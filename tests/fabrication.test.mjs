@@ -36,10 +36,12 @@ function validate(label,s){
   return result.report;
 }
 validate('solid',settings);
-validate('hollow',{...settings,hollowCrystals:true});
+const hollow=validate('hollow',{...settings,hollowCrystals:true});
+assert.equal(hollow.disconnected,1,'Hollowing must not fragment a connected base and cluster');
 validate('sockets',{...settings,cutSockets:true});
 const full=validate('hollow-and-sockets',{...settings,cutSockets:true,hollowCrystals:true});
 assert(full.socketsCut>0,'At least one actual socket should be cut');
+assert.equal(full.disconnected,1,'Combined hollowing and socket cutting must preserve a connected solid');
 const cal=makeCalibrationStrip(wasm);
 assert(cal.triangles>50,'Calibration strip created');
 console.log('calibration',cal.diameters.join(','));
