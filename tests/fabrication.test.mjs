@@ -141,15 +141,21 @@ for(const edge of [0,.75,2.5,5.5]){
  geo.dispose();
 }
 validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
+const domedBalloon=validate('domed-balloon',{...settings,baseDome:17,baseHeight:24,hollowCrystals:true,cutSockets:true,pixelCount:1});
+assert.equal(domedBalloon.internalCavities,0,'Domed hollow cluster has no inaccessible sealed pockets');
+assert.equal(domedBalloon.disconnected,1,'Domed balloon remains a connected printable body');
 const solidMass=validate('solid',settings);
-const hollow=validate('hollow',{...settings,hollowCrystals:true});
-assert(hollow.volumeMm3<solidMass.volumeMm3,'Hollowing must reduce physical material volume');
-console.log('balloon-material-ratio', (hollow.volumeMm3/solidMass.volumeMm3).toFixed(3), 'sealed-voids',hollow.internalCavities);
+const hollow=validate('hollow',{...settings,hollowCrystals:true,cutSockets:true});
+assert(hollow.volumeMm3<solidMass.volumeMm3,'Balloon cavity with an LED port reduces material volume');
+assert.equal(hollow.internalCavities,0,'Sealed inaccessible pockets must be eliminated from exported geometry');
+console.log('balloon-material-ratio', (hollow.volumeMm3/solidMass.volumeMm3).toFixed(3),
+  'sealed-voids',hollow.internalCavities,'filled-pockets',hollow.sealedCavitiesFilled);
 assert.equal(hollow.disconnected,1,'Hollowing must not fragment a connected base and cluster');
 validate('sockets',{...settings,cutSockets:true});
 const full=validate('hollow-and-sockets',{...settings,cutSockets:true,hollowCrystals:true});
 assert(full.socketsCut>0,'At least one actual socket should be cut');
 assert.equal(full.disconnected,1,'Combined hollowing and socket cutting must preserve a connected solid');
+assert.equal(full.internalCavities,0,'No sealed internal voids after LED and hollowing cuts');
 for(const mount of ['Wall screws','Magnet inserts','Threaded insert M3','Custom dual holes']){
  const built=validate('mount-'+mount,{...settings,mount,mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40});
  assert.equal(built.disconnected,1,'Mount '+mount+' must not disconnect the formation');
