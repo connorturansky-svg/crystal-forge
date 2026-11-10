@@ -72,7 +72,7 @@ const relevantManufacturingKeys=[
  'count','height','width','seed','pattern','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipLength','roundSteps',
  'baseType','baseHeight','undersideAccess','wallThickness','pixelCount','pixelDiameter',
- 'pixelFit','cutSockets','hollowCrystals','overhang','splitX'
+ 'pixelFit','cutSockets','hollowCrystals','overhang','splitX','printer'
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
@@ -88,6 +88,7 @@ function disposeManufacturing(){
  }
  manufacturingReport=null;preparedSource=null;
  if($('showManufacturing'))$('showManufacturing').checked=false;
+ if($('printHeatmap'))$('printHeatmap').checked=false;
  if($('prepareStatus'))$('prepareStatus').textContent='Not prepared. Click Prepare print mesh after changing your design.';
  if($('prepareReport'))$('prepareReport').hidden=true;
  for(const id of ['stlBtn','threeMfBtn','splitExportBtn'])if($(id))$(id).disabled=true;
@@ -104,16 +105,48 @@ function manufacturingView(enabled){
  if(enabled)gizmo.detach();
  else selectCrystal(selectedId,false);
 }
+function applyPrintHeatmap(){
+ if(!manufacturingMesh)return;
+ const material=manufacturingMesh.material;
+ const enable=!!$('printHeatmap').checked;
+ if(enable){
+  const geom=manufacturingMesh.geometry;
+  const pos=geom.getAttribute('position').array;
+  const colors=new Float32Array(pos.length),a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+  const cross=new THREE.Vector3(),edge=new THREE.Vector3(),other=new THREE.Vector3();
+  let minY=Infinity;for(let i=1;i<pos.length;i+=3)minY=Math.min(minY,pos[i]);
+  const safe=[.20,.74,.53],caution=[1.0,.69,.22],unsafe=[.97,.28,.32];
+  const threshold=Number(s.overhang||45);
+  for(let i=0;i<pos.length;i+=9){
+   a.fromArray(pos,i);b.fromArray(pos,i+3);c.fromArray(pos,i+6);
+   cross.crossVectors(edge.subVectors(b,a),other.subVectors(c,a)).normalize();
+   const flatBed=[a,b,c].every(v=>Math.abs(v.y-minY)<.15);
+   const slope=Math.asin(Math.min(1,Math.abs(cross.y)))*180/Math.PI;
+   const colour=!flatBed&&cross.y<-.02&&slope>threshold?unsafe:
+    !flatBed&&cross.y<-.02&&slope>threshold-12?caution:safe;
+   for(let j=0;j<3;j++)colors.set(colour,i+j*3);
+  }
+  geom.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  material.color.setHex(0xffffff);
+  material.vertexColors=true;
+ }else{
+  material.vertexColors=false;
+  material.color.setHex(s.colour);
+ }
+ material.needsUpdate=true;
+}
 function renderManufactureReport(report){
  const f=(id,value)=>{$(id).textContent=String(value)};
  f('reportIntegrity',report.status);
  f('reportPieces',report.disconnected);
+ f('reportCavities',report.internalCavities||0);
+ f('reportPrinterFit',report.printerFits?'Yes':'Exceeds bed');
  f('reportTriangles',report.triangleCount.toLocaleString());
  f('reportMass',report.materialPLAgrams.toFixed(1)+' g');
  f('reportSockets',report.socketsCut);
  f('reportHollow',report.hollowed);
  f('reportOverhang',report.quality.unsafeTriangles.toLocaleString());
- f('reportOrientation',report.quality.unsafeTriangles>0?'Base-down; inspect in Cura':'Base-down (favourable)');
+ f('reportOrientation',report.orientation?.name||'Base down');
  const list=report.warnings;
  $('reportWarnings').innerHTML=list.length?'<div class="alert">'+list.map(x=>'<p>'+escapeHTML(x)+'</p>').join('')+'</div>':
   '<div class="success">No flagged conditions in this limited screening. Confirm in your slicer.</div>';
@@ -462,6 +495,7 @@ async function buildManufacturing(){
   $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;
   $('splitExportBtn').disabled=!s.splitParts;
   $('showManufacturing').checked=true;manufacturingView(true);
+  applyPrintHeatmap();
   setStatus('Prepared '+report.triangleCount.toLocaleString()+' triangles · '+report.disconnected+' body/bodies');
  }catch(err){
   console.error('Print preparation failed',err);
@@ -477,6 +511,7 @@ function verifyPrepared(){
 }
 $('prepareBtn').onclick=buildManufacturing;
 $('showManufacturing').onchange=e=>manufacturingView(e.target.checked);
+$('printHeatmap').onchange=applyPrintHeatmap;
 $('stlBtn').onclick=()=>{
  if(!verifyPrepared())return;
  saveSTL(manufacturingMesh.geometry,'crystal-forge-manifold.stl');
