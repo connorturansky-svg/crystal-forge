@@ -155,30 +155,62 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   const initialVolume=combined.volume();
   let hollowed=0;
   if(s.hollowCrystals){
-   // Erode the *united assembly* instead of individually subtracting
-   // neighbouring crystal-shaped cavities. The earlier per-crystal cutters
-   // could slice off separate fragments when crystals overlap.
-   const offset=Math.max(0.8,Number(s.wallThickness));
-   const kernel=hold(wasm.Manifold.sphere(offset,12));
+   // Balloon construction: shell the UNIONED cluster, then hollow the root
+   // and connect its air chamber to larger crystals with internal ports.
+   // This differs from separate sealed miniature cavities per crystal.
+   const thickness=Math.max(.8,Number(s.wallThickness)||1.2);
+   const kernel=hold(wasm.Manifold.sphere(thickness,16));
    const eroded=hold(combined.minkowskiDifference(kernel));
    if(!eroded.isEmpty()){
     const shell=hold(combined.subtract(eroded));
-    assertSolid(shell,'Hollowed union');
-    // Preserve a connected solid root for fabrication: reintroduce the
-    // original lower region (including any pre-existing underside pocket).
-    // This helps prevent thin eroded necks separating neighbouring crystals.
+    assertSolid(shell,'Eroded crystal shell');
+    // A solid reinforcing band at the lower root prevents narrow joints
+    // breaking off from the upper thin-walled crystal points.
     const bb=combined.boundingBox(),low=bb.min,hi=bb.max;
-    const rootHeight=Math.min(hi[1]-low[1],Math.max(7,Number(s.baseHeight||0)+5));
+    const rootHeight=Math.min(hi[1]-low[1],Math.max(5,Number(s.baseHeight||0)+3));
     const rootCut=hold(wasm.Manifold.cube([hi[0]-low[0]+4,rootHeight,hi[2]-low[2]+4])
       .translate([low[0]-2,low[1],low[2]-2]));
     const root=hold(combined.intersect(rootCut));
-    const supported=hold(shell.add(root));
-    assertSolid(supported,'Reinforced hollowed union');
-    combined=supported;
-    hollowed=1; // Indicates the assembly was shelled; narrow crystals may remain solid.
-    warnings.push('The shell operation uses spherical erosion and a solid root. Narrow crystals may remain solid. Verify wall thickness, cavity access and roof support needs in Cura.');
+    const reinforced=hold(shell.add(root));
+    assertSolid(reinforced,'Reinforced outer shell');
+    combined=reinforced;
+    const channels=[];
+    const base=live.find(m=>m.userData?.isBase);
+    if(base){
+      const baseBody=hold(convertMesh(wasm,base));
+      const baseInside=hold(baseBody.minkowskiDifference(kernel));
+      if(!baseInside.isEmpty())channels.push(baseInside);
+    }
+    let connected=0;
+    for(const c of crystals){
+      if(c.hidden)continue;
+      const r=c.r*(c.shape?.bottomScale??s.bottomScale)*Math.min(c.sx||c.scale||1,c.sz||c.scale||1);
+      const radius=Math.min(3.2,Math.max(0,r-thickness*1.5)*.32);
+      if(radius<1.1)continue;
+      const lean=Math.hypot(c.leanX||0,c.leanZ||0);
+      const safeTravel=(r-radius-thickness*.9)/Math.max(.02,lean);
+      const up=Math.min(c.h*.48,30,safeTravel);
+      if(up<Math.max(8,thickness*2))continue;
+      const bottom=thickness+.05;
+      const top=(Number(s.baseHeight||0)-2.5)+up;
+      const depth=top-bottom;
+      if(depth<4)continue;
+      channels.push(hold(wasm.Manifold.cylinder(depth,radius,radius,24).rotate([-90,0,0])
+        .translate([c.x,bottom,c.z])));
+      connected++;
+    }
+    if(channels.length){
+      const channelUnion=hold(wasm.Manifold.union(channels));
+      const opened=hold(combined.subtract(channelUnion));
+      assertSolid(opened,'Opened shared chamber');
+      combined=opened;
+    }
+    hollowed=1;
+    warnings.push('Balloon shell uses a spherical inset and shared internal base chamber with crystal air passages. Exact minimum wall thickness and accessibility still require inspection in Cura.');
+    if(connected<crystals.filter(c=>!c.hidden).length)
+      warnings.push('Some tiny or heavily tilted crystals cannot receive a safe air passage and may remain internally solid or have isolated voids.');
    }else{
-    warnings.push('The current crystal cluster is too narrow for an internal cavity at the selected wall thickness.');
+    warnings.push('The cluster is too thin for a hollow cavity at the selected wall thickness.');
    }
   }
   // Single authoritative feature plan shared with the colour-coded viewport.
