@@ -1,12 +1,12 @@
 Fabrication smoke tests: failure
-Commit: 6f2eb60f08a3eebaa7c55945a35b2956426fd384
+Commit: 67ff02153a7d851a0080fa8809422a5a2977588f
 
 
 > test
 > node tests/fabrication.test.mjs
 
 solid {"triangles":1578,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
-hollow {"triangles":3622,"connected":9,"hollow":10,"sockets":0,"warningCount":2}
+hollow {"triangles":3622,"connected":9,"hollow":10,"sockets":0,"warningCount":3}
 node:internal/modules/run_main:123
     triggerUncaughtException(
     ^
