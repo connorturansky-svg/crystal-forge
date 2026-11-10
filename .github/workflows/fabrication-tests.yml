@@ -11,7 +11,7 @@ on:
       - '.github/workflows/fabrication-tests.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,7 +21,30 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install fixed geometry toolchain
+      - name: Install pinned dependencies
         run: npm install --no-audit --no-fund
-      - name: Test crystal geometry and Manifold exports
-        run: npm test
+      - name: Exercise real Manifold WASM meshes
+        id: smoke
+        continue-on-error: true
+        run: npm test > fabrication-run.log 2>&1
+      - name: Publish diagnostic log in the repository
+        if: always()
+        env:
+          OUTCOME: ${{ steps.smoke.outcome }}
+          REF: ${{ github.sha }}
+        run: |
+          mkdir -p qa
+          {
+            echo "Fabrication smoke tests: $OUTCOME"
+            echo "Commit: $REF"
+            echo
+            if [ -f fabrication-run.log ]; then cat fabrication-run.log; else echo "Tests did not reach execution"; fi
+          } > qa/latest-fabrication-test.log
+          git config user.name "Crystal Forge CI"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add qa/latest-fabrication-test.log
+          git commit -m "ci: publish fabrication test results [skip ci]" || true
+          git push || true
+      - name: Enforce geometry test outcome
+        if: steps.smoke.outcome != 'success'
+        run: exit 1
