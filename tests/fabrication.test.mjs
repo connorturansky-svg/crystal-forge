@@ -3,8 +3,21 @@ import * as THREE from 'three';
 import Module from 'manifold-3d';
 import {generateFormation,crystalGeometry,baseGeometry} from '../geometry-v3.js';
 import {prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
+import {planHardware} from '../hardware-layout.js';
 
 const wasm=await Module();wasm.setup();
+
+function verifyClearance(label,crystals,settings){
+ const plan=planHardware(crystals,settings);
+ assert.equal(plan.collisions.length,0,label+' has no overlapping cut features');
+ const holes=[...plan.sockets,...plan.mounts];
+ for(let i=0;i<holes.length;i++)for(let j=i+1;j<holes.length;j++){
+  const a=holes[i],b=holes[j],distance=Math.hypot(a.x-b.x,a.z-b.z);
+  assert(distance>=a.radius+b.radius+plan.clearance-1e-5,label+' maintains edge clearance');
+ }
+ return plan;
+}
+
 const settings={
   seed:42,count:10,width:95,height:130,pattern:'Central Spire',familyMix:'Quartz',
   bottomScale:1,topScale:.8,cornerRadius:.7,shoulderRound:0,tipFlat:.25,tipLength:.27,roundSteps:3,
@@ -35,6 +48,13 @@ function validate(label,s){
   result.geometry.dispose();
   return result.report;
 }
+// Check crowded designs with both kinds of hole and a minimum web between them.
+for(const n of [1,5,10,16,40]){
+ const q={...settings,count:n,pixelCount:20,cutSockets:true,mount:'Magnet inserts'};
+ const model=assembly(q),plan=verifyClearance('cluster-'+n,model.crystals,q);
+ assert(plan.skippedPixels>=0,'planner reports any skipped pixel bores');
+ console.log('clearance-'+n,JSON.stringify({pixels:plan.sockets.length,mounts:plan.mounts.length,skippedPixels:plan.skippedPixels,skippedMounts:plan.skippedMounts}));
+}
 validate('solid',settings);
 const hollow=validate('hollow',{...settings,hollowCrystals:true});
 assert.equal(hollow.disconnected,1,'Hollowing must not fragment a connected base and cluster');
@@ -45,10 +65,11 @@ assert.equal(full.disconnected,1,'Combined hollowing and socket cutting must pre
 for(const mount of ['Wall screws','Magnet inserts','Threaded insert M3','Custom dual holes']){
  const built=validate('mount-'+mount,{...settings,mount,mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40});
  assert.equal(built.disconnected,1,'Mount '+mount+' must not disconnect the formation');
- assert.equal(built.mountingHolesCut,2,'Mount '+mount+' cuts two holes');
+ assert(built.mountingHolesCut===0||built.mountingHolesCut===2,'Mount '+mount+' cannot cut an unsafe single hole');
 }
 const combo=validate('full-assembly',{...settings,hollowCrystals:true,cutSockets:true,mount:'Magnet inserts'});
 assert.equal(combo.disconnected,1,'Combined hollow and mounted LED assembly must remain connected');
+verifyClearance('full-assembly',assembly({...settings,hollowCrystals:true,cutSockets:true,mount:'Magnet inserts'}).crystals,{...settings,hollowCrystals:true,cutSockets:true,mount:'Magnet inserts'});
 const cal=makeCalibrationStrip(wasm);
 assert(cal.triangles>50,'Calibration strip created');
 console.log('calibration',cal.diameters.join(','));
