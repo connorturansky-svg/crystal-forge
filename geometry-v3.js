@@ -69,7 +69,7 @@ export function crystalGeometry(THREE,c,s){
    add(neck,top);
    add(neck+d,top*(1-d/tipH));
  }
- const tipFlat=Math.max(.05,Math.min(s.tipFlat,top*.45));
+ const tipFlat=Math.max(.05,Math.min(s.tipFlat*.5,top*.45)); // UI is diameter; ring expects radius
  if(tipH>.1)add(height,tipFlat);
  const n=rings[0].length;
  for(let r=0;r<rings.length-1;r++)for(let i=0;i<n;i++){const j=(i+1)%n;quad(rings[r][i],rings[r+1][i],rings[r+1][j],rings[r][j])}
