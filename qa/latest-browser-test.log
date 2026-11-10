@@ -1,5 +1,5 @@
 Browser smoke tests: success
-Commit: 942a0dcd958236e5bbe5b8a6eaf0b00f365dbfb6
+Commit: 246dae0dcbb012b324f9dfdf274f8e9add0fb1f1
 
 Installation outcome: success
 Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
@@ -67,6 +67,7 @@ Chrome Headless Shell 158.0.8127.18 (playwright chromium-headless-shell v1254) d
 > test:browser
 > node tests/browser-smoke.mjs
 
+Retina viewport framing verified at DPR=2
 3D editor launched
 Theme, Help and Changelog verified
 Individual shaping, green selection, floating view and bottom snap verified
