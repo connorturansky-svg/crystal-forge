@@ -1,5 +1,5 @@
 Fabrication smoke tests: success
-Commit: 315ff371f6ae727114cabfa9fd7def571ea98359
+Commit: 7d158815851eccaf91cf055f4c79138253c3d0c5
 
 
 > test
@@ -14,7 +14,7 @@ solid {"triangles":1976,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
 hollow {"triangles":6450,"connected":1,"hollow":1,"sockets":0,"warningCount":3}
 sockets {"triangles":2102,"connected":1,"hollow":0,"sockets":1,"warningCount":3}
 hollow-and-sockets {"triangles":6582,"connected":1,"hollow":1,"sockets":1,"warningCount":4}
-mount-Wall screws {"triangles":2256,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
+mount-Wall screws {"triangles":2258,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
 mount-Magnet inserts {"triangles":2232,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
 mount-Threaded insert M3 {"triangles":2232,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
 mount-Custom dual holes {"triangles":2248,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
