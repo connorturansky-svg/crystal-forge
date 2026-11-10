@@ -101,7 +101,7 @@ export function baseGeometry(THREE,cs,s){
  const b=Math.max(3,s.baseHeight),top=ring(b,2),bottom=ring(0,2.5),centerTop=[c[0],b,c[1]];
  for(let i=0;i<length;i++){const j=(i+1)%length;emit(centerTop,top[j],top[i]);quad(bottom[i],top[i],top[j],bottom[j])}
  if(s.undersideAccess){
-  const margin=Math.min(Math.max(2.4,s.wallThickness*2),Math.min(...outline.map(p=>Math.hypot(p[0]-c[0],p[1]-c[1]))*.38);
+  const margin=Math.min(Math.max(2.4,s.wallThickness*2),Math.min(...outline.map(p=>Math.hypot(p[0]-c[0],p[1]-c[1])))*.38);
   const inner=ring(0,-margin),ceiling=ring(Math.max(1,b-s.wallThickness*2),-margin-.2);
   for(let i=0;i<length;i++){
    const j=(i+1)%length;
