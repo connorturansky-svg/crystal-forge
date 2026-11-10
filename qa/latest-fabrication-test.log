@@ -1,5 +1,5 @@
 Fabrication smoke tests: success
-Commit: 9fe98fb153e827d663bcfa3bf597250ceab9ad80
+Commit: 942a0dcd958236e5bbe5b8a6eaf0b00f365dbfb6
 
 
 > test
@@ -17,7 +17,8 @@ base-Rounded {"triangles":6878,"connected":1,"hollow":0,"sockets":1,"warningCoun
 base-Organic {"triangles":6942,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
 base-Crystal crust {"triangles":14084,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
 Rounded cap and domed base mesh checks passed 768 140
-domed-union {"triangles":7308,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
+All six dome styles seat crystal roots at 0–35 mm
+domed-union {"triangles":7646,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
 solid {"triangles":6910,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
 hollow {"triangles":20154,"connected":1,"hollow":1,"sockets":0,"warningCount":5}
 balloon-material-ratio 0.315 sealed-voids 3
