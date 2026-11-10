@@ -1,5 +1,5 @@
-Fabrication smoke tests: failure
-Commit: 9664952bc70abcd17030db6029d66e8ecccc7652
+Fabrication smoke tests: success
+Commit: 9fe98fb153e827d663bcfa3bf597250ceab9ad80
 
 
 > test
@@ -20,11 +20,14 @@ Rounded cap and domed base mesh checks passed 768 140
 domed-union {"triangles":7308,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
 solid {"triangles":6910,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
 hollow {"triangles":20154,"connected":1,"hollow":1,"sockets":0,"warningCount":5}
-file:///home/runner/work/crystal-forge/crystal-forge/tests/fabrication.test.mjs:122
-assert(hollow.volumeMm3<solidMass.volumeMm3,'Hollowing must reduce physical material volume');
-                                  ^
-
-TypeError: Cannot read properties of undefined (reading 'volumeMm3')
-    at file:///home/runner/work/crystal-forge/crystal-forge/tests/fabrication.test.mjs:122:35
-
-Node.js v22.23.4
+balloon-material-ratio 0.315 sealed-voids 3
+sockets {"triangles":7036,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+hollow-and-sockets {"triangles":20304,"connected":1,"hollow":1,"sockets":1,"warningCount":5}
+mount-Wall screws {"triangles":7186,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
+mount-Magnet inserts {"triangles":7166,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
+mount-Threaded insert M3 {"triangles":7166,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
+mount-Custom dual holes {"triangles":7178,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
+full-assembly {"triangles":20568,"connected":1,"hollow":1,"sockets":1,"warningCount":6}
+calibration 11.8,11.9,12,12.1,12.2
+Export check {"stlTriangles":6910,"baseZ":"0.00","tipZ":"119.51","mfBytes":468304}
+Manufacturing smoke tests passed.
