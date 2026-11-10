@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
 import {generateFormation,crystalGeometry,baseGeometry} from '../geometry-v3.js';
-import {prepareFabrication,makeCalibrationStrip,splitPreparedMesh} from '../fabrication-v1.js';
+import {prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
 
 const wasm=await Module();wasm.setup();
 const settings={
@@ -52,4 +52,28 @@ const halves=splitPreparedMesh(wasm,result.report.mesh,0);
 assert(halves.some(Boolean),'Split produced at least one part');
 halves.forEach(v=>v?.geometry.dispose());
 result.geometry.dispose();
+
+// Simulate browser download click to inspect the actual exported Blob bytes.
+globalThis.document={
+ createElement:()=>({click(){},remove(){},set href(v){},set download(v){}}),
+ body:{appendChild(){}}
+};
+const {meshes:exportMeshes,crystals:exportCrystals}=assembly(settings);
+const exported=prepareFabrication({wasm,meshes:exportMeshes,crystals:exportCrystals,settings});
+const stl=saveSTL(exported.geometry);
+const stlData=new DataView(await stl.arrayBuffer());
+assert.equal(stlData.getUint32(80,true),exported.report.triangleCount,'STL triangle count');
+let minZ=Infinity,maxZ=-Infinity;
+for(let i=0;i<stlData.getUint32(80,true);i++){
+ const o=84+50*i;
+ for(const z of [o+20,o+32,o+44]){const v=stlData.getFloat32(z,true);minZ=Math.min(minZ,v);maxZ=Math.max(maxZ,v)}
+}
+assert(minZ>-.1,'STL base rests on Z=0 build plate (not sideways)');
+assert(maxZ>50,'STL crystal points are upright along Z');
+const mf=save3MF(exported.geometry);
+const bytes=new Uint8Array(await mf.arrayBuffer());
+assert.deepEqual(Array.from(bytes.subarray(0,4)),[0x50,0x4b,0x03,0x04],'3MF begins with ZIP local header');
+assert(bytes.length>1000,'3MF archive contains geometry');
+exported.geometry.dispose();
+console.log('Export check',JSON.stringify({stlTriangles:stlData.getUint32(80,true),baseZ:minZ.toFixed(2),tipZ:maxZ.toFixed(2),mfBytes:bytes.length}));
 console.log('Manufacturing smoke tests passed.');
