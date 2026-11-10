@@ -255,6 +255,21 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   const components=live.map(m=>hold(convertMesh(wasm,m)));
   combined=hold(wasm.Manifold.union(components));
   assertSolid(combined,'Unioned cluster');
+  // When the lower rim of a rigidly tilted crystal is fully embedded in a
+  // shallow mound, it can extend below the build plate. Intersect with a
+  // half-space to leave a flat Y=0 bottom before drilling holes.
+  if(s.baseType!=='none'){
+   const bb=combined.boundingBox(),low=bb.min,high=bb.max;
+   if(low[1]<-.025){
+    const bed=hold(wasm.Manifold.cube([
+      high[0]-low[0]+4,high[1]+4,high[2]-low[2]+4
+     ]).translate([low[0]-2,0,low[2]-2]));
+    const trimmed=hold(combined.intersect(bed));
+    assertSolid(trimmed,'Build plate underside');
+    combined=trimmed;
+    warnings.push('Tilted roots below the build plate were levelled to Y=0. For deeper intact roots, increase base thickness.');
+   }
+  }
   const initialVolume=combined.volume();
   const hardware=planHardware(crystals,s);
   if(hardware.collisions.length)throw new Error('Hardware holes overlap.');
