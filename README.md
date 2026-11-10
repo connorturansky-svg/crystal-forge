@@ -40,6 +40,13 @@ Changing fabrication-relevant settings invalidates the previously prepared mesh 
 
 **Safety and printing:** Manifold validation checks the topology of the Boolean mesh, not every manufacturing constraint. The new shared chamber is made using inward erosion and internal air passages; small/strongly tilted crystals may remain solid or contain inaccessible pockets. Test that the LED opening reaches the chamber and inspect actual wall thickness in Cura. Some hollow cavities or underside roof surfaces may need supports; thin areas, hardware tolerances, pixel spacing, overhead loads and physical strength require validation. For overhead or child-accessible installations, use mechanically rated fixings and independent safety retention. Do not trust printed parts without a suitable physical test.
 
+
+## Tip safety, orbit controls and domed base
+
+- **Tip radius** is now a true spherical-cap curvature in millimetres, beginning at a tangent to the crystalline pyramid. Its 1.5–8 mm slider avoids the previous flat/nipple-like ends. The default is 3.5 mm, with older tiny-radius settings migrated automatically. Printed surface roughness and child suitability still require real-world checks.
+- **Orbit target** recentres on the true cluster bounding-box centre after model rebuilding/regeneration. Orbiting should no longer swing the cluster away from view.
+- **Base dome** is independent of the normal base height and outward base width. It uses nested polygonal rings to form a curved mound, up to 50 mm tall.
+
 ## Keyboard and viewport
 
 V Select · G Move · R Rotate · S Scale · F Frame · Del Delete · Ctrl+Z Undo · Ctrl+Y Redo · Esc Deselect. XYZ gizmo arrows: X red, Y green, Z blue. Standard camera views include ISO, Front, Back, Left, Right, Top.
