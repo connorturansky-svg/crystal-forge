@@ -1,24 +1,24 @@
 Fabrication smoke tests: failure
-Commit: 7768793db18e2e586194df8a226ab1b58b5347e5
+Commit: 6f2eb60f08a3eebaa7c55945a35b2956426fd384
 
 
 > test
 > node tests/fabrication.test.mjs
 
 solid {"triangles":1578,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
-hollow {"triangles":7066,"connected":2,"hollow":10,"sockets":0,"warningCount":3}
+hollow {"triangles":3622,"connected":9,"hollow":10,"sockets":0,"warningCount":2}
 node:internal/modules/run_main:123
     triggerUncaughtException(
     ^
 
 AssertionError [ERR_ASSERTION]: Hollowing must not fragment a connected base and cluster
 
-2 !== 1
+9 !== 1
 
     at file:///home/runner/work/crystal-forge/crystal-forge/tests/fabrication.test.mjs:40:8 {
   generatedMessage: false,
   code: 'ERR_ASSERTION',
-  actual: 2,
+  actual: 9,
   expected: 1,
   operator: 'strictEqual',
   diff: 'simple'
