@@ -196,8 +196,8 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     const supported=hold(shell.add(root));
     assertSolid(supported,'Reinforced hollowed union');
     combined=supported;
-    hollowed=crystals.filter(c=>!c.hidden).length;
-    warnings.push('Hollowing uses spherical erosion with a solid reinforcing root; the first part of each crystal remains solid. Verify minimum wall thickness and cavity access in Cura.');
+    hollowed=1; // Indicates the assembly was shelled; narrow crystals may remain solid.
+    warnings.push('The shell operation uses spherical erosion and a solid root. Narrow crystals may remain solid. Verify wall thickness, cavity access and roof support needs in Cura.');
    }else{
     warnings.push('The current crystal cluster is too narrow for an internal cavity at the selected wall thickness.');
    }
