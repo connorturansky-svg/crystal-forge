@@ -21,6 +21,9 @@ try{
   if(saved?.settings){s={...defaults,...saved.settings};crystals=safeArray(saved.crystals);selectedId=saved.selectedId||null}
 }catch(e){console.warn('Project recovery unavailable',e)}
 function safeArray(a){return Array.isArray(a)?a.filter(x=>x&&typeof x.id==='string').slice(0,300):[]}
+// Migrate older multi-pixel drafts to the new single-source default.
+if(s.lightingMode==='single')s.pixelCount=1;
+if(s.lightingMode==='none')s.pixelCount=0;
 if(!crystals.length)crystals=generateFormation(s);
 const history=[];let historyIndex=-1;
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -70,6 +73,8 @@ function syncShapeControls(){
  for(const e of document.querySelectorAll('[data-state="pixelCount"]'))e.disabled=!multi;
 }
 function syncForm(){
+ if(s.lightingMode==='single')s.pixelCount=1;
+ if(s.lightingMode==='none')s.pixelCount=0;
  document.body.classList.toggle('advanced',s.mode==='advanced');
  document.body.classList.toggle('simple',s.mode!=='advanced');
  $('simpleBtn').classList.toggle('active',s.mode==='simple');
@@ -106,7 +111,7 @@ const relevantManufacturingKeys=[
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
- crystals:crystals.map(c=>({id:c.id,x:c.x,y:c.y,z:c.z,h:c.h,r:c.r,rx:c.rx,rz:c.rz,
+ crystals:crystals.map(c=>({id:c.id,shape:c.shape||{},family:c.family,x:c.x,y:c.y,z:c.z,h:c.h,r:c.r,rx:c.rx,rz:c.rz,
  rotation:c.rotation,sx:c.sx,sy:c.sy,sz:c.sz,hidden:c.hidden,leanX:c.leanX,leanZ:c.leanZ}))});
 }
 function clearHardwareAnnotations(){
@@ -402,6 +407,7 @@ function tweenCamera(to,target){
 }
 function snapView(key){
  const box=new THREE.Box3();for(const m of [...crystalMeshes,...(baseMesh?[baseMesh]:[])])if(m.visible)box.expandByObject(m);
+ if(manufacturingMesh?.visible)box.expandByObject(manufacturingMesh);
  const target=box.isEmpty()?new THREE.Vector3(0,45,0):box.getCenter(new THREE.Vector3());
  const dist=Math.max(125,box.getSize(new THREE.Vector3()).length()*1.65);
  const directions={iso:[1,.75,1],front:[0,.12,1],back:[0,.12,-1],left:[-1,.12,0],right:[1,.12,0],top:[0,1,.0001],bottom:[0,-1,.0001]};
@@ -567,7 +573,7 @@ $('loadFile').onchange=async e=>{
  try{
   const json=JSON.parse(await file.text());
   if(!json.settings||!Array.isArray(json.crystals))throw Error('Invalid project structure');
-  s={...defaults,...json.settings};crystals=safeArray(json.crystals);selectedId=null;
+  s={...defaults,...json.settings};if(s.lightingMode==='single')s.pixelCount=1;crystals=safeArray(json.crystals);selectedId=null;
   syncForm();rebuild();snapshot();setStatus('Project loaded: '+file.name);
  }catch(err){alert('Could not load project: '+err.message)}
  e.target.value='';
