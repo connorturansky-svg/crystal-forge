@@ -10,7 +10,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:8,undersideAccess:false,wallThickness:1.2,
-  showPixels:false,pixelCount:12,pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',
+  showPixels:false,pixelCount:12,pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple'
 };
@@ -40,6 +40,7 @@ function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.leng
 function format(k,v){
  if(['height','width','cornerRadius','shoulderRound','tipFlat','baseHeight','wallThickness','pixelDiameter','pixelFit'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
  if(['bottomScale','topScale','tipLength'].includes(k))return Math.round(v*100)+'%';
+ if(['mountHoleDiameter','mountHoleDepth','mountSpacing'].includes(k))return Number(v).toFixed(1)+' mm';
  if(k==='splitX')return v+' mm';if(k==='overhang')return v+'°';return String(v);
 }
 function syncForm(){
@@ -72,7 +73,7 @@ const relevantManufacturingKeys=[
  'count','height','width','seed','pattern','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipLength','roundSteps',
  'baseType','baseHeight','undersideAccess','wallThickness','pixelCount','pixelDiameter',
- 'pixelFit','cutSockets','hollowCrystals','overhang','splitX','printer'
+ 'pixelFit','cutSockets','hollowCrystals','overhang','splitX','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing'
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
@@ -144,6 +145,7 @@ function renderManufactureReport(report){
  f('reportTriangles',report.triangleCount.toLocaleString());
  f('reportMass',report.materialPLAgrams.toFixed(1)+' g');
  f('reportSockets',report.socketsCut);
+ f('reportMounting',report.mountingHolesCut||0);
  f('reportHollow',report.hollowed);
  f('reportOverhang',report.quality.unsafeTriangles.toLocaleString());
  f('reportOrientation',report.orientation?.name||'Base down');
@@ -549,7 +551,7 @@ $('splitExportBtn').onclick=async()=>{
  finally{button.disabled=false}
 };
 $('bomBtn').onclick=()=>{
- const rows=[['Type','Quantity','Notes'],['12V gumdrop pixels',s.pixelCount,'12 mm nominal mounting hole; adjust by '+s.pixelFit+' mm'],['Crystal bodies',crystals.length,'experimental STL; not Boolean merged'],['Integrated base',s.baseType==='none'?0:1,'mounting holes not generated'],['Planned socket diameter',(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm','preview only']];
+ const rows=[['Type','Quantity','Notes'],['12V gumdrop pixels',s.pixelCount,'12 mm nominal mounting hole; adjust by '+s.pixelFit+' mm'],['Crystal bodies',crystals.length,'experimental STL; not Boolean merged'],['Integrated base',s.baseType==='none'?0:1,'mounted by '+s.mount],['Mounting holes',s.mount==='None'?0:2,s.mount+'; check fit dimensions'],['Planned socket diameter',(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm','preview only']];
  const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
  download(new Blob([csv],{type:'text/csv'}),'crystal-forge-bom.csv');
 };
