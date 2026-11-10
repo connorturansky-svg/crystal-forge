@@ -6,7 +6,7 @@
 // Three.js is provided by whichever realm runs this module (UI, Worker, Node).
 let THREE;
 export function setThreeInstance(three){THREE=three;}
-import {crystalGeometry,crystalRootOffset} from './geometry-v3.js';
+import {crystalGeometry,crystalRootOffset,baseGeometry,baseSurfaceHeight} from './geometry-v3.js';
 import {planHardware} from './hardware-layout.js';
 
 let modulePromise=null;
@@ -154,6 +154,85 @@ function lightTunnel(wasm,start,end,rStart,rEnd){
  const solid=convertMesh(wasm,tube);
  geom.dispose();return solid;
 }
+// Real open underside and integral 45-degree flared buttresses, independent of
+// Cura infill. This does NOT manufacture an empty space within each spike.
+function vaultCylinder(wasm,hold,x,z,y,height,r0,r1=r0){
+ return hold(wasm.Manifold.cylinder(height,r0,r1,16).rotate([-90,0,0]).translate([x,y,z]));
+}
+function vaultInside(p,outline){
+ let inside=false;
+ for(let i=0,j=outline.length-1;i<outline.length;j=i++){
+  const a=outline[i],b=outline[j];
+  if(((a.z>p.z)!==(b.z>p.z))&&p.x<(b.x-a.x)*(p.z-a.z)/(b.z-a.z)+a.x)inside=!inside;
+ }
+ return inside;
+}
+function vaultEdgeDistance(p,poly){
+ let best=Infinity;
+ for(let i=0;i<poly.length;i++){
+  const a=poly[i],b=poly[(i+1)%poly.length],dx=b.x-a.x,dz=b.z-a.z;
+  const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz||1)));
+  best=Math.min(best,Math.hypot(p.x-a.x-dx*t,p.z-a.z-dz*t));
+ }
+ return best;
+}
+function createPrintVault(wasm,hold,crystals,s,hardware,warnings){
+ const stats={applied:false,supportCount:0,pitch:0,gapEstimate:0};
+ if(s.baseType==='none'||Number(s.baseHeight)<11||s.undersideAccess){
+  warnings.push('Zero-infill vault requires an integrated base at least 11 mm tall and the separate underside-access pocket disabled.');
+  return {cutter:null,stats};
+ }
+ const outline=hardware.polygon;
+ if(outline.length<3)return {cutter:null,stats};
+ const wall=2.8,offset=3;
+ const settings={...s,baseHeight:Math.max(3,Number(s.baseHeight)-wall+offset),
+  baseWidth:Math.max(0,Number(s.baseWidth||0)-wall*.3),
+  baseEdgeRadius:Math.max(0,Number(s.baseEdgeRadius||0)-.5),undersideAccess:false};
+ const geom=baseGeometry(THREE,crystals,settings);
+ const box=new THREE.Box3().setFromBufferAttribute(geom.attributes.position);
+ const centre=box.getCenter(new THREE.Vector3()),minDim=Math.min(box.max.x-box.min.x,box.max.z-box.min.z);
+ const inset=Math.max(.67,Math.min(.98,1-2*wall/Math.max(12,minDim)));
+ geom.translate(-centre.x,0,-centre.z);geom.scale(inset,1,inset);geom.translate(centre.x,-offset,centre.z);
+ const cavity=hold(convertMesh(wasm,new THREE.Mesh(geom)));geom.dispose();
+ const xmin=Math.min(...outline.map(p=>p.x)),xmax=Math.max(...outline.map(p=>p.x)),
+   zmin=Math.min(...outline.map(p=>p.z)),zmax=Math.max(...outline.map(p=>p.z));
+ const width=xmax-xmin,depth=zmax-zmin;
+ const pitch=Math.max(16,Math.min(40,Number(s.vaultSupportPitch||25)),Math.sqrt(width*depth/65));
+ const nx=Math.max(1,Math.ceil(width/pitch)),nz=Math.max(1,Math.ceil(depth/pitch));
+ const keep=[],hardwarePositions=[...hardware.sockets,...hardware.mounts];
+ let supports=0;
+ function flaredPillar(x,z,radius,flare,top){
+  const rise=Math.max(1.4,flare-radius),stemTop=Math.max(2,top-rise);
+  const stem=vaultCylinder(wasm,hold,x,z,-.7,stemTop+.9,radius);
+  const cap=vaultCylinder(wasm,hold,x,z,stemTop-.1,Math.max(1,top-stemTop+.5),radius,flare);
+  keep.push(hold(stem.add(cap)));
+ }
+ for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){
+  const p={x:xmin+(i+.5)*width/nx,z:zmin+(j+.5)*depth/nz};
+  if(!vaultInside(p,outline)||vaultEdgeDistance(p,outline)<7)continue;
+  if(hardwarePositions.some(h=>Math.hypot(p.x-h.x,p.z-h.z)<h.radius+8))continue;
+  const roof=baseSurfaceHeight(crystals,s,p.x,p.z)-.7;
+  if(roof<8)continue;
+  flaredPillar(p.x,p.z,2.4,Math.max(5,Math.min(pitch*.32,roof*.4)),roof);supports++;
+ }
+ // Physical collars around all underside LED/mount bores remain after cavity cut.
+ // Side-facing vent holes are drilled separately after the bore operation.
+ for(const p of hardwarePositions){
+  const roof=baseSurfaceHeight(crystals,s,p.x,p.z)-.5;
+  keep.push(vaultCylinder(wasm,hold,p.x,p.z,-.7,Math.max(6,roof+1.1),p.radius+2.8));
+ }
+ let cutter=cavity;
+ if(keep.length){
+  const structure=hold(wasm.Manifold.union(keep));
+  cutter=hold(cavity.subtract(structure));
+ }
+ stats.applied=true;stats.supportCount=supports;stats.pitch=+pitch.toFixed(1);
+ stats.gapEstimate=+Math.max(0,pitch-2*Math.max(5,pitch*.32)).toFixed(1);
+ if(!supports)warnings.push('No internal roof buttresses fitted. Inspect the cavity bridge spans in Cura.');
+ if(stats.gapEstimate>25)warnings.push('Zero-infill vault may retain roof gaps above 25 mm. Reduce buttress spacing or add Cura supports/infill.');
+ warnings.push('Integral base buttresses are supportless-first geometry, not a guarantee. Validate bridging and print orientation in Cura.');
+ return {cutter,stats};
+}
 export function prepareFabrication({wasm,meshes,crystals,settings}){
  if(!wasm?.Manifold || !wasm?.Mesh)throw new Error('Manifold engine has not loaded');
  // Caller explicitly supplies exportable components; preview visibility may
@@ -169,7 +248,20 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   combined=hold(wasm.Manifold.union(components));
   assertSolid(combined,'Unioned cluster');
   const initialVolume=combined.volume();
+  const hardware=planHardware(crystals,s);
+  if(hardware.collisions.length)throw new Error('Hardware holes overlap.');
+  warnings.push(...hardware.messages);
   let hollowed=0,hollowPorts=0,skippedHollowPorts=0;
+  let vault={applied:false,supportCount:0,pitch:0,gapEstimate:0};
+  if(s.baseVault&&s.hollowCrystals)warnings.push('Base vault is unavailable during experimental whole-cluster hollowing.');
+  if(s.baseVault&&!s.hollowCrystals){
+   const made=createPrintVault(wasm,hold,crystals,s,hardware,warnings);
+   vault=made.stats;
+   if(made.cutter){
+    const carved=hold(combined.subtract(made.cutter));assertSolid(carved,'Open underside zero-infill vault');
+    combined=carved;
+   }
+  }
   if(s.hollowCrystals){
    // Balloon construction: shell the UNIONED cluster, then hollow the root
    // and connect its air chamber to larger crystals with internal ports.
@@ -243,19 +335,34 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   // Single authoritative feature plan shared with the colour-coded viewport.
   // Pixel sockets are placed first; mount holes are searched for a safe
   // alternative location. Features that cannot fit are SKIPPED and warned.
-  const hardware=planHardware(crystals,s);
-  if(hardware.collisions.length)throw new Error('Hardware planner reported conflicting bores; no manufacturing mesh was exported.');
-  warnings.push(...hardware.messages);
-  let socketsCut=0,mountingHolesCut=0;
+  let socketsCut=0,mountingHolesCut=0,ventCuts=0;
   if(hardware.sockets.length){
    const cutters=[];
    for(const pos of hardware.sockets){
-    const depth=Math.max(27,Number(s.baseHeight||0)+Number(s.baseDome||0)+10),start=-3;
+    const roof=baseSurfaceHeight(crystals,s,pos.x,pos.z);
+    const depth=vault.applied?Math.max(8,roof-1):Math.max(27,Number(s.baseHeight||0)+Number(s.baseDome||0)+10),start=-3;
     cutters.push(hold(putSocket(wasm,null,pos,pos.radius,depth,start)));
    }
    const holes=hold(wasm.Manifold.union(cutters));
    const cut=hold(combined.subtract(holes));assertSolid(cut,'LED socket cuts');
    combined=cut;socketsCut=hardware.sockets.length;
+   if(vault.applied){
+    // Cross-drill collar windows into the common base chamber. The LED inlet
+    // is not allowed to terminate at an unbroken solid wall.
+    const vents=[];
+    for(const p of hardware.sockets){
+     const roof=baseSurfaceHeight(crystals,s,p.x,p.z);
+     const y=Math.max(6,Math.min(roof-6,Math.max(12,Number(s.baseHeight||0)-4)));
+     const r=Math.max(1.5,Math.min(2.5,p.radius*.38)),span=2*(p.radius+5);
+     vents.push(hold(wasm.Manifold.cylinder(span,r,r,16).rotate([0,90,0]).translate([p.x-span/2,y,p.z])));
+     vents.push(hold(wasm.Manifold.cylinder(span,r,r,16).translate([p.x,y,p.z-span/2])));
+    }
+    if(vents.length){
+     const joined=hold(wasm.Manifold.union(vents));
+     const opened=hold(combined.subtract(joined));assertSolid(opened,'LED collar side vents');
+     combined=opened;ventCuts=hardware.sockets.length;
+    }
+   }
   }
   if(hardware.sockets.length&&Number(s.baseHeight||0)<22)
    warnings.push('The flat base is shorter than a nominal 22 mm gumdrop LED body. Increase its height to about 24 mm if you want to fully conceal the pixel.');
@@ -309,6 +416,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   const lightPathScreened=!!s.hollowCrystals&&socketsCut>0&&hollowPorts>0&&internalCavities===0;
   if(s.hollowCrystals&&!lightPathScreened)
     warnings.push('A single shared illuminated cavity is NOT established by the topology screening. Inspect the cross-section and pixel channel in Cura.');
+  if(vault.applied&&ventCuts<socketsCut)warnings.push('Some LED bores lack side access to the base chamber. Review the print mesh before exporting.');
   if(quality.unsafeTriangles>0)warnings.push('Overhang analysis found '+quality.unsafeTriangles+' potentially unsupported triangles. These are not guaranteed to need supports, but require checking in a slicer.');
   if(s.undersideAccess)warnings.push('The underside access pocket has a ceiling that may need supports. Consider switching the pocket off for supportless-first printing.');
   const mins=bounds.min,maxs=bounds.max;
@@ -328,7 +436,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
+    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
 }

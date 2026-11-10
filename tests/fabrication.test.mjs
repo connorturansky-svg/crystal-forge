@@ -97,7 +97,7 @@ for(const n of [1,5,10,16,40]){
 }
 // Manual pixel and mounting positions use the same manufacturing plan as the UI.
 {
- const cfg={...settings,count:10,pixelPlacement:'manual',lightingMode:'multi',pixelCount:2,
+ const cfg={...settings,count:10,pixelPlacement:'manual',lightingMode:'multi',pixelCount:2,cutSockets:true,
   manualPixelHoles:[{x:0,z:0},{x:100000,z:100000}],
   mountPlacement:'manual',mount:'Custom dual holes',manualMountHoles:[{x:0,z:0}]};
  const cs=generateFormation(cfg),plan=planHardware(cs,cfg);
@@ -182,6 +182,14 @@ for(const edge of [0,.75,2.5,5.5]){
  geo.dispose();
 }
 validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
+const vaultCheck=validate('zero-infill-vault',{...settings,count:8,baseHeight:25,baseDome:12,
+ baseVault:true,vaultSupportPitch:25,cutSockets:true,pixelCount:1,hollowCrystals:false});
+assert(vaultCheck.vault.applied,'Zero-infill base vault is cut in the manufacturing mesh');
+assert(vaultCheck.vault.supportCount>0,'Integral support columns are generated');
+assert(vaultCheck.volumeMm3<vaultCheck.initialVolume,'Cavity removes solid material');
+assert.equal(vaultCheck.disconnected,1,'Roof buttresses stay part of the printed model');
+assert.equal(vaultCheck.internalCavities,0,'Underside chamber remains open');
+assert(vaultCheck.ventCuts>0,'LED collar has side ventilation to the chamber');
 const domedBalloon=validate('domed-balloon',{...settings,baseDome:17,baseHeight:24,hollowCrystals:true,cutSockets:true,pixelCount:1});
 assert.equal(domedBalloon.internalCavities,0,'Domed hollow cluster has no inaccessible sealed pockets');
 assert.equal(domedBalloon.disconnected,1,'Domed balloon remains a connected printable body');

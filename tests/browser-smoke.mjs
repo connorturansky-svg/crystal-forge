@@ -115,6 +115,9 @@ try{
  await page.waitForTimeout(250);
  assert.equal(Number(await page.locator('[data-state="baseEdgeRadius"]').inputValue()),2.5,'Base edge radius slider works');
  assert(!(await page.locator('[data-state="hollowCrystals"]').isChecked()),'Cura-controlled infill defaults on');
+ assert(await page.locator('[data-state="baseVault"]').count(),'Base vault control exists');
+ assert(await page.locator('#placePixelBtn').count(),'Manual LED editor is available');
+ assert(await page.locator('#placeMountBtn').count(),'Manual mount editor is available');
  assert(await page.locator('[data-state="cutSockets"]').isChecked(),'Socket cuts default on');
  assert.equal(await page.locator('[data-state="lightingMode"]').inputValue(),'single','Single shared LED mode default');
  await page.locator('#fitPixelBaseBtn').click();
