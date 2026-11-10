@@ -142,7 +142,9 @@ function cleanupAll(list){
 }
 export function prepareFabrication({wasm,meshes,crystals,settings}){
  if(!wasm?.Manifold || !wasm?.Mesh)throw new Error('Manifold engine has not loaded');
- const s=settings,live=meshes.filter(m=>m&&m.visible),owned=[];
+ // Caller explicitly supplies exportable components; preview visibility may
+ // be off when the joined manufacturing mesh is being inspected.
+ const s=settings,live=meshes.filter(Boolean),owned=[];
  const hold=m=>{owned.push(m);return m};
  const warnings=[];
  if(live.length===0)throw new Error('There is no visible geometry to manufacture');
@@ -258,6 +260,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   const internalCavities=shellVolumes.filter(v=>v<-.01).length;
   cleanupAll(parts);
   if(disconnected>1)warnings.push(disconnected+' separate solids detected; the assembly is not one connected piece.');
+  if(internalCavities>0)warnings.push(internalCavities+' isolated enclosed cavities were detected. These may not receive light from the underside pixel and should be inspected in a slicer.');
   if(quality.unsafeTriangles>0)warnings.push('Overhang analysis found '+quality.unsafeTriangles+' potentially unsupported triangles. These are not guaranteed to need supports, but require checking in a slicer.');
   if(s.undersideAccess)warnings.push('The underside access pocket has a ceiling that may need supports. Consider switching the pocket off for supportless-first printing.');
   const mins=bounds.min,maxs=bounds.max;
