@@ -6,6 +6,7 @@ import {loadManifold,setThreeInstance,saveSTL,save3MF,makeCalibrationStrip,split
 setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
+import {installTooltips} from './tooltips.js';
 
 const $=id=>document.getElementById(id);
 const defaults={
@@ -845,3 +846,4 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Delete'&&selectedId){crystals=crystals.filter(c=>c.id!==selectedId);selectedId=null;rebuild();snapshot()}
 });
 syncForm();rebuild();snapshot();
+installTooltips();

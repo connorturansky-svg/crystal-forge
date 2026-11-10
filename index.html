@@ -77,6 +77,13 @@ body.theme-light .dialog-body .safety{background:#fff4e4;color:#70491f;border-co
 body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80aee6;color:#1c599a}
 @media(max-width:1150px){.topbar{flex-wrap:wrap;justify-content:center}.layout{height:calc(100vh - 110px)}}
 
+.control-tooltip{position:fixed;z-index:3000;pointer-events:none;max-width:300px;padding:10px 12px;border:1px solid #7a9cc5;border-radius:10px;background:#14253af5;color:#edf6ff;box-shadow:0 7px 30px #0008;font:12px/1.45 Inter,system-ui,Segoe UI,sans-serif;white-space:normal;overflow-wrap:anywhere}
+.control-tooltip strong{display:block;font-size:12px;color:#b9e9ff;margin-bottom:4px}
+.control-tooltip span{display:block;font-size:11.5px;color:#e3eefc}
+body.theme-light .control-tooltip{background:#fff;color:#1d3553;border-color:#aac3e3;box-shadow:0 8px 24px #20365333}
+body.theme-light .control-tooltip strong{color:#1a5384}
+body.theme-light .control-tooltip span{color:#334c6b}
+@media(prefers-reduced-motion:reduce){.control-tooltip{transition:none}}
 #shapeScope{margin:2px 0 8px}body .shape-selected{border-left:3px solid #49ef9b;background:#1b453a;color:#cbffe5;padding:10px;border-radius:6px}body.theme-light .shape-selected{background:#daf7e8;color:#136039}#multiplePixelsRow:not(.show){display:none!important}.viewbuttons button.active{background:#315d96!important;color:white!important}
 </style></head>
 <body class="simple">
