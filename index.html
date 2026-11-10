@@ -80,7 +80,7 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 </style></head>
 <body class="simple">
 <header class="topbar">
-<div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.3.1 · Web Studio</span><span class="filename" id="projectName">Untitled cluster</span></div>
+<div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.4 · Fabrication Preview</span><span class="filename" id="projectName">Untitled cluster</span></div>
 <nav class="workspace-tabs"><button class="active" data-tab="design">◇ Design</button><button data-tab="build">⚙ Build</button><button data-tab="print">▣ Print</button></nav>
 <div class="topcluster utility"><div class="modebar"><button id="simpleBtn" class="active">Simple</button><button id="advancedBtn">Advanced</button></div><button id="themeBtn" class="utility-button" title="Switch to light theme" aria-label="Switch theme">☀ Light</button><button id="helpBtn" class="utility-button" title="Help and keyboard shortcuts">? Help</button><button id="changelogBtn" class="utility-button" title="Version history and changes">✦ What’s new</button><button id="saveBtn" title="Download editable project">↓ Save</button><button id="loadBtn" title="Open project">↑ Open</button><input type="file" id="loadFile" accept=".json,application/json"></div>
 </header>
@@ -119,15 +119,21 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="control"><label>Base height <output data-out="baseHeight"></output></label><input data-state="baseHeight" type="range" min="3" max="30" step=".5"></div>
 <label class="checks"><input data-state="undersideAccess" type="checkbox"> Add underside access pocket</label>
 <div class="note">Base cavity is created in geometry. Crystal interiors remain solid pending a validated hollowing method.</div>
-<div class="advanced-only"><div class="control"><label>Target wall thickness <output data-out="wallThickness"></output></label><input data-state="wallThickness" type="range" min=".8" max="4" step=".2"></div></div>
+
+</div></div>
+<div class="card blue"><div class="cardtitle"><span class="symbol">◈</span> Hollow & supportless geometry</div><div class="cardbody">
+<label class="checks"><input data-state="hollowCrystals" type="checkbox"> Cut hollow interiors in eligible crystals</label>
+<div class="control"><label>Target wall thickness <output data-out="wallThickness"></output></label><input data-state="wallThickness" type="range" min=".8" max="4" step=".2"></div>
+<p class="note">Manufacturing mode cuts tapered internal cavities and connects them to underside access holes where requested. These are approximate insets, not certified uniform-thickness shells.</p>
+<div class="success"><strong>Supportless-first:</strong> after preparing the solid, inspect downward-facing surfaces and recommended orientation. A 45° reference alone cannot guarantee support-free printing.</div>
 </div></div>
 <div class="card amber"><div class="cardtitle"><span class="symbol">✳</span> Pixel lighting plan</div><div class="cardbody">
-<label class="checks"><input data-state="showPixels" type="checkbox"> Show LED locations in the viewport</label>
+<label class="checks"><input data-state="showPixels" type="checkbox"> Show LED locations in the viewport</label><label class="checks"><input data-state="cutSockets" type="checkbox"> Cut LED socket holes into manufacturing mesh</label>
 <div class="control"><label>Gumdrop LEDs <output data-out="pixelCount"></output></label><input data-state="pixelCount" type="range" min="0" max="60" step="1"></div>
 <div class="control"><label>Nominal socket diameter <output data-out="pixelDiameter"></output></label><input data-state="pixelDiameter" type="range" min="10" max="15" step=".1"></div>
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
 <p class="softnotice">Planned hole: <strong id="actualHole">12.00 mm</strong></p>
-<div class="note warning">LED positions and fit calculations are previews only — sockets are not cut into exported meshes yet.</div>
+<div class="note warning">When enabled, Print → Prepare Print cuts nominal socket holes using the Manifold engine. Check physical fit against your actual pixels. Retention lips and cable strain relief are not yet included.</div>
 </div></div>
 <div class="card purple advanced-only"><div class="cardtitle"><span class="symbol">⚙</span> Mounting & modularity</div><div class="cardbody">
 <div class="control"><label>Mounting preset</label><select data-state="mount"><option>None</option><option>Wall screws</option><option>Magnet inserts</option><option>Detachable plate</option><option>Ceiling mount</option></select></div>
@@ -139,13 +145,34 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="control"><label>Printer</label><select data-state="printer"><option>Ultimaker 3 Extended</option><option>Ultimaker 2+</option><option>Custom / other</option></select></div>
 <div class="control"><label>Overhang reference <output data-out="overhang"></output></label><input data-state="overhang" type="range" min="30" max="65" step="5"></div>
 <div class="note">Optimised supportless-first is the goal. Automated orientation and thorough overhang analysis are not yet implemented.</div>
-<button id="stlBtn" class="primary" style="width:100%">↓ Export experimental STL</button>
+<div class="divider"></div><button id="prepareBtn" class="primary" style="width:100%;font-weight:700">▣ Prepare print mesh (Boolean union)</button>
+<div id="prepareStatus" class="note">Not prepared. This step will merge crystals and base, cut requested cavities and sockets, then validate the resulting solid.</div>
+<label class="checks"><input id="showManufacturing" type="checkbox"> Show manufacturing mesh in 3D viewport</label>
+<div id="prepareReport" class="card teal" hidden><div class="cardtitle">✓ Manufacturing geometry</div><div class="cardbody">
+<div class="stat"><span>Mesh integrity</span><strong id="reportIntegrity">—</strong></div>
+<div class="stat"><span>Connected bodies</span><strong id="reportPieces">—</strong></div>
+<div class="stat"><span>Triangles</span><strong id="reportTriangles">—</strong></div>
+<div class="stat"><span>Approx. PLA</span><strong id="reportMass">—</strong></div>
+<div class="stat"><span>Socket holes cut</span><strong id="reportSockets">—</strong></div>
+<div class="stat"><span>Hollowed crystals</span><strong id="reportHollow">—</strong></div>
+<div class="stat"><span>Overhang risk faces</span><strong id="reportOverhang">—</strong></div>
+<div class="stat"><span>Suggested orientation</span><strong id="reportOrientation">—</strong></div>
+<div id="reportWarnings" class="note"></div>
+</div></div>
+<div class="buttonrow"><button id="stlBtn" disabled>↓ STL</button><button id="threeMfBtn" disabled>↓ 3MF</button></div>
+<div class="note">Exports use only the prepared manufacturing mesh. Changing geometry or Build options requires preparing again.</div>
 <div class="divider"></div>
-<div class="buttonrow"><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div>
+<div class="buttonrow"><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div><div class="divider"></div><button id="calibrationBtn" style="width:100%">⌖ Generate 12 mm pixel-fit test strip (STL)</button><p class="note">Five mounting-hole diameters, left to right: 11.8 · 11.9 · 12.0 · 12.1 · 12.2 mm. Print in the intended material and measure the best fit.</p>
+<div class="advanced-only"><div class="divider"></div>
+<div class="control"><label>Modular cut plane X <output data-out="splitX"></output></label><input data-state="splitX" type="range" min="-100" max="100" step="1"></div>
+<label class="checks"><input data-state="splitParts" type="checkbox"> Enable split exports (two parts)</label>
+<p class="note">Cut-plane parts are separately closed. Alignment keys and printable connectors have not yet been added.</p>
+<button id="splitExportBtn" disabled style="width:100%">↓ Export split parts</button>
+</div>
 </div></div>
 <div class="card amber"><div class="cardtitle"><span class="symbol">⚠</span> Fabrication status</div><div class="cardbody">
-<div class="alert"><strong>Not yet production-ready.</strong> The exported STL contains individually closed intersecting crystal and base shells, not a single Boolean-unioned body. Hollow crystal interiors, LED holes and verified supportless printing remain unfinished. Check carefully in Cura and repair before any print.</div>
-<div class="note">The preview and editable project are useful now; mesh unions and validation remain engineering priorities.</div>
+<div class="alert"><strong>Not yet production-ready.</strong> Use Prepare Print to build a single Manifold mesh, with optional hollow cuts and pixel holes. Geometric integrity is checked, but minimum wall thickness, print orientation and physical hardware fit are not certified. Check in Cura before printing.</div>
+<div class="note">Print checks are now available, although automatic support removal, reliable constant-wall hollowing, retaining lips and modular connectors remain under development.</div>
 </div></div>
 </section>
 </aside>
@@ -190,10 +217,10 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
    <h3>Keyboard shortcuts</h3><p><kbd>V</kbd> Select · <kbd>G</kbd> Move · <kbd>R</kbd> Rotate · <kbd>S</kbd> Scale · <kbd>F</kbd> Focus selected · <kbd>Del</kbd> Delete · <kbd>Ctrl</kbd> + <kbd>Z</kbd> Undo · <kbd>Ctrl</kbd> + <kbd>Y</kbd> Redo · <kbd>Esc</kbd> Deselect or close this panel.</p>
    <h3>Saving and reopening</h3><p>Projects are automatically saved in this browser. <strong>↓ Save</strong> downloads a portable JSON project. <strong>↑ Open</strong> restores it. STL export contains only the 3D surface geometry; editable controls are preserved in JSON.</p>
    <h3>LEDs and supportless design</h3><p>Build includes a 12 mm nominal pixel profile, adjustable hole-fit values, approximate LED positions and a parts CSV. These are planning aids; the LED sockets are not yet physically cut into meshes. The intended printing defaults are a 1.2 mm target wall and a 45° overhang reference.</p>
-   <div class="safety"><strong>Fabrication warning:</strong> This release's STL export is experimental. Crystal and base shells intersect but are not Boolean-unioned into one validated watertight assembly. Hollow crystal interiors, support-free verification and real LED sockets are not yet implemented. Inspect and repair meshes before attempting a physical print.</div>
+   <div class="safety"><strong>Fabrication warning:</strong> Use Print → Prepare Print for a Boolean-unioned, topologically validated manufacturing mesh. Hollowing is an approximate inset; LED sockets require fit calibration; unsupported regions need review in Cura before physical printing.</div>
   </div>
   <div class="dialog-body" data-info-pane="changelog" hidden>
-   <p>Changes are saved to GitHub and published through GitHub Pages.</p>
+   <p>Changes are saved to GitHub and published through GitHub Pages.</p><div class="release"><strong>v0.4 — Manufacturing & print preparation</strong><div><time>10 November 2026</time></div><ul><li>Manifold-WASM manufacturing pipeline for Boolean-unioned crystal clusters and bases.</li><li>Optional hollow cavities and real pixel-hole cuts with fit adjustment.</li><li>Validated manifold mesh preview, warnings, STL/3MF export, calibration strip and split-plane preparation.</li><li>Improved print diagnostics and explicit manufacturability limitations.</li></ul></div>
    <div class="release"><strong>v0.3.1 — Appearance & guidance</strong><div><time>10 November 2026</time></div>
    <ul><li>Added switchable Light and Dark themes, remembered in the browser.</li><li>Added integrated Help and Changelog windows, with shortcuts and usage instructions.</li><li>Corrected the base footprint generation for crystals without explicit scale values.</li><li>Kept warnings visible for unfinished printable geometry features.</li></ul></div>
    <div class="release"><strong>v0.3 — Expanded studio editor</strong><div><time>10 November 2026</time></div>
@@ -201,9 +228,9 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
    <div class="release"><strong>v0.2 — Stylised low-poly crystals</strong><div><time>10 November 2026</time></div>
    <ul><li>Moved from noisy volumetric geometry to recognisable faceted shafts and pointed tips.</li><li>Introduced large, medium and small cluster composition and a faceted integrated root.</li></ul></div>
    <div class="release"><strong>Coming next — Manufacturing geometry</strong><ul>
-   <li>Robust union of crystals and base into a single validated watertight body.</li>
-   <li>Hollow interiors, genuine 12 mm pixel mounting sockets and cable routing.</li>
-   <li>Printability heatmaps, supportless optimisation, calibration prints, modular connectors and assembly output.</li></ul></div>
+   <li>Further test mesh unions with real prints, advanced edge cases and disconnected-component handling.</li>
+   <li>Uniform minimum-wall hollowing, retaining lips, cable strain relief and serviceable LED carriers.</li>
+   <li>Full supportless optimisation, reliable automatic part orientation, alignment connectors and assembly diagrams.</li></ul></div>
   </div>
  </section>
 </div>
