@@ -298,6 +298,65 @@ document.querySelectorAll('[data-look]').forEach(b=>b.onclick=()=>{
 });
 $('gridBtn').onclick=()=>{grid.visible=!grid.visible;axes.visible=grid.visible};
 $('colours').querySelectorAll('button').forEach(b=>b.onclick=()=>{s.colour=Number(b.dataset.colour);syncForm();rebuild();snapshot()});
+// Persistent appearance setting. Separate from saved geometry projects.
+let activeTheme='dark';
+try{activeTheme=localStorage.getItem('crystal-forge-theme')==='light'?'light':'dark'}catch(e){}
+function applyTheme(theme,save=true){
+ activeTheme=theme==='light'?'light':'dark';
+ document.body.classList.toggle('theme-light',activeTheme==='light');
+ document.body.classList.toggle('theme-dark',activeTheme==='dark');
+ $('themeBtn').textContent=activeTheme==='light'?'☾ Dark':'☀ Light';
+ $('themeBtn').title=activeTheme==='light'?'Switch to dark theme':'Switch to light theme';
+ $('themeBtn').setAttribute('aria-label',$('themeBtn').title);
+ scene.background.set(activeTheme==='light'?0xe9f0f9:0x0e192b);
+ const meta=document.querySelector('meta[name="theme-color"]');
+ if(meta)meta.content=activeTheme==='light'?'#f0f5fc':'#111827';
+ // Keep grid useful over both viewport backgrounds.
+ const mats=Array.isArray(grid.material)?grid.material:[grid.material];
+ for(const m of mats)if(m){m.opacity=activeTheme==='light'?.38:1;m.transparent=activeTheme==='light'}
+ if(save){try{localStorage.setItem('crystal-forge-theme',activeTheme)}catch(e){}}
+}
+$('themeBtn').onclick=()=>applyTheme(activeTheme==='light'?'dark':'light');
+applyTheme(activeTheme,false);
+
+// Keyboard-accessible Help and Changelog, available from any workspace.
+let returnFocus=null;
+function showInfo(tab='help'){
+ returnFocus=document.activeElement;
+ $('infoOverlay').hidden=false;
+ showInfoTab(tab);
+ $('closeInfo').focus();
+}
+function showInfoTab(tab){
+ const which=tab==='changelog'?'changelog':'help';
+ $('infoTitle').textContent=which==='help'?'Crystal Forge — Help':'Crystal Forge — What’s new';
+ document.querySelectorAll('[data-info]').forEach(button=>{
+  const on=button.dataset.info===which;
+  button.classList.toggle('active',on);
+  button.setAttribute('aria-selected',on?'true':'false');
+ });
+ document.querySelectorAll('[data-info-pane]').forEach(panel=>panel.hidden=panel.dataset.infoPane!==which);
+ const active=$('infoOverlay').querySelector('[data-info-pane="'+which+'"]');
+ if(active)active.scrollTop=0;
+}
+function closeInfo(){
+ if($('infoOverlay').hidden)return;
+ $('infoOverlay').hidden=true;
+ if(returnFocus&&typeof returnFocus.focus==='function')returnFocus.focus();
+}
+$('helpBtn').onclick=()=>showInfo('help');
+$('changelogBtn').onclick=()=>showInfo('changelog');
+$('closeInfo').onclick=closeInfo;
+document.querySelectorAll('[data-info]').forEach(button=>button.onclick=()=>showInfoTab(button.dataset.info));
+$('infoOverlay').addEventListener('pointerdown',e=>{if(e.target===$('infoOverlay'))closeInfo()});
+document.addEventListener('keydown',e=>{
+ if(!$('infoOverlay').hidden){
+  if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();closeInfo()}
+  return;
+ }
+ if(e.key==='?'&&!(e.target instanceof HTMLInputElement)){e.preventDefault();showInfo('help')}
+});
+
 $('saveBtn').onclick=saveProject;$('projectExportBtn').onclick=saveProject;
 $('loadBtn').onclick=()=>$('loadFile').click();
 $('loadFile').onchange=async e=>{
