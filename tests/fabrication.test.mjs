@@ -118,6 +118,28 @@ assert.notDeepEqual(Array.from(meshA.getAttribute('position').array),
  Array.from(meshB.getAttribute('position').array),'Individual shape override changes mesh');
 meshA.dispose();meshB.dispose();
 safetyGeometryCheck();
+function testLeanAndSpacing(){
+ const base={...settings,count:12,baseDome:0,spacing:100,leanAmount:90,angleRandomness:0};
+ for(const mode of ['One direction','Criss-cross','Radial outward','Radial inward','Organic / natural']){
+  const cs=generateFormation({...base,leanMode:mode});
+  for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++){
+   const a=cs[i],b=cs[j],extent=c=>c.r*Math.max(base.bottomScale,base.topScale,1)+c.h*Math.hypot(c.leanX,c.leanZ)+3.5;
+   assert(Math.hypot(a.x-b.x,a.z-b.z)>=extent(a)+extent(b)+15-1e-3,'Max spacing must have no swept overlaps for '+mode);
+  }
+  if(mode==='One direction')assert(cs.every(c=>c.leanX>0&&Math.abs(c.leanZ)<1e-9),'One direction consistent');
+  if(mode==='Criss-cross')assert(cs.some(c=>c.leanX>0)&&cs.some(c=>c.leanX<0),'Criss-cross alternates');
+  const tight=generateFormation({...base,spacing:0,leanMode:mode});
+  const span=arr=>Math.max(...arr.map(c=>Math.hypot(c.x,c.z)));
+  assert(span(cs)>span(tight)*3,'Max spacing much wider');
+ }
+ const c=generateFormation({...base,leanMode:'One direction'})[0];
+ const rounded=crystalGeometry(THREE,c,{...base,cornerRadius:2.5,shoulderRound:0});
+ const sharp=crystalGeometry(THREE,c,{...base,cornerRadius:0,shoulderRound:0});
+ assert(rounded.getAttribute('position').count>sharp.getAttribute('position').count,'Side round links to shoulder');
+ rounded.dispose();sharp.dispose();
+ console.log('Lean modes, zero overlap at 100%, joined shoulder rounding passed');
+}
+testLeanAndSpacing();
 
 function verifyDomeRoots(){
  for(const style of ['Fitted','Square','Circle','Rounded','Organic','Crystal crust']){

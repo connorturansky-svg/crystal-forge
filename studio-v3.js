@@ -8,7 +8,7 @@ import {planHardware} from './hardware-layout.js';
 
 const $=id=>document.getElementById(id);
 const defaults={
-  title:'Untitled cluster',count:16,height:155,width:130,seed:42,pattern:'Central Spire',spacing:42,angleRandomness:32,
+  title:'Untitled cluster',count:16,height:155,width:130,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
@@ -55,7 +55,7 @@ function format(k,v){
  if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
  if(['bottomScale','topScale','tipLength'].includes(k))return Math.round(v*100)+'%';
  if(['mountHoleDiameter','mountHoleDepth','mountSpacing'].includes(k))return Number(v).toFixed(1)+' mm';
- if(k==='splitX')return v+' mm';if(['spacing','angleRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
+ if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
 }
 const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
 function selectedCrystal(){return crystals.find(c=>c.id===selectedId)||null}
@@ -116,7 +116,7 @@ function setStatus(t){$('status').textContent=t}
 
 let manufacturingMesh=null,manufacturingReport=null,preparedSource=null;
 const relevantManufacturingKeys=[
- 'count','height','width','seed','pattern','spacing','angleRandomness','familyMix','bottomScale','topScale',
+ 'count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
  'baseType','baseHeight','baseDome','baseEdgeRadius','baseWidth','baseStyle','undersideAccess','wallThickness','lightingMode','pixelCount','pixelDiameter',
  'pixelFit','cutSockets','hollowCrystals','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing'
@@ -541,7 +541,7 @@ function schedule(full=true){
   snapshot();
  },85);
 }
-const regenKeys=new Set(['count','height','width','seed','pattern','spacing','angleRandomness','familyMix']);
+const regenKeys=new Set(['count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix']);
 const previewKeys=new Set(['showPixels','glowPreview','glowColour','preserveLocked','snap','splitParts','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{

@@ -69,6 +69,19 @@ try{
  await page.waitForTimeout(300);
  assert.equal(Number(await domeInput.inputValue()),18,'Base dome slider applied');
  await page.locator('[data-tab="design"]').click();
+ for(const [key,value] of [['spacing','100'],['leanMode','Radial inward'],['leanAmount','80'],['angleRandomness','0']]){
+  await page.locator('[data-state="'+key+'"]').evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))},value);
+  await page.waitForTimeout(160);
+ }
+ const savedLean=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings);
+ assert.equal(savedLean.leanMode,'Radial inward','Lean preset persisted');
+ assert.equal(savedLean.leanAmount,80,'Lean strength persisted');
+ await page.locator('[data-state="spacing"]').evaluate(el=>{el.value='48';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.locator('[data-state="leanMode"]').selectOption('Organic / natural');
+ await page.locator('[data-state="leanAmount"]').evaluate(el=>{el.value='35';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.locator('[data-state="angleRandomness"]').evaluate(el=>{el.value='32';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(300);
+ await page.locator('[data-tab="design"]').click();
 
  assert((await page.locator('#shapeScope').innerText()).includes('GLOBAL SHAPE'),'Global mode restored');
  await page.locator('#floatBtn').click();
