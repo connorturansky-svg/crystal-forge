@@ -561,6 +561,9 @@ document.querySelectorAll('[data-state]').forEach(e=>{
   if(key==='lightingMode'&&value==='single')s.pixelCount=1;
   if(key==='lightingMode'&&value==='none')s.pixelCount=0;
   if(key==='lightingMode'&&value==='multi'&&s.pixelCount<1)s.pixelCount=2;
+   // One explicit manufacturing strategy at a time; avoid silently ignoring a vault.
+   if(key==='baseVault'&&value)s.hollowCrystals=false;
+   if(key==='hollowCrystals'&&value)s.baseVault=false;
   if(!previewKeys.has(key))disposeManufacturing();
   for(const o of document.querySelectorAll('[data-out="'+key+'"]'))o.textContent=format(key,value);
   if(key==='pixelDiameter'||key==='pixelFit')$('actualHole').textContent=(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm';

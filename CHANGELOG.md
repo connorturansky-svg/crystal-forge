@@ -1,5 +1,15 @@
 # Crystal Forge — Changelog
 
+## v0.7.0 — 10 November 2026
+
+- Fixed One direction, Criss-cross and Radial inward/outward presets by compensating each crystal's local Y rotation; regenerated crystal leans now align consistently in world space.
+- Added Build-stage LED and mounting-hole guides, coloured yellow and purple, with invalid manually placed holes flagged red. Select Automatic or Manual, click to position a hole and fine-tune its X/Z coordinates.
+- Manual holes feed the same clearance-aware fabrication planner as automatic holes. Invalid holes are reported and excluded from manufacturing cuts.
+- Introduced optional **Zero-infill base structure**: a physically open underside cavity, automatic integral columns with flared buttresses supporting the mound roof, retained hardware collars and side access windows through the LED socket.
+- Added buttress-spacing controls, estimated bridge-gap reporting and counts for structural supports and LED side ports.
+- Reaffirmed limitation: neither 0% Cura infill nor an open base cavity guarantees continuous light into all crystal spikes, and a buttressed roof is not automatically printable without further supports.
+- Automated regressions cover world-aligned lean patterns, manual-hole collision handling and nominal base vault topology.
+
 ## v0.6.1 — 10 November 2026
 
 - **Cura-first default:** export the Boolean-joined outer crystal cluster with LED and mounting holes, but no internal crystal hollowing. Cura manages 0–100% infill, wall count and skins.

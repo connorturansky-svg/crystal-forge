@@ -6,6 +6,8 @@ on:
       - 'geometry-v3.js'
       - 'fabrication-v1.js'
       - 'studio-v3.js'
+      - 'hardware-editor.js'
+      - 'hardware-layout.js'
       - 'package.json'
       - 'tests/**'
       - '.github/workflows/fabrication-tests.yml'

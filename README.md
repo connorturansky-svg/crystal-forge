@@ -1,4 +1,4 @@
-# Crystal Forge — Browser Studio v0.6.1
+# Crystal Forge — Browser Studio v0.7.0
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, child-safe crystal sculptures. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/
 
@@ -6,8 +6,8 @@ Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three
 
 ## Workspaces
 
-- **Design** — Six formation patterns, six crystal families, reproducible seeds, crystal spacing/overlap, angle randomness, top/bottom ratios, separate side/point rounding, coloured materials, individual crystal shaping and XYZ editing, locks and selection.
-- **Build** — Six base styles (fitted, square, circle, rounded, organic, miniature crystal crust), independent outward rim width and base depth; an optional experimental shared chamber with one underside 12 mm pixel push-fit by default; optional multiple pixels; nominal hole-fit adjustments and screw/magnet/M3/custom mounts.
+- **Design** — Six formation patterns, world-aligned directional lean presets (one-way, criss-cross, radial inward/outward, organic), independent strength/randomness, six crystal families, reproducible seeds, collision-avoiding full spacing range, top/bottom ratios, separate side/point rounding, coloured materials, individual crystal shaping and XYZ editing, locks and selection.
+- **Build** — Six base styles, independent width/height/dome; optional physically open **zero-infill base vault** with tapered internal buttresses, LED retaining collars and sideways vents. Automatic or manually placed LED/mounting holes are visible in the Build viewport (yellow/purple; invalid red) with precise X/Z editing.
 - **Print** — Press **Prepare print mesh** to Boolean-union the individual crystals and integrated base into a Manifold solid, optionally cut experimental cavities, subtract pixel sockets and mounting holes and analyse the result. Inspect the joined mesh in Solid/X-ray, a floating grid-free underside view, colour-coded yellow/purple hole overlays or an overhang heatmap, then download STL or 3MF.
 - **Support tools** — Pixel-fit calibration strip (11.8, 11.9, 12.0, 12.1, 12.2 mm), editable cut plane and split-part STLs, basic bill of materials CSV, view snapping, simple/advanced interface, resizable viewport, light/dark mode, in-app Help and Changelog.
 
@@ -22,6 +22,15 @@ Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three
 
 Changing fabrication-relevant settings invalidates the previously prepared mesh to prevent exporting stale geometry.
 
+### Zero-infill base mode (v0.7.0)
+
+1. In **Build**, enable **Zero-infill base structure** and choose a buttress spacing. This cuts a real underside chamber from the base while retaining supports that flare into the roof at roughly 45°. The supports are part of the model, not Cura infill or removable Cura supports.
+2. The LED bore remains a real Boolean cut; where a vault is generated it includes cross-drilled side vents through the socket's retained collar. The vent allows light to reach the shared chamber but does **not** prove every crystal will glow: Cura can still generate skins across crystal roots.
+3. In Cura, start with 0% infill and inspect the complete layer view for long bridges, unsupported horizontal areas and blocking skins. Use **Print → overhang heatmap**, the vault's approximate roof-gap report, and Cura's sliced preview together. Gap screening is a guide, not a geometry-level guarantee.
+4. For hand positioning, switch Pixel / Mount placement to Manual, choose **Place / move** in Build and click the 3D viewport. Use X/Z inputs to refine; red holes will be skipped. Do not assume a red or skipped hole was included in STL/3MF.
+
+The optional vault and legacy *experimental full hollowing* are mutually exclusive. Leave full crystal hollowing off to use the Cura-first, faster path. Existing saved projects may retain their old hollowing selection.
+
 ## Current capabilities and engineering limits
 
 | Feature | Status |
@@ -35,7 +44,9 @@ Changing fabrication-relevant settings invalidates the previously prepared mesh 
 | Calibration test strip and modular cut-plane splitting | Implemented; alignment connectors not yet included |
 | 45° default overhang screening, heatmap, orientation suggestion | Implemented as **screening**, not support-free certification |
 | Printer volume check: UM3 Extended 215×215×300, UM2+ 223×223×205 | Implemented for upright, single-extruder profile |
-| Manual LED positioning, retaining clips, true constant-wall structures | Not implemented; balloon cavity now links the base chamber to larger crystals using internal passages |
+| Manual LED and mounting-hole placement | Implemented: 3D click-to-place, numerical X/Z and invalid-hole rejection; no drag handles yet |
+| Zero-infill base vault and integral buttresses | Optional; physical underside cavity and LED vent cut-outs, **support-free bridging not certified** |
+| Retaining clips and true constant-wall crystal structures | Not implemented; test socket retention and Cura skin/light paths |
 | One-click supportless redesign, automated snap-fit connectors, full mounting plates | Not implemented |
 
 **Safety and printing:** Manifold validation checks the topology of the Boolean mesh, not every manufacturing constraint. The new shared chamber is made using inward erosion and internal air passages; small/strongly tilted crystals may remain solid or contain inaccessible pockets. Test that the LED opening reaches the chamber and inspect actual wall thickness in Cura. Some hollow cavities or underside roof surfaces may need supports; thin areas, hardware tolerances, pixel spacing, overhead loads and physical strength require validation. For overhead or child-accessible installations, use mechanically rated fixings and independent safety retention. Do not trust printed parts without a suitable physical test.
@@ -55,8 +66,9 @@ V Select · G Move · R Rotate · S Scale · F Frame · Del Delete · Ctrl+Z Und
 
 - `index.html`: static interface and Help/Changelog.
 - `studio-v3.js`: viewport, saved settings, object editing and manufacturing workflow.
+- `hardware-editor.js`: Build-stage real-time hardware guides and manual X/Z placement.
 - `geometry-v3.js`: editable low-poly procedural geometry and faceted roots.
-- `fabrication-v1.js`: Manifold WASM Boolean operations, hollowing, drilling, output and print screening.
+- `fabrication-v1.js`: Manifold WASM Boolean operations, optional structural vault, hollowing, drilling, output and print screening.
 - `tests/fabrication.test.mjs`: real Manifold WASM tests, exporter orientation checks, calibration and mounting tests.
 - `tests/browser-smoke.mjs`: headless interface test, run by GitHub Actions.
 - `.github/workflows/pages.yml`: GitHub Pages deployment.
