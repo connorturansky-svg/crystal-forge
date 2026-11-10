@@ -139,24 +139,21 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   const initialVolume=combined.volume();
   let hollowed=0,socketsCut=0;
   if(s.hollowCrystals){
-   const cavities=[];
-   const baseY=s.baseType==='none'?0:s.baseHeight;
-   for(const c of crystals){
-    if(c.hidden)continue;
-    const smallest=(c.r*Math.min(s.bottomScale,s.topScale)*Math.min(c.sx||c.scale||1,c.sz||c.scale||1));
-    if(smallest<=Math.max(2,s.wallThickness*2.3))continue;
-    const inner=positionedInnerCrystal(c,s,baseY+.5,s.wallThickness);
-    const cut=hold(convertMesh(wasm,inner));cavities.push(cut);inner.geometry.dispose();
-    hollowed++;
+   // Erode the *united assembly* instead of individually subtracting
+   // neighbouring crystal-shaped cavities. The earlier per-crystal cutters
+   // could slice off separate fragments when crystals overlap.
+   const offset=Math.max(0.8,Number(s.wallThickness));
+   const kernel=hold(wasm.Manifold.sphere(offset,12));
+   const eroded=hold(combined.minkowskiDifference(kernel));
+   if(!eroded.isEmpty()){
+    const shell=hold(combined.subtract(eroded));
+    assertSolid(shell,'Hollowed union');
+    combined=shell;
+    hollowed=crystals.filter(c=>!c.hidden).length;
+    warnings.push('Hollowing uses a spherical Minkowski erosion as an approximate normal offset. Verify local wall thickness in Cura before printing.');
+   }else{
+    warnings.push('The current crystal cluster is too narrow for an internal cavity at the selected wall thickness.');
    }
-   if(cavities.length){
-    const innerUnion=hold(wasm.Manifold.union(cavities));
-    const result=hold(combined.subtract(innerUnion));
-    assertSolid(result,'Hollowed assembly');
-    combined=result;
-   }
-   if(hollowed===0)warnings.push('Crystals are too narrow for the selected wall thickness. No hollow interior was cut.');
-   else warnings.push('Hollowing uses an approximate scaled cavity, not a verified uniform wall offset. Check minimum wall thickness before printing.');
   }
   const {chosen,skipped,diameter}=socketPlan(crystals,s);
   if(s.cutSockets&&chosen.length){
