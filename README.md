@@ -1,69 +1,67 @@
-# Crystal Forge — Browser Studio (v0.3.1)
+# Crystal Forge — Browser Studio v0.4
 
-A browser-based, stylised low-poly crystal cluster generator for designing illuminated and 3D-printed installations.
+A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, child-safe crystal sculptures. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/
 
-**Open:** https://connorturansky-svg.github.io/crystal-forge/
+Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three.js and the Manifold WebAssembly geometry library load from the internet. Project files and theme preference are stored locally in your browser; export JSON for backups or moving to another computer.
 
-Runs entirely in Edge / Chrome, with no Python, installation or backend. Three.js currently loads from jsDelivr, so internet access is required.
+## Workspaces
 
-## Quick start
+- **Design** — Six formation patterns, six crystal families, reproducible seeds, global top/bottom diameter ratios, separate corner bevel/tip controls, coloured materials, individual crystal XYZ editing, locks and selection.
+- **Build** — Integrated, separate or no-base preview; optional approximate hollow cavities; a 12V gumdrop pixel count with nominal 12 mm mounting hole and fit offset; real socket cuts during printing; magnet/screw/M3/custom mounting holes.
+- **Print** — Press **Prepare print mesh** to Boolean-union the individual crystals and integrated base into a Manifold solid, erode/cut requested cavities, subtract pixel sockets and mounting holes and analyse the result. Inspect the joined mesh in Solid/X-ray or an overhang heatmap and download STL or 3MF.
+- **Support tools** — Pixel-fit calibration strip (11.8, 11.9, 12.0, 12.1, 12.2 mm), editable cut plane and split-part STLs, basic bill of materials CSV, view snapping, simple/advanced interface, resizable viewport, light/dark mode, in-app Help and Changelog.
 
-1. Open the website and go to **Design**.
-2. Choose a formation, crystal quantity and overall dimensions.
-3. Use **Bottom diameter** and **Top diameter (shoulder)** to tune the recognisable crystal silhouette.
-4. Keep **Side corner rounding** low for crisp facets. **Shoulder rounding** and **Tip flat diameter** are independent advanced settings.
-5. Click a crystal, then use the toolbar **Move / Rotate / Scale** gizmos; X is red, Y green, Z blue.
-6. Select **Build** to preview the base and LED plans; select **Print** for experimental STL export.
-7. Use **↓ Save** for a portable JSON project and **↑ Open** to restore it.
+### Use
 
-Use the **☀ Light / ☾ Dark** theme control, **? Help** and **✦ What's new** buttons in the top toolbar. The theme and editable project are saved in the browser.
+1. Go to **Design** and generate a formation. Keep the side bevel small (0.5–1 mm) to retain the clean, cartoon-like crystalline facets; reduce *shoulder rounding* and *tip flatness* to avoid bulbous or nipple-shaped points.
+2. Go to **Build** and select the base, whether to hollow the mesh, whether to cut nominal LED sockets and which mounting preset to drill.
+3. Go to **Print** and click **Prepare print mesh (Boolean union)**. The manufacturing mesh is created **separately** from the fast editable preview.
+4. Inspect the resulting report: topological validity, separate material bodies, internal void shells, printer size, number of sockets and mount holes, approximate PLA consumption and likely unsupported triangles.
+5. Enable the **colour-coded overhang heatmap** if helpful. Export STL or 3MF only after preparation succeeds, then inspect and slice in Cura.
+6. Use **↓ Save** to download an editable JSON project. You can return to Design, change geometry and prepare again.
 
-## Keyboard shortcuts
+Changing fabrication-relevant settings invalidates the previously prepared mesh to prevent exporting stale geometry.
 
-| Shortcut | Action |
-| --- | --- |
-| V / G / R / S | Select / Move / Rotate / Scale |
-| F | Focus selected object |
-| Delete | Delete selected object |
-| Ctrl+Z / Ctrl+Y | Undo / Redo |
-| Esc | Deselect / close Help |
-| Mouse drag / right drag / scroll | Orbit / pan / zoom |
-
-The viewport also has ISO, FRONT, BACK, LEFT, RIGHT and TOP camera presets; solid, wireframe and x-ray display modes.
-
-## Feature status
+## Current capabilities and engineering limits
 
 | Feature | Status |
 | --- | --- |
-| Six generation patterns, seeded generation | Working prototype |
-| Low-poly faceted geometry, top/bottom ratios, rounded side corners | Working prototype |
-| Crystal selection, numerical dimensions, XYZ transforms | Working prototype |
-| Locking, undo/redo, JSON save/load, light/dark mode | Working prototype |
-| Footprint-following base with optional underside access | Experimental |
-| LED location previews, 12 mm socket fit planning, BOM CSV | Planning preview only |
-| STL download | Experimental — intersecting closed shells |
-| Single unioned watertight cluster, hollow crystals, real pixel sockets | **Not implemented yet** |
-| Verified supportless printing and orientation optimisation | **Not implemented yet** |
-| 3MF, modular splitting, complete mounts and assembly diagrams | Planned |
+| Six growth patterns, geometry shaping and XYZ handles | Implemented |
+| Watertight Boolean union and Manifold 3.5.4 solid validation | Implemented; passing automated representative tests |
+| Approximate hollow shell via inward erosion and reinforced root | Implemented; **minimum wall thickness still needs physical/slicer verification** |
+| Automatic nominal gumdrop socket holes | Implemented; fit and retention require test prints |
+| Screw, magnet, M3 and custom dual mounting holes | Implemented; not structural/load certified |
+| STL and 3MF (slicer Z-up) | Implemented; package/file-format checks in automated tests |
+| Calibration test strip and modular cut-plane splitting | Implemented; alignment connectors not yet included |
+| 45° default overhang screening, heatmap, orientation suggestion | Implemented as **screening**, not support-free certification |
+| Printer volume check: UM3 Extended 215×215×300, UM2+ 223×223×205 | Implemented for upright, single-extruder profile |
+| Manual LED positioning, retaining clips, true constant-wall structures | Not implemented |
+| One-click supportless redesign, automated snap-fit connectors, full mounting plates | Not implemented |
 
-**Fabrication warning:** This version intentionally does **not** claim to generate a validated, single watertight assembly. STL exports contain intersecting components and need inspection and potentially repair before printing. Physical fit, minimum wall thickness, and printability have not yet been verified in Cura.
+**Safety and printing:** Manifold validation checks the topology of the Boolean mesh, not every manufacturing constraint. Some hollow cavities or underside roof surfaces may need supports; thin areas, hardware tolerances, pixel spacing, overhead loads and physical strength require validation. For overhead or child-accessible installations, use mechanically rated fixings and independent safety retention. Do not trust printed parts without a suitable physical test.
 
-## Repository files
+## Keyboard and viewport
 
-- `index.html` — interface, colour-coded panels, light/dark styles, Help and Changelog modal
-- `studio-v3.js` — viewport and UI interactions, gizmos, object tree, project files, experimental STL export
-- `geometry-v3.js` — explicit flat-faceted crystal geometry, rounded vertical corners, footprint base geometry
-- `.github/workflows/pages.yml` — automatic GitHub Pages publishing
-- `CHANGELOG.md` — version history
+V Select · G Move · R Rotate · S Scale · F Frame · Del Delete · Ctrl+Z Undo · Ctrl+Y Redo · Esc Deselect. XYZ gizmo arrows: X red, Y green, Z blue. Standard camera views include ISO, Front, Back, Left, Right, Top.
 
-The earlier `app.js` is retained as a reference implementation but is not loaded by the current page.
+## Implementation
 
-## Hosting
+- `index.html`: static interface and Help/Changelog.
+- `studio-v3.js`: viewport, saved settings, object editing and manufacturing workflow.
+- `geometry-v3.js`: editable low-poly procedural geometry and faceted roots.
+- `fabrication-v1.js`: Manifold WASM Boolean operations, hollowing, drilling, output and print screening.
+- `tests/fabrication.test.mjs`: real Manifold WASM tests, exporter orientation checks, calibration and mounting tests.
+- `tests/browser-smoke.mjs`: headless interface test, run by GitHub Actions.
+- `.github/workflows/pages.yml`: GitHub Pages deployment.
+- `.github/workflows/fabrication-tests.yml`: Node manufacturing tests.
+- `.github/workflows/browser-tests.yml`: headless Chromium browser test.
+- `qa/latest-fabrication-test.log` and `qa/latest-browser-test.log`: automated CI outcomes.
+- `CHANGELOG.md`: version history.
 
-The workflow automatically deploys pushes to `main` using GitHub Actions. Under **Settings → Pages → Build and deployment**, choose **GitHub Actions** if it has not already been enabled.
+The older `app.js` file is an unreferenced archive of the first demonstration.
 
-## Design goals
+## Third-party references
 
-The approved longer-term specification is a lightweight **Design / Build / Print** editor, Simple mode by default, with complete advanced tools available without losing settings. Printing targets include 1.2 mm wall thickness, a 45-degree default overhang criterion, supportless-first formations, fully merged bases, real pixel sockets with fit adjustments, and dimensionally correct STL / 3MF exports.
-
-See the in-app **Help** panel for operating instructions and the **What's new** panel for release notes.
+- Manifold documentation: https://manifoldcad.org/docs/jsapi/documents/Using_Manifold.html
+- UltiMaker 3 Extended printer manual: https://um-support-files.ultimaker.com/manuals/user-manual/UM3/Ultimaker%203%20-%20User%20manual%20EN%20v1.4.pdf
+- UltiMaker 2+ data sheet: https://um-support-files.ultimaker.com/Product-datasheet/Other/Ultimaker%202%2B%20series%20-%20Product%20data%20sheet.pdf
