@@ -91,9 +91,9 @@ const axes=new THREE.AxesHelper(38);axes.position.set(-175,.4,-175);scene.add(ax
 const gizmo=new TransformControls(camera,renderer.domElement);
 scene.add(gizmo.getHelper?.()||gizmo);
 gizmo.setSize(.85);
-gizmo.setTranslationSnap(5);
-gizmo.setRotationSnap(THREE.MathUtils.degToRad(15));
-gizmo.setScaleSnap(.1);
+gizmo.setTranslationSnap(s.snap?5:null);
+gizmo.setRotationSnap(s.snap?THREE.MathUtils.degToRad(15):null);
+gizmo.setScaleSnap(s.snap?.1:null);
 gizmo.addEventListener('dragging-changed',e=>{orbit.enabled=!e.value;if(!e.value){applyGizmo();rebuildBase();snapshot();renderTree();renderSelection()}});
 gizmo.addEventListener('objectChange',()=>{applyGizmo(false);renderSelection(true)});
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
@@ -105,7 +105,7 @@ function disposeMesh(m){if(!m)return;m.geometry?.dispose();m.material?.dispose()
 function makeCrystal(c){
  const mesh=new THREE.Mesh(crystalGeometry(THREE,c,s),crystalMat());
  mesh.position.set(c.x,c.y+(s.baseType==='none'?0:s.baseHeight-2.5),c.z);
- mesh.rotation.y=c.rotation;
+ mesh.rotation.set(c.rx||0,c.rotation||0,c.rz||0,'XYZ');
  mesh.scale.set(c.sx||c.scale||1,c.sy||c.scale||1,c.sz||c.scale||1);
  mesh.userData.crystalId=c.id;mesh.visible=!c.hidden;
  scene.add(mesh);return mesh;
@@ -138,7 +138,7 @@ function updateLEDs(){
 function selectCrystal(id,commit=true){
  const c=crystals.find(c=>c.id===id);selectedId=c?c.id:null;
  selectedMesh=crystalMeshes.find(m=>m.userData.crystalId===selectedId)||null;
- if(selectedMesh&&activeTool!=='select')gizmo.attach(selectedMesh);
+ if(selectedMesh&&activeTool!=='select'&&!c.locked)gizmo.attach(selectedMesh);
  else gizmo.detach();
  for(const m of crystalMeshes)m.material.emissive.setHex(m===selectedMesh?0x21415e:0x000000);
  renderTree();renderSelection();if(commit)persist();
@@ -146,7 +146,7 @@ function selectCrystal(id,commit=true){
 function setTool(tool){
  activeTool=tool;
  document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool));
- if(selectedMesh&&tool!=='select'){gizmo.attach(selectedMesh);gizmo.setMode(tool)}else gizmo.detach();
+ const c=crystals.find(x=>x.id===selectedId);if(selectedMesh&&tool!=='select'&&!c?.locked){gizmo.attach(selectedMesh);gizmo.setMode(tool)}else gizmo.detach();
 }
 function applyGizmo(persistChanges=true){
  if(!selectedMesh)return;
@@ -155,6 +155,7 @@ function applyGizmo(persistChanges=true){
  c.y=+(selectedMesh.position.y-(s.baseType==='none'?0:s.baseHeight-2.5)).toFixed(3);
  c.z=+selectedMesh.position.z.toFixed(3);
  c.rotation=+selectedMesh.rotation.y.toFixed(5);
+ c.rx=+selectedMesh.rotation.x.toFixed(5);c.rz=+selectedMesh.rotation.z.toFixed(5);
  c.sx=+selectedMesh.scale.x.toFixed(3);c.sy=+selectedMesh.scale.y.toFixed(3);c.sz=+selectedMesh.scale.z.toFixed(3);
  if(persistChanges)persist();
 }
@@ -162,12 +163,12 @@ function renderSelection(duringDrag=false){
  const c=crystals.find(x=>x.id===selectedId),pane=$('selectionPane');
  if(!c){pane.innerHTML='<p class="note">Click a crystal or use the object tree to select it. XYZ transform handles appear when you choose Move, Rotate or Scale.</p>';return}
  if(duringDrag){const e=$('transformReadout');if(e)e.textContent='X '+c.x.toFixed(1)+' · Y '+c.y.toFixed(1)+' · Z '+c.z.toFixed(1);return}
- pane.innerHTML='<div class="selectedname">⬡ '+escapeHTML(c.name)+'</div>'+
+ pane.innerHTML='<div class="selectedname">⬡ '+escapeHTML(c.name)+'</div>'+(c.locked?'<div class="alert">This crystal is locked. Unlock it to edit its position, shape or size.</div>':'')+
  '<div class="note" id="transformReadout">X '+c.x.toFixed(1)+' · Y '+c.y.toFixed(1)+' · Z '+c.z.toFixed(1)+'</div>'+
  '<div class="grid2">'+
  num('X',c.x,'x')+num('Y',c.y,'y')+num('Z',c.z,'z')+num('Height',c.h,'h')+num('Radius',c.r,'r')+num('Angle Y',THREE.MathUtils.radToDeg(c.rotation),'angle')+'</div>'+
  '<div class="divider"></div><div class="buttonrow"><button id="focusSelected">Focus</button><button id="lockSelected">'+(c.locked?'Unlock':'Lock')+'</button><button id="hideSelected">'+(c.hidden?'Show':'Hide')+'</button></div>';
- function num(label,val,key){return '<div class="control"><label>'+label+'</label><input type="number" step=".5" data-crystal="'+key+'" value="'+Number(val).toFixed(1)+'"></div>'}
+ function num(label,val,key){return '<div class="control"><label>'+label+'</label><input type="number" step=".5" data-crystal="'+key+'" value="'+Number(val).toFixed(1)+'" '+(c.locked?'disabled':'')+'></div>'}
  pane.querySelectorAll('[data-crystal]').forEach(input=>{
   input.addEventListener('change',()=>{const value=Number(input.value);if(!Number.isFinite(value))return;
    const k=input.dataset.crystal;if(k==='angle')c.rotation=THREE.MathUtils.degToRad(value);
@@ -176,7 +177,7 @@ function renderSelection(duringDrag=false){
   })
  });
  $('focusSelected').onclick=()=>focus(selectedMesh);
- $('lockSelected').onclick=()=>{c.locked=!c.locked;renderTree();renderSelection();snapshot()};
+ $('lockSelected').onclick=()=>{c.locked=!c.locked;selectCrystal(c.id);snapshot()};
  $('hideSelected').onclick=()=>{c.hidden=!c.hidden;rebuild();snapshot()};
 }
 function escapeHTML(str){return String(str).replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x]))}
@@ -267,7 +268,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
   s[key]=value;
   for(const o of document.querySelectorAll('[data-out="'+key+'"]'))o.textContent=format(key,value);
   if(key==='pixelDiameter'||key==='pixelFit')$('actualHole').textContent=(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm';
-  if(key==='snap')gizmo.setTranslationSnap(value?5:null);
+  if(key==='snap'){gizmo.setTranslationSnap(value?5:null);gizmo.setRotationSnap(value?THREE.MathUtils.degToRad(15):null);gizmo.setScaleSnap(value?.1:null)}
   if(regenKeys.has(key))generate();
   else if(previewKeys.has(key)){updateLEDs();renderInfo();persist()}
   else schedule();
@@ -290,7 +291,7 @@ $('duplicateBtn').onclick=()=>{
  crystals.push(newC);selectedId=newC.id;rebuild();snapshot();
 };
 $('deleteBtn').onclick=()=>{if(!selectedId)return;crystals=crystals.filter(c=>c.id!==selectedId);selectedId=null;rebuild();snapshot()};
-$('lockBtn').onclick=()=>{const c=crystals.find(x=>x.id===selectedId);if(!c)return;c.locked=!c.locked;renderTree();renderSelection();snapshot()};
+$('lockBtn').onclick=()=>{const c=crystals.find(x=>x.id===selectedId);if(!c)return;c.locked=!c.locked;selectCrystal(c.id);snapshot()};
 document.querySelectorAll('[data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>snapView(b.dataset.view));
 document.querySelectorAll('[data-look]').forEach(b=>b.onclick=()=>{
