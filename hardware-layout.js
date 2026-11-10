@@ -54,7 +54,7 @@ export function planHardware(crystals,s){
   const socketDiameter=Number(s.pixelDiameter)+Number(s.pixelFit);
   const socketRadius=socketDiameter/2;
   const validHole=(p,radius,others)=>insidePolygon(p,polygon,radius+1.2)&&others.every(q=>dist(p,q)>=radius+q.radius+clearance-1e-5);
-  const pixelRequested=s.cutSockets ? max(0,Math.round(s.pixelCount)) : 0;
+  const pixelRequested=(!s.cutSockets||s.lightingMode==='none') ? 0 : s.lightingMode==='single' ? 1 : max(0,Math.round(s.pixelCount));
   if(s.cutSockets&&(!Number.isFinite(socketDiameter)||socketDiameter<=0))throw new Error('Pixel socket diameter must be positive.');
   const ranked=all.slice().sort((a,b)=>b.r*b.h-a.r*a.h);
   for(const c of ranked){
