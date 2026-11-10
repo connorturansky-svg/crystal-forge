@@ -242,3 +242,39 @@ export function save3MF(geom,filename='crystal-forge.3mf'){
  const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
  return blob;
 }
+
+
+export function makeCalibrationStrip(wasm){
+ const keep=[];const hold=o=>{keep.push(o);return o};
+ try{
+  // X long, Y upward, Z across: flat-bottom 5mm thick FDM calibration.
+  const bar=hold(wasm.Manifold.cube([112,5,22]));
+  const holes=[];
+  for(let i=0;i<5;i++){
+   const dia=11.8+i*.1;
+   const core=hold(wasm.Manifold.cylinder(9,dia/2,dia/2,40));
+   const turned=hold(core.rotate([-90,0,0]));
+   const moved=hold(turned.translate([12+i*22,-2,11]));
+   holes.push(moved);
+  }
+  const allHoles=hold(wasm.Manifold.union(holes));
+  const strip=hold(bar.subtract(allHoles));
+  assertSolid(strip,'Socket calibration strip');
+  return {geometry:fromResultMesh(strip.getMesh()),diameters:[11.8,11.9,12,12.1,12.2],triangles:strip.numTri()};
+ }finally{cleanupAll(keep)}
+}
+export function splitPreparedMesh(wasm,mesh,cutX=0){
+ const keep=[];const hold=o=>{keep.push(o);return o};
+ try{
+  const m=new wasm.Mesh({numProp:3,vertProperties:new Float32Array(mesh.points),triVerts:new Uint32Array(mesh.triangles)});
+  m.merge();
+  const body=hold(new wasm.Manifold(m));assertSolid(body,'Prepared assembly for splitting');
+  const parts=body.splitByPlane([1,0,0],Number(cutX));
+  parts.forEach(hold);
+  return parts.map((p,i)=>{
+   if(p.isEmpty())return null;
+   assertSolid(p,'Split '+(i+1));
+   return{geometry:fromResultMesh(p.getMesh()),triangles:p.numTri(),volume:p.volume()}
+  });
+ }finally{cleanupAll(keep)}
+}
