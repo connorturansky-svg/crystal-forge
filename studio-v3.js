@@ -687,6 +687,13 @@ function cancelActivePreparation(reason='Preparation cancelled'){
 async function buildManufacturing(){
  if($('prepareBtn').disabled)return;
  const btn=$('prepareBtn'),cancelBtn=$('cancelPrepareBtn'),source=sourceHash();
+ // Reuse the cached manifold result unless the editable model changed.
+ if(manufacturingMesh&&manufacturingReport&&preparedSource===source){
+  $('showManufacturing').checked=true;manufacturingView(true);applyPrintHeatmap();
+  $('prepareStatus').textContent='✓ Reused prepared print mesh — no geometry changes.';
+  setStatus('Manufacturing mesh already current · no repeat processing');
+  return;
+ }
  btn.disabled=true;btn.textContent='◌ Preparing in background…';cancelBtn.hidden=false;
  $('prepareStatus').textContent='Starting dedicated manufacturing Web Worker…';
  setStatus('Preparing in background · you can still use the editor');
