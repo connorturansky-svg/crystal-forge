@@ -127,3 +127,43 @@ Retention lips/cable strain relief, serviceable LED carriers, calibrated optical
 ## Cross-feature acceptance scenario — the essential integration test
 
 Create a 16-crystal clustered design with a 25 mm integrated base and dome; test one shared nominal LED, 0% Cura infill, optional vault, a pair of mounting holes and selected crystal overrides. Change lean pattern, spacing, dome and manual hole position. The preview must remain responsive; the build guides and collision planner must agree with prepared cuts; the vault must remain open and connected; STL must be Z-up and fit the printer or warn; Cura slice must reveal any blocked light paths and unsupported roof areas. Preserve state across Simple/Advanced and saved JSON. **No isolated feature test can replace this system-level review.**
+
+
+## F14 — v0.8 global thickness, extreme taper and repeatable variation
+
+- **User requirement:** the previous top/bottom limits made crystals too narrow even at maximum. Provide a starting size slider and independent positive/negative width controls capable of highly exaggerated shapes, with variation.
+- **Controls:** global crystal starting size 50–400%; bottom and top/shoulder ratios 15–500% displayed as -85% to +400% relative to the starting diameter; width randomness 0–100%. Existing designs default to 100% size.
+- **Implementation:** `crystalEndRatios` scales individual radii and hashes stable crystal IDs separately for top/bottom variation. The base and automatic socket planner must share actual resulting diameters.
+- **Interactions:** manually moved or locked crystals retain transforms when adjusting thickness. Enlarged crystals can overlap; regenerate for auto separation. Old stored numeric `bottomScale` and `topScale` values must remain compatible.
+- **Acceptance:** mesh width grows while its height and layout remain fixed; zero randomness gives uniform requested widths; same seed/IDs reproduce the variations; extreme ratios produce closed printable body meshes; formation/base/socket planner honours root dimensions.
+- **Status:** implemented on v0.8 feature branch; representative geometry/browser tests added, physical printing unverified.
+
+## F15 — Rigid tilt, full-perimeter root seating and gentler lighting
+
+- **User requirement:** leaning should rotate the actual crystal, not stretch/shear the shaft; tilted roots should never visibly protrude above the mound.
+- **Implementation:** `crystalOrientation` returns a physical quaternion for the entire crystal. `crystalRootOffset` evaluates the rotated bottom perimeter against `baseSurfaceHeight` with a buried overlap margin. The preview brightness slider controls light intensity without changing STL material.
+- **Acceptance:** full original facet shape and edge lengths preserved under tilt; no root-ring vertex sits above the mound surface; world-space direction modes remain coherent; brightness does not invalidate or change export.
+- **Status:** implementation exists; in-branch root-perimeter regression added, visual/Cura inspection still needed.
+
+## F16 — Continuous LED layout, blind domed sockets and automatic fallback
+
+- **User requirement:** repeated click-to-place without accidentally orbiting, with a live circular hole mock-up following the cursor; automatic pixel placement must find a valid location when one fits; socket must not drill through the top.
+- **Controls:** Automatic or Manual, Place / move LED button, repeated click placement, Escape/Stop, moving colour-coded bore cursor, individual X/Z fields. The moving preview is a visual guide, not a cut until manufacture.
+- **Implementation:** `hardware-editor.js` intercepts canvas pointer events while placement is active and locks orbit/gizmo; `planHardware` searches both scaled crystal roots and the integrated base. `putSocket` subtracts an actual round-capped blind cutter and reports roof clearance; optional vault side apertures remain separate.
+- **Acceptance:** cursor follows pointer, shows valid/invalid, two clicks add two distinct holes without leaving mode or moving the camera, Escape restores orbit; exported sockets match the planner; a roof remains above the cap and Cura shows no accidental top through-hole.
+- **Status:** in v0.8 branch; headless Chromium confirms two-click placement/hover; topology and physical fit require separate checks.
+
+## F17 — Semicircular perimeter fixing ears
+
+- **User requirement:** equally spaced tabs around base edges, configurable number of tabs, number of holes per tab and hole size for cable ties/bolts.
+- **Controls:** Build → Advanced → Mounting preset **Edge fixing tabs**; tab count 1–24, through holes per ear 1–6, diameter 1.8–16 mm, thickness 2.5–15 mm and minimum surrounding material 2–8 mm.
+- **Implementation:** `edge-tabs.js::planEdgeTabs` samples equal perimeter distances, grows the semicircular ear radius to encompass the holes and required plastic web, rejects overlapping/crowded candidates. `hardware-layout.js` combines this with LED/mount plans, `hardware-editor.js` previews violet ears/holes and `fabrication-v1.js` unions actual ears to the base then drills holes through them.
+- **Acceptance:** requested counts/diameters are honoured when space permits; accepted ears remain fused to one connected body; actual through-holes exist in exported STL; skipped ears are reported; Build planning and manufacture agree.
+- **Limitations/status:** implemented in v0.8 branch, topology tests added. Printed plastic and zip ties/bolts must be physically load/fit tested; printed ears are **not certified overhead attachment points**.
+
+## F18 — Contextual explanations
+
+- **User requirement:** hover tabs, buttons and sliders for a small explanation of each control.
+- **Implementation:** `tooltips.js` provides one non-interactive tooltip on hover or keyboard focus, with per-setting/button meaning. New input definitions require entries; tooltips close on click/Escape and stay within viewport.
+- **Acceptance:** hover and keyboard focus show the right title/explanation, do not cover interaction, disappear when leaving, and don't change model state.
+- **Status:** implemented in v0.8 branch; hover regression added.

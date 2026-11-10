@@ -52,3 +52,12 @@ The following are implemented and should not be re-added as new features: six fo
 ## How to move items
 
 On discovering a reproducible failure, add exact steps, input settings, actual/expected outcome, affected commit and severity. When fixing, reference the regression test and move a short note to `docs/DEVELOPMENT_HISTORY.md` and `CHANGELOG.md` (if user-visible). Do not mark a RISK as BUG without evidence, or a BUG as verified fixed from code inspection alone.
+
+
+## v0.8 integration — current PR #3 (10 November 2026)
+
+- **Implemented, verification in progress:** slider ranges/global thickness, seeded width randomness, rigid leaning, mound-root seating, softer adjustable studio lighting, blind domed LED bores, auto-placement fallback, continuous LED placement, hover tooltips and printable perimeter fixing ears.
+- **Browser regression confirmed on feature commit 137920c0:** hovering a tab-control slider shows an explanation; Build displays edge-tab controls, a valid cursor follows the pointer, and two LED clicks succeed without exiting placement; Escape restores orbit.
+- **Manufacturing geometry test pending at time of writing:** new extreme-taper/root-seat and actual Manifold tab/rounded-bore checks must pass on latest PR commit.
+- **P0 physical inspection still needed:** open the prepared v0.8 STL in Cura, verify blind LED roof/clearance, root-to-base junctions, holes in tabs and support requirements; test a printed tie/bolt tab and LED fit before any overhead use.
+- **P1 future:** continuous placement in underside view, precise drag handles, retained single-pixel move action (continuous placement currently converts to Multi), explicit collision and printer footprint visualisation when scaling crystals.

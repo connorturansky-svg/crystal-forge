@@ -104,3 +104,11 @@ A test that only loads code, counts triangles or checks a ZIP signature does **n
 ## 8. Completion evidence template
 
 For each PR, state: **commit**, what changed, commands/workflow run links, environment, passed/failed/skipped checks, remaining manual Cura/physical steps, screenshot or log link and whether production main remained unchanged. Update `docs/AI_HANDOVER.md`.
+
+
+## v0.8 regression additions
+
+- **Browser:** simulate hover on a Build slider and confirm contextual tooltip; set Edge fixing tabs and verify dedicated inputs/preview; enter LED placement, assert OrbitControls disabled, move cursor over valid base, click twice without exiting, Escape and confirm orbit restored.
+- **Geometry:** test deterministic per-ID end-width randomness at extreme width ratios and stable height; use `crystalOrientation` in fabricated test meshes (never the old unrotated fixture). Check every tilted root-ring point sits below the mound, not only the centre.
+- **Hardware:** auto planner must find a pixel hole when the enlarged base has space; tab planner must return hole count matching accepted ear count; Manifold must keep ears fused to one body and cut holes through them; blind socket report must preserve at least 2.8 mm modeled roof and a curved cap.
+- **Manual:** Cura preview for the real LED bore ceiling and LED side vents, actual tie/bolt tab clearance, failed/partial tabs and support-free mound roofs. A Manifold status is not certification of lighting, mechanical strength or FDM printability.
