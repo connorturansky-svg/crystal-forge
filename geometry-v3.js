@@ -72,10 +72,10 @@ export function crystalGeometry(THREE,c,s){
  const tipFlat=Math.max(.05,Math.min(s.tipFlat,top*.45));
  if(tipH>.1)add(height,tipFlat);
  const n=rings[0].length;
- for(let r=0;r<rings.length-1;r++)for(let i=0;i<n;i++){const j=(i+1)%n;quad(rings[r][i],rings[r][j],rings[r+1][j],rings[r+1][i])}
+ for(let r=0;r<rings.length-1;r++)for(let i=0;i<n;i++){const j=(i+1)%n;quad(rings[r][i],rings[r+1][i],rings[r+1][j],rings[r][j])}
  const base=rings[0],cap=rings[rings.length-1];
  const baseC=[0,0,0],tipC=[c.leanX*height,height,c.leanZ*height];
- for(let i=0;i<n;i++){const j=(i+1)%n;emit(baseC,base[j],base[i]);emit(tipC,cap[i],cap[j])}
+ for(let i=0;i<n;i++){const j=(i+1)%n;emit(baseC,base[i],base[j]);emit(tipC,cap[j],cap[i])}
  return meshFromTriangles(THREE,a);
 }
 function hull(points){
