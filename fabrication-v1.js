@@ -133,11 +133,19 @@ function positionedInnerCrystal(c,s,openingY,wall){
  mesh.updateMatrixWorld(true);
  return mesh;
 }
-function putSocket(wasm,c,pos,radius,depth,start){
- // Manifold.cylinder is along Z. Rotate -90 degrees about X to align with +Y.
- const b=wasm.Manifold.cylinder(depth,radius,radius,32)
-  .rotate([-90,0,0]).translate([pos.x,start,pos.z]);
- return b;
+function putSocket(wasm,hold,pos,radius,roofY,start=-3){
+ // Blind full-width cylindrical entrance with a softly domed internal ceiling.
+ // The cap must stop below the exterior base surface (minimum 2.8 mm roof).
+ const wall=2.8,tipY=Math.max(start+1.4,roofY-wall);
+ const rise=Math.min(2.3,Math.max(.45,radius*.32),Math.max(.4,(tipY-start)*.24));
+ const shaftEnd=tipY-rise;
+ const shaft=hold(wasm.Manifold.cylinder(Math.max(.5,shaftEnd-start),radius,radius,40)
+  .rotate([-90,0,0]).translate([pos.x,start,pos.z]));
+ // An ellipsoidal dome is tangent at the shaft; its lower half overlaps the
+ // cylinder, creating no flat roof or through-hole.
+ const cap=hold(wasm.Manifold.sphere(radius,40)
+  .scale([1,rise/radius,1]).translate([pos.x,shaftEnd,pos.z]));
+ return {solid:hold(shaft.add(cap)),roofY,tipY,shaftEnd,capRise:rise,remainingWall:roofY-tipY};
 }
 function cleanupAll(list){
  for(const m of list){try{m.delete()}catch(e){}}
@@ -335,13 +343,16 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   // Single authoritative feature plan shared with the colour-coded viewport.
   // Pixel sockets are placed first; mount holes are searched for a safe
   // alternative location. Features that cannot fit are SKIPPED and warned.
-  let socketsCut=0,mountingHolesCut=0,ventCuts=0;
+  let socketsCut=0,mountingHolesCut=0,ventCuts=0,socketCeilings=[];
   if(hardware.sockets.length){
    const cutters=[];
    for(const pos of hardware.sockets){
     const roof=baseSurfaceHeight(crystals,s,pos.x,pos.z);
-    const depth=vault.applied?Math.max(8,roof-1):Math.max(27,Number(s.baseHeight||0)+Number(s.baseDome||0)+10),start=-3;
-    cutters.push(hold(putSocket(wasm,null,pos,pos.radius,depth,start)));
+    const bore=putSocket(wasm,hold,pos,pos.radius,roof);
+    cutters.push(bore.solid);
+    socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
+      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall});
+    if(bore.shaftEnd<20)warnings.push('LED bore at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+Math.max(0,bore.shaftEnd).toFixed(1)+' mm of full-width clearance. Confirm the actual LED housing fits.');
    }
    const holes=hold(wasm.Manifold.union(cutters));
    const cut=hold(combined.subtract(holes));assertSolid(cut,'LED socket cuts');
@@ -436,7 +447,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
+    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
 }
