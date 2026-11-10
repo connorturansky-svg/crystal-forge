@@ -25,10 +25,26 @@ try{
  await page.locator('[data-tool="translate"]').click();
  await page.locator('[data-view="top"]').click();
  await page.locator('[data-view="iso"]').click();
+ // Selected crystal uses global shape panel controls as its individual editor.
+ await page.locator('#objectTree [data-id]').first().click();
+ assert((await page.locator('#shapeScope').innerText()).includes('INDIVIDUAL CRYSTAL'),'Selected crystal scope shown');
+ await page.locator('[data-state="tipRound"]').evaluate(el=>{el.value='1.1';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'null'));
+ assert(saved.crystals.some(c=>c.shape?.tipRound===1.1),'Per-crystal tip rounding persisted');
+ assert(saved.settings.tipRound!==1.1,'Individual shape left global rounding untouched');
+ await page.locator('#clearCrystalSelection').click();
+ assert((await page.locator('#shapeScope').innerText()).includes('GLOBAL SHAPE'),'Global mode restored');
+ await page.locator('#floatBtn').click();
+ assert(await page.locator('#floatBtn.active').count(),'Floating inspection enabled');
+ await page.locator('[data-view="bottom"]').click();
+ console.log('Individual shaping, green selection, floating view and bottom snap verified');
  console.log('Advanced editor and view controls verified');
  await page.locator('[data-tab="build"]').click();
  assert(await page.locator('[data-state="hollowCrystals"]').isChecked(),'Hollow defaults on');
  assert(await page.locator('[data-state="cutSockets"]').isChecked(),'Socket cuts default on');
+ assert.equal(await page.locator('[data-state="lightingMode"]').inputValue(),'single','Single shared LED mode default');
+ assert.equal(await page.locator('[data-state="pixelCount"]').inputValue(),'1','Exactly one requested LED');
+ assert.equal(await page.locator('[data-state="baseStyle"]').inputValue(),'Fitted','Fitted base default');
  await page.locator('[data-tab="print"]').click();
  await page.locator('#prepareBtn').click();
  await page.waitForFunction(()=>{
@@ -51,6 +67,9 @@ try{
  assert(download.suggestedFilename().endsWith('.stl'));
  const [mf]=await Promise.all([page.waitForEvent('download',{timeout:15000}),page.locator('#threeMfBtn').click()]);
  assert(mf.suggestedFilename().endsWith('.3mf'));
+ await page.locator('#hardwareColoursBtn').click();
+ assert(await page.locator('#hardwareColoursBtn.active').count(),'Hardware outlines can be enabled');
+ assert(Number(await page.locator('#reportSockets').innerText())<=1,'No more than one pixel bore in balloon mode');
  console.log('STL and 3MF browser downloads verified');
  if(logs.length)console.log('Nonfatal browser logs:',logs.join('\n').slice(0,1800));
  assert.equal(logs.length,0,'No JavaScript / network errors in browser');
