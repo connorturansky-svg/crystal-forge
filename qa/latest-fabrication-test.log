@@ -1,5 +1,5 @@
 Fabrication smoke tests: success
-Commit: 90f69401678a86b6ed8bc008da61f0da4072e439
+Commit: 220cd0810101aa353b4af121eb448f9028aae1a9
 
 
 > test
@@ -10,6 +10,12 @@ clearance-5 {"pixels":2,"mounts":0,"skippedPixels":18,"skippedMounts":2}
 clearance-10 {"pixels":1,"mounts":2,"skippedPixels":19,"skippedMounts":0}
 clearance-16 {"pixels":0,"mounts":2,"skippedPixels":20,"skippedMounts":0}
 clearance-40 {"pixels":0,"mounts":2,"skippedPixels":20,"skippedMounts":0}
+base-Fitted {"triangles":1880,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+base-Square {"triangles":1846,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+base-Circle {"triangles":1996,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+base-Rounded {"triangles":1960,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+base-Organic {"triangles":2002,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+base-Crystal crust {"triangles":2420,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
 solid {"triangles":1976,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
 hollow {"triangles":7982,"connected":1,"hollow":1,"sockets":0,"warningCount":4}
 sockets {"triangles":2102,"connected":1,"hollow":0,"sockets":1,"warningCount":3}
