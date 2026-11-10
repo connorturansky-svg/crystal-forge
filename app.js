@@ -5,6 +5,7 @@ const keys=['count','height','width','soft','base','wall','seed','pattern','reso
 let state={count:9,height:130,width:95,soft:1.5,base:9,wall:1.2,seed:42,pattern:'spire',resolution:85,hollow:false};
 try{Object.assign(state,JSON.parse(localStorage.getItem('crystal-forge-m1')||'{}'))}catch{}
 // Geometry revision 0.1.1: keep solids as default until hollowing is validated.
+if(localStorage.getItem('crystal-forge-geometry-revision')!=='2'){state.hollow=false;localStorage.setItem('crystal-forge-geometry-revision','2')}
 const suffix={count:'',height:' mm',width:' mm',soft:' mm',base:' mm',wall:' mm'};
 function labels(){for(const [k,v] of Object.entries(suffix))$(k+'V').textContent=state[k]+v}
 for(const k of keys){const el=$(k);el.value=state[k];if(el.type==='checkbox')el.checked=!!state[k];el.addEventListener('input',()=>{state[k]=el.type==='checkbox'?el.checked:el.type==='number'||el.type==='range'?Number(el.value):el.value;labels();schedule()})}labels();
