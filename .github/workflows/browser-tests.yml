@@ -12,6 +12,19 @@ on:
       - 'tests/browser-smoke.mjs'
       - 'package.json'
       - '.github/workflows/browser-tests.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'geometry-v3.js'
+      - 'studio-v3.js'
+      - 'hardware-editor.js'
+      - 'hardware-layout.js'
+      - 'fabrication-v1.js'
+      - 'fabrication-worker.js'
+      - 'tests/**'
+      - 'package.json'
+      - '.github/workflows/browser-tests.yml'
   workflow_dispatch:
 permissions:
   contents: write
@@ -50,7 +63,8 @@ jobs:
           path: qa/browser-smoke.png
           if-no-files-found: ignore
       - name: Store browser smoke test result
-        if: always()
+        # A PR must never write a test-log commit back onto main.
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           OUTCOME: ${{ steps.browser.outcome }}
           REF: ${{ github.sha }}

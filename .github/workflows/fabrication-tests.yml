@@ -11,6 +11,19 @@ on:
       - 'package.json'
       - 'tests/**'
       - '.github/workflows/fabrication-tests.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'geometry-v3.js'
+      - 'studio-v3.js'
+      - 'hardware-editor.js'
+      - 'hardware-layout.js'
+      - 'fabrication-v1.js'
+      - 'fabrication-worker.js'
+      - 'tests/**'
+      - 'package.json'
+      - '.github/workflows/fabrication-tests.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,6 +47,22 @@ jobs:
           status=$?
           cat fabrication-run.log
           exit "$status"
+      - name: Benchmark representative solid + vault fabrication
+        if: steps.smoke.outcome == 'success'
+        id: benchmark
+        continue-on-error: true
+        env:
+          CRYSTAL_FORGE_MAX_PREP_MS: '90000'
+        run: |
+          npm run test:benchmark > benchmark-run.log 2>&1
+          cat benchmark-run.log
+      - name: Upload benchmark log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crystal-forge-performance-benchmark
+          path: benchmark-run.log
+          if-no-files-found: ignore
       - name: Upload full fabrication test log
         if: always()
         uses: actions/upload-artifact@v4
@@ -41,6 +70,6 @@ jobs:
           name: fabrication-test-log
           path: fabrication-run.log
           if-no-files-found: ignore
-      - name: Fail on real geometry errors
-        if: steps.smoke.outcome != 'success'
+      - name: Fail on real geometry and benchmark errors
+        if: steps.smoke.outcome != 'success' || steps.benchmark.outcome != 'success'
         run: exit 1

@@ -124,6 +124,21 @@ try{
  assert.equal(Number(await page.locator('[data-state="baseHeight"]').inputValue()),25,'Pixel base preset sets 25 mm');
  assert.equal(await page.locator('[data-state="pixelCount"]').inputValue(),'1','Exactly one requested LED');
  assert.equal(await page.locator('[data-state="baseStyle"]').inputValue(),'Fitted','Fitted base default');
+ // Actual interaction regression for the manual LED hole editor. The previous
+ // suite only checked that a button existed, not whether the control worked.
+ await page.locator('[data-state="pixelPlacement"]').selectOption('manual');
+ await page.waitForFunction(()=>!!JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.manualPixelHoles?.length,null,{timeout:7000});
+ const beforeHole=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings.manualPixelHoles[0]);
+ assert(Number.isFinite(beforeHole.x),'Auto placement seeds manual LED X coordinate');
+ const holeX=page.locator('[data-hole-kind="pixel"][data-hole-axis="x"]').first();
+ await holeX.fill('9999');
+ await holeX.press('Tab');
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.manualPixelHoles?.[0]?.x===9999,null,{timeout:7000});
+ assert((await page.locator('#hardwareGuideSummary').innerText()).includes('invalid'),'Invalid LED position is flagged by shared planner');
+ await page.locator('[data-state="pixelPlacement"]').selectOption('auto');
+ await page.waitForTimeout(250);
+ assert.equal((await page.locator('#hardwareGuideSummary').innerText()).includes('invalid (red)'),true,'Hardware guidance remains visible');
+ console.log('Manual LED X/Z editor and invalid position screening verified');
  await page.locator('[data-tab="print"]').click();
  await page.locator('#prepareBtn').click();
  assert(await page.evaluate(()=>window.__crystalForgeWorkerStarts>=1),'Prepare Print uses a Web Worker');
