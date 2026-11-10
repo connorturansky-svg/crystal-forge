@@ -11,7 +11,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:.45,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:8,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
-  showPixels:false,pixelCount:1,lightingMode:'single',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
+  showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false
 };
@@ -335,6 +335,7 @@ function selectCrystal(id,commit=true){
   outline.name='crystal-selection-outline';outline.renderOrder=60;selectedMesh.add(outline);
  }
  syncShapeControls();
+ updateAppearance();
  renderTree();renderSelection();if(commit)persist();
 }
 function setTool(tool){
@@ -401,6 +402,10 @@ function updateAppearance(){
   m.material.transparent=look==='xray';
   m.material.opacity=look==='xray'?.38:1;
   m.material.depthWrite=look!=='xray';
+  const selected=m===selectedMesh,c=selected?selectedCrystal():null;
+  const glow=!!s.glowPreview&&s.lightingMode!=='none';
+  m.material.emissive.setHex(selected?(c?.locked?0x8b1b2c:0x0b8752):glow?Number(s.glowColour):0);
+  m.material.emissiveIntensity=selected?.88:glow?.58:0;
  }
 }
 function focus(obj){
@@ -456,7 +461,7 @@ function schedule(full=true){
  },85);
 }
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','angleRandomness','familyMix']);
-const previewKeys=new Set(['showPixels','preserveLocked','snap','splitParts','splitX']);
+const previewKeys=new Set(['showPixels','glowPreview','glowColour','preserveLocked','snap','splitParts','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
@@ -475,6 +480,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
   for(const o of document.querySelectorAll('[data-out="'+key+'"]'))o.textContent=format(key,value);
   if(key==='pixelDiameter'||key==='pixelFit')$('actualHole').textContent=(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm';
   if(key==='splitParts')$('splitExportBtn').disabled=!manufacturingMesh||!value;
+  if(key==='glowColour'||key==='glowPreview')updateAppearance();
   if(key==='snap'){gizmo.setTranslationSnap(value?5:null);gizmo.setRotationSnap(value?THREE.MathUtils.degToRad(15):null);gizmo.setScaleSnap(value?.1:null)}
   if(regenKeys.has(key))generate();
   else if(previewKeys.has(key)){updateLEDs();renderInfo();persist()}
