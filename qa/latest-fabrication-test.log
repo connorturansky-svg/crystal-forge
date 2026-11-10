@@ -1,5 +1,5 @@
 Fabrication smoke tests: success
-Commit: 1eade4a9245eec1d9349e22bb0cc7b114229bb92
+Commit: 1c54f05a648bff28e751ad384465fffc789e3c75
 
 
 > test
@@ -9,6 +9,11 @@ solid {"triangles":1578,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
 hollow {"triangles":3622,"connected":1,"hollow":10,"sockets":0,"warningCount":2}
 sockets {"triangles":1952,"connected":1,"hollow":0,"sockets":3,"warningCount":3}
 hollow-and-sockets {"triangles":4038,"connected":1,"hollow":10,"sockets":3,"warningCount":4}
+mount-Wall screws {"triangles":1850,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
+mount-Magnet inserts {"triangles":1834,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
+mount-Threaded insert M3 {"triangles":1834,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
+mount-Custom dual holes {"triangles":1846,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
+full-assembly {"triangles":4266,"connected":1,"hollow":10,"sockets":3,"warningCount":5}
 calibration 11.8,11.9,12,12.1,12.2
 Export check {"stlTriangles":1578,"baseZ":"0.00","tipZ":"114.91","mfBytes":104214}
 Manufacturing smoke tests passed.
