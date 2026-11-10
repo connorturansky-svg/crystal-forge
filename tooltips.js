@@ -176,6 +176,11 @@ const SETTINGS={
   "Mount positioning",
   "Automatic chooses separated holes; Manual uses the X/Z positions you specify."
  ],
+ "tabCount": ["Number of edge tabs","Choose 1–24 equally spaced semicircular ears around the base. Crowded positions may be skipped."],
+ "tabHolesPerTab": ["Holes per tab","Choose 1–6 through-holes per ear for zip ties or bolts. The ear scales to fit them."],
+ "tabHoleDiameter": ["Tab hole diameter","Choose the through-hole diameter and allow extra clearance for the real fixing."],
+ "tabThickness": ["Tab thickness","How thick each printable perimeter ear is."],
+ "tabWall": ["Material around tab holes","Requested plastic web around fastening holes; strength must be physically checked."],
  "mountHoleDiameter": [
   "Mount hole diameter",
   "Sets bore diameter for custom mounting holes, subject to material clearance."
