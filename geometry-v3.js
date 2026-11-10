@@ -159,6 +159,23 @@ export function baseOutline(cs,s){
  return outer.map(p=>{const x=p[0]-cx,z=p[1]-cz,d=Math.hypot(x,z)||1;
    return[p[0]+x/d*margin,p[1]+z/d*margin]});
 }
+export function baseAccentSpecs(cs,s){
+ if(s.baseStyle!=='Crystal crust')return [];
+ const outline=baseOutline(cs,s);if(outline.length<6)return [];
+ const rng=seeded(Number(s.seed||42)+90173);
+ const center=outline.reduce((v,p)=>[v[0]+p[0]/outline.length,v[1]+p[1]/outline.length],[0,0]);
+ const n=Math.min(18,Math.max(8,Math.round(outline.length*.25))),out=[];
+ for(let i=0;i<n;i++){
+  const j=Math.floor((i+.5)*outline.length/n)%outline.length;
+  const p=outline[j],k=.83+rng()*.08;
+  const x=center[0]+(p[0]-center[0])*k,z=center[1]+(p[1]-center[1])*k;
+  out.push({id:'base-accent-'+i,x,y:0,z,h:8+rng()*9,r:2.4+rng()*2.6,
+    rotation:rng()*TAU,leanX:(rng()-.5)*.14,leanZ:(rng()-.5)*.14,
+    family:'Quartz',scale:1,
+    shape:{bottomScale:1,topScale:.68,cornerRadius:.15,tipLength:.29,tipFlat:.15,tipRound:.15,shoulderRound:0}
+  });
+ }return out;
+}
 export function baseGeometry(THREE,cs,s){
  const outline=baseOutline(cs,s),length=outline.length;
  if(length<3)return new THREE.BufferGeometry();
