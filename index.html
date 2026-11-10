@@ -77,10 +77,11 @@ body.theme-light .dialog-body .safety{background:#fff4e4;color:#70491f;border-co
 body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80aee6;color:#1c599a}
 @media(max-width:1150px){.topbar{flex-wrap:wrap;justify-content:center}.layout{height:calc(100vh - 110px)}}
 
+#shapeScope{margin:2px 0 8px}body .shape-selected{border-left:3px solid #49ef9b;background:#1b453a;color:#cbffe5;padding:10px;border-radius:6px}body.theme-light .shape-selected{background:#daf7e8;color:#136039}#multiplePixelsRow:not(.show){display:none!important}.viewbuttons button.active{background:#315d96!important;color:white!important}
 </style></head>
 <body class="simple">
 <header class="topbar">
-<div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.4 · Fabrication Preview</span><span class="filename" id="projectName">Untitled cluster</span></div>
+<div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.5 · Cluster Studio</span><span class="filename" id="projectName">Untitled cluster</span></div>
 <nav class="workspace-tabs"><button class="active" data-tab="design">◇ Design</button><button data-tab="build">⚙ Build</button><button data-tab="print">▣ Print</button></nav>
 <div class="topcluster utility"><div class="modebar"><button id="simpleBtn" class="active">Simple</button><button id="advancedBtn">Advanced</button></div><button id="themeBtn" class="utility-button" title="Switch to light theme" aria-label="Switch theme">☀ Light</button><button id="helpBtn" class="utility-button" title="Help and keyboard shortcuts">? Help</button><button id="changelogBtn" class="utility-button" title="Version history and changes">✦ What’s new</button><button id="saveBtn" title="Download editable project">↓ Save</button><button id="loadBtn" title="Open project">↑ Open</button><input type="file" id="loadFile" accept=".json,application/json"></div>
 </header>
@@ -92,11 +93,13 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="control"><label>Growth pattern</label><select data-state="pattern"><option>Central Spire</option><option>Dense Cluster</option><option>Fan</option><option>Geode / Crescent</option><option>Wall Growth</option><option>Organic / Wild</option></select></div>
 <div class="control"><label>Crystals <output data-out="count"></output></label><input data-state="count" type="range" min="1" max="60" step="1"></div>
 <div class="control"><label>Overall height <output data-out="height"></output></label><input data-state="height" type="range" min="40" max="360" step="5"></div>
-<div class="control"><label>Spread / footprint <output data-out="width"></output></label><input data-state="width" type="range" min="35" max="300" step="5"></div>
+<div class="control"><label>Spread / footprint <output data-out="width"></output></label><input data-state="width" type="range" min="35" max="300" step="5"></div><div class="control"><label>Crystal spacing / overlap <output data-out="spacing"></output></label><input data-state="spacing" type="range" min="0" max="100" step="1"><p class="note">0 = closely intertwined · 100 = more spread out.</p></div><div class="control"><label>Angle randomness <output data-out="angleRandomness"></output></label><input data-state="angleRandomness" type="range" min="0" max="100" step="1"><p class="note">Introduce more individual tilt and growth directions.</p></div>
 <div class="buttonrow"><button id="randomBtn">⚄ Randomise</button><button id="regenBtn">↻ Regenerate</button></div>
 <div class="advanced-only"><div class="divider"></div><div class="control"><label>Repeatable seed</label><input data-state="seed" type="number" min="1" max="999999999"></div><label class="checks"><input data-state="preserveLocked" type="checkbox"> Keep locked crystals when regenerating</label></div>
 </div></div>
-<div class="card blue"><div class="cardtitle"><span class="symbol">⬡</span> Crystal shape</div><div class="cardbody">
+<div class="card blue"><div class="cardtitle"><span class="symbol">⬡</span> <span id="shapeScopeTitle">All crystal shapes</span></div><div class="cardbody">
+<div id="shapeScope" class="success">Global controls — all crystals. Select a crystal to edit only that crystal.</div>
+<div class="buttonrow" style="margin:8px 0 12px"><button id="clearCrystalSelection" hidden>↩ Edit all crystals</button><button id="resetCrystalShape" hidden>Reset individual overrides</button></div>
 <div class="control"><label>Crystal family</label><select data-state="familyMix"><option>Quartz</option><option>Shard</option><option>Blade</option><option>Cubic</option><option>Double terminated</option><option>Fantasy</option><option>Mixed</option></select></div>
 <div class="control"><label>Bottom diameter <output data-out="bottomScale"></output></label><input data-state="bottomScale" type="range" min=".55" max="1.7" step=".05"></div>
 <div class="control"><label>Top diameter (shoulder) <output data-out="topScale"></output></label><input data-state="topScale" type="range" min=".35" max="1.6" step=".05"></div>
@@ -104,7 +107,7 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="note">Rounds only the vertical polygon corners. Large flat faces remain flat.</div>
 <div class="advanced-only"><div class="divider"></div>
 <div class="control"><label>Tip length <output data-out="tipLength"></output></label><input data-state="tipLength" type="range" min=".10" max=".55" step=".01"></div>
-<div class="control"><label>Tip flat diameter <output data-out="tipFlat"></output></label><input data-state="tipFlat" type="range" min="0" max="5" step=".1"></div>
+<div class="control"><label>Tip flat diameter <output data-out="tipFlat"></output></label><input data-state="tipFlat" type="range" min="0" max="5" step=".1"></div><div class="control"><label>Tip end rounding <output data-out="tipRound"></output></label><input data-state="tipRound" type="range" min="0" max="2" step=".1"><p class="note">Tiny end fillet only — keeps sharp-looking pyramid faces without making domed points.</p></div>
 <div class="control"><label>Shoulder rounding <output data-out="shoulderRound"></output></label><input data-state="shoulderRound" type="range" min="0" max="2" step=".1"></div>
 <div class="control"><label>Corner smoothness <output data-out="roundSteps"></output></label><input data-state="roundSteps" type="range" min="2" max="8" step="1"></div>
 </div></div></div>
@@ -115,24 +118,27 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 </section>
 <section data-workspace="build">
 <div class="card teal"><div class="cardtitle"><span class="symbol">▱</span> Integrated base</div><div class="cardbody">
+<div class="control"><label>Base outline style</label><select data-state="baseStyle"><option value="Fitted">Faceted / fitted to crystals</option><option value="Square">Square / rectangle</option><option value="Circle">Circle</option><option value="Rounded">Rounded corners</option><option value="Organic">Organic / bumpy</option><option value="Crystal crust">Mini-crystal rocky rim</option></select></div>
+<div class="control"><label>Outward base width <output data-out="baseWidth"></output></label><input data-state="baseWidth" type="range" min="0" max="30" step=".5"><p class="note">How far the base extends beyond the outermost crystals, not its height.</p></div>
 <div class="control"><label>Construction</label><select data-state="baseType"><option value="integrated">Integrated root</option><option value="separate">Separate base (visual)</option><option value="none">No base</option></select></div>
-<div class="control"><label>Base height <output data-out="baseHeight"></output></label><input data-state="baseHeight" type="range" min="3" max="30" step=".5"></div>
+<div class="control"><label>Base height / depth <output data-out="baseHeight"></output></label><input data-state="baseHeight" type="range" min="3" max="30" step=".5"></div>
 <label class="checks"><input data-state="undersideAccess" type="checkbox"> Add underside access pocket</label>
 <div class="note">Base cavity is created in geometry. Crystal interiors remain solid pending a validated hollowing method.</div>
 
 </div></div>
-<div class="card blue"><div class="cardtitle"><span class="symbol">◈</span> Hollow & supportless geometry</div><div class="cardbody">
+<div class="card blue"><div class="cardtitle"><span class="symbol">◈</span> Shared hollow / balloon construction</div><div class="cardbody">
 <label class="checks"><input data-state="hollowCrystals" type="checkbox"> Cut hollow interiors in eligible crystals</label>
 <div class="control"><label>Target wall thickness <output data-out="wallThickness"></output></label><input data-state="wallThickness" type="range" min=".8" max="4" step=".2"></div>
-<p class="note">Manufacturing mode cuts tapered internal cavities and connects them to underside access holes where requested. These are approximate insets, not certified uniform-thickness shells.</p>
+<p class="note">One thin, merged crystal shell with a shared internal air chamber and one underside light-entry socket. The goal is for the entire cluster to glow from one pixel. Wall offset and access are approximate: inspect layer-by-layer in Cura.</p>
 <div class="success"><strong>Supportless-first:</strong> after preparing the solid, inspect downward-facing surfaces and recommended orientation. A 45° reference alone cannot guarantee support-free printing.</div>
 </div></div>
 <div class="card amber"><div class="cardtitle"><span class="symbol">✳</span> Pixel lighting plan</div><div class="cardbody">
-<label class="checks"><input data-state="showPixels" type="checkbox"> Show LED locations in the viewport</label><label class="checks"><input data-state="cutSockets" type="checkbox"> Cut LED socket holes into manufacturing mesh</label>
-<div class="control"><label>Gumdrop LEDs <output data-out="pixelCount"></output></label><input data-state="pixelCount" type="range" min="0" max="60" step="1"></div>
+<div class="control"><label>Illumination approach</label><select data-state="lightingMode"><option value="single">One pixel · shared glowing cluster</option><option value="multi">Multiple pixels (advanced)</option><option value="none">No lighting</option></select></div>
+<label class="checks"><input data-state="showPixels" type="checkbox"> Show LED positions in the viewport</label><label class="checks"><input data-state="cutSockets" type="checkbox"> Cut LED socket holes into manufacturing mesh</label>
+<div id="multiplePixelsRow" class="control advanced-only"><label>Pixel quantity <output data-out="pixelCount"></output></label><input data-state="pixelCount" type="range" min="1" max="60" step="1"></div>
 <div class="control"><label>Nominal socket diameter <output data-out="pixelDiameter"></output></label><input data-state="pixelDiameter" type="range" min="10" max="15" step=".1"></div>
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
-<p class="softnotice">Planned hole: <strong id="actualHole">12.00 mm</strong></p>
+<p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p>
 <div class="note warning">When enabled, Print → Prepare Print cuts nominal socket holes using the Manifold engine. Check physical fit against your actual pixels. Retention lips and cable strain relief are not yet included.</div>
 </div></div>
 <div class="card purple advanced-only"><div class="cardtitle"><span class="symbol">⚙</span> Mounting & modularity</div><div class="cardbody">
@@ -151,7 +157,7 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="note">Optimised supportless-first is the goal. Automated orientation and thorough overhang analysis are not yet implemented.</div>
 <div class="divider"></div><button id="prepareBtn" class="primary" style="width:100%;font-weight:700">▣ Prepare print mesh (Boolean union)</button>
 <div id="prepareStatus" class="note">Not prepared. This step will merge crystals and base, cut requested cavities and sockets, then validate the resulting solid.</div>
-<label class="checks"><input id="showManufacturing" type="checkbox"> Show manufacturing mesh in 3D viewport</label><label class="checks"><input id="printHeatmap" type="checkbox"> Show colour-coded overhang inspection (green / amber / red)</label>
+<label class="checks"><input id="showManufacturing" type="checkbox"> Show manufacturing mesh in 3D viewport</label><label class="checks"><input id="printHeatmap" type="checkbox"> Show colour-coded overhang inspection (green / amber / red)</label><label class="checks"><input id="featureOverlay" type="checkbox"> Outline pixel bores yellow and mounting inserts purple</label>
 <div id="prepareReport" class="card teal" hidden><div class="cardtitle">✓ Manufacturing geometry</div><div class="cardbody">
 <div class="stat"><span>Mesh integrity</span><strong id="reportIntegrity">—</strong></div>
 <div class="stat"><span>Connected bodies</span><strong id="reportPieces">—</strong></div><div class="stat"><span>Enclosed void shells</span><strong id="reportCavities">—</strong></div><div class="stat"><span>Fits printer</span><strong id="reportPrinterFit">—</strong></div>
@@ -184,8 +190,8 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
  <div id="viewport"></div>
  <div class="viewtools"><div class="toolgroup" id="gizmoTools" title="Select an individual crystal first">
  <button data-tool="select" class="active" title="Select (V)">↖</button><button data-tool="translate" title="Move (G)">✥</button><button data-tool="rotate" title="Rotate (R)">⟳</button><button data-tool="scale" title="Scale (S)">⤢</button></div>
- <div class="vcolumn"><div class="viewbuttons"><button data-view="iso" title="Isometric view">ISO</button><button data-view="front" title="Front view">FR</button><button data-view="back" title="Back view">BK</button><button data-view="left" title="Left view">LT</button><button data-view="right" title="Right view">RT</button><button data-view="top" title="Top view">TOP</button></div>
- <div class="viewbuttons"><button data-look="solid" class="active">Solid</button><button data-look="wire">Wire</button><button data-look="xray">X-ray</button><button id="gridBtn">Grid</button></div>
+ <div class="vcolumn"><div class="viewbuttons"><button data-view="iso" title="Isometric view">ISO</button><button data-view="front" title="Front view">FR</button><button data-view="back" title="Back view">BK</button><button data-view="left" title="Left view">LT</button><button data-view="right" title="Right view">RT</button><button data-view="top" title="Top view">TOP</button><button data-view="bottom" title="Underside view / LED sockets">BOT</button></div>
+ <div class="viewbuttons"><button data-look="solid" class="active">Solid</button><button data-look="wire">Wire</button><button data-look="xray">X-ray</button><button id="floatBtn" title="Hide grid and inspect floating object">◇ Floating</button><button id="gridBtn">Grid</button><button id="hardwareColoursBtn" title="Highlight LED sockets yellow and mounting inserts purple">◎ Hardware IDs</button></div>
  <div class="axiskey"><b class="x">X • Red</b><b class="y">Y • Green</b><b class="z">Z • Blue</b></div></div></div>
  <div class="footbar"><div id="status">Loading 3D editor…</div><div><span id="footerStats">—</span> · mm · mouse orbit / scroll zoom</div></div>
 </main>
