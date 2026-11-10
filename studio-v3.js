@@ -249,7 +249,7 @@ function renderManufactureReport(report){
  f('reportMass',report.materialPLAgrams.toFixed(1)+' g');
  f('reportSockets',report.socketsCut);
  f('reportMounting',report.mountingHolesCut||0);
- f('reportTabs',report.tabCount||0);
+ f('reportTabs',report.edgeTabs||0);
  f('reportHollow',report.hollowed?'Yes':'No');
  f('reportVault',report.vault?.applied?'Enabled · '+report.vault.supportCount+' integral buttresses':'Off');
  f('reportVaultGap',report.vault?.applied?report.vault.gapEstimate+' mm (estimate)':'—');

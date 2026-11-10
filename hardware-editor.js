@@ -25,6 +25,21 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  }
  function draw(plan){
   clear();
+  // Preview the exact planned semicircular-tab footprint and through holes
+  // before performing any expensive Manifold union.
+  for(const tab of plan.tabs||[]){
+   const disc=new THREE.Mesh(new THREE.CircleGeometry(tab.radius,64),
+     new THREE.MeshBasicMaterial({color:0xb985ff,opacity:.18,transparent:true,depthTest:false,depthWrite:false,side:THREE.DoubleSide}));
+   disc.rotation.x=-Math.PI/2;disc.position.set(tab.x,.12,tab.z);disc.renderOrder=78;guides.add(disc);
+   const outline=new THREE.Mesh(new THREE.TorusGeometry(tab.radius,.5,8,64),
+     new THREE.MeshBasicMaterial({color:0xb985ff,opacity:.9,transparent:true,depthTest:false}));
+   outline.rotation.x=-Math.PI/2;outline.position.set(tab.x,.16,tab.z);outline.renderOrder=86;guides.add(outline);
+  }
+  for(const hole of plan.tabHoles||[]){
+   const ring=new THREE.Mesh(new THREE.TorusGeometry(hole.radius,.5,8,36),
+     new THREE.MeshBasicMaterial({color:0x8745fa,transparent:true,depthTest:false}));
+   ring.rotation.x=-Math.PI/2;ring.position.set(hole.x,.38,hole.z);ring.renderOrder=96;guides.add(ring);
+  }
   for(const [points,color] of [[plan.sockets,0xffd84b],[plan.mounts,0xb985ff],
       [plan.invalidManualPixels||[],0xff536b],[plan.invalidManualMounts||[],0xff536b]]){
    for(const p of points){
@@ -44,7 +59,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const s=getSettings(),plan=getPlan();
   draw(plan);
   if($('hardwareGuideSummary'))$('hardwareGuideSummary').textContent=
-   plan.sockets.length+' LED hole(s) · '+plan.mounts.length+' mounting hole(s) · '+
+   plan.sockets.length+' LED hole(s) · '+(plan.mounts.length+plan.tabHoles.length)+' mounting hole(s) · '+plan.tabs.length+' edge tab(s) · '+
    (plan.invalidManualPixels.length+plan.invalidManualMounts.length)+' invalid (red)';
   const list=$('manualHardwareList');if(!list)return;
   const html=[];

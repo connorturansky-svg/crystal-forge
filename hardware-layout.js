@@ -1,4 +1,4 @@
-import {baseOutline} from './geometry-v3.js';
+import {baseOutline,crystalEndRatios} from './geometry-v3.js';
 import {planEdgeTabs} from './edge-tabs.js';
 /* Hardware placement planner shared by printable geometry and viewport annotations.
  * All positions are x/z on the underside of the cluster, distances in mm.
@@ -72,7 +72,8 @@ export function planHardware(crystals,s){
   const ranked=pixelManual?[]:all.slice().sort((a,b)=>b.r*b.h-a.r*a.h);
   for(const c of ranked){
     if(sockets.length>=pixelRequested)break;
-    const r=c.r*(c.shape?.bottomScale??s.bottomScale)*min(c.sx||c.scale||1,c.sz||c.scale||1);
+    const ratios=crystalEndRatios(c,s);
+    const r=c.r*ratios.size*ratios.bottom*min(c.sx||c.scale||1,c.sz||c.scale||1);
     if(r<socketRadius+clearance+1.2)continue;
     // Try the crystal axis, then a few locations away from it in larger crystals.
     const offsets=[{x:0,z:0}];
