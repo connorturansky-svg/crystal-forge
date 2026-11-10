@@ -1,3 +1,4 @@
+import {baseOutline} from './geometry-v3.js';
 /* Hardware placement planner shared by printable geometry and viewport annotations.
  * All positions are x/z on the underside of the cluster, distances in mm.
  * Conservative XY separation even where drilling depths do not overlap.
@@ -21,22 +22,17 @@ function edgeDistance(p,a,b){
   return Math.hypot(p.x-a.x-t*x,p.z-a.z-t*z);
 }
 function insidePolygon(p, polygon, clearance){
-  if(polygon.length<3)return false;
-  for(let i=0;i<polygon.length;i++){
-    const a=polygon[i],b=polygon[(i+1)%polygon.length];
-    const cross=(b.x-a.x)*(p.z-a.z)-(b.z-a.z)*(p.x-a.x);
-    if(cross < -1e-5 || edgeDistance(p,a,b) < clearance)return false;
-  }
-  return true;
+ if(polygon.length<3)return false;
+ let inside=false;
+ for(let i=0,j=polygon.length-1;i<polygon.length;j=i++){
+   const a=polygon[i],b=polygon[j];
+   if(edgeDistance(p,a,b)<clearance)return false;
+   if(((a.z>p.z)!==(b.z>p.z)) && p.x<(b.x-a.x)*(p.z-a.z)/(b.z-a.z)+a.x)inside=!inside;
+ }
+ return inside;
 }
 export function hardwareFootprint(crystals,s){
-  const points=[];
-  for(const c of crystals){
-    if(c.hidden)continue;
-    const r=c.r*(c.shape?.bottomScale ?? s.bottomScale)*max(c.sx||c.scale||1,c.sz||c.scale||1) + 2.5;
-    for(let i=0;i<6;i++){const a=c.rotation+i*TAU/6;points.push({x:c.x+Math.cos(a)*r,z:c.z+Math.sin(a)*r});}
-  }
-  return hull(points);
+ return baseOutline(crystals,s).map(([x,z])=>({x,z}));
 }
 export function mountingProfile(s){
   const preset=s.mount || 'None';
