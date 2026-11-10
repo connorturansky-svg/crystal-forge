@@ -82,8 +82,10 @@ const meshB=crystalGeometry(THREE,{...crystal,shape:{tipRound:1.4,topScale:.55,c
 assert.notDeepEqual(Array.from(meshA.getAttribute('position').array),
  Array.from(meshB.getAttribute('position').array),'Individual shape override changes mesh');
 meshA.dispose();meshB.dispose();
-validate('solid',settings);
+const solidMass=validate('solid',settings);
 const hollow=validate('hollow',{...settings,hollowCrystals:true});
+assert(hollow.volumeMm3<solidMass.volumeMm3,'Hollowing must reduce physical material volume');
+console.log('balloon-material-ratio', (hollow.volumeMm3/solidMass.volumeMm3).toFixed(3), 'sealed-voids',hollow.internalCavities);
 assert.equal(hollow.disconnected,1,'Hollowing must not fragment a connected base and cluster');
 validate('sockets',{...settings,cutSockets:true});
 const full=validate('hollow-and-sockets',{...settings,cutSockets:true,hollowCrystals:true});
