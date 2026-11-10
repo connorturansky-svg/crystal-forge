@@ -28,11 +28,23 @@ try{
  // Selected crystal uses global shape panel controls as its individual editor.
  await page.locator('#objectTree [data-id]').first().click();
  assert((await page.locator('#shapeScope').innerText()).includes('INDIVIDUAL CRYSTAL'),'Selected crystal scope shown');
- await page.locator('[data-state="tipRound"]').evaluate(el=>{el.value='1.1';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.locator('[data-state="tipRound"]').evaluate(el=>{el.value='4.5';el.dispatchEvent(new Event('input',{bubbles:true}))});
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'null'));
- assert(saved.crystals.some(c=>c.shape?.tipRound===1.1),'Per-crystal tip rounding persisted');
- assert(saved.settings.tipRound!==1.1,'Individual shape left global rounding untouched');
+ assert(saved.crystals.some(c=>c.shape?.tipRound===4.5),'Per-crystal tip rounding persisted');
+ assert(saved.settings.tipRound!==4.5,'Individual shape left global rounding untouched');
+ // Regeneration must keep the camera's orbit target at the cluster centre.
  await page.locator('#clearCrystalSelection').click();
+ const viewBefore=await page.evaluate(()=>document.querySelector('#status')?.textContent);
+ await page.locator('[data-state="spacing"]').evaluate(el=>{el.value='58';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(300);
+ assert(await page.locator('canvas').count(),'Model remained visible after cluster regeneration');
+ const domeInput=page.locator('[data-state="baseDome"]');
+ await page.locator('[data-tab="build"]').click();
+ await domeInput.evaluate(el=>{el.value='18';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(300);
+ assert.equal(Number(await domeInput.inputValue()),18,'Base dome slider applied');
+ await page.locator('[data-tab="design"]').click();
+
  assert((await page.locator('#shapeScope').innerText()).includes('GLOBAL SHAPE'),'Global mode restored');
  await page.locator('#floatBtn').click();
  assert(await page.locator('#floatBtn.active').count(),'Floating inspection enabled');
