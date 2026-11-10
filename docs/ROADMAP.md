@@ -1,0 +1,54 @@
+# Roadmap — verified issues, unfinished work and proposals
+
+Status notation: **BUG** = reproducible or directly evidenced; **RISK / VERIFY** = potential problem not yet proven by a test print; **REQUIRED** = explicit request; **AGREED** = adopted approach; **PROPOSAL** = suggested but not yet accepted; **LONG-TERM** = exploratory. Priority rankings are guidance for the next development session, not user-approved delivery dates.
+
+## P0 — Baseline verification and regressions
+
+| Item | Class / priority | Evidence and next acceptance criterion |
+| --- | --- | --- |
+| Print a real vault + LED sample | RISK / VERIFY · P0 | v0.7.0 tests show one connected geometry, not reliable bridging or illumination. Slice at 0% infill, record maximum unsupported spans, physical roof quality and whether LED bore side vents reach a usable air chamber. |
+| Verify all crystals illuminate from a shared LED | REQUIRED outcome / RISK · P0 | 0% Cura infill can still seal spike bases with skins. Test actual slicing and one real translucent filament sample. Consider a limited targeted opening if full-cavity erosion is too costly. |
+| Test manual LED/mount click-to-place end to end | REQUIRED / unfinished tests · P0 | UI was implemented v0.7.0. Existing Playwright smoke checks control existence; add actual click, X/Z editing, red invalid indication, export plan equality and saved JSON round-trip. |
+| Confirm world-space lean on real interface | Prior BUG, fixed in source / VERIFY · P0 | Test numerical dot-products already; include browser visual checks for One direction and Radial inward at zero randomness after regeneration and per-crystal yaw. |
+| Protect current live `main` from unreviewed changes | AGREED workflow · P0 | Keep PRs from topic branches; GitHub Pages stays main-only. Check latest origin and workflow SHA before merge. |
+
+## P1 — Known limits and unfinished functionality
+
+- **REQUIRED/unfinished:** stronger screen for long roof bridge spans and layer-to-layer support, not just triangle overhang slopes or approximate vault gap. Any red/yellow heatmap must state its approximations; Cura still authoritative for slicing.
+- **REQUIRED/unfinished:** accessible LED opening that is not merely a bore with a blind ceiling, plus route into intended spikes. Current vault has side windows, but route into all spikes remains unproved.
+- **REQUIRED/unfinished:** performance budgets for preparation on representative 10/16/40/60-crystal combinations, with/without dome, vault, manual features and experimental full hollowing. Current Worker responsiveness/caching improved, but worst-case profiling is not systematic.
+- **RISK / VERIFY:** constant wall thickness is not certified in experimental hollowing; narrow spikes may stay solid. Need sample min-wall inspection before recommending for print.
+- **RISK / VERIFY:** very wide spacing can exceed build-volume limits; designer should explain why 100% separation and a one-piece base may be incompatible with a selected printer.
+- **RISK / VERIFY:** irregular outlines, tall domes and socket/mount arrangements may still produce hard-to-print unsupported features; expand Manifold and Cura configurations.
+- **RISK / VERIFY:** saved projects from prior versions may preserve experimental hollowing and geometry settings; add versioned JSON fixtures/migration tests.
+- **RISK / VERIFY:** visual Build hardware guides and 3D click plane must clearly distinguish the underside XY/XZ plane from visible upper surfaces; invalid manual holes are excluded rather than force-applied. Ensure UI warns before export.
+- **UNFINISHED:** actual LED clips/retaining lips, physical insertion depth, wire channel, cable strain relief and serviceable LED housing.
+- **UNFINISHED:** proper part orientation selection and guaranteed support-free construction, including bridge simulation; current 45° heuristic is advisory.
+- **UNFINISHED:** auto cut connectors, physical splitting dowels/alignment, build instructions and removable mounting plates/keyholes.
+- **UNFINISHED:** comprehensive optical/filament simulation — viewport glow is aesthetic, not an accurate light model.
+- **UNFINISHED:** broader printer profiles, Cura profiles, physical tolerance calibration and mechanical testing.
+- **KNOWN PROCESS ISSUE:** the browser workflow writes `qa/latest-browser-test.log` back to main as a new commit after successful main pushes. This can create noisy main HEAD changes and complicate concurrent GitHub-API commits. Consider using workflow artifacts/check annotations instead, after reviewing whether historical logs are useful.
+
+## P2 — Agreed improvements not yet finished
+
+- **AGREED direction:** a faster, Cura-first default, with optional vault and experimental full hollowing clearly separated. Improve help/warnings so users understand how wall count, top/bottom skins and light paths interact.
+- **AGREED direction:** fully inspectable manually positioned pixels and mounts. Future improvement: in-viewport drag handles, snap/grid and 3D projection suited to underside editing, while keeping `planHardware` authoritative.
+- **AGREED direction:** consistent rounded shoulders/safe cap aesthetics at all crystal scales; expand geometry test matrix and visual screenshots.
+- **AGREED direction:** keep Worker's cancellation/reuse responsive for large models and avoid UI stalls when clicking Prepare multiple times.
+
+## P3 — Exploratory ideas, NOT approved requirements
+
+- **PROPOSAL:** automated cutaway/cross-section showing the LED-to-spike path, with a diagnostic list of blocked roots.
+- **PROPOSAL:** configurable continuous internal tapered ribs or tree-like support branches replacing discrete vault columns where that reduces roof bridging.
+- **PROPOSAL:** printability quality presets based on selected layer height/nozzle and printer material, with calibrated bridge distances.
+- **PROPOSAL:** automated fixture/retention geometry for particular gumdrop models (requires actual measured parts).
+- **PROPOSAL:** additional optical material previews and per-crystal illumination analysis.
+- **LONG-TERM:** more robust assembly/panelisation and one-click validated prints of large clusters.
+
+## Completed work to preserve
+
+The following are implemented and should not be re-added as new features: six formation patterns, seeded generation, per-crystal shapes/locks/gizmos, world-space lean presets, wide spacing, centred floating orbit, even lighting, multiple base styles/dome/rim, Cura-first exterior, optional vault, experimental hollowing, nominal pixel and mount bores, automatic/manual hardware planner, Z-up STL/3MF, calibration coupon, report/heatmap and existing Manifold/Playwright CI.
+
+## How to move items
+
+On discovering a reproducible failure, add exact steps, input settings, actual/expected outcome, affected commit and severity. When fixing, reference the regression test and move a short note to `docs/DEVELOPMENT_HISTORY.md` and `CHANGELOG.md` (if user-visible). Do not mark a RISK as BUG without evidence, or a BUG as verified fixed from code inspection alone.
