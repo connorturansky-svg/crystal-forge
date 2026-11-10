@@ -222,7 +222,12 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   const bounds=combined.boundingBox();
   const quality=triQuality(indexed,s.overhang||45);
   const volume=combined.volume(),parts=combined.decompose();
-  const disconnected=parts.length;cleanupAll(parts);
+  // Decomposition counts enclosed void surfaces separately: a sealed internal
+  // cavity has *negative* signed volume and is not a detached solid piece.
+  const shellVolumes=parts.map(x=>x.volume());
+  const disconnected=shellVolumes.filter(v=>v>Math.max(0.01,volume*1e-8)).length;
+  const internalCavities=shellVolumes.filter(v=>v<-.01).length;
+  cleanupAll(parts);
   if(disconnected>1)warnings.push(disconnected+' separate solids detected; the assembly is not one connected piece.');
   if(quality.unsafeTriangles>0)warnings.push('Overhang analysis found '+quality.unsafeTriangles+' potentially unsupported triangles. These are not guaranteed to need supports, but require checking in a slicer.');
   if(s.undersideAccess)warnings.push('The underside access pocket has a ceiling that may need supports. Consider switching the pocket off for supportless-first printing.');
@@ -242,7 +247,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(!printerFits)warnings.push('Model exceeds the '+s.printer+' build volume ('+volumeLimit.join(' × ')+' mm) in an upright orientation. Split the model or choose another machine.');
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
-  const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,
+  const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
     bounds:size,quality,hollowed,socketsCut,plannedSockets:chosen,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
