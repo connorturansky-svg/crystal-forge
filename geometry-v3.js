@@ -89,7 +89,7 @@ function hull(points){
 }
 export function baseGeometry(THREE,cs,s){
  const points=[];for(const c of cs.filter(c=>!c.hidden)){
-  const r=c.r*s.bottomScale*c.scale+1.8;
+  const r=c.r*s.bottomScale*Math.max(c.sx||c.scale||1,c.sz||c.scale||1)+1.8;
   for(let k=0;k<6;k++){const a=c.rotation+k*TAU/6;points.push([c.x+Math.cos(a)*r,c.z+Math.sin(a)*r])}
  }
  if(points.length<3)return new THREE.BufferGeometry();
