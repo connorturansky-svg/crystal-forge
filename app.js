@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 const $=id=>document.getElementById(id);
 const keys=['count','height','width','soft','base','wall','seed','pattern','resolution','hollow'];
-let state={count:9,height:130,width:95,soft:1.5,base:9,wall:1.2,seed:42,pattern:'spire',resolution:65,hollow:true};
+let state={count:9,height:130,width:95,soft:1.5,base:9,wall:1.2,seed:42,pattern:'spire',resolution:85,hollow:false};
 try{Object.assign(state,JSON.parse(localStorage.getItem('crystal-forge-m1')||'{}'))}catch{}
+// Geometry revision 0.1.1: keep solids as default until hollowing is validated.
 const suffix={count:'',height:' mm',width:' mm',soft:' mm',base:' mm',wall:' mm'};
 function labels(){for(const [k,v] of Object.entries(suffix))$(k+'V').textContent=state[k]+v}
 for(const k of keys){const el=$(k);el.value=state[k];if(el.type==='checkbox')el.checked=!!state[k];el.addEventListener('input',()=>{state[k]=el.type==='checkbox'?el.checked:el.type==='number'||el.type==='range'?Number(el.value):el.value;labels();schedule()})}labels();
@@ -23,10 +24,45 @@ function rng(seed){let x=(seed|0)||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;retur
 function crystals(){const r=rng(state.seed),a=[],W=state.width,H=state.height;for(let i=0;i<state.count;i++){const t=r()*Math.PI*2,spread=state.pattern==='dense'?.35:state.pattern==='spire'?.52:.8,rad=Math.sqrt(r())*W*.43*spread;let x=Math.cos(t)*rad,z=Math.sin(t)*rad,h=H*(.33+r()*.44);if(i===0&&state.pattern==='spire'){x=0;z=0;h=H}if(state.pattern==='fan'){x=(i/Math.max(1,state.count-1)-.5)*W*.7;z=(r()-.5)*W*.13;h=H*(.48+r()*.45)}if(state.pattern==='wild')h=H*(.3+r()*.7);let tx=(r()-.5)*.28,tz=(r()-.5)*.28;if(state.pattern==='fan')tx=x/W*.6;a.push({x,z,h,tx,tz,radius:Math.max(6,W/(Math.sqrt(state.count)*3.2))*(.7+r()*.6),rot:r()*Math.PI*2})}return a}
 function hex(x,z,r,rot){const a=Math.atan2(z,x)-rot,s=Math.PI/3,t=((a+s/2)%s+s)%s-s/2;return Math.hypot(x,z)*Math.cos(t)/Math.cos(s/2)-r}
 function smooth(a,b,k){if(k<=0)return Math.min(a,b);const h=Math.max(k-Math.abs(a-b),0)/k;return Math.min(a,b)-h*h*k*.25}
-function field(){const cs=crystals(),W=state.width,B=state.base,wall=state.wall,soft=state.soft;
-function crystal(c,x,y,z,inset){const yy=y-B,px=x-c.x-c.tx*Math.max(0,yy),pz=z-c.z-c.tz*Math.max(0,yy),tip=c.h*.72;const radius=c.radius*(yy>tip?Math.max(.02,1-(yy-tip)/Math.max(1,c.h-tip)):1);return Math.max(hex(px,pz,Math.max(.02,radius-inset),c.rot),B+inset-y,y-(B+c.h-inset))}
-function shell(x,y,z,inset){let d=Math.max(Math.hypot(x,z)-(W*.49-inset),inset-y,y-(B-inset));for(const c of cs)d=smooth(d,crystal(c,x,y,z,inset),Math.max(0,soft-inset*.5));return d}
-return(x,y,z)=>{const out=shell(x,y,z,0);if(!state.hollow)return out;const inside=shell(x,y,z,wall);return Math.max(out,-inside)}}
+function field(){
+ const cs=crystals(),W=state.width,B=state.base,soft=state.soft;
+ // A continuous hexagonal prism with a faceted tapered termination.
+ function crystal(c,x,y,z,shrink=0){
+   const yy=y-B,px=x-c.x-c.tx*Math.max(0,yy),pz=z-c.z-c.tz*Math.max(0,yy);
+   const h=c.h-shrink*2,rad=Math.max(.05,c.radius-shrink);
+   const start=h*.62;
+   const taper=yy>start?Math.max(.002,(h-yy)/Math.max(1,h-start)):1;
+   const radial=hex(px,pz,rad*taper,c.rot);
+   return Math.max(radial,B-y,y-(B+h));
+ }
+ function exterior(x,y,z){
+   const disk=Math.max(Math.hypot(x,z)-W*.49,-y,y-B);
+   let d=disk;
+   for(const c of cs)d=smooth(d,crystal(c,x,y,z),Math.min(soft,1.5));
+   return d;
+ }
+ // A conservative, underside-accessible cavity. It deliberately stops below
+ // the point of each crystal to avoid creating an unsupported internal roof.
+ // This is an experimental cavity, not a verified uniform-wall offset.
+ function cavity(x,y,z){
+   let d=1e6;
+   const clearance=Math.max(state.wall,2.6);
+   for(const c of cs){
+     if(c.radius<clearance+2)continue;
+     const yy=y-B,px=x-c.x-c.tx*Math.max(0,yy),pz=z-c.z-c.tz*Math.max(0,yy);
+     const h=c.h*.70;
+     const taper=yy>h*.65?Math.max(.002,(h-yy)/Math.max(1,h*.35)):1;
+     const radial=hex(px,pz,Math.max(.1,c.radius-clearance)*taper,c.rot);
+     const cut=Math.max(radial,-4-y,y-(B+h));
+     d=Math.min(d,cut);
+   }
+   return d;
+ }
+ return (x,y,z)=>{
+   const out=exterior(x,y,z);
+   return state.hollow?Math.max(out,-cavity(x,y,z)):out;
+ };
+}
 const offsets=[[0,0,0],[1,0,0],[1,1,0],[0,1,0],[0,0,1],[1,0,1],[1,1,1],[0,1,1]],tets=[[0,5,1,6],[0,1,2,6],[0,2,3,6],[0,3,7,6],[0,7,4,6],[0,4,5,6]];
 function polygonize(f,n){const W=state.width,H=state.height,B=state.base,minX=-W*.68-12,minZ=minX,minY=-5,maxX=-minX,maxZ=maxX,maxY=H+B+12,step=Math.max(maxX-minX,maxY-minY)/n,nx=Math.ceil((maxX-minX)/step),ny=Math.ceil((maxY-minY)/step),nz=nx,sx=nx+1,sy=ny+1,sz=nz+1;
 const vals=new Float32Array(sx*sy*sz),idx=(x,y,z)=>(z*sy+y)*sx+x;for(let z=0;z<sz;z++)for(let y=0;y<sy;y++)for(let x=0;x<sx;x++)vals[idx(x,y,z)]=f(minX+x*step,minY+y*step,minZ+z*step);
