@@ -29,6 +29,7 @@ try{
  await page.locator('#objectTree [data-id]').first().click();
  assert((await page.locator('#shapeScope').innerText()).includes('INDIVIDUAL CRYSTAL'),'Selected crystal scope shown');
  await page.locator('[data-state="tipRound"]').evaluate(el=>{el.value='4.5';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'null')?.crystals?.some(c=>c.shape?.tipRound===4.5),null,{timeout:8000});
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'null'));
  assert(saved.crystals.some(c=>c.shape?.tipRound===4.5),'Per-crystal tip rounding persisted');
  assert(saved.settings.tipRound!==4.5,'Individual shape left global rounding untouched');
