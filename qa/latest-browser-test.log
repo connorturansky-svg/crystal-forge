@@ -1,5 +1,5 @@
 Browser smoke tests: success
-Commit: 371b247fbba6ce5cb6ca87c121c0bd3d26da42ec
+Commit: 2ed0022f02a1fd27fc066afad97a55108b19d7b3
 
 Installation outcome: success
 Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
@@ -71,6 +71,6 @@ Chrome Headless Shell 158.0.8127.18 (playwright chromium-headless-shell v1254) d
 Theme, Help and Changelog verified
 Advanced editor and view controls verified
 Manufacturing prepared: ✓ Combined manufacturing mesh prepared. Review the warnings below and verify in Cura.
-Mounting / hollow / sockets: 16 6
+Mounting / hollow / sockets: Yes 6
 STL and 3MF browser downloads verified
 BROWSER SMOKE TEST PASSED
