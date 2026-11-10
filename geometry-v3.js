@@ -32,13 +32,14 @@ function meshFromTriangles(THREE,triangles){
  g.computeVertexNormals();return g;
 }
 export function crystalGeometry(THREE,c,s){
+ const shape={...s,...(c.shape||{})};
  const a=[],sides=c.family==='Cubic'?4:c.family==='Blade'?5:c.family==='Fantasy'?7:6;
- const height=Math.max(8,c.h),b=Math.max(1,c.r*s.bottomScale),top=Math.max(1,c.r*s.topScale);
- const tipH=height*(c.family==='Cubic'?.10:c.family==='Blade'?.43:c.family==='Shard'?.48:s.tipLength);
- const neck=height-tipH,steps=Math.max(2,s.roundSteps|0);
+ const height=Math.max(8,c.h),b=Math.max(1,c.r*shape.bottomScale),top=Math.max(1,c.r*shape.topScale);
+ const tipH=height*(c.family==='Cubic'?.10:c.family==='Blade'?.43:c.family==='Shard'?.48:shape.tipLength);
+ const neck=height-tipH,steps=Math.max(2,shape.roundSteps|0);
  const emit=(p,q,r)=>a.push(...p,...q,...r),quad=(p,q,r,t)=>{emit(p,q,r);emit(p,r,t)};
  function ring(y,radius){
-  const pts=[],round=clamp(s.cornerRadius,0,radius*.31),d=Math.max(0,y);
+  const pts=[],round=clamp(shape.cornerRadius,0,radius*.31),d=Math.max(0,y);
   for(let i=0;i<sides;i++){
     const angle=TAU*i/sides,pre=angle-TAU/sides,next=angle+TAU/sides;
     const pt=[Math.cos(angle)*radius,Math.sin(angle)*radius];
@@ -58,18 +59,18 @@ export function crystalGeometry(THREE,c,s){
  }
  const rings=[];
  function add(y,r){if(rings.length&&y<=rings[rings.length-1][0][1]+.01)return;rings.push(ring(y,r))}
- const rootRound=Math.min(s.cornerRadius*.5,Math.max(.0,height*.02));
+ const rootRound=Math.min(shape.cornerRadius*.5,Math.max(.0,height*.02));
  add(0,Math.max(.8,b-rootRound));if(rootRound>.05)add(rootRound,b);
  add(neck,top);
  // A deliberate *small* shoulder bevel, independent of side corner radius.
- if(s.shoulderRound>.01){
+ if(shape.shoulderRound>.01){
    rings.pop();
-   const d=clamp(s.shoulderRound,.02,Math.min(neck*.1,tipH*.15));
+   const d=clamp(shape.shoulderRound,.02,Math.min(neck*.1,tipH*.15));
    add(neck-d,top+(b-top)*d/Math.max(.01,neck));
    add(neck,top);
    add(neck+d,top*(1-d/tipH));
  }
- const tipFlat=Math.max(.05,Math.min(s.tipFlat*.5,top*.45)); // UI is diameter; ring expects radius
+ const tipFlat=Math.max(.05,Math.min(shape.tipFlat*.5,top*.45)); // UI is diameter; ring expects radius
  if(tipH>.1)add(height,tipFlat);
  const n=rings[0].length;
  for(let r=0;r<rings.length-1;r++)for(let i=0;i<n;i++){const j=(i+1)%n;quad(rings[r][i],rings[r+1][i],rings[r+1][j],rings[r][j])}
@@ -89,7 +90,7 @@ function hull(points){
 }
 export function baseGeometry(THREE,cs,s){
  const points=[];for(const c of cs.filter(c=>!c.hidden)){
-  const r=c.r*s.bottomScale*Math.max(c.sx||c.scale||1,c.sz||c.scale||1)+1.8;
+  const r=c.r*(c.shape?.bottomScale??s.bottomScale)*Math.max(c.sx||c.scale||1,c.sz||c.scale||1)+1.8;
   for(let k=0;k<6;k++){const a=c.rotation+k*TAU/6;points.push([c.x+Math.cos(a)*r,c.z+Math.sin(a)*r])}
  }
  if(points.length<3)return new THREE.BufferGeometry();
