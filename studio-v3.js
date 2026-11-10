@@ -397,13 +397,13 @@ function renderInfo(){
 }
 function updateAppearance(){
  const look=document.querySelector('[data-look].active')?.dataset.look||'solid';
- for(const m of [...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents]){
+ for(const m of [...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents,...(manufacturingMesh?[manufacturingMesh]:[])]){
   m.material.wireframe=look==='wire';
   m.material.transparent=look==='xray';
   m.material.opacity=look==='xray'?.38:1;
   m.material.depthWrite=look!=='xray';
   const selected=m===selectedMesh,c=selected?selectedCrystal():null;
-  const glow=!!s.glowPreview&&s.lightingMode!=='none';
+  const glow=!!s.glowPreview&&s.lightingMode!=='none'&&!(m===manufacturingMesh&&$('printHeatmap')?.checked);
   m.material.emissive.setHex(selected?(c?.locked?0x8b1b2c:0x0b8752):glow?Number(s.glowColour):0);
   m.material.emissiveIntensity=selected?.88:glow?.58:0;
  }
@@ -623,6 +623,7 @@ async function buildManufacturing(){
   }));
   manufacturingMesh.visible=false;
   scene.add(manufacturingMesh);
+  updateAppearance();
   renderManufactureReport(report);
   createHardwareAnnotations();
   $('prepareStatus').textContent='✓ Combined manufacturing mesh prepared. Review the warnings below and verify in Cura.';
