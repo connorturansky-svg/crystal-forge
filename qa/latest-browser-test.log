@@ -1,5 +1,5 @@
-Browser smoke tests: success
-Commit: 4a76a71d9b54112edbbe87b4de95899e3c17c184
+Browser smoke tests: failure
+Commit: fbb21bf9c895dab2c37a039b929c6d725e30e5d0
 
 Installation outcome: success
 Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
@@ -67,13 +67,17 @@ Chrome Headless Shell 158.0.8127.18 (playwright chromium-headless-shell v1254) d
 > test:browser
 > node tests/browser-smoke.mjs
 
-Retina viewport framing verified at DPR=2
-3D editor launched
-Theme, Help and Changelog verified
-Individual shaping, green selection, floating view and bottom snap verified
-Advanced editor and view controls verified
-Manufacturing prepared: ✓ Mesh prepared off-thread in 117.9 s. Review warnings.
-Repeat Prepare Print validated
-Mounting / hollow / sockets: Yes 1
-STL and 3MF browser downloads verified
-BROWSER SMOKE TEST PASSED
+Browser failure: page.waitForFunction: Timeout 40000ms exceeded.
+    at /home/runner/work/crystal-forge/crystal-forge/tests/browser-smoke.mjs:12:13
+Browser logs: PAGE ERROR Illegal return statement
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 40000ms exceeded.
+    at /home/runner/work/crystal-forge/crystal-forge/tests/browser-smoke.mjs:12:13 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.4
