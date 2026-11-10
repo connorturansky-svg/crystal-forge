@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {performance} from 'node:perf_hooks';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
-import {generateFormation,crystalGeometry,baseGeometry,crystalRootOffset} from '../geometry-v3.js';
+import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,crystalRootOffset} from '../geometry-v3.js';
 import {setThreeInstance,prepareFabrication} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 const settings={
@@ -25,8 +25,8 @@ function assembly(cfg){
  const crystals=generateFormation(cfg),meshes=[];
  for(const c of crystals){
   const mesh=new THREE.Mesh(crystalGeometry(THREE,c,cfg));
-  mesh.position.set(c.x,c.y+crystalRootOffset(crystals,cfg,c),c.z);
-  mesh.rotation.set(c.rx||0,c.rotation||0,c.rz||0,'XYZ');
+  mesh.position.set(c.x,c.y+crystalRootOffset(crystals,cfg,c,THREE),c.z);
+  mesh.quaternion.copy(crystalOrientation(THREE,c));
   mesh.scale.set(c.sx||1,c.sy||1,c.sz||1);
   mesh.userData.crystalId=c.id;
   meshes.push(mesh);

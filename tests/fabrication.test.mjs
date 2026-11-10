@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
-import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset} from '../geometry-v3.js';
+import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
 import {setThreeInstance,prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
@@ -62,8 +62,8 @@ function assembly(s){
   const crystals=generateFormation(s),meshes=[];
   for(const c of crystals){
     const m=new THREE.Mesh(crystalGeometry(THREE,c,s));
-    m.position.set(c.x,c.y+crystalRootOffset(crystals,s,c),c.z);
-    m.rotation.set(c.rx||0,c.rotation||0,c.rz||0,'XYZ');
+    m.position.set(c.x,c.y+crystalRootOffset(crystals,s,c,THREE),c.z);
+    m.quaternion.copy(crystalOrientation(THREE,c));
     m.scale.set(c.sx||c.scale||1,c.sy||c.scale||1,c.sz||c.scale||1);
     m.userData.crystalId=c.id; // Same object identity required by the live editor and light-tunnel solver.
     meshes.push(m);
@@ -117,6 +117,22 @@ for(const style of ['Fitted','Square','Circle','Rounded','Organic','Crystal crus
  const plan=verifyClearance(style,cs,q);
  assert(plan.sockets.length<=1,'Single-pixel mode never cuts multiple LED openings');
   assert(plan.collisions.length===0,'Base style '+style+' contains no hardware clashes');
+}
+// Global starting size and extreme taper vary thickness independently of height
+// while retaining sealed surfaces and deterministic per-crystal widths.
+{
+ const initial={...settings,count:12,crystalSize:1,topScale:1,bottomScale:1,widthRandomness:0};
+ const extreme={...initial,crystalSize:3.5,bottomScale:5,topScale:.15,widthRandomness:72};
+ const cs=generateFormation(initial),small=crystalGeometry(THREE,cs[0],initial),huge=crystalGeometry(THREE,cs[0],extreme);
+ assert.equal(geometryEdges(huge).open,0,'Extreme taper forms a closed shell');
+ assert.equal(cs[0].h,generateFormation(extreme)[0].h,'Global size does not change crystal height');
+ const a=new THREE.Box3().setFromBufferAttribute(small.getAttribute('position'));
+ const b=new THREE.Box3().setFromBufferAttribute(huge.getAttribute('position'));
+ assert(b.max.x-b.min.x>a.max.x-a.min.x,'Global diameter scales actual mesh width');
+ assert.deepEqual(crystalEndRatios(cs[0],extreme),crystalEndRatios(cs[0],extreme),'Width variation reproducible');
+ const auto=planHardware(generateFormation(extreme),{...extreme,baseType:'integrated',pixelPlacement:'auto',cutSockets:true});
+ assert(auto.sockets.length>0,'Automatic LED placement works with enlarged crystal roots');
+ small.dispose();huge.dispose();
 }
 // Per-crystal shape changes only the nominated crystal, not the global mesh.
 const override={...settings,tipRound:.4,spacing:55,angleRandomness:60};
@@ -173,6 +189,26 @@ function verifyDomeRoots(){
  console.log('All six dome styles seat crystal roots at 0–35 mm');
 }
 verifyDomeRoots();
+// Rigidly tilted crystals must be embedded around their WHOLE root perimeter,
+// not just centred at the dome surface.
+{
+ const cfg={...settings,count:12,baseHeight:25,baseDome:30,
+  leanMode:'Radial outward',leanAmount:100,angleRandomness:0,
+  crystalSize:1.4,widthRandomness:35};
+ const model=assembly(cfg);
+ for(let i=0;i<model.crystals.length;i++){
+  const m=model.meshes[i],c=model.crystals[i],attr=m.geometry.getAttribute('position');
+  m.updateMatrixWorld(true);
+  for(let k=0;k<attr.count;k++){
+   const v=new THREE.Vector3().fromBufferAttribute(attr,k);
+   if(Math.abs(v.y)>.001)continue;
+   v.applyMatrix4(m.matrixWorld);
+   assert(v.y<=baseSurfaceHeight(model.crystals,cfg,v.x,v.z)-2.35,
+    'Tilted root perimeter protrudes above mound');
+  }
+ }
+ model.meshes.forEach(m=>m.geometry.dispose());
+}
 
 for(const edge of [0,.75,2.5,5.5]){
  const cfg={...settings,baseDome:20,baseEdgeRadius:edge,baseWidth:8,tipRound:3.5};
@@ -182,6 +218,17 @@ for(const edge of [0,.75,2.5,5.5]){
  geo.dispose();
 }
 validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
+// Tabs must be physical fused geometry with THROUGH holes, not markers.
+const cfgTabs={...settings,count:8,baseHeight:25,baseDome:4,baseWidth:10,
+ mount:'Edge fixing tabs',tabCount:3,tabHolesPerTab:2,
+ tabHoleDiameter:4.5,tabThickness:5,tabWall:3,cutSockets:true};
+const plannedTabs=planHardware(generateFormation(cfgTabs),cfgTabs);
+assert(plannedTabs.tabs.length>0,'Edge tabs are included in planned layout');
+assert.equal(plannedTabs.tabHoles.length,2*plannedTabs.tabs.length,'Each placed tab carries two holes');
+const builtTabs=validate('edge-tabs',cfgTabs);
+assert.equal(builtTabs.edgeTabs,plannedTabs.tabs.length,'All planned tabs are fused into mesh');
+assert.equal(builtTabs.mountingHolesCut,plannedTabs.tabHoles.length,'All accepted tab holes are drilled');
+assert.equal(builtTabs.disconnected,1,'Tabs and body remain connected');
 const vaultCheck=validate('zero-infill-vault',{...settings,count:8,baseHeight:25,baseDome:12,
  baseVault:true,vaultSupportPitch:25,cutSockets:true,pixelCount:1,hollowCrystals:false});
 assert(vaultCheck.vault.applied,'Zero-infill base vault is cut in the manufacturing mesh');
@@ -207,6 +254,10 @@ assert.equal(full.disconnected,1,'Combined hollowing and socket cutting must pre
 assert.equal(full.internalCavities,0,'No sealed internal voids after LED and hollowing cuts');
 assert(full.hollowPorts>0,'At least one hollow spike receives a light passage');
 assert(full.lightPathScreened,'One-pixel model should have no sealed enclosed cavity in representative case');
+const blind=validate('rounded-blind-socket',{...settings,cutSockets:true,baseHeight:25,baseDome:12});
+assert(blind.socketCeilings.length>0,'Socket roofs reported');
+assert(blind.socketCeilings.every(c=>c.remainingWall>=2.79),'LED channels retain a physical roof');
+assert(blind.socketCeilings.every(c=>c.capRise>.2),'Blind LED channel roofs are curved');
 const domeLight=validate('domed-light-path',{...settings,baseHeight:25,baseDome:17,hollowCrystals:true,cutSockets:true});
 assert(domeLight.hollowPorts>0,'Dome-shifted crystal roots have light passages');
 assert(domeLight.baseFitsPixel,'Nominal 22 mm pixel fits a 25 mm base');
