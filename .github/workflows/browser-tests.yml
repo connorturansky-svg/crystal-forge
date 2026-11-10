@@ -1,0 +1,65 @@
+name: Browser smoke test
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'geometry-v3.js'
+      - 'studio-v3.js'
+      - 'fabrication-v1.js'
+      - 'tests/browser-smoke.mjs'
+      - 'package.json'
+      - '.github/workflows/browser-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install JS dependencies and headless Chromium
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Start local static host
+        run: |
+          python3 -m http.server 4321 > /tmp/crystal-forge-server.log 2>&1 &
+          sleep 2
+      - name: Exercise live browser and fabrication pipeline
+        id: browser
+        continue-on-error: true
+        run: |
+          mkdir -p qa
+          npm run test:browser > browser-run.log 2>&1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crystal-forge-browser-screenshot
+          path: qa/browser-smoke.png
+          if-no-files-found: ignore
+      - name: Store browser smoke test result
+        if: always()
+        env:
+          OUTCOME: ${{ steps.browser.outcome }}
+          REF: ${{ github.sha }}
+        run: |
+          mkdir -p qa
+          {
+            echo "Browser smoke tests: $OUTCOME"
+            echo "Commit: $REF"
+            echo
+            if [ -f browser-run.log ]; then cat browser-run.log; else echo "Browser test did not reach execution"; fi
+          } > qa/latest-browser-test.log
+          git config user.name "Crystal Forge CI"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add qa/latest-browser-test.log
+          git commit -m "ci: publish browser test results [skip ci]" || true
+          git push || true
+      - name: Fail on browser errors
+        if: steps.browser.outcome != 'success'
+        run: exit 1
