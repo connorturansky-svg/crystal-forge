@@ -675,12 +675,12 @@ $('loadFile').onchange=async e=>{
  }catch(err){alert('Could not load project: '+err.message)}
  e.target.value='';
 };
-let activePreparationWorker=null,activePreparationReject=null,preparationSerial=0;
+let activePreparationWorker=null,persistentFabricationWorker=null,activePreparationReject=null,preparationSerial=0;
 window.__crystalForgeWorkerStarts=0;
 function cancelActivePreparation(reason='Preparation cancelled'){
  if(!activePreparationWorker)return;
  const worker=activePreparationWorker;activePreparationWorker=null;
- worker.terminate();
+ worker.terminate();if(persistentFabricationWorker===worker)persistentFabricationWorker=null;
  const reject=activePreparationReject;activePreparationReject=null;
  if(reject)reject(new Error(reason));
 }
@@ -705,7 +705,8 @@ async function buildManufacturing(){
   const id=++preparationSerial;
   const result=await new Promise((resolve,reject)=>{
    let worker;
-   try{worker=new Worker(new URL('./fabrication-worker.js',import.meta.url),{type:'module'});}
+   try{worker=persistentFabricationWorker||new Worker(new URL('./fabrication-worker.js',import.meta.url),{type:'module'});
+    persistentFabricationWorker=worker;}
    catch(error){reject(error);return}
    activePreparationWorker=worker;activePreparationReject=reject;
    window.__crystalForgeWorkerStarts++;
@@ -713,20 +714,20 @@ async function buildManufacturing(){
     const data=event.data;if(id!==preparationSerial)return;
     if(data.type==='progress')$('prepareStatus').textContent=data.stage;
     else if(data.type==='complete'){
-     activePreparationWorker=null;activePreparationReject=null;worker.terminate();resolve(data);
+     activePreparationWorker=null;activePreparationReject=null;resolve(data);
     }else if(data.type==='error'){
-     activePreparationWorker=null;activePreparationReject=null;worker.terminate();
+     activePreparationWorker=null;activePreparationReject=null;worker.terminate();persistentFabricationWorker=null;
      reject(new Error(data.message||'Unspecified worker error'));
     }
    };
    worker.onerror=event=>{
-    activePreparationWorker=null;activePreparationReject=null;worker.terminate();
+    activePreparationWorker=null;activePreparationReject=null;worker.terminate();persistentFabricationWorker=null;
     reject(new Error('Print worker failed: '+(event.message||'unknown error')));
    };
    try{worker.postMessage({
      type:'prepare',components,crystals:structuredClone(crystals),settings:structuredClone(s)
     },components.map(input=>input.positions.buffer))}
-   catch(error){activePreparationWorker=null;activePreparationReject=null;worker.terminate();reject(error)}
+   catch(error){activePreparationWorker=null;activePreparationReject=null;worker.terminate();persistentFabricationWorker=null;reject(error)}
   });
   if(source!==sourceHash())throw new Error('Model changed during preparation. Please retry.');
   disposeManufacturing();
@@ -739,7 +740,7 @@ async function buildManufacturing(){
   }));
   manufacturingMesh.visible=false;scene.add(manufacturingMesh);
   updateAppearance();renderManufactureReport(result.report);createHardwareAnnotations();
-  $('prepareStatus').textContent='✓ Prepared off-thread in '+(result.report.preparationMs/1000).toFixed(1)+' s. Review warnings.';
+  $('prepareStatus').textContent='✓ Mesh prepared off-thread in '+(result.report.preparationMs/1000).toFixed(1)+' s. Review warnings.';
   $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;
   $('splitExportBtn').disabled=!s.splitParts;
   $('showManufacturing').checked=true;manufacturingView(true);applyPrintHeatmap();

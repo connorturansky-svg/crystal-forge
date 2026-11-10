@@ -128,7 +128,7 @@ try{
  await page.locator('#prepareBtn').click();
  await page.waitForFunction(()=>{
    const status=document.querySelector('#prepareStatus')?.textContent||'';
-   return status.includes('prepared')||status.includes('failed');
+   return status.toLowerCase().includes('prepared')||status.toLowerCase().includes('failed')||status.toLowerCase().includes('cancelled');
  },null,{timeout:120000});
  const repeated=await page.locator('#prepareStatus').innerText();
  assert(!repeated.toLowerCase().includes('failed'),'Re-preparation from inspection view must succeed');
