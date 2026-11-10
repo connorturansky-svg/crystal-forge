@@ -1,0 +1,7 @@
+{
+  "name":"crystal-forge",
+  "private":true,
+  "type":"module",
+  "scripts":{"test":"node tests/fabrication.test.mjs"},
+  "devDependencies":{"three":"0.165.0","manifold-3d":"3.5.4"}
+}
