@@ -73,19 +73,38 @@ export function crystalGeometry(THREE,c,s){
    add(neck,top);
    add(neck+d,top*(1-d/tipH));
  }
- // Tips remain faceted all the way up. The tiny end easing below is
- // independent of shaft corner-radius and NEVER creates a domed shoulder.
- const pointR=Math.max(.045,Math.min(Number(shape.tipFlat??.2)*.5,top*.20));
- const tipRound=clamp(Number(shape.tipRound??.45),0,2.0);
- // Trim a maximum 1.7 mm at the very end: two small frustum rings form a
- // subtle softened point, leaving the long triangular facets intact.
- const trim=Math.min(tipRound*.75,tipH*.11);
- const rAtTrim=top*Math.max(0,trim/Math.max(.1,tipH));
- if(trim>.015 && rAtTrim>pointR+.05){
-   add(height-trim,Math.max(pointR,rAtTrim));
-   add(height-trim*.38,Math.max(pointR*.9,rAtTrim*.49));
+ // The shaft and pyramidal tip retain deliberately flat faces. Only the very
+ // apex is rounded, using a circular arc TANGENT to the conical tip profile.
+ // A few rounded profile rings create real geometry, not just smooth shading.
+ // Unlike a broad shoulder bevel, this preserves the straight-sided silhouette.
+ const requestedR=Math.max(0,Number(shape.tipRound ?? .45));
+ const flatR=Math.max(.02,Number(shape.tipFlat ?? .25)*.5);
+ const slope=top/Math.max(1,tipH); // radial growth per mm below the theoretical point
+ const maxCapR=Math.min(top*.65,tipH*slope*Math.sqrt(1+slope*slope)*.32);
+ const capR=Math.min(requestedR,maxCapR);
+ if(capR>.035){
+   const tangentR=capR/Math.sqrt(1+slope*slope);
+   const centreY=height-capR*Math.sqrt(1+slope*slope)/slope;
+   const tangentY=centreY+capR*slope/Math.sqrt(1+slope*slope);
+   // Large user-specified flat faces intentionally truncate the tip. They
+   // don't force the cap to grow and swallow its faceted pyramid surfaces.
+   const endR=Math.max(.02,Math.min(flatR,capR*.82));
+   const endAngle=Math.asin(Math.min(.82,endR/capR));
+   const startAngle=Math.atan2(tangentR,tangentY-centreY);
+   if(tangentY>rings[rings.length-1][0][1]+.015 && startAngle>endAngle+.01){
+     add(tangentY,tangentR);
+     const steps=Math.max(5,Math.min(12,Math.round(Number(shape.roundSteps||3)+3)));
+     for(let i=1;i<=steps;i++){
+       const angle=startAngle+(endAngle-startAngle)*i/steps;
+       add(centreY+capR*Math.cos(angle),Math.max(.02,capR*Math.sin(angle)));
+     }
+   }else{
+     add(height,Math.max(.02,flatR));
+   }
+ }else{
+   // Corner radius = 0 produces a sharply faceted end with optional flat.
+   add(height,Math.max(.02,flatR));
  }
- if(tipH>.1)add(height,pointR);
  const n=rings[0].length;
  for(let r=0;r<rings.length-1;r++)for(let i=0;i<n;i++){const j=(i+1)%n;quad(rings[r][i],rings[r+1][i],rings[r+1][j],rings[r][j])}
  const base=rings[0],cap=rings[rings.length-1];
