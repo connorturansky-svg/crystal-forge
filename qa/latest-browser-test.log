@@ -1,5 +1,5 @@
 Browser smoke tests: success
-Commit: e72a9d0c4c1e0b0defefb7ab6072d33ce69cec47
+Commit: 17fd37470b2fcd003eaf4002a08e6f3afb572b76
 
 Installation outcome: success
 Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
@@ -72,7 +72,8 @@ Retina viewport framing verified at DPR=2
 Theme, Help and Changelog verified
 Individual shaping, green selection, floating view and bottom snap verified
 Advanced editor and view controls verified
-Manufacturing prepared: ✓ Mesh prepared off-thread in 0.4 s. Review warnings.
+Manual LED X/Z editor and invalid position screening verified
+Manufacturing prepared: ✓ Mesh prepared off-thread in 0.5 s. Review warnings.
 Repeat Prepare Print validated
 Mounting / hollow / sockets: No 1
 STL and 3MF browser downloads verified
