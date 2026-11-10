@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
-import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs} from '../geometry-v3.js';
+import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset} from '../geometry-v3.js';
 import {prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
 import {planHardware} from '../hardware-layout.js';
 
@@ -61,7 +61,7 @@ function assembly(s){
   const crystals=generateFormation(s),meshes=[];
   for(const c of crystals){
     const m=new THREE.Mesh(crystalGeometry(THREE,c,s));
-    m.position.set(c.x,c.y+s.baseHeight-2.5,c.z);
+    m.position.set(c.x,c.y+crystalRootOffset(crystals,s,c),c.z);
     m.rotation.set(c.rx||0,c.rotation||0,c.rz||0,'XYZ');
     m.scale.set(c.sx||c.scale||1,c.sy||c.scale||1,c.sz||c.scale||1);
     meshes.push(m);
@@ -69,7 +69,7 @@ function assembly(s){
   const base=new THREE.Mesh(baseGeometry(THREE,crystals,s));base.userData.isBase=true;meshes.push(base);
   for(const accent of baseAccentSpecs(crystals,s)){
    const m=new THREE.Mesh(crystalGeometry(THREE,accent,s));
-   m.position.set(accent.x,s.baseHeight-3,accent.z);
+   m.position.set(accent.x,baseSurfaceHeight(crystals,s,accent.x,accent.z)-3,accent.z);
    m.rotation.y=accent.rotation;meshes.push(m);
   }
   return {meshes,crystals};
@@ -116,6 +116,22 @@ assert.notDeepEqual(Array.from(meshA.getAttribute('position').array),
  Array.from(meshB.getAttribute('position').array),'Individual shape override changes mesh');
 meshA.dispose();meshB.dispose();
 safetyGeometryCheck();
+
+function verifyDomeRoots(){
+ for(const style of ['Fitted','Square','Circle','Rounded','Organic','Crystal crust']){
+  for(const dome of [0,8,17,35]){
+   const cfg={...settings,count:16,baseDome:dome,baseStyle:style};
+   const cs=generateFormation(cfg);
+   const roots=cs.map(c=>baseSurfaceHeight(cs,cfg,c.x,c.z));
+   assert(roots.every(v=>Number.isFinite(v)&&v>=cfg.baseHeight-.01&&v<=cfg.baseHeight+dome+.01),'Roots follow dome '+style+' '+dome);
+   assert(cs.every((c,i)=>Math.abs((roots[i]-crystalRootOffset(cs,cfg,c))-2.5)<.0001),'Crystal roots embed 2.5mm');
+   if(dome>0)assert(roots.some(y=>y>cfg.baseHeight+1),'Dome raises crystal roots');
+  }
+ }
+ console.log('All six dome styles seat crystal roots at 0–35 mm');
+}
+verifyDomeRoots();
+
 validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
 const solidMass=validate('solid',settings);
 const hollow=validate('hollow',{...settings,hollowCrystals:true});

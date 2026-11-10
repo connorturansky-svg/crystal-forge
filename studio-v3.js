@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
-import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,exportSTL} from './geometry-v3.js';
+import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
 import {loadManifold,prepareFabrication,saveSTL,save3MF,makeCalibrationStrip,splitPreparedMesh} from './fabrication-v1.js';
 import {planHardware} from './hardware-layout.js';
 
@@ -265,6 +265,7 @@ $('viewport').appendChild(renderer.domElement);
 const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;orbit.dampingFactor=.08;orbit.minDistance=20;orbit.maxDistance=1500;
 orbit.target.set(0,60,0);
+orbit.addEventListener('start',()=>{cameraTween=null});
 scene.add(new THREE.HemisphereLight(0xd9ebff,0x222b3d,2.2));
 const sun=new THREE.DirectionalLight(0xffffff,3.1);sun.position.set(110,250,135);scene.add(sun);
 const fill=new THREE.DirectionalLight(0x99b7ff,1.0);fill.position.set(-120,80,-60);scene.add(fill);
@@ -288,7 +289,7 @@ const baseMat=()=>new THREE.MeshStandardMaterial({color:s.colour,metalness:0,rou
 function disposeMesh(m){if(!m)return;m.geometry?.dispose();m.material?.dispose();scene.remove(m)}
 function makeCrystal(c){
  const mesh=new THREE.Mesh(crystalGeometry(THREE,c,s),crystalMat());
- mesh.position.set(c.x,c.y+(s.baseType==='none'?0:s.baseHeight-2.5),c.z);
+ mesh.position.set(c.x,c.y+crystalRootOffset(crystals,s,c),c.z);
  mesh.rotation.set(c.rx||0,c.rotation||0,c.rz||0,'XYZ');
  mesh.scale.set(c.sx||c.scale||1,c.sy||c.scale||1,c.sz||c.scale||1);
  mesh.userData.crystalId=c.id;mesh.visible=!c.hidden;
@@ -313,7 +314,7 @@ function rebuildBase(){
  scene.add(baseMesh);
  for(const c of baseAccentSpecs(crystals,s)){
   const mesh=new THREE.Mesh(crystalGeometry(THREE,c,s),baseMat());
-  mesh.position.set(c.x,s.baseHeight-3,c.z);mesh.rotation.y=c.rotation;
+  mesh.position.set(c.x,baseSurfaceHeight(crystals,s,c.x,c.z)-3,c.z);mesh.rotation.y=c.rotation;
   mesh.userData.isBaseAccent=true;scene.add(mesh);baseAccents.push(mesh);
  }
  updateAppearance();
@@ -324,7 +325,7 @@ function updateLEDs(){
  const visible=crystals.filter(c=>!c.hidden);if(!visible.length)return;
  for(let i=0;i<s.pixelCount;i++){
   const c=visible[i%visible.length],mesh=new THREE.Mesh(new THREE.SphereGeometry(2.7,10,8),new THREE.MeshBasicMaterial({color:i%3===0?0xffe79c:i%3===1?0xa6eaff:0xff88e6,transparent:true,opacity:.85}));
-  mesh.position.set(c.x+c.leanX*c.h*.2,c.y+(s.baseType==='none'?0:s.baseHeight)+c.h*.2,c.z+c.leanZ*c.h*.2);
+  mesh.position.set(c.x+c.leanX*c.h*.2,c.y+(s.baseType==='none'?0:baseSurfaceHeight(crystals,s,c.x,c.z))+c.h*.2,c.z+c.leanZ*c.h*.2);
   pixelGroup.add(mesh);
  }
 }
@@ -357,7 +358,7 @@ function applyGizmo(persistChanges=true){
  if(!selectedMesh)return;
  const c=crystals.find(c=>c.id===selectedMesh.userData.crystalId);if(!c)return;
  c.x=+selectedMesh.position.x.toFixed(3);
- c.y=+(selectedMesh.position.y-(s.baseType==='none'?0:s.baseHeight-2.5)).toFixed(3);
+ c.y=+(selectedMesh.position.y-crystalRootOffset(crystals,s,c)).toFixed(3);
  c.z=+selectedMesh.position.z.toFixed(3);
  c.rotation=+selectedMesh.rotation.y.toFixed(5);
  c.rx=+selectedMesh.rotation.x.toFixed(5);c.rz=+selectedMesh.rotation.z.toFixed(5);
@@ -418,23 +419,37 @@ function updateAppearance(){
   m.material.emissiveIntensity=selected?.88:glow?.58:0;
  }
 }
-function centreOrbitOnModel(){
- // OrbitControls pans around orbit.target, never the world origin.
- // Preserve the viewing direction and zoom distance when the cluster is
- // regenerated; only translate the camera and target to the model's centre.
+function modelBounds(){
  const box=new THREE.Box3();
- for(const m of crystalMeshes)if(m.visible)box.expandByObject(m);
- if(baseMesh?.visible)box.expandByObject(baseMesh);
- for(const m of baseAccents)if(m.visible)box.expandByObject(m);
- if(box.isEmpty())return;
- const centre=box.getCenter(new THREE.Vector3());
- const shift=centre.clone().sub(orbit.target);
- if(shift.lengthSq()<.000001)return;
- camera.position.add(shift);
- orbit.target.copy(centre);
- cameraTween=null;
- orbit.update();
+ const meshes=manufacturingMesh?.visible?[manufacturingMesh]:[...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents];
+ for(const mesh of meshes)if(mesh.visible)box.expandByObject(mesh);
+ return box;
 }
+function minFramingDistance(box){
+ const size=box.getSize(new THREE.Vector3()),radius=Math.max(1,size.length()*.5);
+ const fovy=THREE.MathUtils.degToRad(camera.fov);
+ const fovx=2*Math.atan(Math.tan(fovy*.5)*Math.max(.1,camera.aspect));
+ return radius/Math.max(.05,Math.sin(Math.min(fovy,fovx)*.5))*1.18;
+}
+function centreOrbitOnModel(){
+ const box=modelBounds();if(box.isEmpty())return;
+ const center=box.getCenter(new THREE.Vector3());
+ const direction=new THREE.Vector3().subVectors(camera.position,orbit.target);
+ let distance=direction.length();
+ if(distance<1e-5)direction.set(1,.7,1).normalize();
+ else direction.multiplyScalar(1/distance);
+ distance=Math.max(distance,minFramingDistance(box));
+ cameraTween=null;
+ camera.position.copy(center).addScaledVector(direction,distance);
+ orbit.target.copy(center);camera.lookAt(center);orbit.update();
+}
+window.__crystalForgeViewMetrics=()=>{
+ const box=modelBounds(),center=box.getCenter(new THREE.Vector3());
+ const p=center.clone().project(camera);
+ return {screen:[p.x,p.y,p.z],center:center.toArray(),
+  target:orbit.target.toArray(),camera:camera.position.toArray(),modelSize:box.getSize(new THREE.Vector3()).toArray(),
+  distance:camera.position.distanceTo(orbit.target)};
+};
 function focus(obj){
  if(!obj)return;
  obj.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(obj),center=box.getCenter(new THREE.Vector3());
@@ -449,7 +464,7 @@ function snapView(key){
  const box=new THREE.Box3();for(const m of [...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents])if(m.visible)box.expandByObject(m);
  if(manufacturingMesh?.visible)box.expandByObject(manufacturingMesh);
  const target=box.isEmpty()?new THREE.Vector3(0,45,0):box.getCenter(new THREE.Vector3());
- const dist=Math.max(125,box.getSize(new THREE.Vector3()).length()*1.65);
+ const dist=Math.max(125,minFramingDistance(box));
  const directions={iso:[1,.75,1],front:[0,.12,1],back:[0,.12,-1],left:[-1,.12,0],right:[1,.12,0],top:[0,1,.0001],bottom:[0,-1,.0001]};
  tweenCamera(target.clone().add(new THREE.Vector3(...(directions[key]||directions.iso)).normalize().multiplyScalar(dist)),target);
 }
@@ -727,4 +742,4 @@ document.addEventListener('keydown',e=>{
  if(e.key.toLowerCase()==='f'&&selectedMesh)focus(selectedMesh);
  if(e.key==='Delete'&&selectedId){crystals=crystals.filter(c=>c.id!==selectedId);selectedId=null;rebuild();snapshot()}
 });
-syncForm();rebuild();snapshot();snapView('iso');
+syncForm();rebuild();snapshot();

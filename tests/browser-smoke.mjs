@@ -50,6 +50,23 @@ try{
  await page.locator('#floatBtn').click();
  assert(await page.locator('#floatBtn.active').count(),'Floating inspection enabled');
  await page.locator('[data-view="bottom"]').click();
+
+ async function centred(stage){
+  const m=await page.evaluate(()=>window.__crystalForgeViewMetrics?.());
+  assert(m,'Missing view metrics '+stage);
+  assert(Math.abs(m.screen[0])<.06&&Math.abs(m.screen[1])<.06,'Model offscreen '+stage+' '+JSON.stringify(m));
+ }
+ await centred('before camera changes');
+ await page.locator('[data-state="baseDome"]').evaluate(el=>{el.value='33';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(400);await centred('larger dome');
+ await page.locator('[data-tab="design"]').click();
+ await page.locator('[data-state="height"]').evaluate(el=>{el.value='190';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(400);await centred('height change');
+ await page.locator('[data-view="left"]').click();await page.waitForTimeout(400);await centred('left snap');
+ await page.locator('[data-tab="build"]').click();
+ await page.locator('[data-state="baseDome"]').evaluate(el=>{el.value='4';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(400);await centred('smaller dome');
+
  console.log('Individual shaping, green selection, floating view and bottom snap verified');
  console.log('Advanced editor and view controls verified');
  await page.locator('[data-tab="build"]').click();

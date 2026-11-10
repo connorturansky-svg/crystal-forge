@@ -174,6 +174,30 @@ export function baseOutline(cs,s){
  return outer.map(p=>{const x=p[0]-cx,z=p[1]-cz,d=Math.hypot(x,z)||1;
    return[p[0]+x/d*margin,p[1]+z/d*margin]});
 }
+
+export function baseSurfaceHeight(cs,s,x,z){
+ if(s.baseType==='none')return 0;
+ const outline=baseOutline(cs,s),b=Math.max(3,Number(s.baseHeight)||3),d=Math.max(0,Number(s.baseDome)||0);
+ if(outline.length<3||d===0)return b;
+ const n=outline.length,cx=outline.reduce((v,p)=>v+p[0]/n,0),cz=outline.reduce((v,p)=>v+p[1]/n,0);
+ const vx=x-cx,vz=z-cz;if(Math.hypot(vx,vz)<1e-8)return b+d;
+ let best=Infinity;
+ for(let i=0;i<n;i++){
+  const p=outline[i],q=outline[(i+1)%n],ex=q[0]-p[0],ez=q[1]-p[1],den=vx*ez-vz*ex;
+  if(Math.abs(den)<1e-12)continue;
+  const rx=p[0]-cx,rz=p[1]-cz;
+  const ray=(rx*ez-rz*ex)/den,edge=(rx*vz-rz*vx)/den;
+  if(ray>0&&edge>=-1e-6&&edge<=1+1e-6)best=Math.min(best,ray);
+ }
+ const f=Number.isFinite(best)?Math.max(0,Math.min(1,1/best)):1;
+ // Match the straight triangles joining the six radial dome rings.
+ const v=f*6,k=Math.min(5,Math.floor(v)),f0=k/6,f1=(k+1)/6;
+ return b+d*(1-f0*f0)+(v-k)*d*(f0*f0-f1*f1);
+}
+export function crystalRootOffset(cs,s,c){
+ return s.baseType==='none'?0:baseSurfaceHeight(cs,s,c.x,c.z)-2.5;
+}
+
 export function baseAccentSpecs(cs,s){
  if(s.baseStyle!=='Crystal crust')return [];
  const outline=baseOutline(cs,s);if(outline.length<6)return [];
