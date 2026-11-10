@@ -58,6 +58,17 @@ try{
  const pieces=await page.locator('#reportPieces').innerText();
  assert.equal(pieces,'1','Export must contain one connected solid body');
  console.log('Manufacturing prepared:',status);
+ // Re-preparing while the merged manufacturing mesh is visible must retain
+ // the actual base and all crystals rather than exporting preview-hidden parts.
+ await page.locator('#prepareBtn').click();
+ await page.waitForFunction(()=>{
+   const status=document.querySelector('#prepareStatus')?.textContent||'';
+   return status.includes('prepared')||status.includes('failed');
+ },null,{timeout:120000});
+ const repeated=await page.locator('#prepareStatus').innerText();
+ assert(!repeated.toLowerCase().includes('failed'),'Re-preparation from inspection view must succeed');
+ assert.equal(await page.locator('#reportPieces').innerText(),'1','Repeat union remains one connected body');
+ console.log('Repeat Prepare Print validated');
  console.log('Mounting / hollow / sockets:',
   await page.locator('#reportHollow').innerText(),
   await page.locator('#reportSockets').innerText());
