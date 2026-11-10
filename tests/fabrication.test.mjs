@@ -55,6 +55,27 @@ for(const n of [1,5,10,16,40]){
  assert(plan.skippedPixels>=0,'planner reports any skipped pixel bores');
  console.log('clearance-'+n,JSON.stringify({pixels:plan.sockets.length,mounts:plan.mounts.length,skippedPixels:plan.skippedPixels,skippedMounts:plan.skippedMounts}));
 }
+// Low-poly design controls and six base profiles must produce real closed
+// solids, including organic shapes and the jagged mini-crystal style.
+for(const style of ['Fitted','Square','Circle','Rounded','Organic','Crystal crust']){
+ const q={...settings,baseStyle:style,baseWidth:7,spacing:48,angleRandomness:35,
+   tipRound:.4,pixelCount:1,lightingMode:'single',cutSockets:true};
+ const report=validate('base-'+style,q);
+ assert.equal(report.disconnected,1,'Base style '+style+' remains connected');
+ assert(report.triangleCount>100,'Base style '+style+' contains printable geometry');
+ const {crystals:cs}=assembly(q);
+ const plan=verifyClearance(style,cs,q);
+ assert(plan.sockets.length<=1,'Single-pixel mode never cuts multiple LED openings');
+}
+// Per-crystal shape changes only the nominated crystal, not the global mesh.
+const override={...settings,tipRound:.4,spacing:55,angleRandomness:60};
+const overridden=generateFormation(override);
+const crystal=overridden[0];
+const meshA=crystalGeometry(THREE,crystal,override);
+const meshB=crystalGeometry(THREE,{...crystal,shape:{tipRound:1.4,topScale:.55,cornerRadius:1.6}},override);
+assert.notDeepEqual(Array.from(meshA.getAttribute('position').array),
+ Array.from(meshB.getAttribute('position').array),'Individual shape override changes mesh');
+meshA.dispose();meshB.dispose();
 validate('solid',settings);
 const hollow=validate('hollow',{...settings,hollowCrystals:true});
 assert.equal(hollow.disconnected,1,'Hollowing must not fragment a connected base and cluster');
