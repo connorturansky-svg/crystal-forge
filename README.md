@@ -84,3 +84,9 @@ The older `app.js` file is an unreferenced archive of the first demonstration.
 - Manifold documentation: https://manifoldcad.org/docs/jsapi/documents/Using_Manifold.html
 - UltiMaker 3 Extended printer manual: https://um-support-files.ultimaker.com/manuals/user-manual/UM3/Ultimaker%203%20-%20User%20manual%20EN%20v1.4.pdf
 - UltiMaker 2+ data sheet: https://um-support-files.ultimaker.com/Product-datasheet/Other/Ultimaker%202%2B%20series%20-%20Product%20data%20sheet.pdf
+
+## Working across ChatGPT Chat and Codex Desktop
+
+Start with [AGENTS.md](AGENTS.md) followed by [AI handover](docs/AI_HANDOVER.md). The [project vision](docs/PROJECT_VISION.md), [feature contracts](docs/FEATURE_SPECIFICATIONS.md), [design decision log](docs/DESIGN_DECISIONS.md), [architecture](docs/ARCHITECTURE.md), [development history](docs/DEVELOPMENT_HISTORY.md), [roadmap](docs/ROADMAP.md), [testing guide](docs/TESTING.md) and [collaboration workflow](docs/COLLABORATION.md) provide persistent intent and implementation context. GitHub is the canonical committed source; develop features on task branches and review PRs before merging to production main.
+
+Lightweight syntax/wiring checks: `npm run test:static`. Existing representative Manifold tests: `npm test`. Chromium smoke tests: `npm run test:browser` (start local web server first). Timing sample: `npm run test:benchmark`. These checks do not replace Cura or physical prints.

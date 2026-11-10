@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:static": "node tests/static.test.mjs",
     "test": "node tests/fabrication.test.mjs",
-    "test:browser": "node tests/browser-smoke.mjs"
+    "test:browser": "node tests/browser-smoke.mjs",
+    "test:benchmark": "node tests/benchmark.mjs"
   },
   "devDependencies": {
     "three": "0.165.0",
