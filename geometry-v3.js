@@ -7,6 +7,29 @@ export function seeded(seed){let x=(Number(seed)|0)||1;return()=>{x^=x<<13;x^=x>
 export const families=['Quartz','Shard','Blade','Cubic','Double terminated','Fantasy'];
 export const patterns=['Central Spire','Dense Cluster','Fan','Geode / Crescent','Wall Growth','Organic / Wild'];
 export const leanModes=['Organic / natural','One direction','Criss-cross','Radial outward','Radial inward'];
+// Stable per-object variation: changing sliders does not re-roll crystal IDs,
+ // move objects, or change a previously selected crystal.
+function signedHash(value,salt){
+ let h=2166136261;
+ for(const ch of String(value||'crystal')+salt){h=Math.imul(h^ch.charCodeAt(0),16777619)}
+ return ((h>>>0)/2147483647.5)-1;
+}
+export function crystalEndRatios(c,s){
+ const shape={...s,...(c.shape||{})};
+ const variability=clamp(Number(s.widthRandomness||0)/100,0,1);
+ const bottom=Math.max(.08,Number(shape.bottomScale??1)*(1+variability*.88*signedHash(c.id,'bottom')));
+ const top=Math.max(.08,Number(shape.topScale??.8)*(1+variability*.88*signedHash(c.id,'top')));
+ return {bottom,top,size:Math.max(.35,Number(s.crystalSize)||1)};
+}
+// Yaw/manual rotations remain intact. The lean is a RIGID local rotation,
+// rather than a shear of every vertex as the crystal grows.
+export function crystalOrientation(THREE,c){
+ const manual=new THREE.Quaternion().setFromEuler(new THREE.Euler(c.rx||0,c.rotation||0,c.rz||0,'XYZ'));
+ const axis=new THREE.Vector3(c.leanX||0,1,c.leanZ||0).normalize();
+ const tilt=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),axis);
+ return manual.multiply(tilt);
+}
+
 export function generateFormation(s){
  const rand=seeded(s.seed),n=Math.max(1,Math.round(s.count||1)),
   large=Math.max(1,Math.round(n*.20)),medium=Math.max(1,Math.round(n*.32));
@@ -46,8 +69,8 @@ export function generateFormation(s){
  // overlapping, including the displacement caused by their lean.
  if(n>1&&spacing>0){
   let required=1;
-  const ext=c=>c.r*Math.max(Number(s.bottomScale??1),Number(s.topScale??.8),1)+
-   c.h*Math.hypot(c.leanX,c.leanZ)+Math.max(0,Number(s.tipRound??3.5));
+  const ext=c=>{const ratios=crystalEndRatios(c,s);return c.r*ratios.size*Math.max(ratios.bottom,ratios.top,1)+
+   c.h*Math.hypot(c.leanX,c.leanZ)+Math.max(0,Number(s.tipRound??3.5));};
   for(let i=0;i<n;i++)for(let j=0;j<i;j++){
    const d=Math.hypot(out[i].x-out[j].x,out[i].z-out[j].z);
    required=Math.max(required,(ext(out[i])+ext(out[j])+Math.max(15,s.width*.1))/Math.max(.00001,d));
@@ -66,16 +89,18 @@ function meshFromTriangles(THREE,triangles){
 export function crystalGeometry(THREE,c,s){
  const shape={...s,...(c.shape||{})};
  const a=[],sides=c.family==='Cubic'?4:c.family==='Blade'?5:c.family==='Fantasy'?7:6;
- const height=Math.max(8,c.h),b=Math.max(1,c.r*shape.bottomScale),top=Math.max(1,c.r*shape.topScale);
+ const ratios=crystalEndRatios(c,s);
+ const size=String(c.id||'').startsWith('base-accent-')?1:ratios.size;
+ const height=Math.max(8,c.h),b=Math.max(.35,c.r*size*ratios.bottom),top=Math.max(.35,c.r*size*ratios.top);
  const tipH=height*(c.family==='Cubic'?.10:c.family==='Blade'?.43:c.family==='Shard'?.48:shape.tipLength);
  const neck=height-tipH,steps=Math.max(2,shape.roundSteps|0);
  const emit=(p,q,r)=>a.push(...p,...q,...r),quad=(p,q,r,t)=>{emit(p,q,r);emit(p,r,t)};
  function ring(y,radius){
-  const pts=[],round=clamp(shape.cornerRadius,0,radius*.31),d=Math.max(0,y);
+  const pts=[],round=clamp(shape.cornerRadius,0,radius*.31);
   for(let i=0;i<sides;i++){
     const angle=TAU*i/sides,pre=angle-TAU/sides,next=angle+TAU/sides;
     const pt=[Math.cos(angle)*radius,Math.sin(angle)*radius];
-    if(round<=.001){pts.push([pt[0]+c.leanX*d,y,pt[1]+c.leanZ*d]);continue}
+    if(round<=.001){pts.push([pt[0],y,pt[1]]);continue}
     const prev=[Math.cos(pre)*radius,Math.sin(pre)*radius],after=[Math.cos(next)*radius,Math.sin(next)*radius];
     function norm(v){const len=Math.hypot(...v)||1;return v.map(x=>x/len)}
     const u=norm([prev[0]-pt[0],prev[1]-pt[1]]),v=norm([after[0]-pt[0],after[1]-pt[1]]);
@@ -85,7 +110,7 @@ export function crystalGeometry(THREE,c,s){
     const end=Math.atan2(pt[1]+v[1]*travel-center[1],pt[0]+v[0]*travel-center[0]);
     const sweep=(end-start+TAU)%TAU;
     for(let k=0;k<=steps;k++){const t=start+sweep*k/steps;
-      pts.push([center[0]+Math.cos(t)*round+c.leanX*d,y,center[1]+Math.sin(t)*round+c.leanZ*d])
+      pts.push([center[0]+Math.cos(t)*round,y,center[1]+Math.sin(t)*round])
     }
   }return pts;
  }
@@ -142,7 +167,7 @@ export function crystalGeometry(THREE,c,s){
  const n=rings[0].length;
  for(let r=0;r<rings.length-1;r++)for(let i=0;i<n;i++){const j=(i+1)%n;quad(rings[r][i],rings[r+1][i],rings[r+1][j],rings[r][j])}
  const base=rings[0],cap=rings[rings.length-1];
- const baseC=[0,0,0],tipC=[c.leanX*apexY,apexY,c.leanZ*apexY];
+ const baseC=[0,0,0],tipC=[0,apexY,0];
  for(let i=0;i<n;i++){const j=(i+1)%n;emit(baseC,base[i],base[j]);emit(tipC,cap[j],cap[i])}
  return meshFromTriangles(THREE,a);
 }
@@ -159,7 +184,8 @@ function hull(points){
 export function baseOutline(cs,s){
  const pts=[];
  for(const c of cs.filter(c=>!c.hidden)){
-  const r=c.r*(c.shape?.bottomScale??s.bottomScale)*Math.max(c.sx||c.scale||1,c.sz||c.scale||1)+1;
+  const end=crystalEndRatios(c,s);
+  const r=c.r*end.size*end.bottom*Math.max(c.sx||c.scale||1,c.sz||c.scale||1)+1;
   for(let k=0;k<6;k++){const a=c.rotation+k*TAU/6;pts.push([c.x+Math.cos(a)*r,c.z+Math.sin(a)*r])}
  }
  if(pts.length<3)return[];
@@ -240,8 +266,26 @@ export function baseSurfaceHeight(cs,s,x,z){
  const v=fraction*6,k=Math.min(5,Math.floor(v)),f0=k/6,f1=(k+1)/6;
  return base+dome*(1-f0*f0)+(v-k)*dome*(f0*f0-f1*f1);
 }
-export function crystalRootOffset(cs,s,c){
- return s.baseType==='none'?0:baseSurfaceHeight(cs,s,c.x,c.z)-2.5;
+export function crystalRootOffset(cs,s,c,THREE){
+ if(s.baseType==='none')return 0;
+ const centre=baseSurfaceHeight(cs,s,c.x,c.z);
+ if(!THREE)return centre-2.5;
+ const ratios=crystalEndRatios(c,s);
+ const radius=Math.max(.35,c.r*ratios.size*ratios.bottom);
+ const sx=c.sx??c.scale??1,sz=c.sz??c.scale??1;
+ const q=crystalOrientation(THREE,c),v=new THREE.Vector3();
+ let safe=centre;
+ // The ENTIRE tipped, rotated base ring must remain under the actual mound
+ // surface. Checking the centre alone left several roots protruding visibly.
+ for(let k=0;k<24;k++){
+   const angle=k*TAU/24;
+   v.set(Math.cos(angle)*radius*sx,0,Math.sin(angle)*radius*sz).applyQuaternion(q);
+   const surface=baseSurfaceHeight(cs,s,c.x+v.x,c.z+v.z);
+   safe=Math.min(safe,surface-v.y);
+ }
+ // Keep a real overlapping root band for Manifold union, not a tangent touch.
+ // Positive per-object Y edits cannot expose a root above the mound.
+ return safe-3-Math.max(0,c.y||0);
 }
 
 export function baseAccentSpecs(cs,s){
