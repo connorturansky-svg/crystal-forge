@@ -1,5 +1,5 @@
 Fabrication smoke tests: success
-Commit: dd434489cac345615e66fe5ab0d725b1f6326cc6
+Commit: f5a1a9c0589c8e6e9961c2241309251ecd941984
 
 
 > test
@@ -7,13 +7,13 @@ Commit: dd434489cac345615e66fe5ab0d725b1f6326cc6
 
 solid {"triangles":1578,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
 hollow {"triangles":3622,"connected":1,"hollow":1,"sockets":0,"warningCount":2}
-sockets {"triangles":1952,"connected":1,"hollow":0,"sockets":3,"warningCount":3}
-hollow-and-sockets {"triangles":4038,"connected":1,"hollow":1,"sockets":3,"warningCount":4}
+sockets {"triangles":1706,"connected":1,"hollow":0,"sockets":1,"warningCount":3}
+hollow-and-sockets {"triangles":3754,"connected":1,"hollow":1,"sockets":1,"warningCount":3}
 mount-Wall screws {"triangles":1850,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
 mount-Magnet inserts {"triangles":1834,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
 mount-Threaded insert M3 {"triangles":1834,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
-mount-Custom dual holes {"triangles":1846,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
-full-assembly {"triangles":4266,"connected":1,"hollow":1,"sockets":3,"warningCount":5}
+mount-Custom dual holes {"triangles":1846,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
+full-assembly {"triangles":4010,"connected":1,"hollow":1,"sockets":1,"warningCount":5}
 calibration 11.8,11.9,12,12.1,12.2
 Export check {"stlTriangles":1578,"baseZ":"0.00","tipZ":"114.91","mfBytes":104214}
 Manufacturing smoke tests passed.
