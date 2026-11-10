@@ -1,5 +1,15 @@
 # Crystal Forge — Changelog
 
+## v0.8.0 — 10 November 2026 (feature branch, awaiting PR review)
+
+- Added global crystal starting thickness (50–400%), signed top/bottom width adjustments (-85% to +400%) and deterministic individual width randomness.
+- Replaced vertex shearing with true whole-crystal lean rotation, seated the tilted root perimeter inside the mound, and introduced gentler adjustable preview lighting.
+- Updated automatic pixel locations to account for the scaled root and search the whole base; manual placement is now a persistent click-to-add tool with a moving circular preview, orbit lock and Escape/Stop.
+- LED channel ceilings are rounded and blind, leaving a modeled minimum 2.8 mm roof; retain full-diameter underside entrance and optional vault side vents.
+- Added semicircular edge fixing tabs with control over count, holes per tab, hole diameter, thickness and plastic web. Build previews tabs and holes; valid geometry is fused/drilled in the print mesh.
+- Added keyboard-focus/hover control explanations and new automated cases for placement, taper, root seating, bores and tabs.
+- Physical validation remains required for Cura slicing, tab strength, printed LED fit, lighting continuity and support-free mound roofs.
+
 ## v0.7.0 — 10 November 2026
 
 - Fixed One direction, Criss-cross and Radial inward/outward presets by compensating each crystal's local Y rotation; regenerated crystal leans now align consistently in world space.

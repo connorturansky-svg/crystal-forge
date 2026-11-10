@@ -1,6 +1,6 @@
 # AI handover — read immediately after AGENTS.md
 
-**Prepared:** 10 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Current app release on main:** v0.7.0. **Documentation task branch:** `docs/shared-chatgpt-codex-workflow` (separate from production main).
+**Updated:** 10 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production app:** v0.7.0. **Unmerged feature work:** v0.8.0 on `feat/global-crystal-diameter` (PR #3).
 
 ## One-minute context
 
@@ -20,14 +20,15 @@ See `docs/FEATURE_SPECIFICATIONS.md` for controls/acceptance, `docs/DESIGN_DECIS
 
 ## Current work / status
 
-The user asked to add **shared ChatGPT + Codex documentation and reliable PR testing**, not to change the appearance or bump the live app version. This task is being implemented on `docs/shared-chatgpt-codex-workflow`: `AGENTS.md`, design/feature/decision/architecture/history/roadmap/testing/handover/collaboration documents, static checks and PR CI. **Do not merge without confirming the actual branch tests and reviewing the PR.**
+The shared AI documentation PR #2 was merged into main. The next user-directed refinement is developed in **PR #3**, branch `feat/global-crystal-diameter`. It includes new global crystal width and extreme taper controls with repeatable randomness, real rigid lean, buried root seating, lower/adjustable studio lighting, robust automatic pixel placement, a continuous valid/invalid circular LED cursor, rounded blind LED bores, configurable perimeter fixing tabs, and hover/focus explanations.
+
+The app is **not yet deployed from this branch**. Tests on GitHub Actions must pass for the exact latest PR commit; do not infer physical safety, continuous light paths or Cura support-free performance from a manifold topology report.
 
 ## Immediate priorities
 
-1. Verify branch static syntax/import checks and any PR-triggered existing browser/Manifold tests for the exact PR commit.
-2. Review PR for no accidental changes to production source, UI or `pages.yml`. If CI logs write to main on PR, guard them.
-3. After review, merge the documentation/test changes to main and update this handover with the new merged commit; no app version increment for a documentation-only PR.
-4. For feature work following this setup, priority is real Cura/physical validation of vaulted roofs + LED light paths, end-to-end manual hole interactions and systematic performance/legacy-file tests.
+1. Review exact-head static, browser (two-click continuous LED mode, hover help, tab UI), and Manifold fabrication tests (tab fusion/hole counts, blind bore roof, extreme taper/root seating).
+2. Inspect the new appearance in a real browser and inspect prepared STL in Cura to verify no top-through LED holes, physical hole fit and tab clearance. Print-test tie/bolt tabs before mounting anything overhead.
+3. Once approved, merge PR #3 into production main and record deployment SHA in this handover. No independent agent should commit directly to main during PR review.
 
 ## Unresolved risks / do not overclaim
 
