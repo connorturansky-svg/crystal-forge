@@ -138,7 +138,9 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div id="multiplePixelsRow" class="control advanced-only"><label>Pixel quantity <output data-out="pixelCount"></output></label><input data-state="pixelCount" type="range" min="1" max="60" step="1"></div>
 <div class="control"><label>Nominal socket diameter <output data-out="pixelDiameter"></output></label><input data-state="pixelDiameter" type="range" min="10" max="15" step=".1"></div>
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
-<p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p>
+<p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p><div class="divider"></div><label class="checks"><input data-state="glowPreview" type="checkbox"> Preview the whole cluster glowing one colour</label>
+<div class="control"><label>Simulated LED colour</label><select data-state="glowColour"><option value="0x77c4ff">Ice blue</option><option value="0xffa3df">Pink</option><option value="0xa58bff">Purple</option><option value="0xffdb8b">Warm white</option><option value="0x9affbc">Green</option><option value="0xffffff">Cool white</option></select></div>
+<p class="note">Illustrative glow only — real brightness depends on filament translucency, wall thickness, cavity connectivity and LED placement.</p>
 <div class="note warning">When enabled, Print → Prepare Print cuts nominal socket holes using the Manifold engine. Check physical fit against your actual pixels. Retention lips and cable strain relief are not yet included.</div>
 </div></div>
 <div class="card purple advanced-only"><div class="cardtitle"><span class="symbol">⚙</span> Mounting & modularity</div><div class="cardbody">
