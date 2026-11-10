@@ -7,6 +7,39 @@ import {planHardware} from '../hardware-layout.js';
 
 const wasm=await Module();wasm.setup();
 
+function geometryEdges(g){
+ const p=g.attributes.position.array,edges=new Map();
+ const v=i=>[...p.slice(i,i+3)].map(x=>Math.round(x*1e4)).join(',');
+ for(let i=0;i<p.length;i+=9)for(let j=0;j<3;j++){
+  const endpoints=[v(i+j*3),v(i+((j+1)%3)*3)].sort().join(':');
+  edges.set(endpoints,(edges.get(endpoints)||0)+1);
+ }
+ return {open:[...edges.values()].filter(x=>x!==2).length,triangles:p.length/9};
+}
+function safetyGeometryCheck(){
+ // Geometry alone cannot certify a child-safe product, but it must form a
+ // smooth profile with many intermediate rings, no flat polygon at the apex
+ // and no open edges.
+ const q={...settings,count:5,tipRound:4,tipFlat:0};
+ const model=assembly(q);
+ const crystal=crystalGeometry(THREE,model.crystals[0],q);
+ const edges=geometryEdges(crystal);
+ assert.equal(edges.open,0,'Broad rounded cap must be closed');
+ const ys=crystal.getAttribute('position').array.filter((_,i)=>i%3===1);
+ assert(Math.max(...ys)<q.height+1,'Rounded apex should not form a sharp overheight spike');
+ assert(edges.triangles>180,'Rounded cap has enough subdivisions to form a curve');
+ crystal.dispose();model.meshes.forEach(x=>x.geometry.dispose());
+ const moundSettings={...q,baseDome:24};
+ const cs=generateFormation(moundSettings),mound=baseGeometry(THREE,cs,moundSettings);
+ const moundEdge=geometryEdges(mound);
+ assert.equal(moundEdge.open,0,'Domed base must be closed');
+ const topY=Math.max(...mound.getAttribute('position').array.filter((_,i)=>i%3===1));
+ assert(topY>=moundSettings.baseHeight+23,'Dome must raise centre independently of base height');
+ mound.dispose();
+ console.log('Rounded cap and domed base mesh checks passed',edges.triangles,moundEdge.triangles);
+}
+
+
 function verifyClearance(label,crystals,settings){
  const plan=planHardware(crystals,settings);
  assert.equal(plan.collisions.length,0,label+' has no overlapping cut features');
@@ -82,7 +115,9 @@ const meshB=crystalGeometry(THREE,{...crystal,shape:{tipRound:1.4,topScale:.55,c
 assert.notDeepEqual(Array.from(meshA.getAttribute('position').array),
  Array.from(meshB.getAttribute('position').array),'Individual shape override changes mesh');
 meshA.dispose();meshB.dispose();
-const solidMass=validate('solid',settings);
+const solidMass=safetyGeometryCheck();
+validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
+validate('solid',settings);
 const hollow=validate('hollow',{...settings,hollowCrystals:true});
 assert(hollow.volumeMm3<solidMass.volumeMm3,'Hollowing must reduce physical material volume');
 console.log('balloon-material-ratio', (hollow.volumeMm3/solidMass.volumeMm3).toFixed(3), 'sealed-voids',hollow.internalCavities);
