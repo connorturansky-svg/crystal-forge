@@ -146,7 +146,7 @@ function renderManufactureReport(report){
  f('reportMass',report.materialPLAgrams.toFixed(1)+' g');
  f('reportSockets',report.socketsCut);
  f('reportMounting',report.mountingHolesCut||0);
- f('reportHollow',report.hollowed);
+ f('reportHollow',report.hollowed?'Yes':'No');
  f('reportOverhang',report.quality.unsafeTriangles.toLocaleString());
  f('reportOrientation',report.orientation?.name||'Base down');
  const list=report.warnings;
