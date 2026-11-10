@@ -1,0 +1,27 @@
+name: Verify Crystal Forge fabrication
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'geometry-v3.js'
+      - 'fabrication-v1.js'
+      - 'studio-v3.js'
+      - 'package.json'
+      - 'tests/**'
+      - '.github/workflows/fabrication-tests.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install fixed geometry toolchain
+        run: npm install --no-audit --no-fund
+      - name: Test crystal geometry and Manifold exports
+        run: npm test
