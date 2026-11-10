@@ -1,5 +1,5 @@
-Browser smoke tests: failure
-Commit: 2c9c74eff1dc87df45ab36603a77f53276ffc979
+Browser smoke tests: success
+Commit: 9664952bc70abcd17030db6029d66e8ecccc7652
 
 Installation outcome: success
 Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
@@ -69,20 +69,10 @@ Chrome Headless Shell 158.0.8127.18 (playwright chromium-headless-shell v1254) d
 
 3D editor launched
 Theme, Help and Changelog verified
-Browser failure: AssertionError [ERR_ASSERTION]: Per-crystal tip rounding persisted
-    at file:///home/runner/work/crystal-forge/crystal-forge/tests/browser-smoke.mjs:33:2
-node:internal/modules/run_main:123
-    triggerUncaughtException(
-    ^
-
-AssertionError [ERR_ASSERTION]: Per-crystal tip rounding persisted
-    at file:///home/runner/work/crystal-forge/crystal-forge/tests/browser-smoke.mjs:33:2 {
-  generatedMessage: false,
-  code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
-  diff: 'simple'
-}
-
-Node.js v22.23.4
+Individual shaping, green selection, floating view and bottom snap verified
+Advanced editor and view controls verified
+Manufacturing prepared: ✓ Combined manufacturing mesh prepared. Review the warnings below and verify in Cura.
+Repeat Prepare Print validated
+Mounting / hollow / sockets: Yes 1
+STL and 3MF browser downloads verified
+BROWSER SMOKE TEST PASSED
