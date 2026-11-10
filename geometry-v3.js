@@ -73,42 +73,38 @@ export function crystalGeometry(THREE,c,s){
    add(neck,top);
    add(neck+d,top*(1-d/tipH));
  }
- // The shaft and pyramidal tip retain deliberately flat faces. Only the very
- // apex is rounded, using a circular arc TANGENT to the conical tip profile.
- // A few rounded profile rings create real geometry, not just smooth shading.
- // Unlike a broad shoulder bevel, this preserves the straight-sided silhouette.
- const requestedR=Math.max(0,Number(shape.tipRound ?? .45));
- const flatR=Math.max(.02,Number(shape.tipFlat ?? .25)*.5);
- const slope=top/Math.max(1,tipH); // radial growth per mm below the theoretical point
- const maxCapR=Math.min(top*.65,tipH*slope*Math.sqrt(1+slope*slope)*.32);
- const capR=Math.min(requestedR,maxCapR);
- if(capR>.035){
-   const tangentR=capR/Math.sqrt(1+slope*slope);
-   const centreY=height-capR*Math.sqrt(1+slope*slope)/slope;
-   const tangentY=centreY+capR*slope/Math.sqrt(1+slope*slope);
-   // Large user-specified flat faces intentionally truncate the tip. They
-   // don't force the cap to grow and swallow its faceted pyramid surfaces.
-   const endR=Math.max(.02,Math.min(flatR,capR*.82));
-   const endAngle=Math.asin(Math.min(.82,endR/capR));
+ // Child-friendly rounded cap: a spherical cap tangent to the pyramidal
+ // flanks. The chosen radius is a REAL curvature radius in millimetres.
+ // Unlike a tiny point fillet, its tangent starts BELOW the old sharp tip,
+ // so there is no pointed nub and no abrupt, flat cut across the top.
+ const slope=top/Math.max(1,tipH);
+ const requested=Math.max(.3,Number(shape.tipRound??3));
+ const maximal=Math.max(.3,tipH*slope*Math.sqrt(1+slope*slope)*.83);
+ const capRadius=Math.min(requested,maximal);
+ const tangentR=capRadius/Math.sqrt(1+slope*slope);
+ const centreY=height-capRadius*Math.sqrt(1+slope*slope)/slope;
+ const tangentY=centreY+capRadius*slope/Math.sqrt(1+slope*slope);
+ // Remove the neck if a very small crystal would otherwise reverse order.
+ const shoulderY=rings[rings.length-1][0][1];
+ if(tangentY>shoulderY+.015){
+   add(tangentY,tangentR);
    const startAngle=Math.atan2(tangentR,tangentY-centreY);
-   if(tangentY>rings[rings.length-1][0][1]+.015 && startAngle>endAngle+.01){
-     add(tangentY,tangentR);
-     const steps=Math.max(5,Math.min(12,Math.round(Number(shape.roundSteps||3)+3)));
-     for(let i=1;i<=steps;i++){
-       const angle=startAngle+(endAngle-startAngle)*i/steps;
-       add(centreY+capR*Math.cos(angle),Math.max(.02,capR*Math.sin(angle)));
-     }
-   }else{
-     add(height,Math.max(.02,flatR));
+   const capSteps=Math.max(9,Math.min(20,Math.round(Number(shape.roundSteps||3)*2+7)));
+   for(let k=1;k<capSteps;k++){
+     const phi=startAngle*(1-k/capSteps);
+     add(centreY+capRadius*Math.cos(phi),Math.max(.0005,capRadius*Math.sin(phi)));
    }
  }else{
-   // Corner radius = 0 produces a sharply faceted end with optional flat.
-   add(height,Math.max(.02,flatR));
+   // Tiny crystals retain a compact rounded apex: do not add a sharp cone.
+   add(Math.max(shoulderY+.1,height-.6),Math.min(top*.4,capRadius*.65));
  }
+ // Final pole: triangular fans close a curved cap without making a flat
+ // polygon at the very top. A tangent dome has zero radial width here.
+ const apexY=centreY+capRadius;
  const n=rings[0].length;
  for(let r=0;r<rings.length-1;r++)for(let i=0;i<n;i++){const j=(i+1)%n;quad(rings[r][i],rings[r+1][i],rings[r+1][j],rings[r][j])}
  const base=rings[0],cap=rings[rings.length-1];
- const baseC=[0,0,0],tipC=[c.leanX*height,height,c.leanZ*height];
+ const baseC=[0,0,0],tipC=[c.leanX*apexY,apexY,c.leanZ*apexY];
  for(let i=0;i<n;i++){const j=(i+1)%n;emit(baseC,base[i],base[j]);emit(tipC,cap[j],cap[i])}
  return meshFromTriangles(THREE,a);
 }
@@ -206,10 +202,27 @@ export function baseGeometry(THREE,cs,s){
  const heights=outline.map((_,i)=>style==='Crystal crust'&&i%3===1?Math.min(3,(s.baseWidth||3)*.3+1):0);
  const top=outline.map((p,i)=>[p[0],b+heights[i],p[1]]);
  const bottom=outline.map(p=>[p[0],0,p[1]]);
- const centerTop=[c[0],b,c[1]];
+ const dome=Math.max(0,Number(s.baseDome??0));
+ const centerTop=[c[0],b+dome,c[1]];
+ // Concentric polygonal rings produce a curved mound without replacing the
+ // base-height control. Five bands create printable, gently changing slopes.
+ let prev=top;
+ for(let band=1;band<=5;band++){
+  const fraction=1-band/6;
+  const ring=outline.map(p=>[
+   c[0]+(p[0]-c[0])*fraction,
+   b+dome*(1-fraction*fraction),
+   c[1]+(p[1]-c[1])*fraction
+  ]);
+  for(let i=0;i<length;i++){
+   const j=(i+1)%length;
+   quad(prev[i],ring[i],ring[j],prev[j]);
+  }
+  prev=ring;
+ }
+ for(let i=0;i<length;i++)emit(centerTop,prev[(i+1)%length],prev[i]);
  for(let i=0;i<length;i++){
   const j=(i+1)%length;
-  emit(centerTop,top[j],top[i]);
   quad(bottom[i],top[i],top[j],bottom[j]);
  }
  if(s.undersideAccess){
