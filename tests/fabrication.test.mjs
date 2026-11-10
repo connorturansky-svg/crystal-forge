@@ -95,6 +95,16 @@ for(const n of [1,5,10,16,40]){
  assert(plan.skippedPixels>=0,'planner reports any skipped pixel bores');
  console.log('clearance-'+n,JSON.stringify({pixels:plan.sockets.length,mounts:plan.mounts.length,skippedPixels:plan.skippedPixels,skippedMounts:plan.skippedMounts}));
 }
+// Manual pixel and mounting positions use the same manufacturing plan as the UI.
+{
+ const cfg={...settings,count:10,pixelPlacement:'manual',lightingMode:'multi',pixelCount:2,
+  manualPixelHoles:[{x:0,z:0},{x:100000,z:100000}],
+  mountPlacement:'manual',mount:'Custom dual holes',manualMountHoles:[{x:0,z:0}]};
+ const cs=generateFormation(cfg),plan=planHardware(cs,cfg);
+ assert.equal(plan.invalidManualPixels.length,1,'Off-base manual pixel is rejected');
+ assert(plan.sockets.length<=1,'Only valid manual pixels are cut');
+ assert.equal(plan.invalidManualMounts.length,1,'Overlapping manually placed mounting hole is rejected');
+}
 // Low-poly design controls and six base profiles must produce real closed
 // solids, including organic shapes and the jagged mini-crystal style.
 for(const style of ['Fitted','Square','Circle','Rounded','Organic','Crystal crust']){
@@ -126,8 +136,16 @@ function testLeanAndSpacing(){
    const a=cs[i],b=cs[j],extent=c=>c.r*Math.max(base.bottomScale,base.topScale,1)+c.h*Math.hypot(c.leanX,c.leanZ)+3.5;
    assert(Math.hypot(a.x-b.x,a.z-b.z)>=extent(a)+extent(b)+15-1e-3,'Max spacing must have no swept overlaps for '+mode);
   }
-  if(mode==='One direction')assert(cs.every(c=>c.leanX>0&&Math.abs(c.leanZ)<1e-9),'One direction consistent');
-  if(mode==='Criss-cross')assert(cs.some(c=>c.leanX>0)&&cs.some(c=>c.leanX<0),'Criss-cross alternates');
+  const worldLean=c=>({x:c.leanX*Math.cos(c.rotation)+c.leanZ*Math.sin(c.rotation),
+    z:-c.leanX*Math.sin(c.rotation)+c.leanZ*Math.cos(c.rotation)});
+  if(mode==='One direction')assert(cs.every(c=>worldLean(c).x>.01&&Math.abs(worldLean(c).z)<1e-8),'All one-direction leans must align in world space');
+  if(mode==='Criss-cross')assert(cs.some(c=>worldLean(c).x>.01)&&cs.some(c=>worldLean(c).x<-.01),'Criss-cross alternates world direction');
+  if(mode==='Radial outward'||mode==='Radial inward'){
+   for(const c of cs.filter(c=>Math.hypot(c.x,c.z)>1)){
+    const w=worldLean(c),dot=w.x*c.x+w.z*c.z;
+    assert(mode==='Radial outward'?dot>0:dot<0,'Radial pattern respects actual world position');
+   }
+  }
   const tight=generateFormation({...base,spacing:0,leanMode:mode});
   const span=arr=>Math.max(...arr.map(c=>Math.hypot(c.x,c.z)));
   assert(span(cs)>span(tight)*3,'Max spacing much wider');

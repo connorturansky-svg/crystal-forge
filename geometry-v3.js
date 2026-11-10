@@ -34,9 +34,12 @@ export function generateFormation(s){
    leanMode==='Radial inward'?centreAngle+Math.PI:rand()*TAU;
   const deviation=(rand()-.5)*TAU*randomness;
   const lean=.85*amount*(1+(rand()-.5)*.18*randomness);
+  const rotation=rand()*TAU;
+  // Compensate for local facet rotation, so presets point in world space.
+  const localHeading=heading+deviation+rotation;
   out.push({id:'cr-'+i+'-'+Math.floor(rand()*1e6),name:'Crystal '+String(i+1).padStart(2,'0'),x,y:0,z,
    h:s.height*factor,r:Math.max(4,s.width/(Math.sqrt(n)*3.6))*(tier===0?1.25:tier===1?.87:.63)*(.84+rand()*.33),
-   rotation:rand()*TAU,leanX:Math.cos(heading+deviation)*lean,leanZ:Math.sin(heading+deviation)*lean,
+   rotation,leanX:Math.cos(localHeading)*lean,leanZ:Math.sin(localHeading)*lean,
    family,locked:false,hidden:false,scale:1});
  }
  // At maximum spacing, conservatively prevent ALL projected crystal envelopes

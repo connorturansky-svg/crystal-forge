@@ -54,9 +54,21 @@ export function planHardware(crystals,s){
   const socketDiameter=Number(s.pixelDiameter)+Number(s.pixelFit);
   const socketRadius=socketDiameter/2;
   const validHole=(p,radius,others)=>insidePolygon(p,polygon,radius+1.2)&&others.every(q=>dist(p,q)>=radius+q.radius+clearance-1e-5);
-  const pixelRequested=(!s.cutSockets||s.lightingMode==='none') ? 0 : s.lightingMode==='single' ? 1 : max(0,Math.round(s.pixelCount));
+  const pixelManual=s.pixelPlacement==='manual',mountManual=s.mountPlacement==='manual';
+  const manualPixels=Array.isArray(s.manualPixelHoles)?s.manualPixelHoles:[];
+  const manualMounts=Array.isArray(s.manualMountHoles)?s.manualMountHoles:[];
+  const invalidManualPixels=[],invalidManualMounts=[];
+  const pixelRequested=(!s.cutSockets||s.lightingMode==='none')?0:
+   pixelManual?min(s.lightingMode==='single'?1:60,manualPixels.length):
+   s.lightingMode==='single'?1:max(0,Math.round(s.pixelCount));
   if(s.cutSockets&&(!Number.isFinite(socketDiameter)||socketDiameter<=0))throw new Error('Pixel socket diameter must be positive.');
-  const ranked=all.slice().sort((a,b)=>b.r*b.h-a.r*a.h);
+  if(pixelManual&&pixelRequested)manualPixels.slice(0,pixelRequested).forEach((entry,i)=>{
+    const p={x:Number(entry.x),z:Number(entry.z)},radius=socketRadius;
+    if(Number.isFinite(p.x)&&Number.isFinite(p.z)&&validHole(p,radius,sockets))
+      sockets.push({...p,radius,diameter:socketDiameter,kind:'LED',manual:true,index:i});
+    else invalidManualPixels.push({...p,radius,kind:'LED',index:i});
+  });
+  const ranked=pixelManual?[]:all.slice().sort((a,b)=>b.r*b.h-a.r*a.h);
   for(const c of ranked){
     if(sockets.length>=pixelRequested)break;
     const r=c.r*(c.shape?.bottomScale??s.bottomScale)*min(c.sx||c.scale||1,c.sz||c.scale||1);
@@ -76,7 +88,13 @@ export function planHardware(crystals,s){
     }
   }
   const mp=mountingProfile(s);
-  if(mp.enabled){
+  if(mp.enabled&&mountManual)manualMounts.slice(0,20).forEach((entry,i)=>{
+    const p={x:Number(entry.x),z:Number(entry.z)},radius=mp.diameter/2;
+    if(Number.isFinite(p.x)&&Number.isFinite(p.z)&&validHole(p,radius,[...sockets,...mounts]))
+      mounts.push({...p,radius,kind:'mount',diameter:mp.diameter,depth:mp.depth,label:mp.preset+' '+(i+1),manual:true,index:i});
+    else invalidManualMounts.push({...p,radius,kind:'mount',index:i});
+  });
+  if(mp.enabled&&!mountManual){
     // Generate paired mount candidates. Search across footprint and rotate
     // away from LED holes; NEVER silently drill overlapping holes.
     const halfRequested=max(5,Number(s.mountSpacing||s.width*.28)/2);
@@ -97,6 +115,8 @@ export function planHardware(crystals,s){
     if(pair)pair.forEach((p,i)=>mounts.push({...p,kind:'mount',radius:mp.diameter/2,diameter:mp.diameter,depth:mp.depth,label:mp.preset+' '+(i+1)}));
     else messages.push('Two '+mp.preset+' mounting holes could not be placed without intersecting LED sockets or the base edge. No mounting holes were cut. Reduce LED quantity, clearance, or mounting-hole size and prepare again.');
   }
+  if(invalidManualPixels.length)messages.push(invalidManualPixels.length+' manual pixel hole(s) are outside the base or collide with another hole. These are NOT exported.');
+  if(invalidManualMounts.length)messages.push(invalidManualMounts.length+' manual mounting hole(s) are outside the base or collide with another hole. These are NOT exported.');
   const skippedPixels=max(0,pixelRequested-sockets.length);
   if(skippedPixels)messages.push(skippedPixels+' of '+pixelRequested+' pixel sockets could not fit without crossing another hole or the root perimeter.');
   const collisions=[];
@@ -105,7 +125,9 @@ export function planHardware(crystals,s){
     if(dist(allHoles[i],allHoles[j])<allHoles[i].radius+allHoles[j].radius+clearance-1e-5)
       collisions.push([i,j]);
   }
+  const requestedMounts=mp.enabled&&mountManual?min(20,manualMounts.length):mp.requested;
   return {sockets,mounts,polygon,collisions,messages,clearance,
-    requestedPixels:pixelRequested,skippedPixels,requestedMounts:mp.requested,
-    skippedMounts:mp.requested-mounts.length,mounting:mp};
+    invalidManualPixels,invalidManualMounts,
+    requestedPixels:pixelRequested,skippedPixels,requestedMounts,
+    skippedMounts:requestedMounts-mounts.length,mounting:mp};
 }
