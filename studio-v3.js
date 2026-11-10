@@ -12,7 +12,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
-  showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
+  showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };

@@ -91,23 +91,93 @@ export function crystalGeometry(THREE,c,s){
  const rootRound=Math.min(shape.cornerRadius*.5,Math.max(.0,height*.02));
  add(0,Math.max(.8,b-rootRound));if(rootRound>.05)add(rootRound,b);
  add(neck,top);
-  // A smooth C1 shoulder fillet bridges the rounded shaft into the tapered tip.
-  // Vertical side rounding automatically contributes even with shoulderRound=0.
-  const shoulderSize=Math.max(Number(shape.shoulderRound||0),Number(shape.cornerRadius||0)*.8);
-  if(shoulderSize>.01){
-    rings.pop();
-    const d=clamp(shoulderSize,.02,Math.min(neck*.17,tipH*.28));
-    const y0=neck-d,dr=2*d;
-    const r0=b+(top-b)*(y0/Math.max(.01,neck));
-    const r1=top*(1-d/Math.max(.01,tipH));
-    const m0=(top-b)/Math.max(.01,neck),m1=-top/Math.max(.01,tipH);
-    add(y0,r0);
-    for(let k=1,stepsY=Math.max(5,steps+3);k<=stepsY;k++){
-      const t=k/stepsY,t2=t*t,t3=t2*t;
-      const radius=(2*t3-3*t2+1)*r0+(t3-2*t2+t)*dr*m0+
+ // Side rounding carries through a C1-continuous shoulder into the tip.
+ const shoulderSize=Math.max(Number(shape.shoulderRound||0),Number(shape.cornerRadius||0)*.8);
+ if(shoulderSize>.01){
+   rings.pop();
+   const d=clamp(shoulderSize,.02,Math.min(neck*.17,tipH*.28));
+   const y0=neck-d,dr=2*d;
+   const r0=b+(top-b)*y0/Math.max(.01,neck);
+   const r1=top*(1-d/Math.max(.01,tipH));
+   const m0=(top-b)/Math.max(.01,neck),m1=-top/Math.max(.01,tipH);
+   add(y0,r0);
+   for(let k=1,stepsY=Math.max(5,steps+3);k<=stepsY;k++){
+     const t=k/stepsY,t2=t*t,t3=t2*t;
+     const radius=(2*t3-3*t2+1)*r0+(t3-2*t2+t)*dr*m0+
        (-2*t3+3*t2)*r1+(t3-t2)*dr*m1;
-      add(y0+dr*t,Math.max(.12,radius));
-    }
+     add(y0+dr*t,Math.max(.12,radius));
+   }
+ }
+ // Child-friendly rounded cap: a spherical cap tangent to the pyramidal
+ // flanks. The chosen radius is a REAL curvature radius in millimetres.
+ // Unlike a tiny point fillet, its tangent starts BELOW the old sharp tip,
+ // so there is no pointed nub and no abrupt, flat cut across the top.
+ const slope=top/Math.max(1,tipH);
+ const requested=Math.max(.3,Number(shape.tipRound??3));
+ const maximal=Math.max(.3,tipH*slope*Math.sqrt(1+slope*slope)*.83);
+ const capRadius=Math.min(requested,maximal);
+ const tangentR=capRadius/Math.sqrt(1+slope*slope);
+ const centreY=height-capRadius*Math.sqrt(1+slope*slope)/slope;
+ const tangentY=centreY+capRadius*slope/Math.sqrt(1+slope*slope);
+ // Remove the neck if a very small crystal would otherwise reverse order.
+ const shoulderY=rings[rings.length-1][0][1];
+ if(tangentY>shoulderY+.015){
+   add(tangentY,tangentR);
+   const startAngle=Math.atan2(tangentR,tangentY-centreY);
+   const capSteps=Math.max(9,Math.min(20,Math.round(Number(shape.roundSteps||3)*2+7)));
+   for(let k=1;k<capSteps;k++){
+     const phi=startAngle*(1-k/capSteps);
+     add(centreY+capRadius*Math.cos(phi),Math.max(.0005,capRadius*Math.sin(phi)));
+   }
+ }else{
+   // Tiny crystals retain a compact rounded apex: do not add a sharp cone.
+   add(Math.max(shoulderY+.1,height-.6),Math.min(top*.4,capRadius*.65));
+ }
+ // Final pole: triangular fans close a curved cap without making a flat
+ // polygon at the very top. A tangent dome has zero radial width here.
+ const apexY=centreY+capRadius;
+ const n=rings[0].length;
+ for(let r=0;r<rings.length-1;r++)for(let i=0;i<n;i++){const j=(i+1)%n;quad(rings[r][i],rings[r+1][i],rings[r+1][j],rings[r][j])}
+ const base=rings[0],cap=rings[rings.length-1];
+ const baseC=[0,0,0],tipC=[c.leanX*apexY,apexY,c.leanZ*apexY];
+ for(let i=0;i<n;i++){const j=(i+1)%n;emit(baseC,base[i],base[j]);emit(tipC,cap[j],cap[i])}
+ return meshFromTriangles(THREE,a);
+}
+function hull(points){
+ const pts=points.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+ if(pts.length<=2)return pts;
+ const det=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+ const lo=[],hi=[];
+ for(const p of pts){while(lo.length>1&&det(lo.at(-2),lo.at(-1),p)<=0)lo.pop();lo.push(p)}
+ for(let i=pts.length-1;i>=0;i--){const p=pts[i];while(hi.length>1&&det(hi.at(-2),hi.at(-1),p)<=0)hi.pop();hi.push(p)}
+ lo.pop();hi.pop();return lo.concat(hi);
+}
+
+export function baseOutline(cs,s){
+ const pts=[];
+ for(const c of cs.filter(c=>!c.hidden)){
+  const r=c.r*(c.shape?.bottomScale??s.bottomScale)*Math.max(c.sx||c.scale||1,c.sz||c.scale||1)+1;
+  for(let k=0;k<6;k++){const a=c.rotation+k*TAU/6;pts.push([c.x+Math.cos(a)*r,c.z+Math.sin(a)*r])}
+ }
+ if(pts.length<3)return[];
+ const outer=hull(pts),n=outer.length;
+ const cx=outer.reduce((v,p)=>v+p[0],0)/n,cz=outer.reduce((v,p)=>v+p[1],0)/n;
+ const margin=Math.max(1.25,Number(s.baseWidth??3)+1.25);
+ const type=s.baseStyle||'Fitted';
+ const bounds={minx:Math.min(...pts.map(p=>p[0])),maxx:Math.max(...pts.map(p=>p[0])),
+               minz:Math.min(...pts.map(p=>p[1])),maxz:Math.max(...pts.map(p=>p[1]))};
+ const x0=bounds.minx-margin,x1=bounds.maxx+margin,z0=bounds.minz-margin,z1=bounds.maxz+margin;
+ if(type==='Square')return[[x0,z0],[x1,z0],[x1,z1],[x0,z1]];
+ if(type==='Circle'){
+  const radius=Math.max(...pts.map(p=>Math.hypot(p[0]-cx,p[1]-cz)))+margin;
+  return Array.from({length:40},(_,i)=>{const a=TAU*i/40;return[cx+Math.cos(a)*radius,cz+Math.sin(a)*radius]});
+ }
+ if(type==='Rounded'){
+  const rad=Math.max(3,Math.min((x1-x0)*.28,(z1-z0)*.28,Number(s.baseWidth??3)+10));
+  const out=[],corners=[[x1-rad,z0+rad,-Math.PI/2,0],[x1-rad,z1-rad,0,Math.PI/2],
+    [x0+rad,z1-rad,Math.PI/2,Math.PI],[x0+rad,z0+rad,Math.PI,Math.PI*1.5]];
+  for(const [x,z,start,end] of corners)for(let k=0;k<=7;k++){
+    const a=start+(end-start)*k/7;out.push([x+Math.cos(a)*rad,z+Math.sin(a)*rad]);
   }
   return out;
  }

@@ -1,4 +1,4 @@
-# Crystal Forge — Browser Studio v0.5
+# Crystal Forge — Browser Studio v0.6.1
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, child-safe crystal sculptures. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/
 
@@ -7,8 +7,8 @@ Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three
 ## Workspaces
 
 - **Design** — Six formation patterns, six crystal families, reproducible seeds, crystal spacing/overlap, angle randomness, top/bottom ratios, separate side/point rounding, coloured materials, individual crystal shaping and XYZ editing, locks and selection.
-- **Build** — Six base styles (fitted, square, circle, rounded, organic, miniature crystal crust), independent outward rim width and base depth; a thin shared balloon-style chamber with one underside 12 mm pixel push-fit by default; optional multiple pixels; nominal hole-fit adjustments and screw/magnet/M3/custom mounts.
-- **Print** — Press **Prepare print mesh** to Boolean-union the individual crystals and integrated base into a Manifold solid, erode/cut requested cavities, subtract pixel sockets and mounting holes and analyse the result. Inspect the joined mesh in Solid/X-ray, a floating grid-free underside view, colour-coded yellow/purple hole overlays or an overhang heatmap, then download STL or 3MF.
+- **Build** — Six base styles (fitted, square, circle, rounded, organic, miniature crystal crust), independent outward rim width and base depth; an optional experimental shared chamber with one underside 12 mm pixel push-fit by default; optional multiple pixels; nominal hole-fit adjustments and screw/magnet/M3/custom mounts.
+- **Print** — Press **Prepare print mesh** to Boolean-union the individual crystals and integrated base into a Manifold solid, optionally cut experimental cavities, subtract pixel sockets and mounting holes and analyse the result. Inspect the joined mesh in Solid/X-ray, a floating grid-free underside view, colour-coded yellow/purple hole overlays or an overhang heatmap, then download STL or 3MF.
 - **Support tools** — Pixel-fit calibration strip (11.8, 11.9, 12.0, 12.1, 12.2 mm), editable cut plane and split-part STLs, basic bill of materials CSV, view snapping, simple/advanced interface, resizable viewport, light/dark mode, in-app Help and Changelog.
 
 ### Use

@@ -114,7 +114,7 @@ try{
  await page.locator('[data-state="baseEdgeRadius"]').evaluate(el=>{el.value='2.5';el.dispatchEvent(new Event('input',{bubbles:true}))});
  await page.waitForTimeout(250);
  assert.equal(Number(await page.locator('[data-state="baseEdgeRadius"]').inputValue()),2.5,'Base edge radius slider works');
- assert(await page.locator('[data-state="hollowCrystals"]').isChecked(),'Hollow defaults on');
+ assert(!(await page.locator('[data-state="hollowCrystals"]').isChecked()),'Cura-controlled infill defaults on');
  assert(await page.locator('[data-state="cutSockets"]').isChecked(),'Socket cuts default on');
  assert.equal(await page.locator('[data-state="lightingMode"]').inputValue(),'single','Single shared LED mode default');
  await page.locator('#fitPixelBaseBtn').click();

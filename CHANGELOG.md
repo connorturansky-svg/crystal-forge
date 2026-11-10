@@ -1,5 +1,12 @@
 # Crystal Forge — Changelog
 
+## v0.6.1 — 10 November 2026
+
+- **Cura-first default:** export the Boolean-joined outer crystal cluster with LED and mounting holes, but no internal crystal hollowing. Cura manages 0–100% infill, wall count and skins.
+- Experimental shared-channel hollowing remains available as an opt-in slow mode. This avoids the expensive erosion for normal preparations.
+- Important: 0% Cura infill alone does not guarantee an uninterrupted light path through every crystal root; inspect slicer layer previews.
+- Repaired the geometry source regression caught by CI during the new spacing/lean/shoulder development.
+
 ## v0.4.2 — 10 November 2026
 
 - Reworked crystal tips into a **true curved spherical cap tangent to the faceted point**, with a 1.5–8 mm visible radius control. No decorative flat tip or tiny nipple-like end.
