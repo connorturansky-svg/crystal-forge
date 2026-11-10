@@ -6,7 +6,7 @@
 // Three.js is provided by whichever realm runs this module (UI, Worker, Node).
 let THREE;
 export function setThreeInstance(three){THREE=three;}
-import {crystalGeometry} from './geometry-v3.js';
+import {crystalGeometry,crystalRootOffset} from './geometry-v3.js';
 import {planHardware} from './hardware-layout.js';
 
 let modulePromise=null;
@@ -193,10 +193,10 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
       if(radius<1.1)continue;
       const lean=Math.hypot(c.leanX||0,c.leanZ||0);
       const safeTravel=(r-radius-thickness*.9)/Math.max(.02,lean);
-      const up=Math.min(c.h*.48,30,safeTravel);
+      const up=Math.min(c.h*.65,60,safeTravel);
       if(up<Math.max(8,thickness*2))continue;
       const bottom=thickness+.05;
-      const top=(Number(s.baseHeight||0)-2.5)+up;
+      const top=crystalRootOffset(crystals,s,c)+(c.y||0)+up;
       const depth=top-bottom;
       if(depth<4)continue;
       channels.push(hold(wasm.Manifold.cylinder(depth,radius,radius,24).rotate([-90,0,0])
@@ -227,13 +227,15 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(hardware.sockets.length){
    const cutters=[];
    for(const pos of hardware.sockets){
-    const depth=Math.max(13,s.baseHeight+9),start=-3;
+    const depth=Math.max(27,Number(s.baseHeight||0)+Number(s.baseDome||0)+10),start=-3;
     cutters.push(hold(putSocket(wasm,null,pos,pos.radius,depth,start)));
    }
    const holes=hold(wasm.Manifold.union(cutters));
    const cut=hold(combined.subtract(holes));assertSolid(cut,'LED socket cuts');
    combined=cut;socketsCut=hardware.sockets.length;
   }
+  if(hardware.sockets.length&&Number(s.baseHeight||0)<22)
+   warnings.push('The flat base is shorter than a nominal 22 mm gumdrop LED body. Increase its height to about 24 mm if you want to fully conceal the pixel.');
   if(s.cutSockets)warnings.push('Pixel fits are nominal. Test print tolerances and retention before installing any electronics.');
   if(hardware.mounts.length){
    const cutters=[];
@@ -250,6 +252,22 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(s.mount==='Magnet inserts')warnings.push('Magnet pockets are nominal 10.2 mm diameter; verify magnet dimensions and required retention.');
   if(s.mount==='Threaded insert M3')warnings.push('M3 insert holes are nominal 4.2 mm; verify insert type and installation tolerances.');
   if(s.mount==='Detachable plate')warnings.push('Detachable mounting plate remains a planned feature, not yet fabricated.');
+  // A manifold STL can still contain *sealed, unlit void shells*.
+  // Retain only outward-connected material shells, filling inaccessible
+  // enclosed voids. Open lumens connected to the pixel inlet are part of
+  // the outward shell and are kept.
+  let sealedCavitiesFilled=0;
+  if(s.hollowCrystals){
+   const shells=combined.decompose().map(hold);
+   const positive=shells.filter(p=>p.volume()>.01);
+   sealedCavitiesFilled=shells.filter(p=>p.volume()<-.01).length;
+   if(sealedCavitiesFilled&&positive.length){
+    const repaired=hold(wasm.Manifold.union(positive));
+    assertSolid(repaired,'Sealed cavity cleanup');
+    combined=repaired;
+    warnings.push(sealedCavitiesFilled+' sealed inaccessible void shells were filled, rather than leaving unlit air pockets inside the model.');
+   }
+  }
   const resultMesh=combined.getMesh();
   const geom=fromResultMesh(resultMesh),indexed=compactMesh(resultMesh);
   const bounds=combined.boundingBox();
@@ -282,7 +300,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
+    bounds:size,quality,hollowed,sealedCavitiesFilled,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
 }
