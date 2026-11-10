@@ -87,6 +87,29 @@ export function planHardware(crystals,s){
       sockets.push({...p,radius:socketRadius,diameter:socketDiameter,crystalId:c.id,kind:'LED'});
     }
   }
+  // A usable LED need not be entirely within a single crystal root.
+  // In Cura-first mode it can sit anywhere in the integrated base, so try
+  // deterministic positions throughout the base if root-centred placement fails.
+  if(!pixelManual&&sockets.length<pixelRequested&&polygon.length>=3&&s.baseType!=='none'){
+    const minX=Math.min(...polygon.map(p=>p.x)),maxX=Math.max(...polygon.map(p=>p.x));
+    const minZ=Math.min(...polygon.map(p=>p.z)),maxZ=Math.max(...polygon.map(p=>p.z));
+    const centroid={x:(minX+maxX)/2,z:(minZ+maxZ)/2};
+    const candidates=[centroid,{x:cx,z:cz}];
+    const extent=Math.hypot(maxX-minX,maxZ-minZ)/2;
+    const stride=Math.max(socketDiameter+clearance+2,6);
+    for(let radius=stride*.35;radius<extent+stride;radius+=stride*.6){
+      const count=Math.max(18,Math.ceil(2*Math.PI*radius/(stride*.65)));
+      for(let k=0;k<count;k++){
+        const angle=TAU*(k/count)+.17;
+        candidates.push({x:centroid.x+Math.cos(angle)*radius,z:centroid.z+Math.sin(angle)*radius});
+      }
+    }
+    for(const p of candidates){
+      if(sockets.length>=pixelRequested)break;
+      if(!validHole(p,socketRadius,sockets))continue;
+      sockets.push({...p,radius:socketRadius,diameter:socketDiameter,crystalId:null,kind:'LED',autoFallback:true});
+    }
+  }
   const mp=mountingProfile(s);
   if(mp.enabled&&mountManual)manualMounts.slice(0,20).forEach((entry,i)=>{
     const p={x:Number(entry.x),z:Number(entry.z)},radius=mp.diameter/2;
