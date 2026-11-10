@@ -1,5 +1,5 @@
 Fabrication smoke tests: success
-Commit: 9d422d4451ae076cb9a28b2dcc7c447e37dd449c
+Commit: f3070f1c417e19b9936f33f61c968e8343414dbc
 
 
 > test
@@ -10,22 +10,22 @@ clearance-5 {"pixels":1,"mounts":0,"skippedPixels":0,"skippedMounts":2}
 clearance-10 {"pixels":1,"mounts":2,"skippedPixels":0,"skippedMounts":0}
 clearance-16 {"pixels":0,"mounts":2,"skippedPixels":1,"skippedMounts":0}
 clearance-40 {"pixels":0,"mounts":2,"skippedPixels":1,"skippedMounts":0}
-base-Fitted {"triangles":1880,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
-base-Square {"triangles":1846,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
-base-Circle {"triangles":1996,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
-base-Rounded {"triangles":1960,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
-base-Organic {"triangles":2002,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
-base-Crystal crust {"triangles":4944,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
-solid {"triangles":1976,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
-hollow {"triangles":8166,"connected":1,"hollow":1,"sockets":0,"warningCount":5}
+base-Fitted {"triangles":4472,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+base-Square {"triangles":4438,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+base-Circle {"triangles":4588,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+base-Rounded {"triangles":4552,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+base-Organic {"triangles":4594,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+base-Crystal crust {"triangles":9214,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+solid {"triangles":4472,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
+hollow {"triangles":10756,"connected":1,"hollow":1,"sockets":0,"warningCount":5}
 balloon-material-ratio 0.316 sealed-voids 3
-sockets {"triangles":2102,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
-hollow-and-sockets {"triangles":8326,"connected":1,"hollow":1,"sockets":1,"warningCount":5}
-mount-Wall screws {"triangles":2258,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
-mount-Magnet inserts {"triangles":2232,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
-mount-Threaded insert M3 {"triangles":2232,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
-mount-Custom dual holes {"triangles":2248,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
-full-assembly {"triangles":8590,"connected":1,"hollow":1,"sockets":1,"warningCount":6}
+sockets {"triangles":4598,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
+hollow-and-sockets {"triangles":10916,"connected":1,"hollow":1,"sockets":1,"warningCount":5}
+mount-Wall screws {"triangles":4754,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
+mount-Magnet inserts {"triangles":4728,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
+mount-Threaded insert M3 {"triangles":4728,"connected":1,"hollow":0,"sockets":0,"warningCount":2}
+mount-Custom dual holes {"triangles":4744,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
+full-assembly {"triangles":11180,"connected":1,"hollow":1,"sockets":1,"warningCount":6}
 calibration 11.8,11.9,12,12.1,12.2
-Export check {"stlTriangles":1976,"baseZ":"0.00","tipZ":"127.61","mfBytes":130264}
+Export check {"stlTriangles":4472,"baseZ":"0.00","tipZ":"127.61","mfBytes":301145}
 Manufacturing smoke tests passed.
