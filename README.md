@@ -1,4 +1,4 @@
-# Crystal Forge — Browser Studio v0.4
+# Crystal Forge — Browser Studio v0.5
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, child-safe crystal sculptures. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/
 
@@ -6,19 +6,19 @@ Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three
 
 ## Workspaces
 
-- **Design** — Six formation patterns, six crystal families, reproducible seeds, global top/bottom diameter ratios, separate corner bevel/tip controls, coloured materials, individual crystal XYZ editing, locks and selection.
-- **Build** — Integrated, separate or no-base preview; optional approximate hollow cavities; a 12V gumdrop pixel count with nominal 12 mm mounting hole and fit offset; real socket cuts during printing; magnet/screw/M3/custom mounting holes.
-- **Print** — Press **Prepare print mesh** to Boolean-union the individual crystals and integrated base into a Manifold solid, erode/cut requested cavities, subtract pixel sockets and mounting holes and analyse the result. Inspect the joined mesh in Solid/X-ray or an overhang heatmap and download STL or 3MF.
+- **Design** — Six formation patterns, six crystal families, reproducible seeds, crystal spacing/overlap, angle randomness, top/bottom ratios, separate side/point rounding, coloured materials, individual crystal shaping and XYZ editing, locks and selection.
+- **Build** — Six base styles (fitted, square, circle, rounded, organic, miniature crystal crust), independent outward rim width and base depth; a thin shared balloon-style chamber with one underside 12 mm pixel push-fit by default; optional multiple pixels; nominal hole-fit adjustments and screw/magnet/M3/custom mounts.
+- **Print** — Press **Prepare print mesh** to Boolean-union the individual crystals and integrated base into a Manifold solid, erode/cut requested cavities, subtract pixel sockets and mounting holes and analyse the result. Inspect the joined mesh in Solid/X-ray, a floating grid-free underside view, colour-coded yellow/purple hole overlays or an overhang heatmap, then download STL or 3MF.
 - **Support tools** — Pixel-fit calibration strip (11.8, 11.9, 12.0, 12.1, 12.2 mm), editable cut plane and split-part STLs, basic bill of materials CSV, view snapping, simple/advanced interface, resizable viewport, light/dark mode, in-app Help and Changelog.
 
 ### Use
 
 1. Go to **Design** and generate a formation. Keep the side bevel small (0.5–1 mm) to retain the clean, cartoon-like crystalline facets; reduce *shoulder rounding* and *tip flatness* to avoid bulbous or nipple-shaped points.
-2. Go to **Build** and select the base, whether to hollow the mesh, whether to cut nominal LED sockets and which mounting preset to drill.
+2. Go to **Build** to select the base shape and how many millimetres its rim extends past the crystals, then select one shared underside pixel (default) or multiple pixels, hollowing and an optional mounting preset.
 3. Go to **Print** and click **Prepare print mesh (Boolean union)**. The manufacturing mesh is created **separately** from the fast editable preview.
 4. Inspect the resulting report: topological validity, separate material bodies, internal void shells, printer size, number of sockets and mount holes, approximate PLA consumption and likely unsupported triangles.
 5. Enable the **colour-coded overhang heatmap** if helpful. Export STL or 3MF only after preparation succeeds, then inspect and slice in Cura.
-6. Use **↓ Save** to download an editable JSON project. You can return to Design, change geometry and prepare again.
+6. Select a crystal in the viewer or object tree; the shape controls now edit **just that crystal**, highlighted green (red if locked). Use Edit all crystals to return to global mode. Use Floating + BOT to inspect the base without a grid, and Hardware IDs to highlight pixel bores yellow and mounting inserts purple. Save editable projects with ↓ Save.
 
 Changing fabrication-relevant settings invalidates the previously prepared mesh to prevent exporting stale geometry.
 
@@ -35,10 +35,10 @@ Changing fabrication-relevant settings invalidates the previously prepared mesh 
 | Calibration test strip and modular cut-plane splitting | Implemented; alignment connectors not yet included |
 | 45° default overhang screening, heatmap, orientation suggestion | Implemented as **screening**, not support-free certification |
 | Printer volume check: UM3 Extended 215×215×300, UM2+ 223×223×205 | Implemented for upright, single-extruder profile |
-| Manual LED positioning, retaining clips, true constant-wall structures | Not implemented |
+| Manual LED positioning, retaining clips, true constant-wall structures | Not implemented; balloon cavity now links the base chamber to larger crystals using internal passages |
 | One-click supportless redesign, automated snap-fit connectors, full mounting plates | Not implemented |
 
-**Safety and printing:** Manifold validation checks the topology of the Boolean mesh, not every manufacturing constraint. Some hollow cavities or underside roof surfaces may need supports; thin areas, hardware tolerances, pixel spacing, overhead loads and physical strength require validation. For overhead or child-accessible installations, use mechanically rated fixings and independent safety retention. Do not trust printed parts without a suitable physical test.
+**Safety and printing:** Manifold validation checks the topology of the Boolean mesh, not every manufacturing constraint. The new shared chamber is made using inward erosion and internal air passages; small/strongly tilted crystals may remain solid or contain inaccessible pockets. Test that the LED opening reaches the chamber and inspect actual wall thickness in Cura. Some hollow cavities or underside roof surfaces may need supports; thin areas, hardware tolerances, pixel spacing, overhead loads and physical strength require validation. For overhead or child-accessible installations, use mechanically rated fixings and independent safety retention. Do not trust printed parts without a suitable physical test.
 
 ## Keyboard and viewport
 
