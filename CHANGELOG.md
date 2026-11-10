@@ -1,5 +1,20 @@
 # Crystal Forge — Changelog
 
+## v0.4 — 10 November 2026
+
+- Added the **Manifold WebAssembly fabrication engine**: true Boolean unions between low-poly crystals and integrated bases.
+- Added experimental **inward-eroded hollow construction** with a reinforcing root to keep clusters structurally connected. Hollowing is an approximation; wall thickness is not physically certified.
+- Added real **12 mm nominal gumdrop pixel socket cuts**, adjustable diameter / printer fit, and a five-hole test strip (11.8–12.2 mm).
+- Added physically drilled mounting geometry for screw-through, magnet pocket, M3 insert and custom dual-hole presets.
+- Added a dedicated **Prepare print mesh** button, manufacturing mesh preview, topological validation, connected-body and internal-cavity reporting.
+- Added print-volume screening for Ultimaker 3 Extended and Ultimaker 2+, a basic orientation recommendation, a colour-coded overhang heatmap and warnings.
+- Added separate Z-up **STL** and **3MF** export routes for the Manifold-derived manufacturing mesh.
+- Added manual planar splitting with separate closed-part STL exports (alignment connectors remain future work).
+- Expanded automated tests using actual Manifold WASM, including hollowing, sockets, mounting holes, file format output and Z-up positioning.
+- Added an automated headless-browser test workflow to check the UI and manufacturing path.
+
+**Known limitations:** These are development manufacturing features, not a fully qualified fabrication service. In particular, constant wall thickness, supportless printing, mechanical retention, LED fit and print material behaviour are not yet guaranteed.
+
 ## v0.3.1 — 10 November 2026
 
 - Added Light and Dark themes, with preferences saved locally.
