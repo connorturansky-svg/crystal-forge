@@ -23,14 +23,19 @@ jobs:
         with:
           node-version: '22'
       - name: Install JS dependencies and headless Chromium
+        id: install
+        continue-on-error: true
         run: |
-          npm install --no-audit --no-fund
-          npx playwright install --with-deps chromium
+          set -o pipefail
+          (npm install --no-audit --no-fund && npx playwright install --with-deps chromium) > /tmp/browser-install.log 2>&1
+          cat /tmp/browser-install.log | tail -n 25
       - name: Start local static host
+        if: steps.install.outcome == 'success'
         run: |
           python3 -m http.server 4321 > /tmp/crystal-forge-server.log 2>&1 &
           sleep 2
       - name: Exercise live browser and fabrication pipeline
+        if: steps.install.outcome == 'success'
         id: browser
         continue-on-error: true
         run: |
@@ -53,6 +58,9 @@ jobs:
             echo "Browser smoke tests: $OUTCOME"
             echo "Commit: $REF"
             echo
+            echo "Installation outcome: ${{ steps.install.outcome }}"
+            if [ -f /tmp/browser-install.log ]; then tail -n 60 /tmp/browser-install.log; fi
+            echo
             if [ -f browser-run.log ]; then cat browser-run.log; else echo "Browser test did not reach execution"; fi
           } > qa/latest-browser-test.log
           git config user.name "Crystal Forge CI"
@@ -62,5 +70,5 @@ jobs:
           git pull --rebase origin main || true
           git push || true
       - name: Fail on browser errors
-        if: steps.browser.outcome != 'success'
+        if: steps.install.outcome != 'success' || steps.browser.outcome != 'success'
         run: exit 1
