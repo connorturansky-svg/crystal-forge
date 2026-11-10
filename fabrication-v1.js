@@ -74,6 +74,43 @@ function triQuality(mesh,threshold=45){
  }
  return {unsafeTriangles:unsafe,atRiskArea:badArea,totalArea:area,atRiskFraction:area?badArea/area:0,minY};
 }
+
+function orientationCheck(mesh,up,threshold=45){
+ const pts=mesh.points,faces=mesh.triangles,norm=new THREE.Vector3(),va=new THREE.Vector3(),vb=new THREE.Vector3(),vc=new THREE.Vector3(),e=new THREE.Vector3(),f=new THREE.Vector3();
+ const upv=new THREE.Vector3(...up);
+ let minProj=Infinity;
+ for(let i=0;i<pts.length;i+=3)minProj=Math.min(minProj,pts[i]*up[0]+pts[i+1]*up[1]+pts[i+2]*up[2]);
+ let bad=0,contact=0,unsafeCount=0;
+ for(let i=0;i<faces.length;i+=3){
+  va.fromArray(pts,faces[i]*3);vb.fromArray(pts,faces[i+1]*3);vc.fromArray(pts,faces[i+2]*3);
+  e.subVectors(vb,va);f.subVectors(vc,va);norm.crossVectors(e,f);
+  const area=norm.length()*.5;if(area<1e-8)continue;norm.normalize();
+  const nDot=norm.dot(upv);
+  const base=[va,vb,vc].every(p=>Math.abs(p.dot(upv)-minProj)<.14);
+  if(base&&nDot<-.95)contact+=area;
+  const angle=Math.asin(Math.min(1,Math.abs(nDot)))*180/Math.PI;
+  if(!base&&nDot<-.02&&angle>threshold){bad+=area;unsafeCount++}
+ }
+ return {riskArea:bad,bedContactArea:contact,unsafeCount};
+}
+function suggestOrientation(mesh,threshold=45){
+ const candidates=[
+  {name:'Base down (upright)',axis:[0,1,0]},
+  {name:'Back side down',axis:[0,0,1]},
+  {name:'Front side down',axis:[0,0,-1]},
+  {name:'Right side down',axis:[1,0,0]},
+  {name:'Left side down',axis:[-1,0,0]},
+  {name:'Tips down (not recommended)',axis:[0,-1,0]}
+ ];
+ const scored=candidates.map((c,i)=>({...c,...orientationCheck(mesh,c.axis,threshold)}));
+ const current=scored[0];
+ // For crystal installations, a stable base is valuable. Only suggest a side
+ // orientation if it avoids far more problematic overhang area AND has contact.
+ const valid=scored.filter((c,i)=>i===0||(i<5&&c.bedContactArea>Math.max(40,current.bedContactArea*.2)));
+ valid.sort((a,b)=>(a.riskArea+Math.max(0,current.bedContactArea-a.bedContactArea)*.4)-(b.riskArea+Math.max(0,current.bedContactArea-b.bedContactArea)*.4));
+ const choice=valid[0]||current;
+ return {name:choice.name,baseDown:current,alternatives:scored.map(({name,riskArea,bedContactArea})=>({name,riskArea,bedContactArea}))};
+}
 export function analyzeGeometry(geom,threshold=45){
  const p=geom.getAttribute('position').array;
  const m={points:new Float32Array(p),triangles:Uint32Array.from({length:p.length/3},(_,i)=>i)};
@@ -191,7 +228,21 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(s.undersideAccess)warnings.push('The underside access pocket has a ceiling that may need supports. Consider switching the pocket off for supportless-first printing.');
   const mins=bounds.min,maxs=bounds.max;
   const size=mins.map((v,i)=>maxs[i]-v);
-  const report={ready:true,status:'Manifold mesh validated',triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,
+  const orientation=suggestOrientation(indexed,s.overhang||45);
+  const buildVolumes={
+   'Ultimaker 3 Extended':[215,215,300],
+   'Ultimaker 2+':[223,223,205]
+  };
+  const volumeLimit=buildVolumes[s.printer];
+  const printerFits=!volumeLimit||(
+   size[1]<=volumeLimit[2]+.001&&(
+    (size[0]<=volumeLimit[0]+.001&&size[2]<=volumeLimit[1]+.001)||
+    (size[2]<=volumeLimit[0]+.001&&size[0]<=volumeLimit[1]+.001)
+   ));
+  if(!printerFits)warnings.push('Model exceeds the '+s.printer+' build volume ('+volumeLimit.join(' × ')+' mm) in an upright orientation. Split the model or choose another machine.');
+  if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
+  if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
+  const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,
     bounds:size,quality,hollowed,socketsCut,plannedSockets:chosen,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
