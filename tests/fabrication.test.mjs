@@ -42,6 +42,13 @@ validate('sockets',{...settings,cutSockets:true});
 const full=validate('hollow-and-sockets',{...settings,cutSockets:true,hollowCrystals:true});
 assert(full.socketsCut>0,'At least one actual socket should be cut');
 assert.equal(full.disconnected,1,'Combined hollowing and socket cutting must preserve a connected solid');
+for(const mount of ['Wall screws','Magnet inserts','Threaded insert M3','Custom dual holes']){
+ const built=validate('mount-'+mount,{...settings,mount,mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40});
+ assert.equal(built.disconnected,1,'Mount '+mount+' must not disconnect the formation');
+ assert.equal(built.mountingHolesCut,2,'Mount '+mount+' cuts two holes');
+}
+const combo=validate('full-assembly',{...settings,hollowCrystals:true,cutSockets:true,mount:'Magnet inserts'});
+assert.equal(combo.disconnected,1,'Combined hollow and mounted LED assembly must remain connected');
 const cal=makeCalibrationStrip(wasm);
 assert(cal.triangles>50,'Calibration strip created');
 console.log('calibration',cal.diameters.join(','));
