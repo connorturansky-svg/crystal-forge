@@ -59,6 +59,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add qa/latest-browser-test.log
           git commit -m "ci: publish browser test results [skip ci]" || true
+          git pull --rebase origin main || true
           git push || true
       - name: Fail on browser errors
         if: steps.browser.outcome != 'success'
