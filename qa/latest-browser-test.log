@@ -1,5 +1,5 @@
 Browser smoke tests: success
-Commit: 8e94a0ad3cf589a5fb8a64f3de5580d931ecb707
+Commit: 9d422d4451ae076cb9a28b2dcc7c447e37dd449c
 
 Installation outcome: success
 Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
@@ -72,6 +72,7 @@ Theme, Help and Changelog verified
 Individual shaping, green selection, floating view and bottom snap verified
 Advanced editor and view controls verified
 Manufacturing prepared: ✓ Combined manufacturing mesh prepared. Review the warnings below and verify in Cura.
+Repeat Prepare Print validated
 Mounting / hollow / sockets: Yes 1
 STL and 3MF browser downloads verified
 BROWSER SMOKE TEST PASSED
