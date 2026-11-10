@@ -11,7 +11,7 @@ const defaults={
   title:'Untitled cluster',count:16,height:155,width:130,seed:42,pattern:'Central Spire',spacing:42,angleRandomness:32,
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
-  baseType:'integrated',baseHeight:8,baseDome:0,baseEdgeRadius:0,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
+  baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
   showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
@@ -96,6 +96,7 @@ function syncForm(){
  }
  for(const e of document.querySelectorAll('[data-out]'))e.textContent=format(e.dataset.out,s[e.dataset.out]);
  $('actualHole').textContent=(Number(s.pixelDiameter)+Number(s.pixelFit)).toFixed(2)+' mm';
+ $('pixelBaseDepthHint').textContent=s.baseHeight>=23?'Base has space for a nominal 22 mm gumdrop body.':'Base is shallower than the ~22 mm gumdrop body. 25 mm is recommended.';
  $('projectName').textContent=s.title;
  syncShapeControls();
  $('floatBtn').classList.toggle('active',!!s.floatView);
@@ -243,6 +244,9 @@ function renderManufactureReport(report){
  f('reportSockets',report.socketsCut);
  f('reportMounting',report.mountingHolesCut||0);
  f('reportHollow',report.hollowed?'Yes':'No');
+ f('reportLightPath',report.lightPathScreened?'Screened clear':'Review needed');
+ f('reportPorts',report.hollowPorts||0);
+ f('reportBaseDepth',report.baseFitsPixel?'Fits nominal pixel':'Too shallow');
  f('reportOverhang',report.quality.unsafeTriangles.toLocaleString());
  f('reportOrientation',report.orientation?.name||'Base down');
  const list=report.warnings;
@@ -595,6 +599,7 @@ document.querySelectorAll('[data-look]').forEach(b=>b.onclick=()=>{
 });
 $('gridBtn').onclick=()=>{grid.visible=!grid.visible;axes.visible=grid.visible; if(s.floatView&&grid.visible){s.floatView=false;$('floatBtn').classList.remove('active');persist()}};
 $('floatBtn').onclick=()=>setFloating(!s.floatView);
+$('fitPixelBaseBtn').onclick=()=>{s.baseHeight=25;syncForm();rebuild();snapshot()};
 $('studioLightBtn').onclick=()=>{s.evenLighting=!s.evenLighting;refreshStudioLighting();persist()};
 $('centreViewBtn').onclick=()=>{
  centreOrbitOnModel();

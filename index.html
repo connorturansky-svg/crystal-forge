@@ -121,7 +121,7 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="control"><label>Base outline style</label><select data-state="baseStyle"><option value="Fitted">Faceted / fitted to crystals</option><option value="Square">Square / rectangle</option><option value="Circle">Circle</option><option value="Rounded">Rounded corners</option><option value="Organic">Organic / bumpy</option><option value="Crystal crust">Mini-crystal rocky rim</option></select></div>
 <div class="control"><label>Outward base width <output data-out="baseWidth"></output></label><input data-state="baseWidth" type="range" min="0" max="30" step=".5"><p class="note">How far the base extends beyond the outermost crystals, not its height.</p></div>
 <div class="control"><label>Construction</label><select data-state="baseType"><option value="integrated">Integrated root</option><option value="separate">Separate base (visual)</option><option value="none">No base</option></select></div>
-<div class="control"><label>Base height / depth <output data-out="baseHeight"></output></label><input data-state="baseHeight" type="range" min="3" max="30" step=".5"></div><div class="control"><label>Base top-edge rounding <output data-out="baseEdgeRadius"></output></label><input data-state="baseEdgeRadius" type="range" min="0" max="6" step=".25"><p class="note">Rounds the upper rim with real mesh geometry. Independent of the dome and base depth.</p></div>
+<div class="control"><label>Base height / depth <output data-out="baseHeight"></output></label><input data-state="baseHeight" type="range" min="3" max="30" step=".5"></div><div class="buttonrow"><button id="fitPixelBaseBtn" title="Set the base to 25 mm to accommodate a nominal 22 mm gumdrop housing">⌖ Fit base for gumdrop · 25 mm</button></div><p id="pixelBaseDepthHint" class="note">25 mm is recommended for a 22 mm pixel body.</p><div class="control"><label>Base top-edge rounding <output data-out="baseEdgeRadius"></output></label><input data-state="baseEdgeRadius" type="range" min="0" max="6" step=".25"><p class="note">Rounds the upper rim with real mesh geometry. Independent of the dome and base depth.</p></div>
 <div class="control"><label>Base dome / mound height <output data-out="baseDome"></output></label><input data-state="baseDome" type="range" min="0" max="50" step=".5"><p class="note">0 mm = flat top. Increase to raise the centre into a rounded mound independently from base thickness.</p></div>
 <label class="checks"><input data-state="undersideAccess" type="checkbox"> Add underside access pocket</label>
 <div class="note">Base cavity is created in geometry. Crystal interiors remain solid pending a validated hollowing method.</div>
@@ -130,7 +130,7 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="card blue"><div class="cardtitle"><span class="symbol">◈</span> Shared hollow / balloon construction</div><div class="cardbody">
 <label class="checks"><input data-state="hollowCrystals" type="checkbox"> Cut hollow interiors in eligible crystals</label>
 <div class="control"><label>Target wall thickness <output data-out="wallThickness"></output></label><input data-state="wallThickness" type="range" min=".8" max="4" step=".2"></div>
-<p class="note">One thin, merged crystal shell with a shared internal air chamber and one underside light-entry socket. The goal is for the entire cluster to glow from one pixel. Wall offset and access are approximate: inspect layer-by-layer in Cura.</p>
+<p class="note">One thin merged outer shell, a hollow base chamber and light passages following the axes of eligible crystal spikes. One underside push-fit pixel is the Simple default. The report flags inaccessible pockets and crystals that remain solid. Inspect the sliced cross-section in Cura.</p>
 <div class="success"><strong>Supportless-first:</strong> after preparing the solid, inspect downward-facing surfaces and recommended orientation. A 45° reference alone cannot guarantee support-free printing.</div>
 </div></div>
 <div class="card amber"><div class="cardtitle"><span class="symbol">✳</span> Pixel lighting plan</div><div class="cardbody">
@@ -167,7 +167,7 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="stat"><span>Triangles</span><strong id="reportTriangles">—</strong></div>
 <div class="stat"><span>Approx. PLA</span><strong id="reportMass">—</strong></div>
 <div class="stat"><span>Socket holes cut</span><strong id="reportSockets">—</strong></div><div class="stat"><span>Mounting holes cut</span><strong id="reportMounting">—</strong></div>
-<div class="stat"><span>Hollow shell applied</span><strong id="reportHollow">—</strong></div>
+<div class="stat"><span>Hollow shell applied</span><strong id="reportHollow">—</strong></div><div class="stat"><span>Crystal light passages</span><strong id="reportPorts">—</strong></div><div class="stat"><span>Shared light path</span><strong id="reportLightPath">—</strong></div><div class="stat"><span>Base depth vs pixel</span><strong id="reportBaseDepth">—</strong></div>
 <div class="stat"><span>Overhang risk faces</span><strong id="reportOverhang">—</strong></div>
 <div class="stat"><span>Suggested orientation</span><strong id="reportOrientation">—</strong></div>
 <div id="reportWarnings" class="note"></div>

@@ -156,6 +156,12 @@ const full=validate('hollow-and-sockets',{...settings,cutSockets:true,hollowCrys
 assert(full.socketsCut>0,'At least one actual socket should be cut');
 assert.equal(full.disconnected,1,'Combined hollowing and socket cutting must preserve a connected solid');
 assert.equal(full.internalCavities,0,'No sealed internal voids after LED and hollowing cuts');
+assert(full.hollowPorts>0,'At least one hollow spike receives a light passage');
+assert(full.lightPathScreened,'One-pixel model should have no sealed enclosed cavity in representative case');
+const domeLight=validate('domed-light-path',{...settings,baseHeight:25,baseDome:17,hollowCrystals:true,cutSockets:true});
+assert(domeLight.hollowPorts>0,'Dome-shifted crystal roots have light passages');
+assert(domeLight.baseFitsPixel,'Nominal 22 mm pixel fits a 25 mm base');
+
 for(const mount of ['Wall screws','Magnet inserts','Threaded insert M3','Custom dual holes']){
  const built=validate('mount-'+mount,{...settings,mount,mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40});
  assert.equal(built.disconnected,1,'Mount '+mount+' must not disconnect the formation');

@@ -142,6 +142,18 @@ function putSocket(wasm,c,pos,radius,depth,start){
 function cleanupAll(list){
  for(const m of list){try{m.delete()}catch(e){}}
 }
+// Closed tapered light tunnel aligned with an individual crystal's actual
+// orientation. Geometry is part of the manufacturable Boolean cut.
+function lightTunnel(wasm,start,end,rStart,rEnd){
+ const direction=new THREE.Vector3().subVectors(end,start),length=direction.length();
+ if(length<1)return null;
+ const geom=new THREE.CylinderGeometry(rEnd,rStart,length,16,1,false);
+ const tube=new THREE.Mesh(geom);
+ tube.position.copy(start).add(end).multiplyScalar(.5);
+ tube.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),direction.normalize());
+ const solid=convertMesh(wasm,tube);
+ geom.dispose();return solid;
+}
 export function prepareFabrication({wasm,meshes,crystals,settings}){
  if(!wasm?.Manifold || !wasm?.Mesh)throw new Error('Manifold engine has not loaded');
  // Caller explicitly supplies exportable components; preview visibility may
@@ -157,7 +169,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   combined=hold(wasm.Manifold.union(components));
   assertSolid(combined,'Unioned cluster');
   const initialVolume=combined.volume();
-  let hollowed=0;
+  let hollowed=0,hollowPorts=0,skippedHollowPorts=0;
   if(s.hollowCrystals){
    // Balloon construction: shell the UNIONED cluster, then hollow the root
    // and connect its air chamber to larger crystals with internal ports.
@@ -188,21 +200,33 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     let connected=0;
     for(const c of crystals){
       if(c.hidden)continue;
-      const r=c.r*(c.shape?.bottomScale??s.bottomScale)*Math.min(c.sx||c.scale||1,c.sz||c.scale||1);
-      const radius=Math.min(3.2,Math.max(0,r-thickness*1.5)*.32);
-      if(radius<1.1)continue;
-      const lean=Math.hypot(c.leanX||0,c.leanZ||0);
-      const safeTravel=(r-radius-thickness*.9)/Math.max(.02,lean);
-      const up=Math.min(c.h*.65,60,safeTravel);
-      if(up<Math.max(8,thickness*2))continue;
-      const bottom=thickness+.05;
-      const top=crystalRootOffset(crystals,s,c)+(c.y||0)+up;
-      const depth=top-bottom;
-      if(depth<4)continue;
-      channels.push(hold(wasm.Manifold.cylinder(depth,radius,radius,24).rotate([-90,0,0])
-        .translate([c.x,bottom,c.z])));
+      const obj=live.find(m=>m.userData?.crystalId===c.id);
+      if(!obj){skippedHollowPorts++;continue}
+      obj.updateMatrixWorld(true);
+      const shape={...s,...(c.shape||{})};
+      const minScale=Math.min(c.sx||c.scale||1,c.sz||c.scale||1);
+      const safeRadius=c.r*Math.min(shape.bottomScale,shape.topScale)*minScale-thickness*2.2;
+      if(safeRadius<1.25){skippedHollowPorts++;continue}
+      const rRoot=Math.min(4.2,Math.max(1.05,safeRadius*.43));
+      const rEnd=Math.min(rRoot*.65,Math.max(.65,safeRadius*.19));
+      const tipFraction=Math.min(.48,Math.max(.1,shape.tipLength||.27));
+      const up=c.h*(1-tipFraction*.40);
+      const root=new THREE.Vector3(0,0,0).applyMatrix4(obj.matrixWorld);
+      const tip=new THREE.Vector3((c.leanX||0)*up,up,(c.leanZ||0)*up).applyMatrix4(obj.matrixWorld);
+      if(tip.y-root.y<Math.max(6,thickness*3)){skippedHollowPorts++;continue}
+      // Vertical base conduit joins the eroded dome; the upper conduit
+      // follows the leaning / rotated crystal spine rather than cutting
+      // straight through the external facets.
+      const floor=new THREE.Vector3(root.x,Math.max(.65,thickness*.7),root.z);
+      const rootEntry=new THREE.Vector3(root.x,Math.max(root.y+1.5,floor.y+1),root.z);
+      const stem=lightTunnel(wasm,floor,rootEntry,rRoot,rRoot);
+      const shaft=lightTunnel(wasm,rootEntry,tip,rRoot,rEnd);
+      if(stem)channels.push(hold(stem));
+      if(shaft)channels.push(hold(shaft));
       connected++;
     }
+    hollowPorts=connected;
+    if(skippedHollowPorts)warnings.push(skippedHollowPorts+' narrow or strongly tilted crystal(s) could not accept a safe light tunnel; these may remain partly solid.');
     if(channels.length){
       const channelUnion=hold(wasm.Manifold.union(channels));
       const opened=hold(combined.subtract(channelUnion));
@@ -211,8 +235,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     }
     hollowed=1;
     warnings.push('Balloon shell uses a spherical inset and shared internal base chamber with crystal air passages. Exact minimum wall thickness and accessibility still require inspection in Cura.');
-    if(connected<crystals.filter(c=>!c.hidden).length)
-      warnings.push('Some tiny or heavily tilted crystals cannot receive a safe air passage and may remain internally solid or have isolated voids.');
+    if(connected===0)warnings.push('No internal crystal passages met the minimum clearance. Enlarge crystals rather than reducing walls below a safe material thickness.');
    }else{
     warnings.push('The cluster is too thin for a hollow cavity at the selected wall thickness.');
    }
@@ -281,6 +304,11 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   cleanupAll(parts);
   if(disconnected>1)warnings.push(disconnected+' separate solids detected; the assembly is not one connected piece.');
   if(internalCavities>0)warnings.push(internalCavities+' isolated enclosed cavities were detected. These may not receive light from the underside pixel and should be inspected in a slicer.');
+  const baseDepth=Number(s.baseHeight||0);
+  const baseFitsPixel=baseDepth>=23; // nominal gumdrop body ~22 mm
+  const lightPathScreened=!!s.hollowCrystals&&socketsCut>0&&hollowPorts>0&&internalCavities===0;
+  if(s.hollowCrystals&&!lightPathScreened)
+    warnings.push('A single shared illuminated cavity is NOT established by the topology screening. Inspect the cross-section and pixel channel in Cura.');
   if(quality.unsafeTriangles>0)warnings.push('Overhang analysis found '+quality.unsafeTriangles+' potentially unsupported triangles. These are not guaranteed to need supports, but require checking in a slicer.');
   if(s.undersideAccess)warnings.push('The underside access pocket has a ceiling that may need supports. Consider switching the pocket off for supportless-first printing.');
   const mins=bounds.min,maxs=bounds.max;
@@ -300,7 +328,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,sealedCavitiesFilled,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
+    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
 }

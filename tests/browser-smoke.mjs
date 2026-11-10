@@ -104,6 +104,8 @@ try{
  assert(await page.locator('[data-state="hollowCrystals"]').isChecked(),'Hollow defaults on');
  assert(await page.locator('[data-state="cutSockets"]').isChecked(),'Socket cuts default on');
  assert.equal(await page.locator('[data-state="lightingMode"]').inputValue(),'single','Single shared LED mode default');
+ await page.locator('#fitPixelBaseBtn').click();
+ assert.equal(Number(await page.locator('[data-state="baseHeight"]').inputValue()),25,'Pixel base preset sets 25 mm');
  assert.equal(await page.locator('[data-state="pixelCount"]').inputValue(),'1','Exactly one requested LED');
  assert.equal(await page.locator('[data-state="baseStyle"]').inputValue(),'Fitted','Fitted base default');
  await page.locator('[data-tab="print"]').click();
