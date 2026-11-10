@@ -115,9 +115,9 @@ const meshB=crystalGeometry(THREE,{...crystal,shape:{tipRound:1.4,topScale:.55,c
 assert.notDeepEqual(Array.from(meshA.getAttribute('position').array),
  Array.from(meshB.getAttribute('position').array),'Individual shape override changes mesh');
 meshA.dispose();meshB.dispose();
-const solidMass=safetyGeometryCheck();
+safetyGeometryCheck();
 validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
-validate('solid',settings);
+const solidMass=validate('solid',settings);
 const hollow=validate('hollow',{...settings,hollowCrystals:true});
 assert(hollow.volumeMm3<solidMass.volumeMm3,'Hollowing must reduce physical material volume');
 console.log('balloon-material-ratio', (hollow.volumeMm3/solidMass.volumeMm3).toFixed(3), 'sealed-voids',hollow.internalCavities);
