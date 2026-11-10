@@ -136,8 +136,12 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="note warning">When enabled, Print → Prepare Print cuts nominal socket holes using the Manifold engine. Check physical fit against your actual pixels. Retention lips and cable strain relief are not yet included.</div>
 </div></div>
 <div class="card purple advanced-only"><div class="cardtitle"><span class="symbol">⚙</span> Mounting & modularity</div><div class="cardbody">
-<div class="control"><label>Mounting preset</label><select data-state="mount"><option>None</option><option>Wall screws</option><option>Magnet inserts</option><option>Detachable plate</option><option>Ceiling mount</option></select></div>
-<p class="note">Mounting profiles are saved with the project. Physical holes, connectors and modular cuts are future manufacturing features.</p>
+<div class="control"><label>Mounting preset</label><select data-state="mount"><option>None</option><option>Wall screws</option><option>Magnet inserts</option><option>Threaded insert M3</option><option>Custom dual holes</option><option>Detachable plate</option><option>Ceiling mount</option></select></div>
+<div class="control"><label>Custom hole diameter <output data-out="mountHoleDiameter"></output></label><input data-state="mountHoleDiameter" type="range" min="2.5" max="12" step=".1"></div>
+<div class="control"><label>Hole spacing <output data-out="mountSpacing"></output></label><input data-state="mountSpacing" type="range" min="10" max="150" step="1"></div>
+<div class="control"><label>Custom hole depth <output data-out="mountHoleDepth"></output></label><input data-state="mountHoleDepth" type="range" min="2" max="30" step=".5"></div>
+<p class="note">Wall/ceiling screw through-holes, blind magnet pockets and M3 insert holes can now be cut in Prepare Print. Detachable plates, keyholes and alignment connectors are not yet generated.</p>
+<p class="note warning">Overhead installations need independently verified load-bearing fixings and secondary retention.</p>
 </div></div>
 </section>
 <section data-workspace="print">
@@ -153,7 +157,7 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="stat"><span>Connected bodies</span><strong id="reportPieces">—</strong></div><div class="stat"><span>Enclosed void shells</span><strong id="reportCavities">—</strong></div><div class="stat"><span>Fits printer</span><strong id="reportPrinterFit">—</strong></div>
 <div class="stat"><span>Triangles</span><strong id="reportTriangles">—</strong></div>
 <div class="stat"><span>Approx. PLA</span><strong id="reportMass">—</strong></div>
-<div class="stat"><span>Socket holes cut</span><strong id="reportSockets">—</strong></div>
+<div class="stat"><span>Socket holes cut</span><strong id="reportSockets">—</strong></div><div class="stat"><span>Mounting holes cut</span><strong id="reportMounting">—</strong></div>
 <div class="stat"><span>Hollowed crystals</span><strong id="reportHollow">—</strong></div>
 <div class="stat"><span>Overhang risk faces</span><strong id="reportOverhang">—</strong></div>
 <div class="stat"><span>Suggested orientation</span><strong id="reportOrientation">—</strong></div>
