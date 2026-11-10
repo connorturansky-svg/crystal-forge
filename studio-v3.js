@@ -8,9 +8,9 @@ import {planHardware} from './hardware-layout.js';
 const $=id=>document.getElementById(id);
 const defaults={
   title:'Untitled cluster',count:16,height:155,width:130,seed:42,pattern:'Central Spire',spacing:42,angleRandomness:32,
-  familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:.45,
+  familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
-  baseType:'integrated',baseHeight:8,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
+  baseType:'integrated',baseHeight:8,baseDome:0,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
   showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false
@@ -21,6 +21,15 @@ try{
   if(saved?.settings){s={...defaults,...saved.settings};crystals=safeArray(saved.crystals);selectedId=saved.selectedId||null}
 }catch(e){console.warn('Project recovery unavailable',e)}
 function safeArray(a){return Array.isArray(a)?a.filter(x=>x&&typeof x.id==='string').slice(0,300):[]}
+// The former 0–2 mm tip control produced sharp truncated points. Migrate
+// existing tiny radii to a safer, broad-radius cap without losing projects.
+try{
+ if(localStorage.getItem('crystal-forge-tip-cap-version')!=='2'){
+  if(Number(s.tipRound)<1.5)s.tipRound=3.5;
+  for(const c of crystals)if(c.shape&&Number(c.shape.tipRound)<1.5)c.shape.tipRound=3.5;
+  localStorage.setItem('crystal-forge-tip-cap-version','2');
+ }
+}catch(e){}
 // Migrate older multi-pixel drafts to the new single-source default.
 if(s.lightingMode==='single')s.pixelCount=1;
 if(s.lightingMode==='none')s.pixelCount=0;
@@ -42,7 +51,7 @@ function restore(str){
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
- if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseWidth','wallThickness','pixelDiameter','pixelFit'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
+ if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseWidth','wallThickness','pixelDiameter','pixelFit'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
  if(['bottomScale','topScale','tipLength'].includes(k))return Math.round(v*100)+'%';
  if(['mountHoleDiameter','mountHoleDepth','mountSpacing'].includes(k))return Number(v).toFixed(1)+' mm';
  if(k==='splitX')return v+' mm';if(['spacing','angleRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
@@ -106,7 +115,7 @@ let manufacturingMesh=null,manufacturingReport=null,preparedSource=null;
 const relevantManufacturingKeys=[
  'count','height','width','seed','pattern','spacing','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
- 'baseType','baseHeight','baseWidth','baseStyle','undersideAccess','wallThickness','lightingMode','pixelCount','pixelDiameter',
+ 'baseType','baseHeight','baseDome','baseWidth','baseStyle','undersideAccess','wallThickness','lightingMode','pixelCount','pixelDiameter',
  'pixelFit','cutSockets','hollowCrystals','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing'
 ];
 function sourceHash(){
@@ -290,6 +299,7 @@ function rebuild(){
  gizmo.detach();crystalMeshes.forEach(disposeMesh);crystalMeshes=[];
  for(const c of crystals)crystalMeshes.push(makeCrystal(c));
  rebuildBase();updateLEDs();selectCrystal(selectedId,false);syncForm();renderTree();renderInfo();
+ centreOrbitOnModel();
  setStatus('Ready · click a crystal to select · G / R / S · drag to orbit');
 }
 function rebuildBase(){
@@ -407,6 +417,23 @@ function updateAppearance(){
   m.material.emissive.setHex(selected?(c?.locked?0x8b1b2c:0x0b8752):glow?Number(s.glowColour):0);
   m.material.emissiveIntensity=selected?.88:glow?.58:0;
  }
+}
+function centreOrbitOnModel(){
+ // OrbitControls pans around orbit.target, never the world origin.
+ // Preserve the viewing direction and zoom distance when the cluster is
+ // regenerated; only translate the camera and target to the model's centre.
+ const box=new THREE.Box3();
+ for(const m of crystalMeshes)if(m.visible)box.expandByObject(m);
+ if(baseMesh?.visible)box.expandByObject(baseMesh);
+ for(const m of baseAccents)if(m.visible)box.expandByObject(m);
+ if(box.isEmpty())return;
+ const centre=box.getCenter(new THREE.Vector3());
+ const shift=centre.clone().sub(orbit.target);
+ if(shift.lengthSq()<.000001)return;
+ camera.position.add(shift);
+ orbit.target.copy(centre);
+ cameraTween=null;
+ orbit.update();
 }
 function focus(obj){
  if(!obj)return;
