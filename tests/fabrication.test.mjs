@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
-import {generateFormation,crystalGeometry,baseGeometry} from '../geometry-v3.js';
+import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs} from '../geometry-v3.js';
 import {prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
 import {planHardware} from '../hardware-layout.js';
 
@@ -19,7 +19,7 @@ function verifyClearance(label,crystals,settings){
 }
 
 const settings={
-  seed:42,count:10,width:95,height:130,pattern:'Central Spire',familyMix:'Quartz',
+  seed:42,count:10,width:95,height:130,pattern:'Central Spire',familyMix:'Quartz',lightingMode:'single',
   bottomScale:1,topScale:.8,cornerRadius:.7,shoulderRound:0,tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:9,wallThickness:1.2,undersideAccess:false,
   pixelCount:5,pixelDiameter:12,pixelFit:.1,cutSockets:false,hollowCrystals:false,overhang:45,
@@ -33,7 +33,12 @@ function assembly(s){
     m.scale.set(c.sx||c.scale||1,c.sy||c.scale||1,c.sz||c.scale||1);
     meshes.push(m);
   }
-  const base=new THREE.Mesh(baseGeometry(THREE,crystals,s));meshes.push(base);
+  const base=new THREE.Mesh(baseGeometry(THREE,crystals,s));base.userData.isBase=true;meshes.push(base);
+  for(const accent of baseAccentSpecs(crystals,s)){
+   const m=new THREE.Mesh(crystalGeometry(THREE,accent,s));
+   m.position.set(accent.x,s.baseHeight-3,accent.z);
+   m.rotation.y=accent.rotation;meshes.push(m);
+  }
   return {meshes,crystals};
 }
 function validate(label,s){
@@ -66,6 +71,7 @@ for(const style of ['Fitted','Square','Circle','Rounded','Organic','Crystal crus
  const {crystals:cs}=assembly(q);
  const plan=verifyClearance(style,cs,q);
  assert(plan.sockets.length<=1,'Single-pixel mode never cuts multiple LED openings');
+  assert(plan.collisions.length===0,'Base style '+style+' contains no hardware clashes');
 }
 // Per-crystal shape changes only the nominated crystal, not the global mesh.
 const override={...settings,tipRound:.4,spacing:55,angleRandomness:60};
