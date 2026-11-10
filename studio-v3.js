@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,baseGeometry,exportSTL} from './geometry-v3.js';
+import {loadManifold,prepareFabrication,saveSTL,save3MF,makeCalibrationStrip,splitPreparedMesh} from './fabrication-v1.js';
 
 const $=id=>document.getElementById(id);
 const defaults={
@@ -9,7 +10,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:8,undersideAccess:false,wallThickness:1.2,
-  showPixels:false,pixelCount:12,pixelDiameter:12,pixelFit:.15,mount:'None',
+  showPixels:false,pixelCount:12,pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple'
 };
@@ -39,7 +40,7 @@ function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.leng
 function format(k,v){
  if(['height','width','cornerRadius','shoulderRound','tipFlat','baseHeight','wallThickness','pixelDiameter','pixelFit'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
  if(['bottomScale','topScale','tipLength'].includes(k))return Math.round(v*100)+'%';
- if(k==='overhang')return v+'°';return String(v);
+ if(k==='splitX')return v+' mm';if(k==='overhang')return v+'°';return String(v);
 }
 function syncForm(){
  document.body.classList.toggle('advanced',s.mode==='advanced');
@@ -65,6 +66,59 @@ function download(blob,name){
  setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
 function setStatus(t){$('status').textContent=t}
+
+let manufacturingMesh=null,manufacturingReport=null,preparedSource=null;
+const relevantManufacturingKeys=[
+ 'count','height','width','seed','pattern','familyMix','bottomScale','topScale',
+ 'cornerRadius','shoulderRound','tipFlat','tipLength','roundSteps',
+ 'baseType','baseHeight','undersideAccess','wallThickness','pixelCount','pixelDiameter',
+ 'pixelFit','cutSockets','hollowCrystals','overhang','splitX'
+];
+function sourceHash(){
+ return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
+ crystals:crystals.map(c=>({id:c.id,x:c.x,y:c.y,z:c.z,h:c.h,r:c.r,rx:c.rx,rz:c.rz,
+ rotation:c.rotation,sx:c.sx,sy:c.sy,sz:c.sz,hidden:c.hidden,leanX:c.leanX,leanZ:c.leanZ}))});
+}
+function disposeManufacturing(){
+ if(manufacturingMesh){
+  scene.remove(manufacturingMesh);
+  manufacturingMesh.geometry.dispose();
+  manufacturingMesh.material.dispose();
+  manufacturingMesh=null;
+ }
+ manufacturingReport=null;preparedSource=null;
+ if($('showManufacturing'))$('showManufacturing').checked=false;
+ if($('prepareStatus'))$('prepareStatus').textContent='Not prepared. Click Prepare print mesh after changing your design.';
+ if($('prepareReport'))$('prepareReport').hidden=true;
+ for(const id of ['stlBtn','threeMfBtn','splitExportBtn'])if($(id))$(id).disabled=true;
+ for(const mesh of crystalMeshes||[])mesh.visible=!crystals.find(c=>c.id===mesh.userData.crystalId)?.hidden;
+ if(baseMesh)baseMesh.visible=s.baseType!=='none';
+ if(pixelGroup)pixelGroup.visible=true;
+}
+function manufacturingView(enabled){
+ if(!manufacturingMesh)enabled=false;
+ if(manufacturingMesh)manufacturingMesh.visible=enabled;
+ for(const m of crystalMeshes)m.visible=!enabled&&!crystals.find(c=>c.id===m.userData.crystalId)?.hidden;
+ if(baseMesh)baseMesh.visible=!enabled&&s.baseType!=='none';
+ pixelGroup.visible=!enabled;
+ if(enabled)gizmo.detach();
+ else selectCrystal(selectedId,false);
+}
+function renderManufactureReport(report){
+ const f=(id,value)=>{$(id).textContent=String(value)};
+ f('reportIntegrity',report.status);
+ f('reportPieces',report.disconnected);
+ f('reportTriangles',report.triangleCount.toLocaleString());
+ f('reportMass',report.materialPLAgrams.toFixed(1)+' g');
+ f('reportSockets',report.socketsCut);
+ f('reportHollow',report.hollowed);
+ f('reportOverhang',report.quality.unsafeTriangles.toLocaleString());
+ f('reportOrientation',report.quality.unsafeTriangles>0?'Base-down; inspect in Cura':'Base-down (favourable)');
+ const list=report.warnings;
+ $('reportWarnings').innerHTML=list.length?'<div class="alert">'+list.map(x=>'<p>'+escapeHTML(x)+'</p>').join('')+'</div>':
+  '<div class="success">No flagged conditions in this limited screening. Confirm in your slicer.</div>';
+ $('prepareReport').hidden=false;
+}
 function generate(preserve=true){
  const kept=preserve&&s.preserveLocked?crystals.filter(c=>c.locked):[];
  const next=generateFormation({...s,count:Math.max(0,s.count-kept.length)});
@@ -111,12 +165,14 @@ function makeCrystal(c){
  scene.add(mesh);return mesh;
 }
 function rebuild(){
+ disposeManufacturing();
  gizmo.detach();crystalMeshes.forEach(disposeMesh);crystalMeshes=[];
  for(const c of crystals)crystalMeshes.push(makeCrystal(c));
  rebuildBase();updateLEDs();selectCrystal(selectedId,false);syncForm();renderTree();renderInfo();
  setStatus('Ready · click a crystal to select · G / R / S · drag to orbit');
 }
 function rebuildBase(){
+ disposeManufacturing();
  disposeMesh(baseMesh);baseMesh=null;
  if(s.baseType==='none')return;
  const geo=baseGeometry(THREE,crystals,s);
@@ -138,7 +194,7 @@ function updateLEDs(){
 function selectCrystal(id,commit=true){
  const c=crystals.find(c=>c.id===id);selectedId=c?c.id:null;
  selectedMesh=crystalMeshes.find(m=>m.userData.crystalId===selectedId)||null;
- if(selectedMesh&&activeTool!=='select'&&!c.locked)gizmo.attach(selectedMesh);
+ if(selectedMesh&&activeTool!=='select'&&!c.locked&&!manufacturingMesh?.visible)gizmo.attach(selectedMesh);
  else gizmo.detach();
  for(const m of crystalMeshes)m.material.emissive.setHex(m===selectedMesh?0x21415e:0x000000);
  renderTree();renderSelection();if(commit)persist();
@@ -146,7 +202,7 @@ function selectCrystal(id,commit=true){
 function setTool(tool){
  activeTool=tool;
  document.querySelectorAll('[data-tool]').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool));
- const c=crystals.find(x=>x.id===selectedId);if(selectedMesh&&tool!=='select'&&!c?.locked){gizmo.attach(selectedMesh);gizmo.setMode(tool)}else gizmo.detach();
+ const c=crystals.find(x=>x.id===selectedId);if(selectedMesh&&tool!=='select'&&!c?.locked&&!manufacturingMesh?.visible){gizmo.attach(selectedMesh);gizmo.setMode(tool)}else gizmo.detach();
 }
 function applyGizmo(persistChanges=true){
  if(!selectedMesh)return;
@@ -261,11 +317,12 @@ function schedule(full=true){
  },85);
 }
 const regenKeys=new Set(['count','height','width','seed','pattern','familyMix']);
-const previewKeys=new Set(['showPixels','pixelCount','pixelDiameter','pixelFit','mount','printer','overhang','preserveLocked','snap']);
+const previewKeys=new Set(['showPixels','mount','printer','preserveLocked','snap']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
   s[key]=value;
+  if(!previewKeys.has(key))disposeManufacturing();
   for(const o of document.querySelectorAll('[data-out="'+key+'"]'))o.textContent=format(key,value);
   if(key==='pixelDiameter'||key==='pixelFit')$('actualHole').textContent=(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm';
   if(key==='snap'){gizmo.setTranslationSnap(value?5:null);gizmo.setRotationSnap(value?THREE.MathUtils.degToRad(15):null);gizmo.setScaleSnap(value?.1:null)}
@@ -370,12 +427,92 @@ $('loadFile').onchange=async e=>{
  }catch(err){alert('Could not load project: '+err.message)}
  e.target.value='';
 };
-function exportExperimental(){
- if(!confirm('This STL contains overlapping closed crystal and base shells, NOT a verified Boolean-unioned print-ready mesh. Continue with experimental export?'))return;
- const triangles=exportSTL(THREE,[...crystalMeshes,...(baseMesh?[baseMesh]:[])],'crystal-forge-experimental.stl');
- setStatus('Exported '+triangles.toLocaleString()+' experimental STL triangles · verify in Cura');
+async function buildManufacturing(){
+ const btn=$('prepareBtn');
+ if(btn.disabled)return;
+ btn.disabled=true;btn.textContent='◌ Preparing…';
+ $('prepareStatus').textContent='Loading geometry engine and preparing a Boolean solid…';
+ setStatus('Preparing print geometry…');
+ // Yield so status is visible before expensive synchronous WASM operations.
+ await new Promise(resolve=>setTimeout(resolve,40));
+ try{
+  const wasm=await loadManifold();
+  const source=sourceHash();
+  $('prepareStatus').textContent='Boolean union, hollow cuts and pixel sockets…';
+  await new Promise(resolve=>setTimeout(resolve,30));
+  const {geometry,report}=prepareFabrication({
+   wasm,
+   meshes:[...crystalMeshes.filter(m=>m.visible||m.userData.crystalId),...(baseMesh?[baseMesh]:[])].filter(m=>{
+     if(m.userData.crystalId)return !crystals.find(c=>c.id===m.userData.crystalId)?.hidden;
+     return true;
+   }),
+   crystals,settings:s
+  });
+  // If the user modified the design during processing, discard stale geometry.
+  if(source!==sourceHash()){geometry.dispose();throw new Error('Design changed during preparation. Please prepare again.')}
+  disposeManufacturing();
+  manufacturingReport=report;preparedSource=source;
+  manufacturingMesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
+   color:s.colour,metalness:0,roughness:.42,flatShading:true,side:THREE.DoubleSide
+  }));
+  manufacturingMesh.visible=false;
+  scene.add(manufacturingMesh);
+  renderManufactureReport(report);
+  $('prepareStatus').textContent='✓ Combined manufacturing mesh prepared. Review the warnings below and verify in Cura.';
+  $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;
+  $('splitExportBtn').disabled=!s.splitParts;
+  $('showManufacturing').checked=true;manufacturingView(true);
+  setStatus('Prepared '+report.triangleCount.toLocaleString()+' triangles · '+report.disconnected+' body/bodies');
+ }catch(err){
+  console.error('Print preparation failed',err);
+  $('prepareStatus').textContent='Preparation failed: '+err.message;
+  setStatus('Manufacturing failed · '+err.message);
+ }finally{btn.disabled=false;btn.textContent='▣ Prepare print mesh (Boolean union)'}
 }
-$('stlBtn').onclick=exportExperimental;
+function verifyPrepared(){
+ if(!manufacturingMesh||!manufacturingReport||preparedSource!==sourceHash()){
+  alert('Please run Prepare print mesh first. Your existing manufacturing mesh is missing or out of date.');return false;
+ }
+ return true;
+}
+$('prepareBtn').onclick=buildManufacturing;
+$('showManufacturing').onchange=e=>manufacturingView(e.target.checked);
+$('stlBtn').onclick=()=>{
+ if(!verifyPrepared())return;
+ saveSTL(manufacturingMesh.geometry,'crystal-forge-manifold.stl');
+ setStatus('Downloaded joined STL · still verify supports and wall thickness in Cura');
+};
+$('threeMfBtn').onclick=()=>{
+ if(!verifyPrepared())return;
+ save3MF(manufacturingMesh.geometry,'crystal-forge-manifold.3mf');
+ setStatus('Downloaded 3MF · inspect model and slicer results');
+};
+$('calibrationBtn').onclick=async()=>{
+ const button=$('calibrationBtn');button.disabled=true;button.textContent='Generating calibration strip…';
+ await new Promise(resolve=>setTimeout(resolve,20));
+ try{
+  const wasm=await loadManifold(),data=makeCalibrationStrip(wasm);
+  saveSTL(data.geometry,'12mm-pixel-fit-calibration-11_8-to-12_2.stl');
+  data.geometry.dispose();
+  setStatus('Calibration strip downloaded · five holes 11.8–12.2 mm, left to right');
+ }catch(err){console.error(err);alert('Calibration strip failed: '+err.message)}
+ finally{button.disabled=false;button.textContent='⌖ Generate 12 mm pixel-fit test strip (STL)'}
+};
+$('splitExportBtn').onclick=async()=>{
+ if(!verifyPrepared()||!s.splitParts)return;
+ const button=$('splitExportBtn');button.disabled=true;
+ try{
+  const wasm=await loadManifold();
+  const halves=splitPreparedMesh(wasm,manufacturingReport.mesh,s.splitX);
+  for(let i=0;i<halves.length;i++){
+   if(!halves[i])continue;
+   saveSTL(halves[i].geometry,'crystal-forge-split-'+(i+1)+'.stl');
+   halves[i].geometry.dispose();
+  }
+  setStatus('Split halves exported · connectors and alignment keys not yet included');
+ }catch(err){console.error(err);alert('Split failed: '+err.message)}
+ finally{button.disabled=false}
+};
 $('bomBtn').onclick=()=>{
  const rows=[['Type','Quantity','Notes'],['12V gumdrop pixels',s.pixelCount,'12 mm nominal mounting hole; adjust by '+s.pixelFit+' mm'],['Crystal bodies',crystals.length,'experimental STL; not Boolean merged'],['Integrated base',s.baseType==='none'?0:1,'mounting holes not generated'],['Planned socket diameter',(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm','preview only']];
  const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
