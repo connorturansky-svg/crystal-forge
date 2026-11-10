@@ -5,6 +5,7 @@
  */
 import * as THREE from 'three';
 import {crystalGeometry} from './geometry-v3.js';
+import {planHardware} from './hardware-layout.js';
 
 let modulePromise=null;
 export async function loadManifold(){
@@ -136,28 +137,6 @@ function putSocket(wasm,c,pos,radius,depth,start){
   .rotate([-90,0,0]).translate([pos.x,start,pos.z]);
  return b;
 }
-function socketPlan(cs,s){
- const count= s.cutSockets?Math.max(0,Math.round(s.pixelCount)):0;
- const hole=(s.pixelDiameter+s.pixelFit);
- const r=hole*.5;
- const chosen=[];
- const sorted=cs.filter(c=>!c.hidden).slice().sort((a,b)=>(b.r*b.h)-(a.r*a.h));
- for(const c of sorted){
-  if(chosen.length>=count)break;
-  const baseRad=c.r*s.bottomScale*Math.min(c.sx||c.scale||1,c.sz||c.scale||1);
-  const safeRad=r+Math.max(1.5,s.wallThickness*1.25);
-  if(baseRad<safeRad)continue;
-  const offsets=[[0,0]];
-  if(baseRad>r*3.25+3*s.wallThickness)offsets.push([r*1.23,0],[-r*1.23,0]);
-  for(const [dx,dz] of offsets){
-   if(chosen.length>=count)break;
-   const angle=c.rotation,ca=Math.cos(angle),sa=Math.sin(angle);
-   const px=c.x+dx*ca-dz*sa,pz=c.z+dx*sa+dz*ca;
-   chosen.push({crystalId:c.id,x:px,z:pz});
-  }
- }
- return {chosen,requested:count,skipped:Math.max(0,count-chosen.length),diameter:hole};
-}
 function cleanupAll(list){
  for(const m of list){try{m.delete()}catch(e){}}
 }
@@ -174,7 +153,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   combined=hold(wasm.Manifold.union(components));
   assertSolid(combined,'Unioned cluster');
   const initialVolume=combined.volume();
-  let hollowed=0,socketsCut=0;
+  let hollowed=0;
   if(s.hollowCrystals){
    // Erode the *united assembly* instead of individually subtracting
    // neighbouring crystal-shaped cavities. The earlier per-crystal cutters
@@ -202,55 +181,39 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     warnings.push('The current crystal cluster is too narrow for an internal cavity at the selected wall thickness.');
    }
   }
-  const {chosen,skipped,diameter}=socketPlan(crystals,s);
-  if(s.cutSockets&&chosen.length){
+  // Single authoritative feature plan shared with the colour-coded viewport.
+  // Pixel sockets are placed first; mount holes are searched for a safe
+  // alternative location. Features that cannot fit are SKIPPED and warned.
+  const hardware=planHardware(crystals,s);
+  if(hardware.collisions.length)throw new Error('Hardware planner reported conflicting bores; no manufacturing mesh was exported.');
+  warnings.push(...hardware.messages);
+  let socketsCut=0,mountingHolesCut=0;
+  if(hardware.sockets.length){
    const cutters=[];
-   for(const pos of chosen){
+   for(const pos of hardware.sockets){
     const depth=Math.max(13,s.baseHeight+9),start=-3;
-    cutters.push(hold(putSocket(wasm,null,pos,diameter*.5,depth,start)));
+    cutters.push(hold(putSocket(wasm,null,pos,pos.radius,depth,start)));
    }
-   const holeUnion=hold(wasm.Manifold.union(cutters));
-   const cut=hold(combined.subtract(holeUnion));
-   assertSolid(cut,'Pixel socket subtraction');
-   combined=cut;
-   socketsCut=chosen.length;
+   const holes=hold(wasm.Manifold.union(cutters));
+   const cut=hold(combined.subtract(holes));assertSolid(cut,'LED socket cuts');
+   combined=cut;socketsCut=hardware.sockets.length;
   }
-  if(skipped)warnings.push(skipped+' of '+s.pixelCount+' requested LED sockets could not fit while maintaining basic radial clearance.');
-  if(s.cutSockets)warnings.push('LED socket fit is based on nominal dimensions and has not yet been physically calibrated. No retaining lip is included.');
-  // Optional mounting holes: intentionally stay within the footprint root
-  // wherever possible. Custom dimensions and material fit remain user-tunable.
-  let mountingHolesCut=0;
-  const mountingPreset=s.mount||'None';
-  if(mountingPreset!=='None'&&s.baseType!=='none'&&mountingPreset!=='Detachable plate'){
-   const custom=mountingPreset==='Custom dual holes';
-   const diameter=custom?Number(s.mountHoleDiameter||4.5):
-    mountingPreset==='Magnet inserts'?10.2:mountingPreset==='Threaded insert M3'?4.2:4.5;
-   const depth=mountingPreset==='Magnet inserts'?Math.min(3.2,s.baseHeight-1.6):
-    mountingPreset==='Threaded insert M3'?Math.min(5.5,s.baseHeight-1.6):
-    custom?Math.max(1.2,Number(s.mountHoleDepth||s.baseHeight+2)):s.baseHeight+4;
-   const spacing=custom?Number(s.mountSpacing||s.width*.28):s.width*.28;
-   const positions=[[-spacing/2,0],[spacing/2,0]];
-   const mountCuts=[];
-   for(const [x,z] of positions){
-    const radius=Math.max(.8,diameter*.5);
-    const cutter=hold(wasm.Manifold.cylinder(depth+.5,radius,radius,32)
-      .rotate([-90,0,0]).translate([x,-.5,z]));
-    mountCuts.push(cutter);
+  if(s.cutSockets)warnings.push('Pixel fits are nominal. Test print tolerances and retention before installing any electronics.');
+  if(hardware.mounts.length){
+   const cutters=[];
+   for(const pos of hardware.mounts){
+    cutters.push(hold(wasm.Manifold.cylinder(pos.depth+.5,pos.radius,pos.radius,32)
+      .rotate([-90,0,0]).translate([pos.x,-.5,pos.z])));
    }
-   if(mountCuts.length){
-    const holes=hold(wasm.Manifold.union(mountCuts));
-    const drilled=hold(combined.subtract(holes));
-    assertSolid(drilled,'Mounting feature cuts');
-    combined=drilled;mountingHolesCut=positions.length;
-   }
-   if(mountingPreset==='Ceiling mount')
-    warnings.push('Ceiling mounts require independent mechanical retention and verified load limits. Do not rely on a printed fixing alone.');
-   if(custom)warnings.push('Custom mounting holes are nominal. Check position, diameter and remaining surrounding material in Cura.');
-   if(mountingPreset==='Magnet inserts')warnings.push('Magnet holes are nominal 10.2 mm × 3.2 mm blind pockets. Verify magnet dimensions and print shrinkage.');
-   if(mountingPreset==='Threaded insert M3')warnings.push('M3 insert holes are nominal 4.2 mm; verify your insert type and installation instructions.');
-  }else if(mountingPreset==='Detachable plate'){
-   warnings.push('Detachable mounting plate is not yet generated; choose a drilled mount or create a plate separately.');
+   const holes=hold(wasm.Manifold.union(cutters));
+   const cut=hold(combined.subtract(holes));assertSolid(cut,'Mounting-hole cuts');
+   combined=cut;mountingHolesCut=hardware.mounts.length;
   }
+  if(s.mount==='Ceiling mount')
+    warnings.push('Ceiling mounting demands properly rated fixings and secondary retention. A printed bracket alone is not a certified overhead support.');
+  if(s.mount==='Magnet inserts')warnings.push('Magnet pockets are nominal 10.2 mm diameter; verify magnet dimensions and required retention.');
+  if(s.mount==='Threaded insert M3')warnings.push('M3 insert holes are nominal 4.2 mm; verify insert type and installation tolerances.');
+  if(s.mount==='Detachable plate')warnings.push('Detachable mounting plate remains a planned feature, not yet fabricated.');
   const resultMesh=combined.getMesh();
   const geom=fromResultMesh(resultMesh),indexed=compactMesh(resultMesh);
   const bounds=combined.boundingBox();
@@ -282,7 +245,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,socketsCut,mountingHolesCut,plannedSockets:chosen,warnings,mesh:indexed};
+    bounds:size,quality,hollowed,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
 }
