@@ -31,6 +31,10 @@ try{
    'Initial cluster is centred onscreen at DPR=2 '+JSON.stringify(layout));
  console.log('Retina viewport framing verified at DPR=2');
  console.log('3D editor launched');
+ await page.locator('#studioLightBtn').click();
+ assert((await page.locator('#studioLightBtn').innerText()).includes('Off'),'Even lighting toggles off');
+ await page.locator('#studioLightBtn').click();
+ assert((await page.locator('#studioLightBtn').innerText()).includes('On'),'Even lighting toggles on');
  await page.locator('#themeBtn').click();
  assert(await page.locator('body.theme-light').count(),'Light theme applied');
  await page.locator('#themeBtn').click();
@@ -94,6 +98,9 @@ try{
  console.log('Individual shaping, green selection, floating view and bottom snap verified');
  console.log('Advanced editor and view controls verified');
  await page.locator('[data-tab="build"]').click();
+ await page.locator('[data-state="baseEdgeRadius"]').evaluate(el=>{el.value='2.5';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(250);
+ assert.equal(Number(await page.locator('[data-state="baseEdgeRadius"]').inputValue()),2.5,'Base edge radius slider works');
  assert(await page.locator('[data-state="hollowCrystals"]').isChecked(),'Hollow defaults on');
  assert(await page.locator('[data-state="cutSockets"]').isChecked(),'Socket cuts default on');
  assert.equal(await page.locator('[data-state="lightingMode"]').inputValue(),'single','Single shared LED mode default');

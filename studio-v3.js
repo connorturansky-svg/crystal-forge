@@ -10,10 +10,10 @@ const defaults={
   title:'Untitled cluster',count:16,height:155,width:130,seed:42,pattern:'Central Spire',spacing:42,angleRandomness:32,
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
-  baseType:'integrated',baseHeight:8,baseDome:0,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
+  baseType:'integrated',baseHeight:8,baseDome:0,baseEdgeRadius:0,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
   showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
-  colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false
+  colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
 let s={...defaults},crystals=[],selectedId=null,activeTool='select',cameraTween=null;
 try{
@@ -51,7 +51,7 @@ function restore(str){
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
- if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseWidth','wallThickness','pixelDiameter','pixelFit'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
+ if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
  if(['bottomScale','topScale','tipLength'].includes(k))return Math.round(v*100)+'%';
  if(['mountHoleDiameter','mountHoleDepth','mountSpacing'].includes(k))return Number(v).toFixed(1)+' mm';
  if(k==='splitX')return v+' mm';if(['spacing','angleRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
@@ -99,6 +99,7 @@ function syncForm(){
  syncShapeControls();
  $('floatBtn').classList.toggle('active',!!s.floatView);
  $('hardwareColoursBtn').classList.toggle('active',!!s.hardwareColourMode);
+ refreshStudioLighting();
  document.querySelectorAll('#colours button').forEach(b=>b.classList.toggle('active',Number(b.dataset.colour)===s.colour));
 }
 function saveProject(){
@@ -115,7 +116,7 @@ let manufacturingMesh=null,manufacturingReport=null,preparedSource=null;
 const relevantManufacturingKeys=[
  'count','height','width','seed','pattern','spacing','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
- 'baseType','baseHeight','baseDome','baseWidth','baseStyle','undersideAccess','wallThickness','lightingMode','pixelCount','pixelDiameter',
+ 'baseType','baseHeight','baseDome','baseEdgeRadius','baseWidth','baseStyle','undersideAccess','wallThickness','lightingMode','pixelCount','pixelDiameter',
  'pixelFit','cutSockets','hollowCrystals','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing'
 ];
 function sourceHash(){
@@ -272,9 +273,26 @@ const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;orbit.dampingFactor=.08;orbit.minDistance=20;orbit.maxDistance=1500;
 orbit.target.set(0,60,0);
 orbit.addEventListener('start',()=>{cameraTween=null});
-scene.add(new THREE.HemisphereLight(0xd9ebff,0x222b3d,2.2));
-const sun=new THREE.DirectionalLight(0xffffff,3.1);sun.position.set(110,250,135);scene.add(sun);
-const fill=new THREE.DirectionalLight(0x99b7ff,1.0);fill.position.set(-120,80,-60);scene.add(fill);
+const hemisphere=new THREE.HemisphereLight(0xf4faff,0xc3dcfa,1.75);scene.add(hemisphere);
+const sun=new THREE.DirectionalLight(0xffffff,1.35);sun.position.set(110,250,135);scene.add(sun);
+const fill=new THREE.DirectionalLight(0xd3e6ff,.9);fill.position.set(-120,80,-60);scene.add(fill);
+const underside=new THREE.DirectionalLight(0xd8edff,1.55);underside.position.set(0,-180,90);scene.add(underside);
+const rimLight=new THREE.DirectionalLight(0xf6f9ff,.85);rimLight.position.set(70,-60,-200);scene.add(rimLight);
+const ambience=new THREE.AmbientLight(0xffffff,.65);scene.add(ambience);
+function refreshStudioLighting(){
+ const even=!!s.evenLighting;
+ hemisphere.color.set(even?0xf4faff:0xd9ebff);
+ hemisphere.groundColor.set(even?0xc3dcfa:0x222b3d);
+ hemisphere.intensity=even?1.75:2.2;
+ sun.intensity=even?1.35:3.1;
+ fill.intensity=even?.9:1;
+ underside.intensity=even?1.55:0;
+ rimLight.intensity=even?.85:0;
+ ambience.intensity=even?.65:0;
+ $('studioLightBtn').classList.toggle('active',even);
+ $('studioLightBtn').textContent=even?'☼ Even light: On':'☼ Even light: Off';
+}
+
 const grid=new THREE.GridHelper(500,25,0x345378,0x263950);grid.position.y=-.12;scene.add(grid);
 const axes=new THREE.AxesHelper(38);axes.position.set(-175,.4,-175);scene.add(axes);
 const hardwareAnnotations=new THREE.Group();hardwareAnnotations.name='Hardware-identification overlays';scene.add(hardwareAnnotations);
@@ -575,6 +593,7 @@ document.querySelectorAll('[data-look]').forEach(b=>b.onclick=()=>{
 });
 $('gridBtn').onclick=()=>{grid.visible=!grid.visible;axes.visible=grid.visible; if(s.floatView&&grid.visible){s.floatView=false;$('floatBtn').classList.remove('active');persist()}};
 $('floatBtn').onclick=()=>setFloating(!s.floatView);
+$('studioLightBtn').onclick=()=>{s.evenLighting=!s.evenLighting;refreshStudioLighting();persist()};
 $('centreViewBtn').onclick=()=>{
  centreOrbitOnModel();
  setStatus('View centred on crystal cluster · drag to rotate · right-drag to pan');

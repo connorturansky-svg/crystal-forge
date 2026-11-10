@@ -132,6 +132,13 @@ function verifyDomeRoots(){
 }
 verifyDomeRoots();
 
+for(const edge of [0,.75,2.5,5.5]){
+ const cfg={...settings,baseDome:20,baseEdgeRadius:edge,baseWidth:8,tipRound:3.5};
+ const crystals=generateFormation(cfg),geo=baseGeometry(THREE,crystals,cfg);
+ assert.equal(geometryEdges(geo).open,0,'Upper-edge fillet must stay closed');
+ assert(crystals.every(c=>Number.isFinite(baseSurfaceHeight(crystals,cfg,c.x,c.z))),'Crystal roots remain attached');
+ geo.dispose();
+}
 validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
 const solidMass=validate('solid',settings);
 const hollow=validate('hollow',{...settings,hollowCrystals:true});

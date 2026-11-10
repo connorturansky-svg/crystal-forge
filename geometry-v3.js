@@ -177,22 +177,30 @@ export function baseOutline(cs,s){
 
 export function baseSurfaceHeight(cs,s,x,z){
  if(s.baseType==='none')return 0;
- const outline=baseOutline(cs,s),b=Math.max(3,Number(s.baseHeight)||3),d=Math.max(0,Number(s.baseDome)||0);
- if(outline.length<3||d===0)return b;
- const n=outline.length,cx=outline.reduce((v,p)=>v+p[0]/n,0),cz=outline.reduce((v,p)=>v+p[1]/n,0);
- const vx=x-cx,vz=z-cz;if(Math.hypot(vx,vz)<1e-8)return b+d;
+ const outline=baseOutline(cs,s),base=Math.max(3,Number(s.baseHeight)||3),dome=Math.max(0,Number(s.baseDome)||0);
+ if(outline.length<3)return base;
+ const edge=Math.min(Math.max(0,Number(s.baseEdgeRadius||0)),base*.55,Math.max(.1,Number(s.baseWidth||3)*.85));
+ if(dome===0&&edge===0)return base;
+ const n=outline.length,cx=outline.reduce((sum,p)=>sum+p[0]/n,0),cz=outline.reduce((sum,p)=>sum+p[1]/n,0);
+ const vx=x-cx,vz=z-cz,dist=Math.hypot(vx,vz);if(dist<1e-8)return base+dome;
  let best=Infinity;
- for(let i=0;i<n;i++){
-  const p=outline[i],q=outline[(i+1)%n],ex=q[0]-p[0],ez=q[1]-p[1],den=vx*ez-vz*ex;
-  if(Math.abs(den)<1e-12)continue;
+ // Ray/edge intersection gives the actual polyline radius in any direction.
+ for(let k=0;k<n;k++){
+  const p=outline[k],q=outline[(k+1)%n],ex=q[0]-p[0],ez=q[1]-p[1],det=vx*ez-vz*ex;
+  if(Math.abs(det)<1e-12)continue;
   const rx=p[0]-cx,rz=p[1]-cz;
-  const ray=(rx*ez-rz*ex)/den,edge=(rx*vz-rz*vx)/den;
-  if(ray>0&&edge>=-1e-6&&edge<=1+1e-6)best=Math.min(best,ray);
+  const at=(rx*ez-rz*ex)/det,along=(rx*vz-rz*vx)/det;
+  if(at>0&&along>=-1e-6&&along<=1+1e-6)best=Math.min(best,at);
  }
- const f=Number.isFinite(best)?Math.max(0,Math.min(1,1/best)):1;
- // Match the straight triangles joining the six radial dome rings.
- const v=f*6,k=Math.min(5,Math.floor(v)),f0=k/6,f1=(k+1)/6;
- return b+d*(1-f0*f0)+(v-k)*d*(f0*f0-f1*f1);
+ if(!Number.isFinite(best))return base;
+ const boundary=dist*best,topRadius=Math.max(.1,boundary-edge);
+ if(edge>0&&dist>topRadius){
+  const inset=Math.max(0,Math.min(edge,boundary-dist));
+  return base-edge+Math.sqrt(Math.max(0,2*edge*inset-inset*inset));
+ }
+ const fraction=Math.min(1,Math.max(0,dist/topRadius));
+ const v=fraction*6,k=Math.min(5,Math.floor(v)),f0=k/6,f1=(k+1)/6;
+ return base+dome*(1-f0*f0)+(v-k)*dome*(f0*f0-f1*f1);
 }
 export function crystalRootOffset(cs,s,c){
  return s.baseType==='none'?0:baseSurfaceHeight(cs,s,c.x,c.z)-2.5;
@@ -227,28 +235,37 @@ export function baseGeometry(THREE,cs,s){
  const top=outline.map((p,i)=>[p[0],b+heights[i],p[1]]);
  const bottom=outline.map(p=>[p[0],0,p[1]]);
  const dome=Math.max(0,Number(s.baseDome??0));
+ // Real upper-edge fillet: lower wall, circular quarter-arc rings,
+ // then domed top surface. No shader-only corner smoothing.
+ const edge=Math.min(Math.max(0,Number(s.baseEdgeRadius||0)),b*.55,Math.max(.1,Number(s.baseWidth||3)*.85));
+ let prev=outline.map((p,k)=>[p[0],b-edge+heights[k],p[1]]);
+ for(let k=0;k<length;k++){
+  const next=(k+1)%length;quad(bottom[k],prev[k],prev[next],bottom[next]);
+ }
+ if(edge>.001){
+  for(let band=1;band<=6;band++){
+   const angle=band*Math.PI/12, inset=edge*(1-Math.cos(angle)),y=b-edge+edge*Math.sin(angle);
+   const ring=outline.map((p,k)=>{
+    const dx=p[0]-c[0],dz=p[1]-c[1],d=Math.hypot(dx,dz)||1;
+    return[p[0]-dx/d*inset,y+heights[k],p[1]-dz/d*inset];
+   });
+   for(let k=0;k<length;k++){const next=(k+1)%length;quad(prev[k],ring[k],ring[next],prev[next]);}
+   prev=ring;
+  }
+ }
+ const topOutline=prev.map(p=>[p[0],p[2]]);
  const centerTop=[c[0],b+dome,c[1]];
- // Concentric polygonal rings produce a curved mound without replacing the
- // base-height control. Five bands create printable, gently changing slopes.
- let prev=top;
  for(let band=1;band<=5;band++){
   const fraction=1-band/6;
-  const ring=outline.map(p=>[
+  const ring=topOutline.map(p=>[
    c[0]+(p[0]-c[0])*fraction,
    b+dome*(1-fraction*fraction),
    c[1]+(p[1]-c[1])*fraction
   ]);
-  for(let i=0;i<length;i++){
-   const j=(i+1)%length;
-   quad(prev[i],ring[i],ring[j],prev[j]);
-  }
+  for(let k=0;k<length;k++){const next=(k+1)%length;quad(prev[k],ring[k],ring[next],prev[next]);}
   prev=ring;
  }
- for(let i=0;i<length;i++)emit(centerTop,prev[(i+1)%length],prev[i]);
- for(let i=0;i<length;i++){
-  const j=(i+1)%length;
-  quad(bottom[i],top[i],top[j],bottom[j]);
- }
+ for(let k=0;k<length;k++)emit(centerTop,prev[(k+1)%length],prev[k]);
  if(s.undersideAccess){
   const minR=Math.min(...outline.map(p=>Math.hypot(p[0]-c[0],p[1]-c[1])));
   const inward=Math.min(Math.max(2.5,s.wallThickness*2),minR*.40);
