@@ -217,6 +217,40 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   }
   if(skipped)warnings.push(skipped+' of '+s.pixelCount+' requested LED sockets could not fit while maintaining basic radial clearance.');
   if(s.cutSockets)warnings.push('LED socket fit is based on nominal dimensions and has not yet been physically calibrated. No retaining lip is included.');
+  // Optional mounting holes: intentionally stay within the footprint root
+  // wherever possible. Custom dimensions and material fit remain user-tunable.
+  let mountingHolesCut=0;
+  const mountingPreset=s.mount||'None';
+  if(mountingPreset!=='None'&&s.baseType!=='none'&&mountingPreset!=='Detachable plate'){
+   const custom=mountingPreset==='Custom dual holes';
+   const diameter=custom?Number(s.mountHoleDiameter||4.5):
+    mountingPreset==='Magnet inserts'?10.2:mountingPreset==='Threaded insert M3'?4.2:4.5;
+   const depth=mountingPreset==='Magnet inserts'?Math.min(3.2,s.baseHeight-1.6):
+    mountingPreset==='Threaded insert M3'?Math.min(5.5,s.baseHeight-1.6):
+    custom?Math.max(1.2,Number(s.mountHoleDepth||s.baseHeight+2)):s.baseHeight+4;
+   const spacing=custom?Number(s.mountSpacing||s.width*.28):s.width*.28;
+   const positions=[[-spacing/2,0],[spacing/2,0]];
+   const mountCuts=[];
+   for(const [x,z] of positions){
+    const radius=Math.max(.8,diameter*.5);
+    const cutter=hold(wasm.Manifold.cylinder(depth+.5,radius,radius,32)
+      .rotate([-90,0,0]).translate([x,-.5,z]));
+    mountCuts.push(cutter);
+   }
+   if(mountCuts.length){
+    const holes=hold(wasm.Manifold.union(mountCuts));
+    const drilled=hold(combined.subtract(holes));
+    assertSolid(drilled,'Mounting feature cuts');
+    combined=drilled;mountingHolesCut=positions.length;
+   }
+   if(mountingPreset==='Ceiling mount')
+    warnings.push('Ceiling mounts require independent mechanical retention and verified load limits. Do not rely on a printed fixing alone.');
+   if(custom)warnings.push('Custom mounting holes are nominal. Check position, diameter and remaining surrounding material in Cura.');
+   if(mountingPreset==='Magnet inserts')warnings.push('Magnet holes are nominal 10.2 mm × 3.2 mm blind pockets. Verify magnet dimensions and print shrinkage.');
+   if(mountingPreset==='Threaded insert M3')warnings.push('M3 insert holes are nominal 4.2 mm; verify your insert type and installation instructions.');
+  }else if(mountingPreset==='Detachable plate'){
+   warnings.push('Detachable mounting plate is not yet generated; choose a drilled mount or create a plate separately.');
+  }
   const resultMesh=combined.getMesh();
   const geom=fromResultMesh(resultMesh),indexed=compactMesh(resultMesh);
   const bounds=combined.boundingBox();
@@ -248,7 +282,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,socketsCut,plannedSockets:chosen,warnings,mesh:indexed};
+    bounds:size,quality,hollowed,socketsCut,mountingHolesCut,plannedSockets:chosen,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
 }
