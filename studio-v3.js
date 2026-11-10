@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
-import {generateFormation,crystalGeometry,baseGeometry,exportSTL} from './geometry-v3.js';
+import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,exportSTL} from './geometry-v3.js';
 import {loadManifold,prepareFabrication,saveSTL,save3MF,makeCalibrationStrip,splitPreparedMesh} from './fabrication-v1.js';
 import {planHardware} from './hardware-layout.js';
 
@@ -176,6 +176,7 @@ function disposeManufacturing(){
  for(const id of ['stlBtn','threeMfBtn','splitExportBtn'])if($(id))$(id).disabled=true;
  for(const mesh of crystalMeshes||[])mesh.visible=!crystals.find(c=>c.id===mesh.userData.crystalId)?.hidden;
  if(baseMesh)baseMesh.visible=s.baseType!=='none';
+ for(const m of baseAccents)m.visible=s.baseType!=='none';
  if(pixelGroup)pixelGroup.visible=true;
 }
 function manufacturingView(enabled){
@@ -183,6 +184,7 @@ function manufacturingView(enabled){
  if(manufacturingMesh)manufacturingMesh.visible=enabled;
  for(const m of crystalMeshes)m.visible=!enabled&&!crystals.find(c=>c.id===m.userData.crystalId)?.hidden;
  if(baseMesh)baseMesh.visible=!enabled&&s.baseType!=='none';
+ for(const m of baseAccents)m.visible=!enabled&&s.baseType!=='none';
  pixelGroup.visible=!enabled;
  if(enabled)gizmo.detach();
  else selectCrystal(selectedId,false);
@@ -270,7 +272,7 @@ gizmo.setScaleSnap(s.snap?.1:null);
 gizmo.addEventListener('dragging-changed',e=>{orbit.enabled=!e.value;if(!e.value){applyGizmo();rebuildBase();snapshot();renderTree();renderSelection()}});
 gizmo.addEventListener('objectChange',()=>{applyGizmo(false);renderSelection(true)});
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
-let crystalMeshes=[],baseMesh=null,pixelGroup=new THREE.Group(),selectedMesh=null;
+let crystalMeshes=[],baseMesh=null,baseAccents=[],pixelGroup=new THREE.Group(),selectedMesh=null;
 scene.add(pixelGroup);
 const crystalMat=()=>new THREE.MeshStandardMaterial({color:s.colour,metalness:0,roughness:.4,flatShading:true,side:THREE.DoubleSide});
 const baseMat=()=>new THREE.MeshStandardMaterial({color:s.colour,metalness:0,roughness:.56,flatShading:true,side:THREE.DoubleSide});
@@ -293,11 +295,17 @@ function rebuild(){
 function rebuildBase(){
  disposeManufacturing();
  disposeMesh(baseMesh);baseMesh=null;
+ baseAccents.forEach(disposeMesh);baseAccents=[];
  if(s.baseType==='none')return;
  const geo=baseGeometry(THREE,crystals,s);
  baseMesh=new THREE.Mesh(geo,baseMat());
  baseMesh.userData.isBase=true;
  scene.add(baseMesh);
+ for(const c of baseAccentSpecs(crystals,s)){
+  const mesh=new THREE.Mesh(crystalGeometry(THREE,c,s),baseMat());
+  mesh.position.set(c.x,s.baseHeight-3,c.z);mesh.rotation.y=c.rotation;
+  mesh.userData.isBaseAccent=true;scene.add(mesh);baseAccents.push(mesh);
+ }
  updateAppearance();
 }
 function updateLEDs(){
@@ -376,7 +384,7 @@ function renderTree(){
  $('objectTree').querySelectorAll('[data-id]').forEach(e=>e.onclick=()=>selectCrystal(e.dataset.id));
 }
 function renderInfo(){
- const meshes=[...crystalMeshes,...(baseMesh?[baseMesh]:[])];
+ const meshes=[...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents];
  let total=0,box=new THREE.Box3();
  for(const m of meshes){if(!m.visible)continue;total+=m.geometry.attributes.position.count/3;m.updateMatrixWorld(true);box.expandByObject(m)}
  const dims=box.isEmpty()?new THREE.Vector3():box.getSize(new THREE.Vector3());
@@ -388,7 +396,7 @@ function renderInfo(){
 }
 function updateAppearance(){
  const look=document.querySelector('[data-look].active')?.dataset.look||'solid';
- for(const m of [...crystalMeshes,...(baseMesh?[baseMesh]:[])]){
+ for(const m of [...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents]){
   m.material.wireframe=look==='wire';
   m.material.transparent=look==='xray';
   m.material.opacity=look==='xray'?.38:1;
@@ -406,7 +414,7 @@ function tweenCamera(to,target){
  cameraTween={from:camera.position.clone(),to,origin:orbit.target.clone(),target,start:performance.now()};
 }
 function snapView(key){
- const box=new THREE.Box3();for(const m of [...crystalMeshes,...(baseMesh?[baseMesh]:[])])if(m.visible)box.expandByObject(m);
+ const box=new THREE.Box3();for(const m of [...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents])if(m.visible)box.expandByObject(m);
  if(manufacturingMesh?.visible)box.expandByObject(manufacturingMesh);
  const target=box.isEmpty()?new THREE.Vector3(0,45,0):box.getCenter(new THREE.Vector3());
  const dist=Math.max(125,box.getSize(new THREE.Vector3()).length()*1.65);
@@ -594,7 +602,7 @@ async function buildManufacturing(){
   await new Promise(resolve=>setTimeout(resolve,30));
   const {geometry,report}=prepareFabrication({
    wasm,
-   meshes:[...crystalMeshes.filter(m=>m.visible||m.userData.crystalId),...(baseMesh?[baseMesh]:[])].filter(m=>{
+   meshes:[...crystalMeshes.filter(m=>m.visible||m.userData.crystalId),...(baseMesh?[baseMesh]:[]),...baseAccents].filter(m=>{
      if(m.userData.crystalId)return !crystals.find(c=>c.id===m.userData.crystalId)?.hidden;
      return true;
    }),
