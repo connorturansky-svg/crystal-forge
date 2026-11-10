@@ -3,6 +3,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,baseGeometry,exportSTL} from './geometry-v3.js';
 import {loadManifold,prepareFabrication,saveSTL,save3MF,makeCalibrationStrip,splitPreparedMesh} from './fabrication-v1.js';
+import {planHardware} from './hardware-layout.js';
 
 const $=id=>document.getElementById(id);
 const defaults={
@@ -108,8 +109,55 @@ function sourceHash(){
  crystals:crystals.map(c=>({id:c.id,x:c.x,y:c.y,z:c.z,h:c.h,r:c.r,rx:c.rx,rz:c.rz,
  rotation:c.rotation,sx:c.sx,sy:c.sy,sz:c.sz,hidden:c.hidden,leanX:c.leanX,leanZ:c.leanZ}))});
 }
+function clearHardwareAnnotations(){
+ for(const m of [...hardwareAnnotations.children]){
+  hardwareAnnotations.remove(m);
+  m.geometry?.dispose();m.material?.dispose();
+ }
+}
+function createHardwareAnnotations(){
+ clearHardwareAnnotations();
+ if(!manufacturingReport)return;
+ const plan=manufacturingReport.hardware;
+ if(!plan)return;
+ const markers=[
+  ...plan.sockets.map(p=>({...p,color:0xffdc25})),
+  ...plan.mounts.map(p=>({...p,color:0xb57cff}))
+ ];
+ for(const p of markers){
+  // A ring at the underside identifies each cut precisely without becoming
+  // part of the exported mesh. The translucent tube also shows bore depth.
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(p.radius+.36,.47,8,40),
+   new THREE.MeshBasicMaterial({color:p.color,depthTest:false,transparent:true,opacity:.97}));
+  ring.rotation.x=-Math.PI/2;
+  ring.position.set(p.x,-.32,p.z);ring.renderOrder=90;hardwareAnnotations.add(ring);
+  const depth=p.kind==='LED'?Math.max(13,s.baseHeight+9):p.depth;
+  const tube=new THREE.Mesh(new THREE.CylinderGeometry(p.radius,p.radius,depth,32,1,true),
+   new THREE.MeshBasicMaterial({color:p.color,transparent:true,opacity:.22,depthWrite:false,
+    depthTest:false,side:THREE.DoubleSide}));
+  tube.position.set(p.x,depth/2-.25,p.z);tube.renderOrder=88;hardwareAnnotations.add(tube);
+ }
+ updateHardwareAnnotationVisibility();
+}
+function updateHardwareAnnotationVisibility(){
+ hardwareAnnotations.visible=!!manufacturingMesh?.visible &&
+   (!!s.hardwareColourMode || !!$('featureOverlay')?.checked);
+ $('hardwareColoursBtn').classList.toggle('active',!!s.hardwareColourMode);
+}
+function setFloating(enabled){
+ s.floatView=!!enabled;
+ grid.visible=!s.floatView;
+ axes.visible=!s.floatView;
+ $('floatBtn').classList.toggle('active',s.floatView);
+ if(s.floatView){
+  // Orbit around the actual object centre, not the world origin/build plate.
+  snapView('iso');
+  setStatus('Floating inspect · drag to spin · right-drag to pan · BOT for underside');
+ }else snapView('iso');
+ persist();
+}
 function disposeManufacturing(){
- if(manufacturingMesh){
+ clearHardwareAnnotations(); if(manufacturingMesh){
   scene.remove(manufacturingMesh);
   manufacturingMesh.geometry.dispose();
   manufacturingMesh.material.dispose();
@@ -133,6 +181,7 @@ function manufacturingView(enabled){
  pixelGroup.visible=!enabled;
  if(enabled)gizmo.detach();
  else selectCrystal(selectedId,false);
+ updateHardwareAnnotationVisibility();
 }
 function applyPrintHeatmap(){
  if(!manufacturingMesh)return;
@@ -205,6 +254,8 @@ const sun=new THREE.DirectionalLight(0xffffff,3.1);sun.position.set(110,250,135)
 const fill=new THREE.DirectionalLight(0x99b7ff,1.0);fill.position.set(-120,80,-60);scene.add(fill);
 const grid=new THREE.GridHelper(500,25,0x345378,0x263950);grid.position.y=-.12;scene.add(grid);
 const axes=new THREE.AxesHelper(38);axes.position.set(-175,.4,-175);scene.add(axes);
+const hardwareAnnotations=new THREE.Group();hardwareAnnotations.name='Hardware-identification overlays';scene.add(hardwareAnnotations);
+
 const gizmo=new TransformControls(camera,renderer.domElement);
 scene.add(gizmo.getHelper?.()||gizmo);
 gizmo.setSize(.85);
@@ -353,7 +404,7 @@ function snapView(key){
  const box=new THREE.Box3();for(const m of [...crystalMeshes,...(baseMesh?[baseMesh]:[])])if(m.visible)box.expandByObject(m);
  const target=box.isEmpty()?new THREE.Vector3(0,45,0):box.getCenter(new THREE.Vector3());
  const dist=Math.max(125,box.getSize(new THREE.Vector3()).length()*1.65);
- const directions={iso:[1,.75,1],front:[0,.12,1],back:[0,.12,-1],left:[-1,.12,0],right:[1,.12,0],top:[0,1,.0001]};
+ const directions={iso:[1,.75,1],front:[0,.12,1],back:[0,.12,-1],left:[-1,.12,0],right:[1,.12,0],top:[0,1,.0001],bottom:[0,-1,.0001]};
  tweenCamera(target.clone().add(new THREE.Vector3(...(directions[key]||directions.iso)).normalize().multiplyScalar(dist)),target);
 }
 let lastClickPoint={x:0,y:0};
@@ -444,7 +495,11 @@ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>snapView(b.dat
 document.querySelectorAll('[data-look]').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('[data-look]').forEach(x=>x.classList.toggle('active',x===b));updateAppearance();
 });
-$('gridBtn').onclick=()=>{grid.visible=!grid.visible;axes.visible=grid.visible};
+$('gridBtn').onclick=()=>{grid.visible=!grid.visible;axes.visible=grid.visible; if(s.floatView&&grid.visible){s.floatView=false;$('floatBtn').classList.remove('active');persist()}};
+$('floatBtn').onclick=()=>setFloating(!s.floatView);
+$('hardwareColoursBtn').onclick=()=>{s.hardwareColourMode=!s.hardwareColourMode;updateHardwareAnnotationVisibility();persist()};
+$('featureOverlay').onchange=()=>updateHardwareAnnotationVisibility();
+
 $('colours').querySelectorAll('button').forEach(b=>b.onclick=()=>{s.colour=Number(b.dataset.colour);syncForm();rebuild();snapshot()});
 // Persistent appearance setting. Separate from saved geometry projects.
 let activeTheme='dark';
@@ -548,6 +603,7 @@ async function buildManufacturing(){
   manufacturingMesh.visible=false;
   scene.add(manufacturingMesh);
   renderManufactureReport(report);
+  createHardwareAnnotations();
   $('prepareStatus').textContent='✓ Combined manufacturing mesh prepared. Review the warnings below and verify in Cura.';
   $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;
   $('splitExportBtn').disabled=!s.splitParts;
@@ -569,6 +625,8 @@ function verifyPrepared(){
 $('prepareBtn').onclick=buildManufacturing;
 $('showManufacturing').onchange=e=>manufacturingView(e.target.checked);
 $('printHeatmap').onchange=applyPrintHeatmap;
+if(s.floatView){grid.visible=false;axes.visible=false}
+
 $('stlBtn').onclick=()=>{
  if(!verifyPrepared())return;
  saveSTL(manufacturingMesh.geometry,'crystal-forge-manifold.stl');
