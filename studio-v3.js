@@ -107,7 +107,7 @@ const relevantManufacturingKeys=[
  'count','height','width','seed','pattern','spacing','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
  'baseType','baseHeight','baseWidth','baseStyle','undersideAccess','wallThickness','lightingMode','pixelCount','pixelDiameter',
- 'pixelFit','cutSockets','hollowCrystals','overhang','splitX','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing'
+ 'pixelFit','cutSockets','hollowCrystals','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing'
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
@@ -448,7 +448,7 @@ function schedule(full=true){
  },85);
 }
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','angleRandomness','familyMix']);
-const previewKeys=new Set(['showPixels','mount','printer','preserveLocked','snap']);
+const previewKeys=new Set(['showPixels','preserveLocked','snap','splitParts','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
@@ -466,6 +466,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
   if(!previewKeys.has(key))disposeManufacturing();
   for(const o of document.querySelectorAll('[data-out="'+key+'"]'))o.textContent=format(key,value);
   if(key==='pixelDiameter'||key==='pixelFit')$('actualHole').textContent=(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm';
+  if(key==='splitParts')$('splitExportBtn').disabled=!manufacturingMesh||!value;
   if(key==='snap'){gizmo.setTranslationSnap(value?5:null);gizmo.setRotationSnap(value?THREE.MathUtils.degToRad(15):null);gizmo.setScaleSnap(value?.1:null)}
   if(regenKeys.has(key))generate();
   else if(previewKeys.has(key)){updateLEDs();renderInfo();persist()}
