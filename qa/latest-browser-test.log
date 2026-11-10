@@ -1,5 +1,5 @@
-Browser smoke tests: success
-Commit: 4b5dfe998da461d9f6564fc6247b41c608e3b6d8
+Browser smoke tests: failure
+Commit: 85d06b796bb4c511328d3ad417e7e246be1c5317
 
 Installation outcome: success
 Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
@@ -72,8 +72,17 @@ Retina viewport framing verified at DPR=2
 Theme, Help and Changelog verified
 Individual shaping, green selection, floating view and bottom snap verified
 Advanced editor and view controls verified
-Manufacturing prepared: ✓ Combined manufacturing mesh prepared. Review the warnings below and verify in Cura.
-Repeat Prepare Print validated
-Mounting / hollow / sockets: Yes 1
-STL and 3MF browser downloads verified
-BROWSER SMOKE TEST PASSED
+Manufacturing prepared: ✓ Prepared off-thread in 70.1 s. Review warnings.
+Browser failure: page.waitForFunction: Timeout 120000ms exceeded.
+    at /home/runner/work/crystal-forge/crystal-forge/tests/browser-smoke.mjs:129:13
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 120000ms exceeded.
+    at /home/runner/work/crystal-forge/crystal-forge/tests/browser-smoke.mjs:129:13 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.4
