@@ -259,6 +259,14 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   const hardware=planHardware(crystals,s);
   if(hardware.collisions.length)throw new Error('Hardware holes overlap.');
   warnings.push(...hardware.messages);
+  // Permanent semicircular fixing ears are fused to the base before drilling.
+  if(hardware.tabs.length){
+   const tabs=hardware.tabs.map(tab=>hold(wasm.Manifold.cylinder(
+     tab.thickness,tab.radius,tab.radius,48).rotate([-90,0,0]).translate([tab.x,0,tab.z])));
+   const joined=hold(combined.add(hold(wasm.Manifold.union(tabs))));
+   assertSolid(joined,'Semicircular edge fixing tabs');
+   combined=joined;
+  }
   let hollowed=0,hollowPorts=0,skippedHollowPorts=0;
   let vault={applied:false,supportCount:0,pitch:0,gapEstimate:0};
   if(s.baseVault&&s.hollowCrystals)warnings.push('Base vault is unavailable during experimental whole-cluster hollowing.');
@@ -388,6 +396,17 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
    const cut=hold(combined.subtract(holes));assertSolid(cut,'Mounting-hole cuts');
    combined=cut;mountingHolesCut=hardware.mounts.length;
   }
+  if(hardware.tabHoles.length){
+   // The tab holes are open through the entire ear thickness, outside the
+   // main base outline, to accept a bolt or looped cable tie.
+   const tabCutters=hardware.tabHoles.map(p=>hold(wasm.Manifold.cylinder(
+     p.depth+2,p.radius,p.radius,40).rotate([-90,0,0]).translate([p.x,-1,p.z])));
+   const joined=hold(wasm.Manifold.union(tabCutters));
+   const opened=hold(combined.subtract(joined));
+   assertSolid(opened,'Edge fixing bolt and cable-tie holes');
+   combined=opened;mountingHolesCut+=hardware.tabHoles.length;
+  }
+  if(hardware.tabs.length)warnings.push('Perimeter fixing tabs are not rated structural attachments. Physically test hole sizes, printed web strength and layer adhesion before suspending the sculpture.');
   if(s.mount==='Ceiling mount')
     warnings.push('Ceiling mounting demands properly rated fixings and secondary retention. A printed bracket alone is not a certified overhead support.');
   if(s.mount==='Magnet inserts')warnings.push('Magnet pockets are nominal 10.2 mm diameter; verify magnet dimensions and required retention.');
@@ -447,7 +466,8 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
+    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,
+     plannedSockets:hardware.sockets,plannedMounts:[...hardware.mounts,...hardware.tabHoles],hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
 }
