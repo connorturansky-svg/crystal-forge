@@ -3,7 +3,9 @@
  * The interactive preview stays lightweight and separate from the manufacturing mesh.
  * Runtime: browser (loadManifold) or injected WASM module (testing).
  */
-import * as THREE from 'three';
+// Three.js is provided by whichever realm runs this module (UI, Worker, Node).
+let THREE;
+export function setThreeInstance(three){THREE=three;}
 import {crystalGeometry} from './geometry-v3.js';
 import {planHardware} from './hardware-layout.js';
 

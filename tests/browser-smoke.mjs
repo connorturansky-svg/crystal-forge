@@ -108,6 +108,10 @@ try{
  assert.equal(await page.locator('[data-state="baseStyle"]').inputValue(),'Fitted','Fitted base default');
  await page.locator('[data-tab="print"]').click();
  await page.locator('#prepareBtn').click();
+ assert(await page.evaluate(()=>window.__crystalForgeWorkerStarts>=1),'Prepare Print uses a Web Worker');
+ await page.locator('#helpBtn').click();
+ assert(await page.locator('#infoOverlay:not([hidden])').count(),'UI stays responsive during manufacturing');
+ await page.locator('#closeInfo').click();
  await page.waitForFunction(()=>{
   const panel=document.querySelector('#prepareReport');
   const status=document.querySelector('#prepareStatus')?.textContent||'';

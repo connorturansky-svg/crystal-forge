@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
-import {loadManifold,prepareFabrication,saveSTL,save3MF,makeCalibrationStrip,splitPreparedMesh} from './fabrication-v1.js';
+import {loadManifold,setThreeInstance,saveSTL,save3MF,makeCalibrationStrip,splitPreparedMesh} from './fabrication-v1.js';
+setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
 
 const $=id=>document.getElementById(id);
@@ -172,6 +173,7 @@ function setFloating(enabled){
  persist();
 }
 function disposeManufacturing(){
+ cancelActivePreparation('Preparation cancelled because model changed');
  clearHardwareAnnotations(); if(manufacturingMesh){
   scene.remove(manufacturingMesh);
   manufacturingMesh.geometry.dispose();
@@ -673,51 +675,84 @@ $('loadFile').onchange=async e=>{
  }catch(err){alert('Could not load project: '+err.message)}
  e.target.value='';
 };
+let activePreparationWorker=null,activePreparationReject=null,preparationSerial=0;
+window.__crystalForgeWorkerStarts=0;
+function cancelActivePreparation(reason='Preparation cancelled'){
+ if(!activePreparationWorker)return;
+ const worker=activePreparationWorker;activePreparationWorker=null;
+ worker.terminate();
+ const reject=activePreparationReject;activePreparationReject=null;
+ if(reject)reject(new Error(reason));
+}
 async function buildManufacturing(){
- const btn=$('prepareBtn');
- if(btn.disabled)return;
- btn.disabled=true;btn.textContent='◌ Preparing…';
- $('prepareStatus').textContent='Loading geometry engine and preparing a Boolean solid…';
- setStatus('Preparing print geometry…');
- // Yield so status is visible before expensive synchronous WASM operations.
- await new Promise(resolve=>setTimeout(resolve,40));
+ if($('prepareBtn').disabled)return;
+ const btn=$('prepareBtn'),cancelBtn=$('cancelPrepareBtn'),source=sourceHash();
+ btn.disabled=true;btn.textContent='◌ Preparing in background…';cancelBtn.hidden=false;
+ $('prepareStatus').textContent='Starting dedicated manufacturing Web Worker…';
+ setStatus('Preparing in background · you can still use the editor');
  try{
-  const wasm=await loadManifold();
-  const source=sourceHash();
-  $('prepareStatus').textContent='Boolean union, hollow cuts and pixel sockets…';
-  await new Promise(resolve=>setTimeout(resolve,30));
-  const {geometry,report}=prepareFabrication({
-   wasm,
-   meshes:[...crystalMeshes.filter(m=>m.visible||m.userData.crystalId),...(baseMesh?[baseMesh]:[]),...baseAccents].filter(m=>{
-     if(m.userData.crystalId)return !crystals.find(c=>c.id===m.userData.crystalId)?.hidden;
-     return true;
-   }),
-   crystals,settings:s
+  if(!window.Worker)throw new Error('This browser does not support Web Workers.');
+  const components=[...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents].filter(m=>{
+   if(m.userData.crystalId)return !crystals.find(c=>c.id===m.userData.crystalId)?.hidden;
+   return true;
+  }).map(mesh=>({
+   positions:new Float32Array(mesh.geometry.getAttribute('position').array),
+   position:mesh.position.toArray(),quaternion:mesh.quaternion.toArray(),
+   scale:mesh.scale.toArray(),
+   userData:{crystalId:mesh.userData.crystalId||null,isBase:!!mesh.userData.isBase,
+    isBaseAccent:!!mesh.userData.isBaseAccent}
+  }));
+  const id=++preparationSerial;
+  const result=await new Promise((resolve,reject)=>{
+   let worker;
+   try{worker=new Worker(new URL('./fabrication-worker.js',import.meta.url),{type:'module'});}
+   catch(error){reject(error);return}
+   activePreparationWorker=worker;activePreparationReject=reject;
+   window.__crystalForgeWorkerStarts++;
+   worker.onmessage=event=>{
+    const data=event.data;if(id!==preparationSerial)return;
+    if(data.type==='progress')$('prepareStatus').textContent=data.stage;
+    else if(data.type==='complete'){
+     activePreparationWorker=null;activePreparationReject=null;worker.terminate();resolve(data);
+    }else if(data.type==='error'){
+     activePreparationWorker=null;activePreparationReject=null;worker.terminate();
+     reject(new Error(data.message||'Unspecified worker error'));
+    }
+   };
+   worker.onerror=event=>{
+    activePreparationWorker=null;activePreparationReject=null;worker.terminate();
+    reject(new Error('Print worker failed: '+(event.message||'unknown error')));
+   };
+   try{worker.postMessage({
+     type:'prepare',components,crystals:structuredClone(crystals),settings:structuredClone(s)
+    },components.map(input=>input.positions.buffer))}
+   catch(error){activePreparationWorker=null;activePreparationReject=null;worker.terminate();reject(error)}
   });
-  // If the user modified the design during processing, discard stale geometry.
-  if(source!==sourceHash()){geometry.dispose();throw new Error('Design changed during preparation. Please prepare again.')}
+  if(source!==sourceHash())throw new Error('Model changed during preparation. Please retry.');
   disposeManufacturing();
-  manufacturingReport=report;preparedSource=source;
+  const geometry=new THREE.BufferGeometry();
+  geometry.setAttribute('position',new THREE.BufferAttribute(result.positions,3));
+  geometry.computeVertexNormals();
+  manufacturingReport=result.report;preparedSource=source;
   manufacturingMesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({
    color:s.colour,metalness:0,roughness:.42,flatShading:true,side:THREE.DoubleSide
   }));
-  manufacturingMesh.visible=false;
-  scene.add(manufacturingMesh);
-  updateAppearance();
-  renderManufactureReport(report);
-  createHardwareAnnotations();
-  $('prepareStatus').textContent='✓ Combined manufacturing mesh prepared. Review the warnings below and verify in Cura.';
+  manufacturingMesh.visible=false;scene.add(manufacturingMesh);
+  updateAppearance();renderManufactureReport(result.report);createHardwareAnnotations();
+  $('prepareStatus').textContent='✓ Prepared off-thread in '+(result.report.preparationMs/1000).toFixed(1)+' s. Review warnings.';
   $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;
   $('splitExportBtn').disabled=!s.splitParts;
-  $('showManufacturing').checked=true;manufacturingView(true);
-  applyPrintHeatmap();
-  setStatus('Prepared '+report.triangleCount.toLocaleString()+' triangles · '+report.disconnected+' body/bodies');
- }catch(err){
-  console.error('Print preparation failed',err);
-  $('prepareStatus').textContent='Preparation failed: '+err.message;
-  setStatus('Manufacturing failed · '+err.message);
- }finally{btn.disabled=false;btn.textContent='▣ Prepare print mesh (Boolean union)'}
+  $('showManufacturing').checked=true;manufacturingView(true);applyPrintHeatmap();
+  setStatus('Prepared '+result.report.triangleCount.toLocaleString()+' triangles · editor remained responsive');
+ }catch(error){
+  console.error('Preparation',error);
+  $('prepareStatus').textContent=error.message;setStatus(error.message);
+ }finally{
+  if(activePreparationWorker)cancelActivePreparation('Preparation finished');
+  btn.disabled=false;btn.textContent='▣ Prepare print mesh (Boolean union)';cancelBtn.hidden=true;
+ }
 }
+$('cancelPrepareBtn').onclick=()=>cancelActivePreparation('Preparation cancelled. You can edit and retry.');
 function verifyPrepared(){
  if(!manufacturingMesh||!manufacturingReport||preparedSource!==sourceHash()){
   alert('Please run Prepare print mesh first. Your existing manufacturing mesh is missing or out of date.');return false;

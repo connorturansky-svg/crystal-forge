@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
 import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset} from '../geometry-v3.js';
-import {prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
+import {setThreeInstance,prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
+setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
 
 const wasm=await Module();wasm.setup();

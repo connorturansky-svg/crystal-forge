@@ -158,8 +158,8 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="control"><label>Printer</label><select data-state="printer"><option>Ultimaker 3 Extended</option><option>Ultimaker 2+</option><option>Custom / other</option></select></div>
 <div class="control"><label>Overhang reference <output data-out="overhang"></output></label><input data-state="overhang" type="range" min="30" max="65" step="5"></div>
 <div class="note">Optimised supportless-first is the goal. Automated orientation and thorough overhang analysis are not yet implemented.</div>
-<div class="divider"></div><button id="prepareBtn" class="primary" style="width:100%;font-weight:700">▣ Prepare print mesh (Boolean union)</button>
-<div id="prepareStatus" class="note">Not prepared. This step will merge crystals and base, cut requested cavities and sockets, then validate the resulting solid.</div>
+<div class="divider"></div><button id="prepareBtn" class="primary" style="width:100%;font-weight:700">▣ Prepare print mesh (Boolean union)</button><button id="cancelPrepareBtn" hidden style="width:100%;margin-top:7px">✕ Cancel preparation</button>
+<div id="prepareStatus" class="note">Not prepared. Runs in a background Web Worker to keep the editor responsive while it merges the model and cuts openings.</div>
 <label class="checks"><input id="showManufacturing" type="checkbox"> Show manufacturing mesh in 3D viewport</label><label class="checks"><input id="printHeatmap" type="checkbox"> Show colour-coded overhang inspection (green / amber / red)</label><label class="checks"><input id="featureOverlay" type="checkbox"> Outline pixel bores yellow and mounting inserts purple</label>
 <div id="prepareReport" class="card teal" hidden><div class="cardtitle">✓ Manufacturing geometry</div><div class="cardbody">
 <div class="stat"><span>Mesh integrity</span><strong id="reportIntegrity">—</strong></div>
