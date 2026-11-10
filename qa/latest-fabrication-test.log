@@ -1,5 +1,5 @@
 Fabrication smoke tests: success
-Commit: 8e94a0ad3cf589a5fb8a64f3de5580d931ecb707
+Commit: 9d422d4451ae076cb9a28b2dcc7c447e37dd449c
 
 
 > test
@@ -18,6 +18,7 @@ base-Organic {"triangles":2002,"connected":1,"hollow":0,"sockets":1,"warningCoun
 base-Crystal crust {"triangles":4944,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
 solid {"triangles":1976,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
 hollow {"triangles":8166,"connected":1,"hollow":1,"sockets":0,"warningCount":5}
+balloon-material-ratio 0.316 sealed-voids 3
 sockets {"triangles":2102,"connected":1,"hollow":0,"sockets":1,"warningCount":2}
 hollow-and-sockets {"triangles":8326,"connected":1,"hollow":1,"sockets":1,"warningCount":5}
 mount-Wall screws {"triangles":2258,"connected":1,"hollow":0,"sockets":0,"warningCount":1}
