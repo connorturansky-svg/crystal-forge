@@ -3,13 +3,33 @@ import {chromium} from 'playwright';
 const url=process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321';
 const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
 const logs=[];
-const page=await browser.newPage({viewport:{width:1440,height:950},acceptDownloads:true});
+const context=await browser.newContext({viewport:{width:1440,height:950},deviceScaleFactor:2,acceptDownloads:true});
+const page=await context.newPage();
 page.on('pageerror',e=>logs.push('PAGE ERROR '+e.message));
 page.on('console',m=>{if(m.type()==='error')logs.push('CONSOLE ERROR '+m.text())});
 try{
  await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
  await page.waitForFunction(()=>document.querySelector('canvas')&&document.querySelector('#status')?.textContent?.includes('Ready'),null,{timeout:40000});
  assert(await page.locator('canvas').count(),'WebGL canvas mounted');
+ // A DPR=2 canvas must match its CSS viewport, not spill over it.
+ const layout=await page.evaluate(()=>{
+  const rect=document.querySelector('#viewport').getBoundingClientRect();
+  const canvas=document.querySelector('#viewport canvas');
+  const c=canvas.getBoundingClientRect();
+  return {viewport:{w:rect.width,h:rect.height,x:rect.x,y:rect.y},
+    canvas:{w:c.width,h:c.height,x:c.x,y:c.y},
+    pixelBuffer:{w:canvas.width,h:canvas.height},dpr:window.devicePixelRatio,
+    camera:window.__crystalForgeViewMetrics?.()};
+ });
+ assert.equal(layout.dpr,2,'Retina/DPR=2 simulation is enabled');
+ assert(Math.abs(layout.canvas.w-layout.viewport.w)<2,'Canvas CSS width equals viewport width');
+ assert(Math.abs(layout.canvas.h-layout.viewport.h)<2,'Canvas CSS height equals viewport height');
+ assert(Math.abs(layout.canvas.x-layout.viewport.x)<2,'Canvas starts at viewport left edge');
+ assert(Math.abs(layout.canvas.y-layout.viewport.y)<2,'Canvas starts at viewport top edge');
+ assert(layout.pixelBuffer.w>=layout.canvas.w*1.9,'WebGL still uses high resolution backing pixels');
+ assert(layout.camera&&Math.abs(layout.camera.screen[0])<.05&&Math.abs(layout.camera.screen[1])<.05,
+   'Initial cluster is centred onscreen at DPR=2 '+JSON.stringify(layout));
+ console.log('Retina viewport framing verified at DPR=2');
  console.log('3D editor launched');
  await page.locator('#themeBtn').click();
  assert(await page.locator('body.theme-light').count(),'Light theme applied');
@@ -57,6 +77,10 @@ try{
   assert(Math.abs(m.screen[0])<.06&&Math.abs(m.screen[1])<.06,'Model offscreen '+stage+' '+JSON.stringify(m));
  }
  await centred('before camera changes');
+ // Reproduce: user pans then tries to orbit the cluster. Centre Model
+ // should restore the pivot without changing any crystal geometry.
+ await page.locator('#centreViewBtn').click();
+ await centred('after explicit recenter');
  await page.locator('[data-state="baseDome"]').evaluate(el=>{el.value='33';el.dispatchEvent(new Event('input',{bubbles:true}))});
  await page.waitForTimeout(400);await centred('larger dome');
  await page.locator('[data-tab="design"]').click();

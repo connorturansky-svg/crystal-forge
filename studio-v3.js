@@ -261,6 +261,12 @@ const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,preserveDrawi
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
+// WebGL drawing-buffer pixels are DPR-scaled. CSS pixels MUST NOT be:
+ // without explicit CSS sizing, a 2x-DPR display gives a canvas twice the
+ // viewport size and its camera centre appears at the bottom-right.
+renderer.domElement.style.width='100%';
+renderer.domElement.style.height='100%';
+renderer.domElement.style.display='block';
 $('viewport').appendChild(renderer.domElement);
 const orbit=new OrbitControls(camera,renderer.domElement);
 orbit.enableDamping=true;orbit.dampingFactor=.08;orbit.minDistance=20;orbit.maxDistance=1500;
@@ -490,9 +496,18 @@ function animate(now){
  }
  orbit.update();renderer.render(scene,camera);
 }
+let firstCanvasLayout=true;
 function resize(){
- const box=$('viewport');renderer.setSize(Math.max(1,box.clientWidth),Math.max(1,box.clientHeight),false);
- camera.aspect=Math.max(.01,box.clientWidth/Math.max(1,box.clientHeight));camera.updateProjectionMatrix();
+ const box=$('viewport'),width=Math.max(1,box.clientWidth),height=Math.max(1,box.clientHeight);
+ renderer.setSize(width,height,false);
+ camera.aspect=Math.max(.01,width/height);
+ camera.updateProjectionMatrix();
+ // In particular, start framing only AFTER the responsive viewport has a
+ // usable aspect ratio. Headless tests use DPR 2 to catch CSS pixel mismatches.
+ if(firstCanvasLayout&&box.clientWidth>0&&box.clientHeight>0&&crystalMeshes.length){
+  firstCanvasLayout=false;
+  centreOrbitOnModel();
+ }
 }
 new ResizeObserver(resize).observe($('viewport'));resize();requestAnimationFrame(animate);
 let rebuildTimer;
@@ -560,6 +575,10 @@ document.querySelectorAll('[data-look]').forEach(b=>b.onclick=()=>{
 });
 $('gridBtn').onclick=()=>{grid.visible=!grid.visible;axes.visible=grid.visible; if(s.floatView&&grid.visible){s.floatView=false;$('floatBtn').classList.remove('active');persist()}};
 $('floatBtn').onclick=()=>setFloating(!s.floatView);
+$('centreViewBtn').onclick=()=>{
+ centreOrbitOnModel();
+ setStatus('View centred on crystal cluster · drag to rotate · right-drag to pan');
+};
 $('hardwareColoursBtn').onclick=()=>{s.hardwareColourMode=!s.hardwareColourMode;updateHardwareAnnotationVisibility();persist()};
 $('featureOverlay').onchange=()=>updateHardwareAnnotationVisibility();
 
