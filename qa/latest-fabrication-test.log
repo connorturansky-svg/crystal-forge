@@ -1,5 +1,5 @@
 Fabrication smoke tests: success
-Commit: 9ab69dc895363bc556ffc416defcd6e2a2e60cde
+Commit: 1eade4a9245eec1d9349e22bb0cc7b114229bb92
 
 
 > test
@@ -10,4 +10,5 @@ hollow {"triangles":3622,"connected":1,"hollow":10,"sockets":0,"warningCount":2}
 sockets {"triangles":1952,"connected":1,"hollow":0,"sockets":3,"warningCount":3}
 hollow-and-sockets {"triangles":4038,"connected":1,"hollow":10,"sockets":3,"warningCount":4}
 calibration 11.8,11.9,12,12.1,12.2
+Export check {"stlTriangles":1578,"baseZ":"0.00","tipZ":"114.91","mfBytes":104214}
 Manufacturing smoke tests passed.
