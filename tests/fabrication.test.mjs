@@ -65,6 +65,7 @@ function assembly(s){
     m.position.set(c.x,c.y+crystalRootOffset(crystals,s,c),c.z);
     m.rotation.set(c.rx||0,c.rotation||0,c.rz||0,'XYZ');
     m.scale.set(c.sx||c.scale||1,c.sy||c.scale||1,c.sz||c.scale||1);
+    m.userData.crystalId=c.id; // Same object identity required by the live editor and light-tunnel solver.
     meshes.push(m);
   }
   const base=new THREE.Mesh(baseGeometry(THREE,crystals,s));base.userData.isBase=true;meshes.push(base);
