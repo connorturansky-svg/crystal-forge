@@ -138,7 +138,7 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 </div></div>
 <div class="card amber"><div class="cardtitle"><span class="symbol">✳</span> Pixel lighting plan</div><div class="cardbody">
 <div class="control"><label>Illumination approach</label><select data-state="lightingMode"><option value="single">One pixel · shared glowing cluster</option><option value="multi">Multiple pixels (advanced)</option><option value="none">No lighting</option></select></div>
-<label class="checks"><input data-state="showPixels" type="checkbox"> Show LED positions in the viewport</label><label class="checks"><input data-state="cutSockets" type="checkbox"> Cut LED socket holes into manufacturing mesh</label>
+<label class="checks"><input data-state="showPixels" type="checkbox"> Show LED centres in the viewport</label><label class="checks"><input data-state="cutSockets" type="checkbox"> Cut LED socket holes into manufacturing mesh</label><div class="control"><label>Pixel hole placement</label><select data-state="pixelPlacement"><option value="auto">Automatic</option><option value="manual">Manual X/Z positions</option></select></div>
 <div id="multiplePixelsRow" class="control advanced-only"><label>Pixel quantity <output data-out="pixelCount"></output></label><input data-state="pixelCount" type="range" min="1" max="60" step="1"></div>
 <div class="control"><label>Nominal socket diameter <output data-out="pixelDiameter"></output></label><input data-state="pixelDiameter" type="range" min="10" max="15" step=".1"></div>
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
@@ -148,12 +148,20 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="note warning">When enabled, Print → Prepare Print cuts nominal socket holes using the Manifold engine. Check physical fit against your actual pixels. Retention lips and cable strain relief are not yet included.</div>
 </div></div>
 <div class="card purple advanced-only"><div class="cardtitle"><span class="symbol">⚙</span> Mounting & modularity</div><div class="cardbody">
-<div class="control"><label>Mounting preset</label><select data-state="mount"><option>None</option><option>Wall screws</option><option>Magnet inserts</option><option>Threaded insert M3</option><option>Custom dual holes</option><option>Detachable plate</option><option>Ceiling mount</option></select></div>
+<div class="control"><label>Mount hole placement</label><select data-state="mountPlacement"><option value="auto">Automatic</option><option value="manual">Manual X/Z positions</option></select></div><div class="control"><label>Mounting preset</label><select data-state="mount"><option>None</option><option>Wall screws</option><option>Magnet inserts</option><option>Threaded insert M3</option><option>Custom dual holes</option><option>Detachable plate</option><option>Ceiling mount</option></select></div>
 <div class="control"><label>Custom hole diameter <output data-out="mountHoleDiameter"></output></label><input data-state="mountHoleDiameter" type="range" min="2.5" max="12" step=".1"></div>
 <div class="control"><label>Hole spacing <output data-out="mountSpacing"></output></label><input data-state="mountSpacing" type="range" min="10" max="150" step="1"></div>
 <div class="control"><label>Custom hole depth <output data-out="mountHoleDepth"></output></label><input data-state="mountHoleDepth" type="range" min="2" max="30" step=".5"></div>
 <p class="note">Wall/ceiling screw through-holes, blind magnet pockets and M3 insert holes can now be cut in Prepare Print. Detachable plates, keyholes and alignment connectors are not yet generated.</p>
 <p class="note warning">Overhead installations need independently verified load-bearing fixings and secondary retention.</p>
+</div></div>
+<div class="card amber"><div class="cardtitle">◎ Hardware hole editor</div><div class="cardbody">
+<p class="note">LED holes appear yellow and mounting holes purple in the live Build viewport. Red manual holes are invalid and will not be cut.</p>
+<p id="hardwareGuideSummary" class="softnotice">Hole layout pending…</p>
+<div class="buttonrow"><button id="placePixelBtn">＋ Place / move LED</button><button id="placeMountBtn">＋ Place mounting hole</button></div>
+<div class="buttonrow" style="margin-top:6px"><button id="stopHolePlacementBtn">✕ Stop placing</button></div>
+<p id="placementHint" class="note">Select Place, then click the model. Adjust X/Z for precision below.</p>
+<div id="manualHardwareList"></div>
 </div></div>
 </section>
 <section data-workspace="print">

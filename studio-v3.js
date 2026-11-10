@@ -5,6 +5,7 @@ import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfa
 import {loadManifold,setThreeInstance,saveSTL,save3MF,makeCalibrationStrip,splitPreparedMesh} from './fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
+import {createHardwareEditor} from './hardware-editor.js';
 
 const $=id=>document.getElementById(id);
 const defaults={
@@ -12,11 +13,12 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
-  showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
+  showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
 let s={...defaults},crystals=[],selectedId=null,activeTool='select',cameraTween=null;
+let hardwareUI=null;
 try{
   const saved=JSON.parse(localStorage.getItem('crystal-forge-v3')||'null');
   if(saved?.settings){s={...defaults,...saved.settings};crystals=safeArray(saved.crystals);selectedId=saved.selectedId||null}
@@ -119,7 +121,7 @@ const relevantManufacturingKeys=[
  'count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
  'baseType','baseHeight','baseDome','baseEdgeRadius','baseWidth','baseStyle','undersideAccess','wallThickness','lightingMode','pixelCount','pixelDiameter',
- 'pixelFit','cutSockets','hollowCrystals','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing'
+ 'pixelFit','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing'
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
@@ -329,7 +331,7 @@ function rebuild(){
  disposeManufacturing();
  gizmo.detach();crystalMeshes.forEach(disposeMesh);crystalMeshes=[];
  for(const c of crystals)crystalMeshes.push(makeCrystal(c));
- rebuildBase();updateLEDs();selectCrystal(selectedId,false);syncForm();renderTree();renderInfo();
+ rebuildBase();updateLEDs();selectCrystal(selectedId,false);syncForm();renderTree();renderInfo();hardwareUI?.refresh();
  centreOrbitOnModel();
  setStatus('Ready · click a crystal to select · G / R / S · drag to orbit');
 }
@@ -350,15 +352,14 @@ function rebuildBase(){
  updateAppearance();
 }
 function updateLEDs(){
- while(pixelGroup.children.length){const child=pixelGroup.children[0];pixelGroup.remove(child);child.geometry?.dispose();child.material?.dispose()}
- if(!s.showPixels||!s.pixelCount)return;
- const visible=crystals.filter(c=>!c.hidden);if(!visible.length)return;
- for(let i=0;i<s.pixelCount;i++){
-  const c=visible[i%visible.length],mesh=new THREE.Mesh(new THREE.SphereGeometry(2.7,10,8),new THREE.MeshBasicMaterial({color:i%3===0?0xffe79c:i%3===1?0xa6eaff:0xff88e6,transparent:true,opacity:.85}));
-  mesh.position.set(c.x+c.leanX*c.h*.2,c.y+(s.baseType==='none'?0:baseSurfaceHeight(crystals,s,c.x,c.z))+c.h*.2,c.z+c.leanZ*c.h*.2);
-  pixelGroup.add(mesh);
+ while(pixelGroup.children.length){const m=pixelGroup.children[0];pixelGroup.remove(m);m.geometry?.dispose();m.material?.dispose()}
+ if(!s.showPixels)return;
+ for(const p of planHardware(crystals,s).sockets){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(3,10,8),new THREE.MeshBasicMaterial({color:0xffdc58,depthTest:false}));
+  m.position.set(p.x,1,p.z);m.renderOrder=95;pixelGroup.add(m);
  }
 }
+
 function selectCrystal(id,commit=true){
  const c=crystals.find(c=>c.id===id);selectedId=c?c.id:null;
  selectedMesh=crystalMeshes.find(m=>m.userData.crystalId===selectedId)||null;
@@ -776,6 +777,10 @@ $('prepareBtn').onclick=buildManufacturing;
 $('showManufacturing').onchange=e=>manufacturingView(e.target.checked);
 $('printHeatmap').onchange=applyPrintHeatmap;
 if(s.floatView){grid.visible=false;axes.visible=false}
+hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,
+ getSettings:()=>s,getCrystals:()=>crystals,onStatus:setStatus,
+ onEdit:()=>{disposeManufacturing();syncForm();updateLEDs();hardwareUI.refresh();renderInfo();snapshot()}
+});
 
 $('stlBtn').onclick=()=>{
  if(!verifyPrepared())return;
