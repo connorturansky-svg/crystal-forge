@@ -1,5 +1,19 @@
 # Crystal Forge — Changelog
 
+## v0.5 — 10 November 2026
+
+- Independent per-crystal shape controls through the existing Design panel, with green selected outlines and red locked outlines. Individual changes are retained as shape overrides.
+- Separated micro tip-end rounding from shaft corner bevels and shoulder rounding for crisp, softly blunted low-poly points.
+- Added **crystal spacing/overlap** and **angle randomness** sliders.
+- Added **base outward width**, independent of height, and six profiles: fitted/faceted, square, circle, rounded, organic/bumpy, and mini-crystal crust with actual faceted accents.
+- Changed the default illumination from multiple independent pixels to **one shared pixel below the base**. The manufacturing shell now has an interior base plenum with passages intended to connect larger hollow crystals. Small crystals can remain solid.
+- Added floating 3D inspection with an optional hidden grid and bottom-view snap.
+- Added removable visual outlines for LED bores (yellow) and mounting/insert bores (purple) in the prepared manufacturing view.
+- Added shared hole-placement clearances to prevent overlap between LED and mounting holes. Invalid mounting holes are repositioned or skipped, with warnings.
+- Extended manufacturing/browser CI checks for base styles, one-pixel illumination, per-crystal shaping, and feature separation.
+
+**Fabrication caveat:** An internally connected light chamber is still not guaranteed for every small crystal, and uniform wall thickness/supportless printing must be verified in Cura. Pixel openings remain nominal and require a fit test.
+
 ## v0.4 — 10 November 2026
 
 - Added the **Manifold WebAssembly fabrication engine**: true Boolean unions between low-poly crystals and integrated bases.
