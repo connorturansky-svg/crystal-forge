@@ -139,6 +139,52 @@ try{
  await page.waitForTimeout(250);
  assert.equal((await page.locator('#hardwareGuideSummary').innerText()).includes('invalid (red)'),true,'Hardware guidance remains visible');
  console.log('Manual LED X/Z editor and invalid position screening verified');
+ // The tab preset must be accessible, visible, hover-explained and reflected
+ // in the live hardware plan before preparing a manufacturing mesh.
+ await page.locator('[data-state="mount"]').selectOption('Edge fixing tabs');
+ assert(await page.locator('#edgeTabSettings').isVisible(),'Edge tab controls are visible');
+ await page.locator('[data-state="tabCount"]').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.locator('[data-state="tabHolesPerTab"]').evaluate(el=>{el.value='2';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(300);
+ assert((await page.locator('#hardwareGuideSummary').innerText()).includes('edge tab(s)'),'Build previews planned tabs');
+ await page.locator('[data-state="tabCount"]').hover();
+ await page.waitForTimeout(570);
+ assert(await page.locator('#controlTooltip:not([hidden])').isVisible(),'Slider hover explains its function');
+ assert((await page.locator('#controlTooltip').innerText()).includes('Number of edge tabs'),'Tooltip is specific to the control');
+ await page.locator('[data-state="mount"]').selectOption('None');
+ // Continuous pixel tool: moving the mouse previews a circular hole,
+ // each click adds one LED, and orbiting stays disabled until Escape.
+ await page.locator('[data-view="top"]').click();
+ await page.waitForTimeout(430);
+ await page.locator('#placePixelBtn').click();
+ let placement=await page.evaluate(()=>window.__crystalForgePlacementMetrics?.());
+ assert(placement?.active,'Clicking place enters persistent tool');
+ assert.equal(placement.orbitEnabled,false,'Orbit disabled during hole placement');
+ const rect=await page.locator('#viewport canvas').boundingBox();
+ assert(rect,'The 3D viewport exists');
+ async function findValidPixel(){
+  for(let row=2;row<=8;row++)for(let col=2;col<=8;col++){
+   const x=rect.x+rect.width*col/10,y=rect.y+rect.height*row/10;
+   await page.mouse.move(x,y);
+   const m=await page.evaluate(()=>window.__crystalForgePlacementMetrics?.());
+   if(m?.valid&&m.cursorVisible)return {x,y};
+  }
+  return null;
+ }
+ for(let n=0;n<2;n++){
+  const point=await findValidPixel();
+  assert(point,'Live ring cursor should find a valid position on the base');
+  const prior=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualPixelHoles.length);
+  await page.mouse.click(point.x,point.y);
+  await page.waitForFunction(n=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualPixelHoles.length===n+1,prior,{timeout:8000});
+  assert((await page.evaluate(()=>window.__crystalForgePlacementMetrics?.())).active,'Placement remains active after each click');
+ }
+ await page.keyboard.press('Escape');
+ placement=await page.evaluate(()=>window.__crystalForgePlacementMetrics?.());
+ assert(!placement.active&&placement.orbitEnabled,'Esc exits placement and restores orbit');
+ await page.locator('[data-state="pixelPlacement"]').selectOption('auto');
+ await page.locator('[data-state="lightingMode"]').selectOption('single');
+ console.log('Edge tabs, hover explanations, continuous 3D pixel cursor and two clicks verified');
  await page.locator('[data-tab="print"]').click();
  await page.locator('#prepareBtn').click();
  assert(await page.evaluate(()=>window.__crystalForgeWorkerStarts>=1),'Prepare Print uses a Web Worker');
