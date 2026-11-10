@@ -1,5 +1,14 @@
 # Crystal Forge — Changelog
 
+## v0.4.2 — 10 November 2026
+
+- Reworked crystal tips into a **true curved spherical cap tangent to the faceted point**, with a 1.5–8 mm visible radius control. No decorative flat tip or tiny nipple-like end.
+- Migrated older tiny tip-radius settings to a broader default, while preserving saved formations and custom edits.
+- Recentered the camera orbit around the actual crystal cluster when regenerating or rebuilding the model, while maintaining viewing direction and zoom distance.
+- Added a **Base dome / mound height** slider (0–50 mm) independent of base thickness/height. The domed top is built from concentric polygonal rings.
+- Added mesh-topology and dome-height assertions to manufacturing tests.
+- Rounded caps are a safer design intent, **not a child-safety certification**; printed tip strength, surface roughness and suitability need physical testing.
+
 ## v0.5 — 10 November 2026
 
 - Independent per-crystal shape controls through the existing Design panel, with green selected outlines and red locked outlines. Individual changes are retained as shape overrides.
