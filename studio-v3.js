@@ -789,7 +789,7 @@ $('prepareBtn').onclick=buildManufacturing;
 $('showManufacturing').onchange=e=>manufacturingView(e.target.checked);
 $('printHeatmap').onchange=applyPrintHeatmap;
 if(s.floatView){grid.visible=false;axes.visible=false}
-hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,
+hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh:()=>baseMesh,
  getSettings:()=>s,getCrystals:()=>crystals,onStatus:setStatus,
  onEdit:()=>{disposeManufacturing();syncForm();updateLEDs();hardwareUI.refresh();renderInfo();snapshot()}
 });
