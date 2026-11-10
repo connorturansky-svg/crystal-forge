@@ -189,12 +189,13 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
 }
+// Converts Three.js Y-up preview into the Z-up coordinate convention used by slicers.
 export function saveSTL(geometry,filename='crystal-forge-manifold.stl'){
  const p=geometry.getAttribute('position').array,count=Math.floor(p.length/9);
  const bytes=new ArrayBuffer(84+50*count),dv=new DataView(bytes);dv.setUint32(80,count,true);
  let off=84;const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),n=new THREE.Vector3();
  for(let i=0;i<p.length;i+=9){
-  a.fromArray(p,i);b.fromArray(p,i+3);c.fromArray(p,i+6);
+  a.set(p[i],-p[i+2],p[i+1]);b.set(p[i+3],-p[i+5],p[i+4]);c.set(p[i+6],-p[i+8],p[i+7]);
   n.subVectors(b,a).cross(new THREE.Vector3().subVectors(c,a)).normalize();
   for(const v of [n,a,b,c]){dv.setFloat32(off,v.x,true);dv.setFloat32(off+4,v.y,true);dv.setFloat32(off+8,v.z,true);off+=12}
   dv.setUint16(off,0,true);off+=2;
@@ -204,14 +205,14 @@ export function saveSTL(geometry,filename='crystal-forge-manifold.stl'){
  setTimeout(()=>URL.revokeObjectURL(url),1500);
  return blob;
 }
-// Minimal spec-compliant uncompressed 3MF archive, built without ZIP dependencies.
+// Z-up 3MF and a minimal spec-compliant uncompressed ZIP archive, without dependencies.
 export function save3MF(geom,filename='crystal-forge.3mf'){
  const pos=geom.getAttribute('position').array;
  const v=[],faces=[],map=new Map();
  const key=(x,y,z)=>[x,y,z].map(n=>n.toFixed(5)).join(',');
  for(let i=0;i<pos.length;i+=9){
   const ids=[];
-  for(let j=0;j<3;j++){const x=pos[i+j*3],y=pos[i+j*3+1],z=pos[i+j*3+2],k=key(x,y,z);
+  for(let j=0;j<3;j++){const x=pos[i+j*3],y=-pos[i+j*3+2],z=pos[i+j*3+1],k=key(x,y,z);
    if(!map.has(k)){map.set(k,v.length);v.push([x,y,z])}ids.push(map.get(k))}
   faces.push(ids);
  }
