@@ -1,0 +1,13 @@
+Fabrication smoke tests: success
+Commit: 7a0e7a34ecf81ecca0c336f079a48592fdcafa46
+
+
+> test
+> node tests/fabrication.test.mjs
+
+solid {"triangles":1578,"connected":1,"hollow":0,"sockets":0,"warningCount":0}
+hollow {"triangles":3584,"connected":9,"hollow":10,"sockets":0,"warningCount":3}
+sockets {"triangles":1952,"connected":1,"hollow":0,"sockets":3,"warningCount":3}
+hollow-and-sockets {"triangles":4088,"connected":7,"hollow":10,"sockets":3,"warningCount":5}
+calibration 11.8,11.9,12,12.1,12.2
+Manufacturing smoke tests passed.
