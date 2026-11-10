@@ -1,4 +1,12 @@
 Browser smoke tests: skipped
-Commit: 61e8b34ab889826018d016de440676c46c68d36c
+Commit: 2521a756ccafcc183118403154559db7fa0f8252
+
+Installation outcome: failure
+
+added 44 packages in 5s
+BEWARE: your OS is not officially supported by Playwright; installing dependencies for ubuntu26.04-x64 as a fallback.
+Cannot install dependencies for ubuntu26.04-x64 with Playwright 1.56.1!
+Failed to install browsers
+Error: ERROR: Playwright does not support chromium on ubuntu26.04-x64
 
 Browser test did not reach execution
