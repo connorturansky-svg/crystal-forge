@@ -148,9 +148,19 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
    if(!eroded.isEmpty()){
     const shell=hold(combined.subtract(eroded));
     assertSolid(shell,'Hollowed union');
-    combined=shell;
+    // Preserve a connected solid root for fabrication: reintroduce the
+    // original lower region (including any pre-existing underside pocket).
+    // This helps prevent thin eroded necks separating neighbouring crystals.
+    const bb=combined.boundingBox(),low=bb.min,hi=bb.max;
+    const rootHeight=Math.min(hi[1]-low[1],Math.max(7,Number(s.baseHeight||0)+5));
+    const rootCut=hold(wasm.Manifold.cube([hi[0]-low[0]+4,rootHeight,hi[2]-low[2]+4])
+      .translate([low[0]-2,low[1],low[2]-2]));
+    const root=hold(combined.intersect(rootCut));
+    const supported=hold(shell.add(root));
+    assertSolid(supported,'Reinforced hollowed union');
+    combined=supported;
     hollowed=crystals.filter(c=>!c.hidden).length;
-    warnings.push('Hollowing uses a spherical Minkowski erosion as an approximate normal offset. Verify local wall thickness in Cura before printing.');
+    warnings.push('Hollowing uses spherical erosion with a solid reinforcing root; the first part of each crystal remains solid. Verify minimum wall thickness and cavity access in Cura.');
    }else{
     warnings.push('The current crystal cluster is too narrow for an internal cavity at the selected wall thickness.');
    }
