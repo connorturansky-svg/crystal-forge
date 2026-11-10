@@ -6,13 +6,13 @@ import {loadManifold,prepareFabrication,saveSTL,save3MF,makeCalibrationStrip,spl
 
 const $=id=>document.getElementById(id);
 const defaults={
-  title:'Untitled cluster',count:16,height:155,width:130,seed:42,pattern:'Central Spire',
-  familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,
+  title:'Untitled cluster',count:16,height:155,width:130,seed:42,pattern:'Central Spire',spacing:42,angleRandomness:32,
+  familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:.45,
   tipFlat:.25,tipLength:.27,roundSteps:3,
-  baseType:'integrated',baseHeight:8,undersideAccess:false,wallThickness:1.2,
-  showPixels:false,pixelCount:12,pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
+  baseType:'integrated',baseHeight:8,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,wallThickness:1.2,
+  showPixels:false,pixelCount:1,lightingMode:'single',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:true,splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
-  colour:0x8bbcff,mode:'simple'
+  colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false
 };
 let s={...defaults},crystals=[],selectedId=null,activeTool='select',cameraTween=null;
 try{
@@ -38,10 +38,35 @@ function restore(str){
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
- if(['height','width','cornerRadius','shoulderRound','tipFlat','baseHeight','wallThickness','pixelDiameter','pixelFit'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
+ if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseWidth','wallThickness','pixelDiameter','pixelFit'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
  if(['bottomScale','topScale','tipLength'].includes(k))return Math.round(v*100)+'%';
  if(['mountHoleDiameter','mountHoleDepth','mountSpacing'].includes(k))return Number(v).toFixed(1)+' mm';
- if(k==='splitX')return v+' mm';if(k==='overhang')return v+'°';return String(v);
+ if(k==='splitX')return v+' mm';if(['spacing','angleRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
+}
+const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
+function selectedCrystal(){return crystals.find(c=>c.id===selectedId)||null}
+function shapeValue(c,k){
+ if(!c)return s[k];
+ if(k==='familyMix')return c.family;
+ return c.shape?.[k]??s[k];
+}
+function syncShapeControls(){
+ const c=selectedCrystal();
+ $('shapeScopeTitle').textContent=c?'Shaping: '+c.name:'All crystal shapes';
+ $('shapeScope').textContent=c?('INDIVIDUAL CRYSTAL · '+c.name+' · other crystals unchanged'):'GLOBAL SHAPE · Select any crystal to edit it independently';
+ $('shapeScope').classList.toggle('shape-selected',!!c);
+ $('clearCrystalSelection').hidden=!c;
+ $('resetCrystalShape').hidden=!c;
+ for(const e of document.querySelectorAll('[data-state]')){
+  const k=e.dataset.state;if(!shapeKeys.has(k))continue;
+  const v=shapeValue(c,k);
+  if(e.type==='checkbox')e.checked=!!v;else e.value=v??'';
+  e.disabled=!!c?.locked;
+  for(const o of document.querySelectorAll('[data-out="'+k+'"]'))o.textContent=format(k,v);
+ }
+ const multi=s.lightingMode==='multi';
+ $('multiplePixelsRow').classList.toggle('show',multi);
+ for(const e of document.querySelectorAll('[data-state="pixelCount"]'))e.disabled=!multi;
 }
 function syncForm(){
  document.body.classList.toggle('advanced',s.mode==='advanced');
@@ -56,6 +81,9 @@ function syncForm(){
  for(const e of document.querySelectorAll('[data-out]'))e.textContent=format(e.dataset.out,s[e.dataset.out]);
  $('actualHole').textContent=(Number(s.pixelDiameter)+Number(s.pixelFit)).toFixed(2)+' mm';
  $('projectName').textContent=s.title;
+ syncShapeControls();
+ $('floatBtn').classList.toggle('active',!!s.floatView);
+ $('hardwareColoursBtn').classList.toggle('active',!!s.hardwareColourMode);
  document.querySelectorAll('#colours button').forEach(b=>b.classList.toggle('active',Number(b.dataset.colour)===s.colour));
 }
 function saveProject(){
@@ -70,9 +98,9 @@ function setStatus(t){$('status').textContent=t}
 
 let manufacturingMesh=null,manufacturingReport=null,preparedSource=null;
 const relevantManufacturingKeys=[
- 'count','height','width','seed','pattern','familyMix','bottomScale','topScale',
- 'cornerRadius','shoulderRound','tipFlat','tipLength','roundSteps',
- 'baseType','baseHeight','undersideAccess','wallThickness','pixelCount','pixelDiameter',
+ 'count','height','width','seed','pattern','spacing','angleRandomness','familyMix','bottomScale','topScale',
+ 'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
+ 'baseType','baseHeight','baseWidth','baseStyle','undersideAccess','wallThickness','lightingMode','pixelCount','pixelDiameter',
  'pixelFit','cutSockets','hollowCrystals','overhang','splitX','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing'
 ];
 function sourceHash(){
@@ -231,7 +259,18 @@ function selectCrystal(id,commit=true){
  selectedMesh=crystalMeshes.find(m=>m.userData.crystalId===selectedId)||null;
  if(selectedMesh&&activeTool!=='select'&&!c.locked&&!manufacturingMesh?.visible)gizmo.attach(selectedMesh);
  else gizmo.detach();
- for(const m of crystalMeshes)m.material.emissive.setHex(m===selectedMesh?0x21415e:0x000000);
+ for(const m of crystalMeshes){
+  m.material.emissive.setHex(m===selectedMesh?(c?.locked?0x7c1627:0x0b8752):0);
+  m.material.emissiveIntensity=m===selectedMesh?.9:0;
+  const old=m.getObjectByName('crystal-selection-outline');
+  if(old){m.remove(old);old.geometry.dispose();old.material.dispose()}
+ }
+ if(selectedMesh){
+  const outline=new THREE.LineSegments(new THREE.EdgesGeometry(selectedMesh.geometry,38),
+    new THREE.LineBasicMaterial({color:c.locked?0xff566a:0x2bffa0,depthTest:false,transparent:true,opacity:.94}));
+  outline.name='crystal-selection-outline';outline.renderOrder=60;selectedMesh.add(outline);
+ }
+ syncShapeControls();
  renderTree();renderSelection();if(commit)persist();
 }
 function setTool(tool){
@@ -258,7 +297,7 @@ function renderSelection(duringDrag=false){
  '<div class="note" id="transformReadout">X '+c.x.toFixed(1)+' · Y '+c.y.toFixed(1)+' · Z '+c.z.toFixed(1)+'</div>'+
  '<div class="grid2">'+
  num('X',c.x,'x')+num('Y',c.y,'y')+num('Z',c.z,'z')+num('Height',c.h,'h')+num('Radius',c.r,'r')+num('Angle Y',THREE.MathUtils.radToDeg(c.rotation),'angle')+'</div>'+
- '<div class="divider"></div><div class="buttonrow"><button id="focusSelected">Focus</button><button id="lockSelected">'+(c.locked?'Unlock':'Lock')+'</button><button id="hideSelected">'+(c.hidden?'Show':'Hide')+'</button></div>';
+ '<div class="divider"></div><div class="note" style="color:#64e7af">Crystal shaping controls on the left now edit only this crystal.</div><div class="buttonrow"><button id="focusSelected">Focus</button><button id="lockSelected">'+(c.locked?'Unlock':'Lock')+'</button><button id="hideSelected">'+(c.hidden?'Show':'Hide')+'</button></div>';
  function num(label,val,key){return '<div class="control"><label>'+label+'</label><input type="number" step=".5" data-crystal="'+key+'" value="'+Number(val).toFixed(1)+'" '+(c.locked?'disabled':'')+'></div>'}
  pane.querySelectorAll('[data-crystal]').forEach(input=>{
   input.addEventListener('change',()=>{const value=Number(input.value);if(!Number.isFinite(value))return;
@@ -351,12 +390,22 @@ function schedule(full=true){
   snapshot();
  },85);
 }
-const regenKeys=new Set(['count','height','width','seed','pattern','familyMix']);
+const regenKeys=new Set(['count','height','width','seed','pattern','spacing','angleRandomness','familyMix']);
 const previewKeys=new Set(['showPixels','mount','printer','preserveLocked','snap']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
+  const target=selectedCrystal();
+  if(shapeKeys.has(key)&&target){
+    if(target.locked){syncShapeControls();return}
+    if(key==='familyMix')target.family=value;
+    else target.shape={...(target.shape||{}),[key]:value};
+    rebuild();snapshot();return;
+  }
   s[key]=value;
+  if(key==='lightingMode'&&value==='single')s.pixelCount=1;
+  if(key==='lightingMode'&&value==='none')s.pixelCount=0;
+  if(key==='lightingMode'&&value==='multi'&&s.pixelCount<1)s.pixelCount=2;
   if(!previewKeys.has(key))disposeManufacturing();
   for(const o of document.querySelectorAll('[data-out="'+key+'"]'))o.textContent=format(key,value);
   if(key==='pixelDiameter'||key==='pixelFit')$('actualHole').textContent=(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm';
@@ -367,6 +416,12 @@ document.querySelectorAll('[data-state]').forEach(e=>{
  });
  e.addEventListener('change',snapshot);
 });
+$('clearCrystalSelection').onclick=()=>selectCrystal(null);
+$('resetCrystalShape').onclick=()=>{
+ const c=selectedCrystal();if(!c||c.locked)return;
+ c.shape={};c.family=s.familyMix==='Mixed'?'Quartz':s.familyMix;
+ rebuild();snapshot();
+};
 $('simpleBtn').onclick=()=>{s.mode='simple';syncForm();snapshot()};
 $('advancedBtn').onclick=()=>{s.mode='advanced';syncForm();snapshot()};
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{
