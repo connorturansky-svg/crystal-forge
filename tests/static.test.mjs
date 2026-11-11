@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const local=p=>path.join(root,p);
 const jsPaths=fs.readdirSync(root).filter(p=>p.endsWith('.js'));
 for(const p of fs.readdirSync(local('tests')).filter(p=>p.endsWith('.mjs')))jsPaths.push('tests/'+p);
-assert(jsPaths.includes('studio-v3.js')&&jsPaths.includes('fabrication-v1.js')&&jsPaths.includes('hardware-editor.js')&&jsPaths.includes('pixel-profiles.js')&&jsPaths.includes('wire-routing.js')&&jsPaths.includes('print-advisor.js'));
+assert(jsPaths.includes('studio-v3.js')&&jsPaths.includes('fabrication-v1.js')&&jsPaths.includes('hardware-editor.js')&&jsPaths.includes('pixel-profiles.js')&&jsPaths.includes('wire-routing.js')&&jsPaths.includes('print-advisor.js')&&jsPaths.includes('cura-profiles.js'));
 for(const p of jsPaths){
  // node --check parses ESM without importing CDN modules or starting WebGL.
  try{execFileSync(process.execPath,['--check',local(p)],{stdio:'pipe'})}
