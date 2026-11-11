@@ -161,6 +161,9 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Illumination approach</label><select data-state="lightingMode"><option value="single">One pixel · shared glowing cluster</option><option value="multi">Multiple pixels (advanced)</option><option value="none">No lighting</option></select></div>
 <label class="checks"><input data-state="showPixels" type="checkbox"> Show LED centres in the viewport</label><label class="checks"><input data-state="cutSockets" type="checkbox"> Cut LED socket holes into manufacturing mesh</label><div class="control"><label>Pixel hole placement</label><select data-state="pixelPlacement"><option value="auto">Automatic</option><option value="manual">Manual X/Z positions</option></select></div>
 <div id="multiplePixelsRow" class="control advanced-only"><label>Pixel quantity <output data-out="pixelCount"></output></label><input data-state="pixelCount" type="range" min="1" max="60" step="1"></div>
+<div class="control"><label>Pixel type / saved profile</label><select data-state="pixelProfileId" id="pixelProfileSelect"><option value="gumdrop">Generic 12 mm gumdrop</option><option value="bullet">Generic 12 mm bullet</option><option value="seed">Generic 5 mm seed</option></select></div>
+<div class="buttonrow"><button type="button" id="editPixelProfileBtn">⚙ Edit / save pixel profile</button></div>
+<p id="pixelProfileDetails" class="note">Preset dimensions are approximate. Measure the real LED before printing.</p>
 <div class="control"><label>Nominal socket diameter <output data-out="pixelDiameter"></output></label><input data-state="pixelDiameter" type="range" min="10" max="15" step=".1"></div>
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
 <p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p><div class="divider"></div><label class="checks"><input data-state="glowPreview" type="checkbox"> Preview the whole cluster glowing one colour</label>
@@ -250,6 +253,23 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="note">Saved locally in this browser. Use <b>↓ Save</b> to keep a portable project file.</div>
 </aside></div>
 
+<div id="pixelProfileOverlay" class="dialog-backdrop" hidden>
+<section class="dialog" role="dialog" aria-modal="true" aria-labelledby="pixelEditorTitle">
+<div class="dialog-header"><h2 id="pixelEditorTitle">Reusable pixel profiles</h2><button id="closePixelProfileBtn">✕ Close</button></div>
+<div class="dialog-body"><p>Measure the real LED. Generic defaults are not verified manufacturer specifications.</p>
+<div class="grid2">
+<div class="control"><label>Name</label><input id="pixelName" type="text" maxlength="70"></div>
+<div class="control"><label>Shape</label><select id="pixelKind"><option value="gumdrop">Gumdrop</option><option value="bullet">Bullet</option><option value="seed">Seed</option></select></div>
+<div class="control"><label>Body diameter (mm)</label><input id="pixelBodyDiameter" type="number" min="2" max="30" step=".1"></div>
+<div class="control"><label>Body length (mm)</label><input id="pixelBodyHeight" type="number" min="3" max="50" step=".1"></div>
+<div class="control"><label>Flange diameter (mm)</label><input id="pixelFlangeDiameter" type="number" min="2" max="38" step=".1"></div>
+<div class="control"><label>Flange height (mm)</label><input id="pixelFlangeHeight" type="number" min="0" max="10" step=".1"></div>
+<div class="control"><label>Upper dome height (mm)</label><input id="pixelCapHeight" type="number" min="0" max="12" step=".1"></div>
+<div class="control"><label>Wire relief width (mm)</label><input id="pixelWireWidth" type="number" min="0" max="12" step=".1"></div>
+<div class="control"><label>Wire relief depth (mm)</label><input id="pixelWireDepth" type="number" min="0" max="8" step=".1"></div>
+</div><p class="note warning">Profile cutters are blind, with an optional flange and two shallow underside wire slots. Retaining clips and complete cable routes are not generated.</p>
+<div class="buttonrow"><button class="primary" id="savePixelProfileBtn">Save to profile library</button><button id="deletePixelProfileBtn">Delete selected custom profile</button></div>
+</div></section></div>
 <div id="infoOverlay" class="dialog-backdrop" hidden>
  <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
   <div class="dialog-header"><h2 id="infoTitle">Crystal Forge — Help</h2><button id="closeInfo" title="Close help and changelog" aria-label="Close">✕ Close</button></div>

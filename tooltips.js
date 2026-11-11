@@ -139,6 +139,7 @@ const SETTINGS={
   "Illumination layout",
   "Choose one shared LED, multiple LEDs or no lighting. Actual channels need inspecting in Cura."
  ],
+ "pixelProfileId": ["Pixel profile","Choose a seed, bullet, gumdrop or saved custom profile. Dimensions change the actual manufacturing cut."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."
@@ -270,6 +271,7 @@ const BUTTONS={
   "Lock crystal",
   "Protect a crystal from accidental changes and supported regeneration operations."
  ],
+ "editPixelProfileBtn": ["Pixel profile editor","Define measured body, flange, dome and wire-relief dimensions and save a reusable profile."],
  "fitPixelBaseBtn": [
   "Fit base for pixel",
   "Sets base depth to 25 mm for the nominal 22 mm gumdrop body. Test actual housing fit."
@@ -397,6 +399,7 @@ function lookup(el){
  if(el.matches('input,select'))return [heading,'Adjust this setting; some edits require preparing a new print mesh.'];
  return null;
 }
+export function describeControl(el){return lookup(el)}
 export function installTooltips(doc=document){
  const node=doc.createElement('div');
  node.id='controlTooltip';node.className='control-tooltip';node.setAttribute('role','tooltip');node.hidden=true;

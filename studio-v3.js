@@ -6,7 +6,8 @@ import {loadManifold,setThreeInstance,saveSTL,save3MF,makeCalibrationStrip,split
 setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
-import {installTooltips} from './tooltips.js';
+import {installTooltips,describeControl} from './tooltips.js';
+import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
 
 const $=id=>document.getElementById(id);
 const defaults={
@@ -14,7 +15,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,
-  showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -100,8 +101,8 @@ function syncForm(){
   else e.value=s[k]??'';
  }
  for(const e of document.querySelectorAll('[data-out]'))e.textContent=format(e.dataset.out,s[e.dataset.out]);
- $('actualHole').textContent=(Number(s.pixelDiameter)+Number(s.pixelFit)).toFixed(2)+' mm';
- $('pixelBaseDepthHint').textContent=s.baseHeight>=23?'Base has space for a nominal 22 mm gumdrop body.':'Base is shallower than the ~22 mm gumdrop body. 25 mm is recommended.';
+ $('actualHole').textContent=resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm';
+ $('pixelBaseDepthHint').textContent=s.baseHeight>=resolvePixelProfile(s).bodyHeight+1?'Base accommodates selected nominal LED depth.':'Base is shallower than selected LED housing. Check fit.';
  $('projectName').textContent=s.title;
  syncShapeControls();
  $('edgeTabSettings').hidden=s.mount!=='Edge fixing tabs';
@@ -125,7 +126,7 @@ const relevantManufacturingKeys=[
  'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
  'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightingMode','pixelCount','pixelDiameter',
- 'pixelFit','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
+ 'pixelFit','pixelProfileId','pixelProfiles','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
@@ -565,6 +566,11 @@ document.querySelectorAll('[data-state]').forEach(e=>{
     rebuild();snapshot();return;
   }
   s[key]=value;
+   if(key==='pixelProfileId'){
+    const profile=allPixelProfiles(s).find(p=>p.id===value);
+    if(profile)s.pixelDiameter=profile.bodyDiameter;
+    syncForm();
+   }
   if(key==='mount')$('edgeTabSettings').hidden=value!=='Edge fixing tabs';
   if(key==='lightingMode'&&value==='single')s.pixelCount=1;
   if(key==='lightingMode'&&value==='none')s.pixelCount=0;
@@ -574,7 +580,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
    if(key==='hollowCrystals'&&value)s.baseVault=false;
   if(!previewKeys.has(key))disposeManufacturing();
   for(const o of document.querySelectorAll('[data-out="'+key+'"]'))o.textContent=format(key,value);
-  if(key==='pixelDiameter'||key==='pixelFit')$('actualHole').textContent=(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm';
+  if(key==='pixelDiameter'||key==='pixelFit'||key==='pixelProfileId')$('actualHole').textContent=resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm';
   if(key==='splitParts')$('splitExportBtn').disabled=!manufacturingMesh||!value;
   if(key==='glowColour'||key==='glowPreview')updateAppearance();
    if(key==='studioBrightness')refreshStudioLighting();
