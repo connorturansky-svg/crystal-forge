@@ -25,7 +25,7 @@ import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
 const $=id=>document.getElementById(id);
 installResizablePanels();
 const defaults={
-  title:'Untitled cluster',count:16,height:155,width:130,crystalSize:1,widthRandomness:0,studioBrightness:.85,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
+  title:'Untitled cluster',batchSelectionIds:[],count:16,height:155,width:130,crystalSize:1,widthRandomness:0,studioBrightness:.85,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
   familyMix:'Quartz',familyWeights:{Quartz:1,Shard:1,Blade:1,Cubic:1,'Double terminated':1,Fantasy:1},bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
@@ -426,6 +426,7 @@ function makeCrystal(c){
  scene.add(mesh);return mesh;
 }
 function rebuild(){
+ s.batchSelectionIds=(Array.isArray(s.batchSelectionIds)?s.batchSelectionIds:[]).filter(id=>crystals.some(c=>c.id===id));
  disposeManufacturing();
  gizmo.detach();crystalMeshes.forEach(disposeMesh);crystalMeshes=[];
  for(const c of crystals)crystalMeshes.push(makeCrystal(c));
@@ -518,12 +519,53 @@ function renderSelection(duringDrag=false){
 function escapeHTML(str){return String(str).replace(/[&<>"]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[x]))}
 function renderTree(){
  $('treeCount').textContent=crystals.length+' crystals';
+ const batch=new Set(Array.isArray(s.batchSelectionIds)?s.batchSelectionIds:[]);
+ $('batchSelectedCount').textContent=String(batch.size);
  const root='<div class="treeentry base" data-base>▰ '+(s.baseType==='none'?'No integrated base':'Integrated root')+'</div>';
  $('objectTree').innerHTML='<div class="treeentry" style="font-weight:700">◇ Formation '+crystals.length+'</div>'+
- crystals.map(c=>'<div class="treeentry child '+(c.id===selectedId?'selected ':'')+(c.locked?'locked':'')+'" data-id="'+escapeHTML(c.id)+'"><span>⬡</span><span>'+escapeHTML(c.name)+'</span><span class="treeactions">'+(c.locked?'🔒 ':'')+(c.hidden?'◌':'')+'</span></div>').join('')+root+
+ crystals.map(c=>'<div class="treeentry child '+(c.id===selectedId?'selected ':'')+(batch.has(c.id)?'batch-selected ':'')+(c.locked?'locked':'')+'" data-id="'+escapeHTML(c.id)+'"><input type="checkbox" data-batch-id="'+escapeHTML(c.id)+'" aria-label="Batch select '+escapeHTML(c.name)+'" '+(batch.has(c.id)?'checked':'')+'><span>⬡</span><span>'+escapeHTML(c.name)+'</span><span class="treeactions">'+(c.locked?'🔒 ':'')+(c.hidden?'◌':'')+'</span></div>').join('')+root+
  '<div class="treeentry base">✳ LEDs ('+s.pixelCount+' planned)</div>';
- $('objectTree').querySelectorAll('[data-id]').forEach(e=>e.onclick=()=>selectCrystal(e.dataset.id));
+ $('objectTree').querySelectorAll('[data-id]').forEach(e=>e.onclick=event=>{
+  if(event.target.matches('[data-batch-id]'))return;
+  if(event.ctrlKey||event.metaKey||event.shiftKey){toggleBatchSelection(e.dataset.id);return}
+  selectCrystal(e.dataset.id);
+ });
+ $('objectTree').querySelectorAll('[data-batch-id]').forEach(input=>input.onchange=event=>{
+  event.stopPropagation();toggleBatchSelection(input.dataset.batchId,input.checked);
+ });
 }
+function toggleBatchSelection(id,force=null){
+ const all=new Set(Array.isArray(s.batchSelectionIds)?s.batchSelectionIds:[]);
+ if(force===true)all.add(id);else if(force===false)all.delete(id);else if(all.has(id))all.delete(id);else all.add(id);
+ s.batchSelectionIds=[...all].filter(v=>crystals.some(c=>c.id===v));
+ updateAppearance();renderTree();snapshot();
+}
+function batchApply(action,label){
+ const ids=new Set(s.batchSelectionIds||[]);
+ const editable=crystals.filter(c=>ids.has(c.id)&&!c.locked);
+ if(!editable.length){setStatus('No unlocked crystals selected for batch editing');return}
+ for(const c of editable)action(c);
+ rebuild();snapshot();setStatus(label+' applied to '+editable.length+' unlocked crystals');
+}
+$('batchSelectAll').onclick=()=>{s.batchSelectionIds=crystals.map(c=>c.id);updateAppearance();renderTree();snapshot()};
+$('batchClear').onclick=()=>{s.batchSelectionIds=[];updateAppearance();renderTree();snapshot()};
+$('batchApplyMove').onclick=()=>{
+ const dx=Number($('batchMoveX').value),dz=Number($('batchMoveZ').value);
+ if(!Number.isFinite(dx)||!Number.isFinite(dz))return;
+ batchApply(c=>{c.x+=dx;c.z+=dz},'Batch X/Z movement');
+};
+$('batchScaleDown').onclick=()=>batchApply(c=>{c.sx=Math.max(.1,(c.sx||1)*.9);c.sy=Math.max(.1,(c.sy||1)*.9);c.sz=Math.max(.1,(c.sz||1)*.9)},'−10% scale');
+$('batchScaleUp').onclick=()=>batchApply(c=>{c.sx=Math.min(10,(c.sx||1)*1.1);c.sy=Math.min(10,(c.sy||1)*1.1);c.sz=Math.min(10,(c.sz||1)*1.1)},'+10% scale');
+$('batchLock').onclick=()=>{
+ const ids=new Set(s.batchSelectionIds||[]),group=crystals.filter(c=>ids.has(c.id));
+ const value=group.some(c=>!c.locked);group.forEach(c=>c.locked=value);
+ rebuild();snapshot();setStatus(value?'Locked group':'Unlocked group');
+};
+$('batchHide').onclick=()=>{
+ const ids=new Set(s.batchSelectionIds||[]),group=crystals.filter(c=>ids.has(c.id));
+ const value=group.some(c=>!c.hidden);group.forEach(c=>c.hidden=value);
+ rebuild();snapshot();setStatus(value?'Hid selected group':'Showed selected group');
+};
 function renderInfo(){
  const meshes=[...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents];
  let total=0,box=new THREE.Box3();
@@ -543,9 +585,10 @@ function updateAppearance(){
   m.material.opacity=look==='xray'?.38:1;
   m.material.depthWrite=look!=='xray';
   const selected=m===selectedMesh,c=selected?selectedCrystal():null;
+  const batch=!!m.userData.crystalId&&s.batchSelectionIds?.includes(m.userData.crystalId);
   const glow=!!s.glowPreview&&s.lightingMode!=='none'&&!(m===manufacturingMesh&&$('printHeatmap')?.checked);
-  m.material.emissive.setHex(selected?(c?.locked?0x8b1b2c:0x0b8752):glow?Number(s.glowColour):0);
-  m.material.emissiveIntensity=selected?.88:glow?.58:0;
+  m.material.emissive.setHex(selected?(c?.locked?0x8b1b2c:0x0b8752):batch?0x116aaf:glow?Number(s.glowColour):0);
+  m.material.emissiveIntensity=selected?.88:batch?.73:glow?.58:0;
  }
 }
 function modelBounds(){
@@ -606,8 +649,11 @@ renderer.domElement.addEventListener('pointerup',e=>{
  raycaster.setFromCamera(pointer,camera);
  const hits=raycaster.intersectObjects(crystalMeshes.filter(m=>m.visible),true);
  if(hits.length){let o=hits[0].object;while(o&&!o.userData.crystalId)o=o.parent;
-  if(o)selectCrystal(o.userData.crystalId)
- }else selectCrystal(null);
+  if(o){
+   if(e.ctrlKey||e.metaKey||e.shiftKey)toggleBatchSelection(o.userData.crystalId);
+   else selectCrystal(o.userData.crystalId);
+  }
+ }else if(!(e.ctrlKey||e.metaKey||e.shiftKey))selectCrystal(null);
 });
 function animate(now){
  requestAnimationFrame(animate);
