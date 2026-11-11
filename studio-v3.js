@@ -146,7 +146,7 @@ function syncFitCalibration(){
  }
  const active=!!s.fitCalibration;
  $('fitOverrideToolBtn').hidden=!active;$('resetFitOverrideBtn').hidden=!active;
- if(active)$('fitOverrideToolBtn').textContent='⚙ Calibrated Ø '+Number(s.fitCalibration.diameter).toFixed(2)+' mm';
+ if(active)$('fitOverrideToolBtn').textContent='⚙ Fit '+(Number(s.pixelFit)>=0?'+':'')+Number(s.pixelFit).toFixed(2)+' mm';
 }
 function syncForm(){
  refreshPixelProfileOptions();
