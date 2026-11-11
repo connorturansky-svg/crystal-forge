@@ -533,7 +533,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
  }finally{cleanupAll(owned)}
 }
 // Converts Three.js Y-up preview into the Z-up coordinate convention used by slicers.
-export function saveSTL(geometry,filename='crystal-forge-manifold.stl'){
+export function encodeSTL(geometry){
  const p=geometry.getAttribute('position').array,count=Math.floor(p.length/9);
  const bytes=new ArrayBuffer(84+50*count),dv=new DataView(bytes);dv.setUint32(80,count,true);
  let off=84;const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),n=new THREE.Vector3();
@@ -543,7 +543,10 @@ export function saveSTL(geometry,filename='crystal-forge-manifold.stl'){
   for(const v of [n,a,b,c]){dv.setFloat32(off,v.x,true);dv.setFloat32(off+4,v.y,true);dv.setFloat32(off+8,v.z,true);off+=12}
   dv.setUint16(off,0,true);off+=2;
  }
- const blob=new Blob([bytes],{type:'model/stl'});
+ return new Uint8Array(bytes);
+}
+export function saveSTL(geometry,filename='crystal-forge-manifold.stl'){
+ const blob=new Blob([encodeSTL(geometry)],{type:'model/stl'});
  const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;link.click();
  setTimeout(()=>URL.revokeObjectURL(url),1500);
  return blob;
