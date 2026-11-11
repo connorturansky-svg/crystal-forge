@@ -10,6 +10,7 @@ import {applyShapePreset} from './design-workflows.js';
 setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
+import {installResizablePanels} from './workspace-panels.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
@@ -20,6 +21,7 @@ import {assessPrintQuality,printChecklistText} from './print-quality.js';
 import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
 
 const $=id=>document.getElementById(id);
+installResizablePanels();
 const defaults={
   title:'Untitled cluster',count:16,height:155,width:130,crystalSize:1,widthRandomness:0,studioBrightness:.85,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
