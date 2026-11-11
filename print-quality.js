@@ -23,6 +23,18 @@ export function assessPrintQuality(crystals,settings,preparedReport=null){
   return smallest<lineWidth*2;
  });
  if(narrow.length)add('warning','Tiny roots/facets',narrow.length+' crystal(s) have a calculated half-width below two nozzle lines. Inspect thin tips and root rings in Cura.');
+ if(s.wireChannels&&s.wireMode==='string'&&!hardware.wirePlan?.ready)
+  add('warning','Incomplete pixel string routing',hardware.wirePlan?.messages?.join(' ')||'No verified safe physical cable route. Manufacturing will not cut a partial serial route.');
+ if(s.targetedLightPaths){
+  const diameter=Math.max(1,finite(s.lightBoreDiameter,4)),wall=Math.max(.8,finite(s.wallThickness,1.2));
+  const risky=visible.filter(c=>{
+   const shape={...s,...(c.shape||{})};
+   const radius=Number(c.r||0)*Math.min(finite(shape.bottomScale,1),finite(shape.topScale,.8))*
+    Math.min(finite(c.sx||c.scale,1),finite(c.sz||c.scale,1));
+   return radius-diameter/2<wall+lineWidth;
+  });
+  if(risky.length)add('warning','Light bore wall margin (approximate)',risky.length+' crystal root(s) have a screened radial margin below modeled wall + one nozzle line ('+(wall+lineWidth).toFixed(2)+' mm). This is not a true minimum-wall calculation: check actual cutaways in Cura.');
+ }
  if(s.wireChannels&&finite(s.wireWidth,3)<lineWidth*3)
   add('warning','Wire-groove resolution','Requested '+s.wireWidth+' mm channels are less than three nominal nozzle widths. Inspect the underside in Cura.');
  if(s.pixelRetentionLip>0&&finite(s.pixelRetentionLip,0)>lineWidth*.75)
@@ -47,11 +59,11 @@ export function assessPrintQuality(crystals,settings,preparedReport=null){
  checks.push('Confirm light can enter every intended crystal; 0% infill alone is insufficient.');
  checks.push('Fit-test the actual LED and filament with a small calibration coupon.');
  checks.push('Physically test mounting, cable strain relief and any suspended pieces.');
- const status=findings.some(f=>f.severity==='warning')?'Warnings':findings.some(f=>f.severity==='review')?'Review in Cura':'Inspection required';
  const estimatedHeight=Math.max(0,...visible.map(c=>Number(c.h||0)+Number(s.baseHeight||0)+Number(s.baseDome||0)));
  const estimatedLayers=profile?.layerHeight?Math.ceil(estimatedHeight/profile.layerHeight):null;
  const approximateFlow=profile?Number((profile.nozzle*profile.layerHeight*profile.speed).toFixed(2)):null;
  if(approximateFlow>12)add('review','Possible flow constraint','Approximately '+approximateFlow+' mm³/s requested at the selected width, layer and speed. Check the actual print core and filament flow limit.');
+ const status=findings.some(f=>f.severity==='warning')?'Warnings':findings.some(f=>f.severity==='review')?'Review in Cura':'Inspection required';
  return {status,nozzle,layerHeight:profile?.layerHeight??null,roof,findings,checks,hardware,estimatedCableMm:ceil(hardware.wirePlan?.lengthMm||0),estimatedLayers,approximateFlow};
 }
 export function printChecklistText(result,settings={}){
