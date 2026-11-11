@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:static": "node tests/static.test.mjs && node tests/cura-profiles.test.mjs && node tests/all-phases.test.mjs && node tests/wire-tab-edit.test.mjs",
+    "test:static": "node tests/static.test.mjs && node tests/cura-profiles.test.mjs && node tests/all-phases.test.mjs && node tests/wire-tab-edit.test.mjs && node tests/fit-calibration.test.mjs",
     "test": "node tests/fabrication.test.mjs",
     "test:browser": "node tests/browser-smoke.mjs",
     "test:benchmark": "node tests/benchmark.mjs"
