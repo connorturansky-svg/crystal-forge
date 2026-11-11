@@ -109,6 +109,34 @@ try{
  await page.waitForTimeout(400);await centred('smaller dome');
 
  console.log('Individual shaping, green selection, floating view and bottom snap verified');
+ // PR4 controls: contextual help, full hill and saved pixel profiles.
+ await page.locator('#descriptionsBtn').click();
+ assert.equal(await page.locator('#descriptionsBtn').getAttribute('aria-pressed'),'true');
+ await page.locator('[data-tab="build"]').click();
+ await page.locator('[data-state="mount"]').selectOption('Magnet inserts');
+ assert((await page.locator('#contextHelpBody').innerText()).includes('magnets'),'Mounting description shown');
+ await page.locator('[data-state="baseProfile"]').selectOption('Full dome / hill');
+ await page.locator('[data-state="sideWall"]').evaluate(el=>{el.value='20';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(250);
+ assert.equal(await page.locator('[data-state="baseProfile"]').inputValue(),'Full dome / hill');
+ await page.locator('[data-state="baseProfile"]').selectOption('Plinth + dome');
+ await page.locator('[data-state="sideWall"]').evaluate(el=>{el.value='100';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.locator('[data-state="mount"]').selectOption('None');
+ await page.locator('#editPixelProfileBtn').click();
+ assert(await page.locator('#pixelProfileOverlay:not([hidden])').count(),'Pixel editor opens');
+ await page.locator('#pixelName').fill('Measured gumdrop');
+ await page.locator('#pixelBodyDiameter').fill('13.5');
+ await page.locator('#pixelFlangeDiameter').fill('15.5');
+ await page.locator('#pixelBodyHeight').fill('19');
+ await page.locator('#savePixelProfileBtn').click();
+ assert(await page.locator('#pixelProfileOverlay[hidden]').count(),'Pixel editor closes');
+ const pixelState=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings);
+ assert(pixelState.pixelProfileId.startsWith('custom-'),'Custom profile selected');
+ assert(pixelState.pixelProfiles.some(p=>p.id===pixelState.pixelProfileId&&p.bodyDiameter===13.5),'Custom profile persisted');
+ await page.locator('[data-state="pixelProfileId"]').selectOption('gumdrop');
+ await page.locator('#descriptionsBtn').click();
+ assert.equal(await page.locator('#descriptionsBtn').getAttribute('aria-pressed'),'false');
+ console.log('PR4 help, base profiles, pixel editor and persistence verified');
  console.log('Advanced editor and view controls verified');
  await page.locator('[data-tab="build"]').click();
  await page.locator('[data-state="baseEdgeRadius"]').evaluate(el=>{el.value='2.5';el.dispatchEvent(new Event('input',{bubbles:true}))});
