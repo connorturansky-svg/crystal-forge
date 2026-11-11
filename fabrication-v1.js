@@ -8,6 +8,7 @@ let THREE;
 export function setThreeInstance(three){THREE=three;}
 import {crystalGeometry,crystalRootOffset,baseGeometry,baseSurfaceHeight} from './geometry-v3.js';
 import {planHardware} from './hardware-layout.js';
+import {resolvePixelProfile} from './pixel-profiles.js';
 
 let modulePromise=null;
 export async function loadManifold(){
@@ -133,19 +134,27 @@ function positionedInnerCrystal(c,s,openingY,wall){
  mesh.updateMatrixWorld(true);
  return mesh;
 }
-function putSocket(wasm,hold,pos,radius,roofY,start=-3){
- // Blind full-width cylindrical entrance with a softly domed internal ceiling.
- // The cap must stop below the exterior base surface (minimum 2.8 mm roof).
- const wall=2.8,tipY=Math.max(start+1.4,roofY-wall);
- const rise=Math.min(2.3,Math.max(.45,radius*.32),Math.max(.4,(tipY-start)*.24));
- const shaftEnd=tipY-rise;
- const shaft=hold(wasm.Manifold.cylinder(Math.max(.5,shaftEnd-start),radius,radius,40)
-  .rotate([-90,0,0]).translate([pos.x,start,pos.z]));
- // An ellipsoidal dome is tangent at the shaft; its lower half overlaps the
- // cylinder, creating no flat roof or through-hole.
- const cap=hold(wasm.Manifold.sphere(radius,40)
-  .scale([1,rise/radius,1]).translate([pos.x,shaftEnd,pos.z]));
- return {solid:hold(shaft.add(cap)),roofY,tipY,shaftEnd,capRise:rise,remainingWall:roofY-tipY};
+function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
+ const p=profile||resolvePixelProfile({pixelDiameter:12,pixelFit:0});
+ const tipY=Math.max(start+1.4,roofY-2.8),available=tipY-start;
+ const capRise=Math.min(Math.max(.35,p.capHeight),2.5,available*.24);
+ const shaftEnd=tipY-capRise,depth=Math.max(.5,shaftEnd-start);
+ const bodyRadius=Math.max(.8,p.boreDiameter/2),cutters=[];
+ const cylinder=(r,y,h)=>hold(wasm.Manifold.cylinder(h,r,r,32).rotate([-90,0,0]).translate([pos.x,y,pos.z]));
+ cutters.push(cylinder(bodyRadius,start,depth));
+ if(p.kind!=='seed'&&p.flangeHeight>.1&&p.maxDiameter>p.boreDiameter+.1)
+  cutters.push(cylinder(p.maxDiameter/2,start,Math.min(depth,p.flangeHeight)));
+ cutters.push(hold(wasm.Manifold.sphere(bodyRadius,32).scale([1,capRise/bodyRadius,1]).translate([pos.x,shaftEnd,pos.z])));
+ if(p.wireWidth>.1&&p.wireDepth>.1){
+  // Two shallow underside cable reliefs; not full wiring channels.
+  const w=Math.max(.8,p.wireWidth+p.clearance),h=Math.min(3,p.wireDepth),len=bodyRadius+4;
+  for(const sign of [-1,1]){
+   cutters.push(hold(wasm.Manifold.cube([w,h,len])
+    .translate([pos.x-w/2,start+.25,pos.z+(sign===1?bodyRadius*.35:-bodyRadius-4)])));
+  }
+ }
+ return {solid:hold(wasm.Manifold.union(cutters)),roofY,tipY,shaftEnd,
+  capRise,remainingWall:roofY-tipY,profileId:p.id};
 }
 function cleanupAll(list){
  for(const m of list){try{m.delete()}catch(e){}}
@@ -371,7 +380,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
    const cutters=[];
    for(const pos of hardware.sockets){
     const roof=baseSurfaceHeight(crystals,s,pos.x,pos.z);
-    const bore=putSocket(wasm,hold,pos,pos.radius,roof);
+    const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolvePixelProfile(s));
     cutters.push(bore.solid);
     socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
       straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall});
@@ -398,8 +407,8 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     }
    }
   }
-  if(hardware.sockets.length&&Number(s.baseHeight||0)<22)
-   warnings.push('The flat base is shorter than a nominal 22 mm gumdrop LED body. Increase its height to about 24 mm if you want to fully conceal the pixel.');
+  if(hardware.sockets.length&&Number(s.baseHeight||0)<resolvePixelProfile(s).bodyHeight)
+   warnings.push('Selected LED body exceeds base depth; verify fit and protrusion in Cura.');
   if(s.cutSockets)warnings.push('Pixel fits are nominal. Test print tolerances and retention before installing any electronics.');
   if(hardware.mounts.length){
    const cutters=[];
@@ -457,7 +466,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(disconnected>1)warnings.push(disconnected+' separate solids detected; the assembly is not one connected piece.');
   if(internalCavities>0)warnings.push(internalCavities+' isolated enclosed cavities were detected. These may not receive light from the underside pixel and should be inspected in a slicer.');
   const baseDepth=Number(s.baseHeight||0);
-  const baseFitsPixel=baseDepth>=23; // nominal gumdrop body ~22 mm
+  const baseFitsPixel=baseDepth>=resolvePixelProfile(s).bodyHeight+1;
   const lightPathScreened=!!s.hollowCrystals&&socketsCut>0&&hollowPorts>0&&internalCavities===0;
   if(s.hollowCrystals&&!lightPathScreened)
     warnings.push('A single shared illuminated cavity is NOT established by the topology screening. Inspect the cross-section and pixel channel in Cura.');
