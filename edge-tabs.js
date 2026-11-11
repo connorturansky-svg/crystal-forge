@@ -4,7 +4,8 @@
 const hypot=(x,z)=>Math.hypot(x,z);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function planEdgeTabs(polygon,s,existing=[],clearance=2.5){
- const requested=clamp(Math.round(Number(s.tabCount)||4),1,24);
+ const manual=Array.isArray(s.manualEdgeTabs)?s.manualEdgeTabs:null;
+  const requested=manual?Math.min(24,manual.length):clamp(Math.round(Number(s.tabCount)||4),1,24);
  const holesEach=clamp(Math.round(Number(s.tabHolesPerTab)||2),1,6);
  const holeDiameter=clamp(Number(s.tabHoleDiameter)||4.5,1.8,16);
  const thickness=clamp(Number(s.tabThickness)||5,2.5,15);
@@ -39,7 +40,7 @@ export function planEdgeTabs(polygon,s,existing=[],clearance=2.5){
   return holes;
  };
  for(let i=0;i<requested;i++){
-  const distance=perimeter*(i+.5)/requested;
+  const distance=perimeter*(manual?clamp(Number(manual[i]?.u)||0,0,.999999):(i+.5)/requested);
   const edge=edges.find(e=>distance<=e.start+e.len+1e-6)||edges.at(-1);
   const t=clamp((distance-edge.start)/edge.len,0,1);
   const centre={x:edge.a.x+edge.tangent.x*t*edge.len,z:edge.a.z+edge.tangent.z*t*edge.len};
@@ -51,6 +52,21 @@ export function planEdgeTabs(polygon,s,existing=[],clearance=2.5){
   tabs.push({...centre,radius,thickness,holeCount:holesEach,index:i});
   tabHoles.push(...candidates);
  }
- if(tabs.length<requested)messages.push('Only '+tabs.length+' of '+requested+' equally spaced edge tabs fit without overlapping other tabs/holes. Reduce tab count, hole diameter or hole count.');
+ if(tabs.length<requested)messages.push('Only '+tabs.length+' of '+requested+' edge tabs fit without overlapping other tabs or holes. Move/remove conflicting tabs or reduce hole sizes.');
  return {tabs,tabHoles,requested,holesEach,skipped:requested-tabs.length,messages};
+}
+
+/** Find the closest perimeter position for draggable tabs, never placing a tab inside the base. */
+export function nearestEdgePosition(polygon,point){
+ let total=0,best={u:0,x:0,z:0,distance:Infinity};
+ const perimeter=polygon.reduce((sum,a,i)=>sum+hypot(polygon[(i+1)%polygon.length].x-a.x,polygon[(i+1)%polygon.length].z-a.z),0);
+ for(let i=0;i<polygon.length;i++){
+  const a=polygon[i],b=polygon[(i+1)%polygon.length],dx=b.x-a.x,dz=b.z-a.z,len=hypot(dx,dz);
+  if(len<=1e-6)continue;
+  const t=clamp(((point.x-a.x)*dx+(point.z-a.z)*dz)/(len*len),0,1);
+  const x=a.x+t*dx,z=a.z+t*dz,d=hypot(point.x-x,point.z-z);
+  if(d<best.distance)best={u:clamp((total+len*t)/perimeter,0,.999999),x,z,distance:d};
+  total+=len;
+ }
+ return best;
 }
