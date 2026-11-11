@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {calculateCuraSettings,createCuraProfile,CURA_MACHINES,CURA_MATERIALS,CURA_NOZZLES} from '../cura-profiles.js';
+import {calculateCuraSettings,createCuraProfile,CURA_MACHINES,CURA_MATERIALS,CURA_NOZZLES,resolveCuraQualityType} from '../cura-profiles.js';
 
 function inspectZip(bytes){
  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
@@ -43,12 +43,14 @@ for(const machine of CURA_MACHINES){
    assert.equal(entries.length,machine==='Ultimaker 3 Extended'?3:2,'correct extruder profile count');
    const all=entries.map(e=>e.body).join('\n');
    for(const part of ['[general]','[metadata]','[values]','type = quality_changes',
-    'quality_type = normal','version = 4','setting_version = 27','layer_height = ',
+    'quality_type = '+resolveCuraQualityType(machine,nozzle),'version = 4','setting_version = 27','layer_height = ',
     'wall_line_count = ','infill_sparse_density = '])
     assert(all.includes(part),'Cura metadata or value missing: '+part);
    assert(all.includes('material = generic_'+material.toLowerCase()),'material metadata');
    assert(all.includes('definition = '+(machine==='Ultimaker 3 Extended'?'ultimaker3':'ultimaker2_plus')),'machine definition');
    assert(all.includes('variant = '+(machine==='Ultimaker 3 Extended'?'AA '+nozzle:nozzle+' mm')),'nozzle variant');
+   assert(profile.fallbackText.includes('quality type: '+profile.qualityType),'manual compatibility sheet records selected quality type');
+   assert(profile.fallbackFilename.endsWith('.txt'));
    assert(!all.includes('material_print_temperature = '),'preserves selected Cura material temperature');
    assert(!all.includes('machine_nozzle_size = '),'does not silently alter physical machine nozzle');
   }
@@ -57,4 +59,8 @@ for(const machine of CURA_MACHINES){
 assert.throws(()=>createCuraProfile({machine:'Custom / other'}),/Select Ultimaker/);
 assert.throws(()=>createCuraProfile({quality:-1}),/Quality/);
 assert.throws(()=>createCuraProfile({intent:'anything'}),/intent/);
+assert.equal(resolveCuraQualityType('Ultimaker 2+',.8),'coarse','UM2+ 0.8 mm does not assume unavailable normal type');
+assert.equal(resolveCuraQualityType('Ultimaker 3 Extended',.4),'normal');
+assert.equal(createCuraProfile({machine:'Ultimaker 2+',nozzle:.8,qualityType:'high'}).qualityType,'high');
+assert.throws(()=>createCuraProfile({qualityType:'not-a-real-quality'}),/quality type/);
 console.log('Cura profile 14 supported machine/nozzle/material combinations, three print intentions and ZIP metadata passed');
