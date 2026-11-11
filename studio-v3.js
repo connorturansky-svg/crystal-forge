@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
-import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,makePixelSeatCoupon,makeDetachableMountPlate,splitPreparedMesh,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon} from './fabrication-v1.js';
+import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,makePixelSeatCoupon,makeDetachableMountPlate,splitPreparedMesh,splitPreparedMeshGrid,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon} from './fabrication-v1.js';
 import {buildProductionPack} from './production-pack.js';
 import {planSplitJoints} from './split-joints.js';
+import {planBedAwareSplit} from './bed-split.js';
 import {planDetachablePlate} from './detachable-plate.js';
 import {applyShapePreset} from './design-workflows.js';
 setThreeInstance(THREE);
@@ -32,7 +33,7 @@ const defaults={
   familyMix:'Quartz',familyWeights:{Quartz:1,Shard:1,Blade:1,Cubic:1,'Double terminated':1,Fantasy:1},bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
-  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',pixelStringSpacing:50,wireMinBendRadius:5,wireInputTailLength:0,wireOutputTailLength:0,wireDirectionArrows:true,wireShowLengths:true,wirePairSpacing:7,wireWidth:3,wireDepth:2,wireSlack:0,manualEdgeTabs:null,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,autoBedSplit:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',pixelStringSpacing:50,wireMinBendRadius:5,wireInputTailLength:0,wireOutputTailLength:0,wireDirectionArrows:true,wireShowLengths:true,wirePairSpacing:7,wireWidth:3,wireDepth:2,wireSlack:0,manualEdgeTabs:null,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaQualityType:'auto',curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -279,6 +280,7 @@ function manufacturingView(enabled){
  if(enabled)gizmo.detach();
  else selectCrystal(selectedId,false);
  updateHardwareAnnotationVisibility();
+ hardwareUI?.refresh(); // disable Build guide overlays when prepared mesh is visible
 }
 function applyPrintHeatmap(){
  if(!manufacturingMesh)return;
@@ -316,6 +318,15 @@ function renderManufactureReport(report){
  f('reportPieces',report.disconnected);
  f('reportCavities',report.internalCavities||0);
  f('reportPrinterFit',report.printerFits?'Yes':'Exceeds bed');
+ if($('bedSplitSummary')){
+  const p=planBedAwareSplit(report);
+  $('bedSplitSummary').textContent=p.ready?(p.needed?
+   'Automatic upright split: '+p.pieceCount+' pieces, '+p.cutsX.length+
+   ' X and '+p.cutsZ.length+' Z cut(s)'+(p.rotatedOnBed?' (rotate parts 90° in Cura)':'')+
+   '. No tested connectors included.':
+   'One-piece model fits the printable bed area with an 8 mm planning margin.'):
+   'Automatic bed split unavailable: '+p.reason;
+ }
  f('reportRoofSpan',report.roofReview?report.roofReview.estimateMm.toFixed(1)+' mm (proxy)':'—');
  f('reportTriangles',report.triangleCount.toLocaleString());
  f('reportMass',report.materialPLAgrams.toFixed(1)+' g');
@@ -706,7 +717,7 @@ document.querySelectorAll('[data-family-weight]').forEach(input=>input.addEventL
  generate();snapshot();
 }));
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix']);
-const previewKeys=new Set(['fitCouponStyle','hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
+const previewKeys=new Set(['fitCouponStyle','hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','autoBedSplit','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
@@ -718,6 +729,10 @@ document.querySelectorAll('[data-state]').forEach(e=>{
     rebuild();snapshot();return;
   }
   s[key]=value;
+  if((key==='autoBedSplit'||key==='splitParts')&&value){
+   s[key==='autoBedSplit'?'splitParts':'autoBedSplit']=false;
+   syncForm();
+  }
   if(key==='familyMix')$('familyWeightsControls').hidden=value!=='Mixed';
   if(key==='pixelFit'&&s.fitCalibration){s.fitCalibration=null;syncFitCalibration()}
    if(key==='pixelProfileId'){
@@ -928,6 +943,7 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{
  for(const e of document.querySelectorAll('[data-workspace]'))e.classList.toggle('active',e.dataset.workspace===b.dataset.tab);
  const titles={design:['Design workspace','Shape and composition'],build:['Build workspace','Lighting and assembly'],print:['Print workspace','Check and export']};
  $('leftHeading').textContent=titles[b.dataset.tab][0];$('leftCaption').textContent=titles[b.dataset.tab][1];
+ hardwareUI?.refresh();
 });
 $('randomBtn').onclick=()=>{s.seed=Math.floor(Math.random()*999999)+1;syncForm();generate()};
 $('regenBtn').onclick=()=>generate();
@@ -1190,7 +1206,7 @@ $('showManufacturing').onchange=e=>manufacturingView(e.target.checked);
 $('printHeatmap').onchange=applyPrintHeatmap;
 if(s.floatView){grid.visible=false;axes.visible=false}
 hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh:()=>baseMesh,
- getSettings:()=>s,getCrystals:()=>crystals,onStatus:setStatus,
+ getSettings:()=>s,getCrystals:()=>crystals,getManufacturingVisible:()=>!!manufacturingMesh?.visible,onStatus:setStatus,
  onEdit:()=>{disposeManufacturing();syncForm();updateLEDs();hardwareUI.refresh();renderInfo();snapshot()}
 });
 
@@ -1214,6 +1230,7 @@ $('productionPackBtn').onclick=async()=>{
  const button=$('productionPackBtn');button.disabled=true;
  try{
   const assemblyFiles=[],assemblyWarnings=[],wasm=await loadManifold();
+   let splitManifest=null;
   if(s.mount==='Detachable plate'){
    const plan=planDetachablePlate(s,planHardware(crystals,s));
    if(plan.valid){
@@ -1222,7 +1239,28 @@ $('productionPackBtn').onclick=async()=>{
     plate.geometry.dispose();
    }else assemblyWarnings.push('Mounting plate omitted: '+plan.reasons.join(' '));
   }
-  if(s.splitParts){
+  if(s.autoBedSplit){
+   const splitPlan=planBedAwareSplit(manufacturingReport);
+   if(!splitPlan.ready)throw Error('Cannot split for this printer: '+splitPlan.reason);
+   if(splitPlan.needed){
+    $('prepareStatus').textContent='Splitting prepared model into '+splitPlan.pieceCount+' printer-bed-sized parts…';
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    const parts=splitPreparedMeshGrid(wasm,manufacturingReport.mesh,splitPlan);
+     splitManifest={...splitPlan,parts:parts.map(part=>({
+      file:'auto-bed-part-'+String(part.index).padStart(2,'0')+'.stl',
+      index:part.index,dimensionsXHeightZmm:part.bounds,
+      volumeMm3:part.volume,triangles:part.triangles
+     })),instructions:'Original mesh coordinates preserved. Orient/rotate each part on the Cura bed and test your actual joining strategy. No mating connectors or overhead ratings.'};
+    try{
+     for(const part of parts)assemblyFiles.push({path:'05_Assembly/auto-bed-part-'+
+      String(part.index).padStart(2,'0')+'.stl',bytes:encodeSTL(part.geometry)});
+    }finally{for(const part of parts)part.geometry.dispose()}
+    assemblyWarnings.push('AUTO BED SPLIT: '+splitPlan.pieceCount+' separate pieces. '+splitPlan.cutsX.length+
+     ' X cut(s) and '+splitPlan.cutsZ.length+' Z cut(s), 8 mm bed clearance'+
+     (splitPlan.rotatedOnBed?'; rotate pieces 90 degrees on Cura bed':'')+'.');
+    assemblyWarnings.push('Auto split parts have NO alignment connectors or certified joints. Test joining, adhesive, access and mechanical retention before assembly.');
+   }else assemblyWarnings.push('Automatic bed split: original model fits this printer; no extra pieces needed.');
+  }else if(s.splitParts){
    const layout=planSplitJoints(s,planHardware(crystals,s),s.splitX);
    const halves=splitPreparedMesh(wasm,manufacturingReport.mesh,s.splitX,layout);
    halves.forEach((piece,i)=>{
@@ -1240,7 +1278,7 @@ $('productionPackBtn').onclick=async()=>{
    assemblyWarnings.push(...layout.messages);
   }
   const release=buildProductionPack({settings:s,crystals,report:manufacturingReport,
-   stlBytes:encodeSTL(manufacturingMesh.geometry),extraFiles:assemblyFiles,assemblyWarnings});
+   stlBytes:encodeSTL(manufacturingMesh.geometry),extraFiles:assemblyFiles,assemblyWarnings,splitManifest});
   download(new Blob([release.bytes],{type:'application/zip'}),release.filename);
   setStatus('Downloaded production pack · '+release.files.length+' files'+(release.curaIncluded?' including Cura profile':' (no compatible Cura profile)'));
  }catch(error){console.error(error);alert('Production pack failed: '+error.message)}

@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
 import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,baseProfileHeight,baseEdgeHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
-import {setThreeInstance,prepareFabrication,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
+import {setThreeInstance,prepareFabrication,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,splitPreparedMeshGrid,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
+import {planBedAwareSplit} from '../bed-split.js';
 import {planWireRoutes} from '../wire-routing.js';
 import {planTargetedLightPaths} from '../targeted-light-paths.js';
 import {planDetachablePlate} from '../detachable-plate.js';
@@ -277,6 +278,8 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  const roof=estimateRoofReview(plan.polygon,cfg,{});
  assert(roof.needsCura&&Number.isFinite(roof.estimateMm),'Roof span review remains advisory');
  const prepared=validate('wired-groove',cfg);
+ assert(prepared.socketCeilings.every(socket=>socket.wireReliefDepth===0),
+  'PR13: two legacy-routed pixels must have no detached local relief cuts');
  assert.equal(prepared.wireChannelsCut,plan.wirePlan.routes.length,'Manufacturing uses the exact planned groove count');
  assert.equal(prepared.disconnected,1,'Wiring must not split the model into pieces');
  assert(prepared.wireLengthMm>=35,'Manufacturing report includes planned route length');
@@ -284,6 +287,8 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  const plannedOne=planHardware(generateFormation(one),one);
  assert(plannedOne.wirePlan.exitAdded,'One accepted pixel extends a channel to the edge');
  const cutOne=validate('single-pixel-exit-groove',one);
+ assert(cutOne.socketCeilings.every(socket=>socket.wireReliefDepth===0),
+  'PR13: legacy single-groove wiring must not leave separate pixel-side stubs when routed');
  const noExit=validate('single-pixel-no-exit',{...one,wireExit:false});
  assert(cutOne.wireChannelsCut>0,'Single pixel groove reaches real Manifold cutter');
  assert.equal(noExit.wireChannelsCut,0,'Without edge exit there is no single-pixel groove');
@@ -300,7 +305,16 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
   ...noStringWires,wireMode:'single'
  });
  assert(oldLocalRelief.socketCeilings.some(p=>p.wireReliefDepth>0),
-  'Legacy single-wire modes retain the original relief cutter');
+  'When external routing is OFF, legacy stand-alone sockets retain local exits');
+ const pairedWithRoutes=validate('PR13 parallel wiring without extra stubs',
+  {...cfg,wireMode:'parallel',wireChannels:true,wireExit:true,wirePairSpacing:8});
+ assert(pairedWithRoutes.socketCeilings.every(p=>p.wireReliefDepth===0),
+  'PR13: legacy parallel routing never adds separate fixed-axis reliefs');
+ const legacyWithRoutes=validate('PR13 saved legacy single with routed groove',
+  {...one,wireMode:'single',wireChannels:true,wireExit:true});
+ assert(legacyWithRoutes.wireChannelsCut>0,'Saved legacy project retains its main connected track');
+ assert(legacyWithRoutes.socketCeilings.every(p=>p.wireReliefDepth===0),
+  'PR13: saved legacy single layout has no orphan LED reliefs when routed');
  assert(plainSerial.volumeMm3>oldLocalRelief.volumeMm3+1,
   'The actual string-mode Manifold solid has no extra unrelated relief cuts');
  const serialOne={...one,wireMode:'string',wireWidth:2,wireDepth:1.4};
@@ -319,6 +333,15 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  const serialTwoPlan=planHardware(generateFormation(serialTwo),serialTwo);
  assert(serialTwoPlan.wirePlan.ready,'Two physical pixels have IN, ordered link and OUT paths');
  assert.deepEqual(serialTwoPlan.wirePlan.connections.map(x=>x.kind),['input','link','output']);
+ // Final-phase fail-closed test: impossible 5 mm pixel-to-pixel spacing
+ // must never produce an STL with missing / partial serial wire grooves.
+ const impossible={...serialTwo,pixelStringSpacing:5};
+ const impossibleAssembly=assembly(impossible);
+ try{
+  assert.throws(()=>prepareFabrication({wasm,meshes:impossibleAssembly.meshes,
+   crystals:impossibleAssembly.crystals,settings:impossible}),/Pixel string route invalid/,
+   'Fail closed rather than exporting a printable body without its planned wiring');
+ }finally{impossibleAssembly.meshes.forEach(m=>m.geometry.dispose())}
  const serialTwoMesh=validate('PR9 two-pixel serial cable grooves',serialTwo);
  assert.equal(serialTwoMesh.wireChannelsCut,serialTwoPlan.wirePlan.routes.length);
  assert(serialTwoMesh.socketCeilings.every(p=>p.wireReliefDepth===0),
@@ -477,7 +500,22 @@ const keyed=splitPreparedMesh(wasm,result.report.mesh,0,{points:[{x:0,z:10,y:7,d
 assert.equal(keyed.joints,1,'Optional split-part dowel planning applied');
 assert(keyed.some(Boolean),'Keyed split export produced real geometry');
 keyed.forEach(v=>v?.geometry.dispose());
-const pins=makeSplitPinCoupon(wasm,[{diameter:4,depth:5}]);
+// Printer-bed-aware split: verify actual Manifold solids, volume conservation,
+ // closed shells, and printable XY footprint, not just a plan.
+ const bb=result.report.bounds,gridPlan=planBedAwareSplit({...result.report,
+  printerLimit:[Math.max(35,Math.round(bb[0]*.65)),bb[2]+20,bb[1]+20]});
+ assert(gridPlan.ready&&gridPlan.needed,'Large model receives an auto bed plan');
+ const gridPieces=splitPreparedMeshGrid(wasm,result.report.mesh,gridPlan);
+ assert(gridPieces.length>=2&&gridPieces.length<=gridPlan.pieceCount);
+ for(const piece of gridPieces){
+  assert.equal(geometryEdges(piece.geometry).open,0,'Actual bed tile stays watertight');
+  assert(piece.bounds[0]<=gridPlan.usableX+.1&&piece.bounds[2]<=gridPlan.usableZ+.1,
+   'Actual bed tile fits its allocated XY area');
+ }
+ assert(Math.abs(gridPieces.reduce((sum,p)=>sum+p.volume,0)-result.report.volumeMm3)<
+  Math.max(1,result.report.volumeMm3*.002),'Split preserves total volume');
+ gridPieces.forEach(piece=>piece.geometry.dispose());
+ const pins=makeSplitPinCoupon(wasm,[{diameter:4,depth:5}]);
 assert(pins.geometry.getAttribute('position').count>30,'Separate printable alignment pin geometry exists');
 pins.geometry.dispose();
 result.geometry.dispose();

@@ -8,12 +8,33 @@ import {planHardware} from './hardware-layout.js';
 import {buildPixelStringMap} from './pixel-string-export.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
 const csv=rows=>rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n')+'\r\n';
-export function buildProductionPack({settings,crystals,report,stlBytes,extraFiles=[],assemblyWarnings=[]}){
+export function buildProductionPack({settings,crystals,report,stlBytes,extraFiles=[],assemblyWarnings=[],splitManifest=null}){
  if(!report?.ready||!(stlBytes instanceof Uint8Array)||stlBytes.length<84)
   throw Error('Prepare and validate a manufacturing STL before exporting a production pack.');
  const s=settings,hardware=planHardware(crystals,s);
  const assurance=assessPrintQuality(crystals,s,report),optical=assessOpticalAccess(crystals,s,report);
+ // Machine-readable release evidence: automated geometric checks are kept
+ // distinct from unverified Cura, optical, mechanical and electrical tests.
+ const releaseGates={
+  schema:1,softwareVersion:'0.15.0',printedProductCertified:false,
+  generatedAt:new Date().toISOString(),
+  gates:[
+   {id:'joined-manifold',status:report.ready?'software-pass':'blocked',
+    evidence:'Prepared Manifold mesh / '+report.triangleCount+' triangles'},
+   {id:'physical-cable-plan',status:!s.wireChannels?'not-requested':
+     (hardware.wirePlan?.ready?'software-pass':'review-required'),
+    evidence:'Shared Build/manufacturing routing plan; real cable flexibility not measured'},
+   {id:'printer-footprint',status:report.printerFits?'software-pass':
+     (s.autoBedSplit||s.splitParts?'manual-assembly-review':'blocked'),
+    evidence:'Selected printer build dimensions; optional split parts require Cura checks'},
+   {id:'actual-cura-import',status:'manual-required',evidence:'Import Cura quality profile on installed printer/nozzle/material'},
+   {id:'slicer-layers',status:'manual-required',evidence:'Inspect roofs, roots, thin walls, bores and wire paths at layer resolution'},
+   {id:'physical-led-fit',status:'manual-required',evidence:'Print calibration coupons, test insertion/removal and real wire strain relief'},
+   {id:'optical-paths',status:'manual-required',evidence:'Illuminate each intended crystal spike using actual LED and translucent material'},
+   {id:'mechanical-assembly',status:'manual-required',evidence:'Fit parts/connectors and independently assess final mounting'}
+  ]};
  const assets=[
+  ['03_Reports/production-release-gates.json',JSON.stringify(releaseGates,null,2)],
   ['01_Model/crystal-forge-manifold.stl',stlBytes],
   ['02_Editable/crystal-forge-project.json',JSON.stringify({version:3,settings:s,crystals},null,2)],
   ['03_Reports/print-checklist.txt',printChecklistText(assurance,s)],
@@ -39,6 +60,11 @@ export function buildProductionPack({settings,crystals,report,stlBytes,extraFile
   if(!/^05_Assembly\/[a-zA-Z0-9_.-]+\.stl$/.test(item.path))
    throw Error('Unsafe assembly export path');
   assets.push([item.path,item.bytes]);
+ }
+ if(splitManifest){
+  if(!Array.isArray(splitManifest.parts)||!splitManifest.parts.length)
+   throw Error('Automatic bed split manifest requires numbered physical parts');
+  assets.push(['05_Assembly/bed-split-layout.json',JSON.stringify(splitManifest,null,2)]);
  }
  const condensed={status:report.status,bounds:report.bounds,printerFits:report.printerFits,
   triangleCount:report.triangleCount,volumeMm3:report.volumeMm3,
@@ -67,7 +93,8 @@ export function buildProductionPack({settings,crystals,report,stlBytes,extraFile
   '4. Slice and inspect every roof, channel, joint and tip at layer resolution.',
   '5. Test-print a socket and check the actual LED/retention and wire exit.',
   '6. Test actual light transmission and mechanical installation before use.',
-  '7. If you need separate split parts, export them using Split in the editor.',
+  '7. If parts are larger than the selected printer, enable Print → Automatic bed splitting before generating this ZIP.',
+  '8. Check 03_Reports/production-release-gates.json for software evidence and remaining PHYSICAL tests.',
   '05_Assembly — optional split pieces, dowels and M3 mounting plate',
   '',...assemblyWarnings,
   '',curaIncluded?'Cura profile included: review all settings after import.':

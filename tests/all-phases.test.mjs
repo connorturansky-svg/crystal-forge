@@ -56,9 +56,17 @@ binary[0]=66;binary[1]=73;binary[2]=78;binary[3]=65;
 const pack=buildProductionPack({settings:s,crystals,report,stlBytes:binary});
 assert(pack.bytes.length>binary.length);
 assert(pack.curaIncluded);
+const multiPartPack=buildProductionPack({settings:{...s,autoBedSplit:true},crystals,report,
+ stlBytes:binary,splitManifest:{parts:[{file:'auto-bed-part-01.stl',index:1,dimensionsXHeightZmm:[90,150,90]}],
+ instructions:'Test physical joint before use'}});
+assert(multiPartPack.files.includes('05_Assembly/bed-split-layout.json'),
+ 'Real auto-split ZIP includes dimensional map and numbered part manifest');
+assert(pack.files.includes('03_Reports/production-release-gates.json'),
+ 'Pack contains explicit never-auto-certified physical release gates');
 for(const path of ['01_Model/crystal-forge-manifold.stl','02_Editable/crystal-forge-project.json',
  '03_Reports/wiring-plan.csv','03_Reports/optical-audit.csv','03_Reports/print-checklist.txt',
- '03_Reports/parts-list.csv','03_Reports/manufacturing-report.json','START_HERE.txt'])
+ '03_Reports/parts-list.csv','03_Reports/manufacturing-report.json',
+ '03_Reports/production-release-gates.json','START_HERE.txt'])
  assert(pack.files.includes(path),'Missing pack file '+path);
 assert(pack.files.some(p=>p.endsWith('.curaprofile')),'Cura archive included');
 const archive=pack.bytes,view=new DataView(archive.buffer,archive.byteOffset,archive.length),decoder=new TextDecoder();

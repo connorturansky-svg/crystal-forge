@@ -1,4 +1,16 @@
-# PR12 — v0.14.2 pixel-string cable geometry fix (draft)
+# v0.15.0 — Final consolidated software phase (PR13/#19; current draft)
+
+**Source:** [PR #19](https://github.com/connorturansky-svg/crystal-forge/pull/19), based on merged PR12. **Goal:** one consolidated software milestone, not another chain of minor phases. [Full software + physical acceptance guide](FINAL_PHASE_ACCEPTANCE.md).
+
+**Implemented in draft:** suppress orphan LED reliefs in all actively routed modes; hide Build ghost paths over the actual prepared mesh; reject unsafe/overlength serial model exports; optional printer-bed-aware multi-part Manifold STL ZIP; 1/5 mm keyboard hardware nudges; machine-readable release gates; extended benchmark options and regression tests.
+
+**Still unverified:** exact latest-head CI, installed Cura import/slicing, printed translucent optical connections, cable fit and 25/50/100 mm physical string limits, real strain relief, joints and mounting. **Do not call physical production-ready from software pass.** Auto bed pieces are straight cuts without certified assembly keys or connectors. Cross-device GitHub session still needs a user token; no unattended OAuth.
+
+**After software merge (only if CI and browser acceptance pass):** no more feature phases are required for a *software release candidate*. Physically test and document before approving repeatable printed production or overhead usage. Keep open issue trackers for untested capabilities rather than falsely closing them.
+
+---
+
+# PR12 — v0.14.2 pixel-string cable geometry fix (merged)
 
 **Baseline:** PR11 [#17](https://github.com/connorturansky-svg/crystal-forge/pull/17) merged. User screenshot revealed two short disconnected relief slots across every LED socket despite the main connected cable path being correct.
 

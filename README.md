@@ -1,6 +1,6 @@
-# Crystal Forge — Browser Studio v0.14.2 unified pixel cable geometry candidate
+# Crystal Forge — Browser Studio v0.15.0 consolidated software candidate
 
-**PR11 [#17](https://github.com/connorturansky-svg/crystal-forge/pull/17) merged into `main`.** PR12 corrects duplicated short wire grooves inside pixels: in serial mode, the authoritative physical cable path is the only cutter. [PR12 geometry acceptance guide](docs/PR12_CABLE_GEOMETRY_TEST_GUIDE.md). Inspect sliced Cura output and real cable fit before calling this production-ready.
+**PR12 [#18](https://github.com/connorturansky-svg/crystal-forge/pull/18) was merged.** The current [PR13/#19](https://github.com/connorturansky-svg/crystal-forge/pull/19) consolidates the final software stage: orphan-free routed pixels across old/new projects, no double-rendered ghost tracks, fail-closed cable manufacturing, optional automatic printer-bed splitting, keyboard nudges and stronger export/QA. **Real Cura and physical LED/optical/mounting tests remain required.** [Final release acceptance](docs/FINAL_PHASE_ACCEPTANCE.md).
 
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, touch-considerate crystal sculptures. Physical safety and print strength must still be verified. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/

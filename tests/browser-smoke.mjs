@@ -451,6 +451,21 @@ try{
  const pieces=await page.locator('#reportPieces').innerText();
  assert.equal(pieces,'1','Export must contain one connected solid body');
  console.log('Manufacturing prepared:',status);
+ // Final regression: never draw translucent Build guides on top of the
+ // actual Manifold cable grooves, even when switching workspaces.
+ await page.locator('[data-tab="build"]').click();
+ await page.waitForFunction(()=>window.__crystalForgePlacementMetrics?.()?.manufacturingVisible===true);
+ assert.equal((await page.evaluate(()=>window.__crystalForgePlacementMetrics())).routeGuidesVisible,false,
+  'Prepared mesh must not be overlaid with duplicate Build route guides');
+ await page.locator('[data-tab="print"]').click();
+ await page.locator('#showManufacturing').uncheck();
+ await page.locator('[data-tab="build"]').click();
+ await page.waitForFunction(()=>window.__crystalForgePlacementMetrics?.()?.routeGuidesVisible===true);
+ await page.locator('[data-tab="print"]').click();
+ await page.locator('#showManufacturing').check();
+ assert(await page.locator('[data-state="autoBedSplit"]').count(),
+  'Auto bed splitting controls available in Print workspace');
+
  // Re-preparing while the merged manufacturing mesh is visible must retain
  // the actual base and all crystals rather than exporting preview-hidden parts.
  await page.locator('#prepareBtn').click();

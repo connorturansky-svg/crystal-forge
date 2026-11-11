@@ -5,7 +5,7 @@ import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
 import {nearestEdgePosition} from './edge-tabs.js';
 import {ensureHardwareIds,movePixelInString,hardwareName} from './hardware-identity.js';
 
-export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,onEdit,onStatus}){
+export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,getManufacturingVisible=()=>false,onEdit,onStatus}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
  guides.name='Live hardware holes';scene.add(guides);
  // A true cursor in the 3D scene, always visible above the intersected base
@@ -148,7 +148,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const routePaths=plan.wirePlan?.previewRoutes?.length?plan.wirePlan.previewRoutes:(plan.wirePlan?.routes||[]);
   for(const route of routePaths){
    const dx=route.b.x-route.a.x,dz=route.b.z-route.a.z;
-   const length=Math.hypot(dx,dz)+.5;
+   const length=Math.hypot(dx,dz)+.12; // guide-only overlap; avoid fake projecting stubs
    const angle=-Math.atan2(dz,dx);
    const midX=(route.a.x+route.b.x)/2,midZ=(route.a.z+route.b.z)/2;
    // This translucent volume matches the Manifold subtractor's width/depth.
@@ -160,7 +160,12 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    const outline=new THREE.LineSegments(new THREE.EdgesGeometry(geom),
     new THREE.LineBasicMaterial({color:route.overLength?0xff3356:0x49faff,depthTest:false,transparent:true,opacity:.95}));
    outline.position.copy(ghost.position);outline.rotation.copy(ghost.rotation);outline.renderOrder=93;guides.add(outline);
-   if(s.wireDirectionArrows!==false&&route.lengthMm>0){
+   // Arrow decorations are never allowed to cross an LED socket. They
+   // must live on an actual open stretch of cable rather than looking like
+   // a stray short unconnected groove through the yellow P ring.
+   const nearSocket=plan.sockets.some(p=>Math.hypot(midX-p.x,midZ-p.z)<
+    p.radius+Math.min(8,Math.max(3,route.lengthMm))+3);
+   if(s.wireDirectionArrows!==false&&route.lengthMm>0&&!nearSocket){
     arrowDistance+=route.lengthMm;
     if(arrowDistance>=14){
      const arrow=new THREE.ArrowHelper(
@@ -184,7 +189,10 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
     markerLayer.appendChild(tag);markerObjects.push({button:tag,p});
    }
   }
-  guides.visible=isBuild();
+  // The true prepared Manifold mesh must not be double-rendered with the
+  // translucent Build routing guides; they can resemble orphan wire stubs.
+  // P/M/T selection markers remain available independently.
+  guides.visible=isBuild()&&!getManufacturingVisible();
  }
  function refresh(){
   const s=getSettings();
@@ -602,6 +610,31 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    if(!contextMenu.hidden)clearContext();
    if(placing)cancel();
   }
+  // Fine positioning: Arrow = 1 mm, Shift+Arrow = 5 mm.
+  // Keep all form fields and text editing completely unaffected.
+  const delta={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+  if(!delta||!isBuild()||placing||markerDrag||!selectedHardware||e.altKey||e.ctrlKey||e.metaKey||
+    e.target?.closest?.('input,select,textarea,[contenteditable="true"]'))return;
+  const kind=selectedHardware.kind,id=selectedHardware.id;
+  if(kind!=='pixel'&&kind!=='mount')return;
+  const cfg=getSettings(),key=kind==='pixel'?'manualPixelHoles':'manualMountHoles',mode=kind+'Placement';
+  if(cfg[mode]!=='manual'){
+   const plan=getPlan(),items=kind==='pixel'?plan.sockets:plan.mounts;
+   cfg[key]=items.map((p,i)=>({id:p.id||kind+'-'+i,x:p.x,z:p.z,
+    ...(kind==='pixel'?{profileId:p.profileId,wireAngle:p.wireAngle??0}:{})}));
+   cfg[mode]='manual';
+  }
+  const i=cfg[key]?.findIndex(p=>String(p.id)===id);
+  if(i<0)return;
+  e.preventDefault();
+  const step=e.shiftKey?5:1,old=cfg[key][i],point={...old,
+   x:Math.round((old.x+delta[0]*step)*10)/10,z:Math.round((old.z+delta[1]*step)*10)/10};
+  if(!placementValid(kind,point,i)){
+   onStatus('Hardware nudge blocked: the hole would collide or leave the base.');
+   return;
+  }
+  old.x=point.x;old.z=point.z;onEdit();
+  onStatus('Moved '+hardwareName(kind,i)+' by '+step+' mm; rerouted pixel string.');
  },true);
  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{
   if(b.dataset.tab!=='build'&&placing)cancel();
@@ -622,7 +655,8 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  // Read-only test/debug telemetry, not a second representation of holes.
  window.__crystalForgePlacementMetrics=()=>({tool:placing,active:!!placing,
   cursorVisible:preview.visible,valid:!!lastCursor?.valid,
-  worldPosition:lastCursor?.pos??null,orbitEnabled:orbit.enabled});
+  worldPosition:lastCursor?.pos??null,orbitEnabled:orbit.enabled,
+  routeGuidesVisible:guides.visible,manufacturingVisible:!!getManufacturingVisible()});
 
  return {refresh,cancel};
 }
