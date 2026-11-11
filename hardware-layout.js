@@ -70,7 +70,7 @@ export function planHardware(crystals,s){
     const p={x:Number(entry.x),z:Number(entry.z)};
     const specific=resolveSocketProfile(s,entry),radius=specific.maxDiameter/2;
     if(Number.isFinite(p.x)&&Number.isFinite(p.z)&&validHole(p,radius,sockets))
-      sockets.push({...p,radius,diameter:specific.boreDiameter,profileId:specific.id,kind:'LED',manual:true,index:i});
+      sockets.push({...p,radius,diameter:specific.boreDiameter,profileId:specific.id,kind:'LED',manual:true,index:i,wireAngle:Number(entry.wireAngle??0),wireEndX:entry.wireEndX,wireEndZ:entry.wireEndZ});
     else invalidManualPixels.push({...p,radius,kind:'LED',index:i});
   });
   const ranked=pixelManual?[]:all.slice().sort((a,b)=>b.r*b.h-a.r*a.h);
@@ -161,7 +161,7 @@ export function planHardware(crystals,s){
   const requestedMounts=mp.preset==='Edge fixing tabs'?
    edgePlan.requested*edgePlan.holesEach:
    mp.enabled&&mountManual?min(20,manualMounts.length):mp.requested;
-  const wirePlan=planWireRoutes(crystals,s,{sockets,mounts,tabHoles:edgePlan.tabHoles,polygon});
+  const wirePlan=planWireRoutes(crystals,s,{sockets,mounts,tabs:edgePlan.tabs,tabHoles:edgePlan.tabHoles,polygon});
   messages.push(...wirePlan.messages);
   return {sockets,mounts,polygon,collisions,messages,clearance,wirePlan,
     invalidManualPixels,invalidManualMounts,
