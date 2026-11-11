@@ -9,6 +9,7 @@ export function setThreeInstance(three){THREE=three;}
 import {crystalGeometry,crystalRootOffset,baseGeometry,baseSurfaceHeight} from './geometry-v3.js';
 import {planHardware} from './hardware-layout.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
+import {estimateRoofReview} from './print-advisor.js';
 
 let modulePromise=null;
 export async function loadManifold(){
@@ -495,16 +496,29 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
    'Ultimaker 3 Extended':[215,215,300],
    'Ultimaker 2+':[223,223,205]
   };
+  if(s.printer==='Custom / other'){
+   buildVolumes['Custom / other']=[
+    Math.min(1500,Math.max(30,Number(s.printerX)||220)),
+    Math.min(1500,Math.max(30,Number(s.printerY)||220)),
+    Math.min(1500,Math.max(30,Number(s.printerZ)||220))
+   ];
+   warnings.push('Custom printer dimensions entered manually; verify in your slicer.');
+  }
   const volumeLimit=buildVolumes[s.printer];
   const printerFits=!volumeLimit||(
    size[1]<=volumeLimit[2]+.001&&(
     (size[0]<=volumeLimit[0]+.001&&size[2]<=volumeLimit[1]+.001)||
     (size[2]<=volumeLimit[0]+.001&&size[0]<=volumeLimit[1]+.001)
    ));
+  const roofReview=estimateRoofReview(hardware.polygon,s,vault);
+  if(roofReview.estimateMm>30)
+   warnings.push('Worst-case 0%-infill roof span proxy: '+roofReview.estimateMm.toFixed(1)+' mm. This is a 2D indicator, NOT calculated Cura bridge geometry; check layer preview.');
+  if(s.baseProfile==='Full dome / hill'&&Number(s.sideWall||0)<20)
+   warnings.push('Full hill has very shallow edges: verify real edge thickness, adhesion and channel clearances.');
   if(!printerFits)warnings.push('Model exceeds the '+s.printer+' build volume ('+volumeLimit.join(' × ')+' mm) in an upright orientation. Split the model or choose another machine.');
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
-  const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
+  const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,roofReview,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
     bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
      plannedSockets:hardware.sockets,plannedMounts:[...hardware.mounts,...hardware.tabHoles],hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
