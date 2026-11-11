@@ -59,9 +59,15 @@ function measure(label,overrides={}){
   for(const m of meshes)m.geometry.dispose();
  }
 }
+const extended=process.env.CRYSTAL_FORGE_BENCH_EXTENDED==='1';
+const extendedResults=[];
+if(extended){
+ for(const count of [10,16,40,60])extendedResults.push(measure('crystal-count-'+count,{count,cutSockets:true}));
+}
 const normal=measure('cura-first-solid');
 const vaulted=measure('zero-infill-vault',{baseVault:true});
 console.log(JSON.stringify({result:'BENCHMARK COMPLETED',wasmInitMs:Math.round(initMs),
  ratio:vaulted.preparationMs/Math.max(1,normal.preparationMs),
+ extended:extendedResults,
  maxPrepMs:process.env.CRYSTAL_FORGE_MAX_PREP_MS||'not enforced',
  note:'For relative comparisons only; repeat on same machine. Not a slicer/physical print test.'}));

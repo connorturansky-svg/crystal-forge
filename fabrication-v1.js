@@ -260,7 +260,7 @@ function createPrintVault(wasm,hold,crystals,s,hardware,warnings){
  warnings.push('Integral base buttresses are supportless-first geometry, not a guarantee. Validate bridging and print orientation in Cura.');
  return {cutter,stats};
 }
-export function prepareFabrication({wasm,meshes,crystals,settings}){
+export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=>{}}){
  if(!wasm?.Manifold || !wasm?.Mesh)throw new Error('Manifold engine has not loaded');
  // Caller explicitly supplies exportable components; preview visibility may
  // be off when the joined manufacturing mesh is being inspected.
@@ -271,6 +271,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
  if(s.baseType==='none'&&live.length>1)warnings.push('No base: the exported model may contain disconnected individual crystals.');
  let combined;
  try{
+  onProgress('Creating printable 3D solids…');
   const components=live.map(m=>hold(convertMesh(wasm,m)));
   combined=hold(wasm.Manifold.union(components));
   assertSolid(combined,'Unioned cluster');
@@ -289,6 +290,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     warnings.push('Tilted roots below the build plate were levelled to Y=0. For deeper intact roots, increase base thickness.');
    }
   }
+  onProgress('Checking the joined shell and optional cavities…');
   const initialVolume=combined.volume();
   const hardware=planHardware(crystals,s);
   if(hardware.collisions.length)throw new Error('Hardware holes overlap.');
@@ -417,6 +419,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     }
    }
   }
+  onProgress('Finishing LED openings, light paths and cable routes…');
   // Targeted channels physically connect accepted LED socket ceilings to
   // crystal spines without expensive whole-union erosion. Default OFF.
   const targetedPlan=planTargetedLightPaths(crystals,s,hardware);
@@ -515,6 +518,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     warnings.push(sealedCavitiesFilled+' sealed inaccessible void shells were filled, rather than leaving unlit air pockets inside the model.');
    }
   }
+  onProgress('Auditing the final manifold geometry and printer limits…');
   const resultMesh=combined.getMesh();
   const geom=fromResultMesh(resultMesh),indexed=compactMesh(resultMesh);
   const bounds=combined.boundingBox();

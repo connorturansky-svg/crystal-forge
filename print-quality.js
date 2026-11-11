@@ -47,14 +47,20 @@ export function assessPrintQuality(crystals,settings,preparedReport=null){
  checks.push('Fit-test the actual LED and filament with a small calibration coupon.');
  checks.push('Physically test mounting, cable strain relief and any suspended pieces.');
  const status=findings.some(f=>f.severity==='warning')?'Warnings':findings.some(f=>f.severity==='review')?'Review in Cura':'Inspection required';
- return {status,nozzle,layerHeight:profile?.layerHeight??null,roof,findings,checks,hardware,estimatedCableMm:ceil(hardware.wirePlan?.lengthMm||0)};
+ const estimatedHeight=Math.max(0,...visible.map(c=>Number(c.h||0)+Number(s.baseHeight||0)+Number(s.baseDome||0)));
+ const estimatedLayers=profile?.layerHeight?Math.ceil(estimatedHeight/profile.layerHeight):null;
+ const approximateFlow=profile?Number((profile.nozzle*profile.layerHeight*profile.speed).toFixed(2)):null;
+ if(approximateFlow>12)add('review','Possible flow constraint','Approximately '+approximateFlow+' mm³/s requested at the selected width, layer and speed. Check the actual print core and filament flow limit.');
+ return {status,nozzle,layerHeight:profile?.layerHeight??null,roof,findings,checks,hardware,estimatedCableMm:ceil(hardware.wirePlan?.lengthMm||0),estimatedLayers,approximateFlow};
 }
 export function printChecklistText(result,settings={}){
  const lines=['CRYSTAL FORGE — PRINT CHECKLIST','NOT a Cura/G-code or structural validation','',
   'Printer: '+String(settings.printer||'Unspecified'),
   'Nozzle: '+result.nozzle+' mm','Material: '+String(settings.curaMaterial||'Unspecified'),
   'Assessment: '+result.status,'Roof span proxy: '+result.roof.estimateMm.toFixed(1)+' mm',
-  'Routed wire estimate: '+result.estimatedCableMm+' mm','','REVIEW WARNINGS'];
+  'Routed wire estimate: '+result.estimatedCableMm+' mm',
+  'Approximate layers: '+(result.estimatedLayers??'unknown'),
+  'Requested flow estimate: '+(result.approximateFlow??'unknown')+' mm³/s (not machine calibrated)','','REVIEW WARNINGS'];
  for(const f of result.findings)lines.push('- ['+f.severity.toUpperCase()+'] '+f.label+': '+f.detail);
  lines.push('','MANUAL CURA / PHYSICAL CHECKS');
  for(const c of result.checks)lines.push('[ ] '+c);

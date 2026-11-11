@@ -303,6 +303,7 @@ function renderManufactureReport(report){
  f('reportOrientation',report.orientation?.name||'Base down');
  const inspection=assessPrintQuality(crystals,s,report),optics=assessOpticalAccess(crystals,s,report);
  $('printAssuranceSummary').textContent=inspection.status+' · '+inspection.findings.length+' review note(s) · roof proxy '+inspection.roof.estimateMm.toFixed(1)+' mm. Download full checklist.';
+ $('printFlowEstimate').textContent='Approx. '+(inspection.estimatedLayers??'—')+' layers · '+(inspection.approximateFlow??'—')+' mm³/s requested extrusion (not calibrated)';
  $('opticalAuditSummary').textContent=optics.results.length+' crystal(s), '+optics.acceptedPixels+' LED(s). Individual passage verification requires Cura and a physical test.';
  const list=report.warnings;
  $('reportWarnings').innerHTML=list.length?'<div class="alert">'+list.map(x=>'<p>'+escapeHTML(x)+'</p>').join('')+'</div>':
