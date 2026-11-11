@@ -330,6 +330,7 @@ const BUTTONS={
   "Exports the prepared print geometry as a 3MF project model for slicing."
  ],
  "wiringCsvBtn": ["Export wiring plan CSV","Download accepted underside channel segments and lengths, including skipped-route counts. These are estimates; check your wiring physically."],
+ "productionPackBtn": ["Complete production pack","Export a ZIP containing the prepared STL, editable project, Cura candidate profile, hardware CSVs and inspection/safety notes. Requires a current manufacturing mesh."],
  "bomBtn": [
   "Parts list",
   "Downloads a CSV estimate of LEDs, crystals and mounting features."

@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
-import {loadManifold,setThreeInstance,saveSTL,save3MF,makeCalibrationStrip,splitPreparedMesh,makeSplitPinCoupon} from './fabrication-v1.js';
+import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,splitPreparedMesh,makeSplitPinCoupon} from './fabrication-v1.js';
+import {buildProductionPack} from './production-pack.js';
 import {planSplitJoints} from './split-joints.js';
 import {applyShapePreset} from './design-workflows.js';
 setThreeInstance(THREE);
@@ -226,7 +227,7 @@ function disposeManufacturing(){
  if($('printHeatmap'))$('printHeatmap').checked=false;
  if($('prepareStatus'))$('prepareStatus').textContent='Not prepared. Click Prepare print mesh after changing your design.';
  if($('prepareReport'))$('prepareReport').hidden=true;
- for(const id of ['stlBtn','threeMfBtn','splitExportBtn'])if($(id))$(id).disabled=true;
+ for(const id of ['stlBtn','threeMfBtn','splitExportBtn','productionPackBtn'])if($(id))$(id).disabled=true;
  for(const mesh of crystalMeshes||[])mesh.visible=!crystals.find(c=>c.id===mesh.userData.crystalId)?.hidden;
  if(baseMesh)baseMesh.visible=s.baseType!=='none';
  for(const m of baseAccents)m.visible=s.baseType!=='none';
@@ -865,7 +866,7 @@ async function buildManufacturing(){
   manufacturingMesh.visible=false;scene.add(manufacturingMesh);
   updateAppearance();renderManufactureReport(result.report);createHardwareAnnotations();
   $('prepareStatus').textContent='✓ Mesh prepared off-thread in '+(result.report.preparationMs/1000).toFixed(1)+' s. Review warnings.';
-  $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;
+  $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;$('productionPackBtn').disabled=false;
   $('splitExportBtn').disabled=!s.splitParts;
   $('showManufacturing').checked=true;manufacturingView(true);applyPrintHeatmap();
   setStatus('Prepared '+result.report.triangleCount.toLocaleString()+' triangles · editor remained responsive');
@@ -893,6 +894,16 @@ hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBase
  onEdit:()=>{disposeManufacturing();syncForm();updateLEDs();hardwareUI.refresh();renderInfo();snapshot()}
 });
 
+$('productionPackBtn').onclick=()=>{
+ if(!verifyPrepared())return;
+ const button=$('productionPackBtn');button.disabled=true;
+ try{
+  const release=buildProductionPack({settings:s,crystals,report:manufacturingReport,stlBytes:encodeSTL(manufacturingMesh.geometry)});
+  download(new Blob([release.bytes],{type:'application/zip'}),release.filename);
+  setStatus('Downloaded production pack · '+release.files.length+' files'+(release.curaIncluded?' including Cura profile':' (no compatible Cura profile)'));
+ }catch(error){console.error(error);alert('Production pack failed: '+error.message)}
+ finally{button.disabled=false}
+};
 $('stlBtn').onclick=()=>{
  if(!verifyPrepared())return;
  saveSTL(manufacturingMesh.geometry,'crystal-forge-manifold.stl');
