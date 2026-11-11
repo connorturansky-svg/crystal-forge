@@ -1,5 +1,15 @@
 # Crystal Forge — Changelog
 
+## v0.9.0 — 11 November 2026 (PR4 draft — not merged)
+
+- Base profiles: Flat plinth, smoothly integrated Plinth + dome, and Full dome / hill; independent dome falloff and side-wall amount. Geometry and crystal seating share a radial profile.
+- Pixel profiles: generic nominal 5 mm seed, 12 mm bullet and 12 mm gumdrop forms, plus custom measured profiles saved to a reusable library and portable project JSON.
+- Actual Manifold socket geometry: flange-clearance envelopes, blind domed internal ceilings and two shallow underside wire-relief openings. These are not automatic complete cable routes or retention clips.
+- Persistent contextual Descriptions panel alongside hover/focus help, explaining all existing mounting types and limitations.
+- Tests: base closure and root seating, custom pixel planning and bore geometry, headless controls/profile persistence and static wiring.
+
+**Not verified:** Physical pixel fit, optical connectivity, Cura support requirements, overhead load-bearing strength, and full live desktop visual acceptance. This branch does not change live Pages until merged.
+
 ## v0.8.0 — 10 November 2026 (feature branch, awaiting PR review)
 
 - Added global crystal starting thickness (50–400%), signed top/bottom width adjustments (-85% to +400%) and deterministic individual width randomness.

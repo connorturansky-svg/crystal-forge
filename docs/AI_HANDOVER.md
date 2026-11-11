@@ -1,6 +1,14 @@
 # AI handover — read immediately after AGENTS.md
 
-**Updated:** 10 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production app:** v0.7.0. **Unmerged feature work:** v0.8.0 on `feat/global-crystal-diameter` (PR #3).
+**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.8.0 (PR3 merged). **Unmerged:** v0.9.0 on `feat/pr4-help-base-pixels` (draft PR #4).
+
+## PR4 handover (11 November 2026)
+
+- PR: https://github.com/connorturansky-svg/crystal-forge/pull/4. Created from main commit `83633eda52293151172d3db5986b3b275d7eecbd`.
+- Implemented three continuous base profiles with dome falloff/side-wall controls; seed/bullet/gumdrop nominal socket shapes and custom pixel-profile editor; saved profile library inside browser/project JSON; contextual Descriptions panel and mounting explanations.
+- Fabrication planner accounts for the widest LED flange, Manifold cutter includes blind cap and two shallow underside wire-relief slots. No physical pixel retaining clip or full wiring channel exists yet.
+- Added geometry and browser regression tests. The exact-head workflows must be checked; do not claim CI/physical validation from code inspection. The repository could not be cloned in this current tool environment, so no local test was executed.
+- Avoid merging until CI and slicer inspections have been reviewed. Live Pages still reflects main.
 
 ## One-minute context
 
