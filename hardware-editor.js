@@ -57,17 +57,33 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    }
   }
   for(const route of plan.wirePlan?.routes||[]){
-   const geometry=new THREE.BufferGeometry();
-   geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
-    route.a.x,.85,route.a.z,route.b.x,.85,route.b.z]),3));
-   const line=new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0x12c9dc,depthTest:false,transparent:true,opacity:.95}));
-   line.renderOrder=100;guides.add(line);
+   const dx=route.b.x-route.a.x,dz=route.b.z-route.a.z;
+   const length=Math.hypot(dx,dz)+.5;
+   const angle=-Math.atan2(dz,dx);
+   const midX=(route.a.x+route.b.x)/2,midZ=(route.a.z+route.b.z)/2;
+   // This translucent volume matches the Manifold subtractor's width/depth.
+   // It is only a GUIDE in Build; after Prepare Print, BOT shows the REAL cut.
+   const geom=new THREE.BoxGeometry(length,route.depth+.6,route.width);
+   const ghost=new THREE.Mesh(geom,new THREE.MeshBasicMaterial({
+    color:0x06bed2,transparent:true,opacity:.3,depthTest:false,depthWrite:false,side:THREE.DoubleSide}));
+   ghost.position.set(midX,(route.depth-.4)/2,midZ);ghost.rotation.y=angle;ghost.renderOrder=92;guides.add(ghost);
+   const outline=new THREE.LineSegments(new THREE.EdgesGeometry(geom),
+    new THREE.LineBasicMaterial({color:0x49faff,depthTest:false,transparent:true,opacity:.95}));
+   outline.position.copy(ghost.position);outline.rotation.copy(ghost.rotation);outline.renderOrder=93;guides.add(outline);
   }
   guides.visible=isBuild();
  }
  function refresh(){
   const s=getSettings(),plan=getPlan();
   draw(plan);
+  const routing=plan.wirePlan;
+  if($('wireRouteStatus')){
+   $('wireRouteStatus').textContent=!routing?.enabled?'Wiring grooves are off. Enable them to plan a push-fit underside channel.':
+     routing.routes.length
+       ?routing.routes.length+' actual groove segment(s) planned · '+routing.lengthMm.toFixed(1)+' mm of route, '+(routing.exitAdded?'including a perimeter exit':'no perimeter exit')+'. Click BOT to inspect the underside, then Prepare Print for the cut model.'
+       :routing.messages.join(' ')||'No groove was planned. Add another LED or enable the perimeter exit.';
+   $('wireRouteStatus').classList.toggle('warning',!!routing?.enabled&&!routing.routes.length);
+  }
   if($('hardwareGuideSummary'))$('hardwareGuideSummary').textContent=
    plan.sockets.length+' LED hole(s) · '+(plan.mounts.length+plan.tabHoles.length)+' mounting hole(s) · '+plan.tabs.length+' edge tab(s) · '+
    (plan.invalidManualPixels.length+plan.invalidManualMounts.length)+' invalid (red) · '+(plan.wirePlan?.routes.length||0)+' cyan wire segments · '+(plan.wirePlan?.unrouted||0)+' unconnected';

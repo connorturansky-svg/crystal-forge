@@ -42,7 +42,7 @@ export function buildProductionPack({settings,crystals,report,stlBytes,extraFile
   triangleCount:report.triangleCount,volumeMm3:report.volumeMm3,
   estimatedPLAgrams:report.materialPLAgrams,socketsCut:report.socketsCut,
   mountingHolesCut:report.mountingHolesCut,wireChannelsCut:report.wireChannelsCut,
-  hollowPorts:report.hollowPorts,roofReview:report.roofReview,warnings:report.warnings};
+  hollowPorts:report.hollowPorts,directLightPorts:report.directLightPorts,skippedDirectLightPorts:report.skippedDirectLightPorts,lightPortDetails:report.lightPortDetails,roofReview:report.roofReview,warnings:report.warnings};
  assets.push(['03_Reports/manufacturing-report.json',JSON.stringify(condensed,null,2)]);
  let curaIncluded=false,curaWarning='';
  try{
