@@ -1048,9 +1048,9 @@ $('resetTabsBtn').onclick=()=>{
 };
 $('wiringCsvBtn').onclick=()=>{
  const plan=planHardware(crystals,s),routes=plan.wirePlan?.routes||[];
- const rows=[['Segment','From pixel','To pixel','Start X (mm)','Start Z (mm)','End X (mm)','End Z (mm)','Width (mm)','Depth (mm)','Length (mm)']];
- routes.forEach((r,i)=>rows.push([i+1,r.from+1,r.to==null?'Exterior':r.to+1,r.a.x.toFixed(1),r.a.z.toFixed(1),r.b.x.toFixed(1),r.b.z.toFixed(1),r.width,r.depth,r.lengthMm.toFixed(1)]));
- rows.push(['SUMMARY','','','','','','','','',Math.round((plan.wirePlan?.lengthMm||0)*10)/10]);
+ const rows=[['Segment','Wire lane','From pixel','To pixel','Start X (mm)','Start Z (mm)','End X (mm)','End Z (mm)','Width (mm)','Depth (mm)','Length (mm)']];
+ routes.forEach((r,i)=>rows.push([i+1,r.lane??1,r.from+1,r.to==null?'Exterior':r.to+1,r.a.x.toFixed(1),r.a.z.toFixed(1),r.b.x.toFixed(1),r.b.z.toFixed(1),r.width,r.depth,r.lengthMm.toFixed(1)]));
+ rows.push(['SUMMARY','','','','','','','','','',Math.round((plan.wirePlan?.lengthMm||0)*10)/10]);
  rows.push(['Unrouted pixels',plan.wirePlan?.unrouted||0,'Review Build warnings before printing']);
  const csv=rows.map(row=>row.map(v=>String(v??'').includes(',')?'"'+String(v).replaceAll('"','""')+'"':String(v??'')).join(',')).join('\r\n');
  download(new Blob([csv],{type:'text/csv'}),'crystal-forge-wire-routing.csv');
