@@ -61,3 +61,9 @@ On discovering a reproducible failure, add exact steps, input settings, actual/e
 - **Manufacturing geometry test pending at time of writing:** new extreme-taper/root-seat and actual Manifold tab/rounded-bore checks must pass on latest PR commit.
 - **P0 physical inspection still needed:** open the prepared v0.8 STL in Cura, verify blind LED roof/clearance, root-to-base junctions, holes in tabs and support requirements; test a printed tie/bolt tab and LED fit before any overhead use.
 - **P1 future:** continuous placement in underside view, precise drag handles, retained single-pixel move action (continuous placement currently converts to Multi), explicit collision and printer footprint visualisation when scaling crystals.
+
+## PR4 v0.9 draft (11 November 2026)
+
+- **Implemented on branch:** integrated full-hill/plinth modes, dome falloff and side wall controls; generic/custom LED profile selector, library editor, flange-aware socket cutting and shallow underside wire relief; persistent descriptions panel.
+- **Verification pending:** review GitHub checks against latest PR4 HEAD, test contour/fillet matching and base roof slicing in Cura, print a measured LED fitting sample and inspect cable exits.
+- **Follow-on milestones:** retaining clips, strain relief, full automatic wire routing, actual measured manufacturer's LED models, optical path cross sections and physical safety testing.

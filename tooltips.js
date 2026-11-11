@@ -104,6 +104,9 @@ const SETTINGS={
   "Base depth",
   "Sets the main base thickness, which must accommodate any LED housing and mounting hardware."
  ],
+ "baseProfile": ["Base profile","Flat plinth is level; Plinth + dome merges a mound into the rounded rim; Full dome / hill rises gradually from near the floor."],
+ "domeFalloff": ["Hill spread","Adjusts how broadly the surface rises. The top joins the rim without a separate lip."],
+ "sideWall": ["Side wall amount","Full hill: 0% nearly reaches the floor, 100% preserves the plinth depth. Check thin outer edges in Cura."],
  "baseDome": [
   "Mound height",
   "Adds a rising mound under the crystals. Keep crystal roots embedded in this curved surface."
@@ -136,6 +139,7 @@ const SETTINGS={
   "Illumination layout",
   "Choose one shared LED, multiple LEDs or no lighting. Actual channels need inspecting in Cura."
  ],
+ "pixelProfileId": ["Pixel profile","Choose a seed, bullet, gumdrop or saved custom profile. Dimensions change the actual manufacturing cut."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."
@@ -227,6 +231,7 @@ const BUTTONS={
   "Help",
   "Opens the full help guide and keyboard shortcuts."
  ],
+ "descriptionsBtn": ["Descriptions panel","Display a persistent explanation card for whichever control you hover, focus or change."],
  "changelogBtn": [
   "What’s new",
   "Shows version history and recent development changes."
@@ -267,6 +272,7 @@ const BUTTONS={
   "Lock crystal",
   "Protect a crystal from accidental changes and supported regeneration operations."
  ],
+ "editPixelProfileBtn": ["Pixel profile editor","Define measured body, flange, dome and wire-relief dimensions and save a reusable profile."],
  "fitPixelBaseBtn": [
   "Fit base for pixel",
   "Sets base depth to 25 mm for the nominal 22 mm gumdrop body. Test actual housing fit."
@@ -393,6 +399,21 @@ function lookup(el){
  if(el.matches('button'))return [heading,'Activate this control.'];
  if(el.matches('input,select'))return [heading,'Adjust this setting; some edits require preparing a new print mesh.'];
  return null;
+}
+const MOUNT_EXPLANATIONS={
+ 'None':'Adds no fixing holes; suitable for freestanding parts or externally designed mounts.',
+ 'Wall screws':'Two nominal through-bores for screws when there is enough base perimeter and spacing.',
+ 'Magnet inserts':'Two shallow blind pockets for magnets. Check polarity, retention, size and depth.',
+ 'Threaded insert M3':'Blind pockets for M3 inserts. Match dimensions to the exact heat-set or press-fit insert.',
+ 'Custom dual holes':'Two holes at the chosen size, spacing and depth subject to base material clearance.',
+ 'Edge fixing tabs':'Semicircular perimeter ears with configurable through-holes for ties or bolts. Physical tensile/load testing required.',
+ 'Detachable plate':'Concept only. No mating detachable plate is generated yet.',
+ 'Ceiling mount':'Nominal fixing features, not a load-rated suspension system. Use certified hardware and independent safety retention.'
+};
+export function describeControl(el){
+ const info=lookup(el);
+ if(el?.dataset?.state==='mount')return ['Mount: '+el.value,MOUNT_EXPLANATIONS[el.value]||info?.[1]];
+ return info;
 }
 export function installTooltips(doc=document){
  const node=doc.createElement('div');

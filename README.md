@@ -1,4 +1,4 @@
-# Crystal Forge — Browser Studio v0.8.0
+# Crystal Forge — Browser Studio v0.9.0
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, child-safe crystal sculptures. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/
 

@@ -6,15 +6,16 @@ import {loadManifold,setThreeInstance,saveSTL,save3MF,makeCalibrationStrip,split
 setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
-import {installTooltips} from './tooltips.js';
+import {installTooltips,describeControl} from './tooltips.js';
+import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
 
 const $=id=>document.getElementById(id);
 const defaults={
   title:'Untitled cluster',count:16,height:155,width:130,crystalSize:1,widthRandomness:0,studioBrightness:.85,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
-  baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,
-  showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -37,6 +38,19 @@ try{
 // Migrate older multi-pixel drafts to the new single-source default.
 if(s.lightingMode==='single')s.pixelCount=1;
 if(s.lightingMode==='none')s.pixelCount=0;
+const pixelLibraryKey='crystal-forge-pixel-library';
+function mergePixelLibrary(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(pixelLibraryKey)||'[]');
+  const map=new Map();
+  for(const p of [...(Array.isArray(saved)?saved:[]),...(Array.isArray(s.pixelProfiles)?s.pixelProfiles:[])]){
+   const value=normalisePixelProfile(p);
+   if(value.id.startsWith('custom-'))map.set(value.id,value);
+  }
+  s.pixelProfiles=[...map.values()].slice(0,30);
+ }catch(e){s.pixelProfiles=Array.isArray(s.pixelProfiles)?s.pixelProfiles:[]}
+}
+mergePixelLibrary();
 if(!crystals.length)crystals=generateFormation(s);
 const history=[];let historyIndex=-1;
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -51,7 +65,7 @@ function persist(){
  try{localStorage.setItem('crystal-forge-v3',JSON.stringify({settings:s,crystals,selectedId}))}catch(e){console.warn(e)}
 }
 function restore(str){
- try{const v=JSON.parse(str);s={...defaults,...v.settings};crystals=safeArray(v.crystals);selectedId=v.selectedId||null;syncForm();rebuild();persist()}catch(e){console.error(e)}
+ try{const v=JSON.parse(str);s={...defaults,...v.settings};mergePixelLibrary();crystals=safeArray(v.crystals);selectedId=v.selectedId||null;syncForm();rebuild();persist()}catch(e){console.error(e)}
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
@@ -60,7 +74,7 @@ function format(k,v){
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
  if(['mountHoleDiameter','mountHoleDepth','mountSpacing','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
- if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
+ if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
 }
 const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
 function selectedCrystal(){return crystals.find(c=>c.id===selectedId)||null}
@@ -87,7 +101,20 @@ function syncShapeControls(){
  $('multiplePixelsRow').classList.toggle('show',multi);
  for(const e of document.querySelectorAll('[data-state="pixelCount"]'))e.disabled=!multi;
 }
+function refreshPixelProfileOptions(){
+ const select=$('pixelProfileSelect');if(!select)return;
+ const profiles=allPixelProfiles(s);
+ select.replaceChildren(...profiles.map(p=>{
+  const option=document.createElement('option');option.value=p.id;option.textContent=p.name;return option;
+ }));
+ if(!profiles.some(p=>p.id===s.pixelProfileId))s.pixelProfileId='gumdrop';
+ select.value=s.pixelProfileId;
+ const p=resolvePixelProfile(s);
+ $('pixelProfileDetails').textContent=p.kind+' · '+p.bodyDiameter+' mm diameter × '+p.bodyHeight+
+  ' mm body · '+p.flangeDiameter+' mm flange · '+p.wireWidth+' mm wire relief. Verify actual LED dimensions.';
+}
 function syncForm(){
+ refreshPixelProfileOptions();
  if(s.lightingMode==='single')s.pixelCount=1;
  if(s.lightingMode==='none')s.pixelCount=0;
  document.body.classList.toggle('advanced',s.mode==='advanced');
@@ -100,8 +127,8 @@ function syncForm(){
   else e.value=s[k]??'';
  }
  for(const e of document.querySelectorAll('[data-out]'))e.textContent=format(e.dataset.out,s[e.dataset.out]);
- $('actualHole').textContent=(Number(s.pixelDiameter)+Number(s.pixelFit)).toFixed(2)+' mm';
- $('pixelBaseDepthHint').textContent=s.baseHeight>=23?'Base has space for a nominal 22 mm gumdrop body.':'Base is shallower than the ~22 mm gumdrop body. 25 mm is recommended.';
+ $('actualHole').textContent=resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm';
+ $('pixelBaseDepthHint').textContent=s.baseHeight>=resolvePixelProfile(s).bodyHeight+1?'Base accommodates selected nominal LED depth.':'Base is shallower than selected LED housing. Check fit.';
  $('projectName').textContent=s.title;
  syncShapeControls();
  $('edgeTabSettings').hidden=s.mount!=='Edge fixing tabs';
@@ -124,8 +151,8 @@ let manufacturingMesh=null,manufacturingReport=null,preparedSource=null;
 const relevantManufacturingKeys=[
  'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
- 'baseType','baseHeight','baseDome','baseEdgeRadius','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightingMode','pixelCount','pixelDiameter',
- 'pixelFit','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
+ 'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightingMode','pixelCount','pixelDiameter',
+ 'pixelFit','pixelProfileId','pixelProfiles','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
@@ -565,6 +592,11 @@ document.querySelectorAll('[data-state]').forEach(e=>{
     rebuild();snapshot();return;
   }
   s[key]=value;
+   if(key==='pixelProfileId'){
+    const profile=allPixelProfiles(s).find(p=>p.id===value);
+    if(profile)s.pixelDiameter=profile.bodyDiameter;
+    syncForm();
+   }
   if(key==='mount')$('edgeTabSettings').hidden=value!=='Edge fixing tabs';
   if(key==='lightingMode'&&value==='single')s.pixelCount=1;
   if(key==='lightingMode'&&value==='none')s.pixelCount=0;
@@ -574,7 +606,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
    if(key==='hollowCrystals'&&value)s.baseVault=false;
   if(!previewKeys.has(key))disposeManufacturing();
   for(const o of document.querySelectorAll('[data-out="'+key+'"]'))o.textContent=format(key,value);
-  if(key==='pixelDiameter'||key==='pixelFit')$('actualHole').textContent=(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm';
+  if(key==='pixelDiameter'||key==='pixelFit'||key==='pixelProfileId')$('actualHole').textContent=resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm';
   if(key==='splitParts')$('splitExportBtn').disabled=!manufacturingMesh||!value;
   if(key==='glowColour'||key==='glowPreview')updateAppearance();
    if(key==='studioBrightness')refreshStudioLighting();
@@ -684,6 +716,47 @@ document.addEventListener('keydown',e=>{
  if(e.key==='?'&&!(e.target instanceof HTMLInputElement)){e.preventDefault();showInfo('help')}
 });
 
+// Reusable pixel profiles are stored in both browser library and editable projects.
+const pixelFields={name:'pixelName',kind:'pixelKind',bodyDiameter:'pixelBodyDiameter',
+ bodyHeight:'pixelBodyHeight',flangeDiameter:'pixelFlangeDiameter',flangeHeight:'pixelFlangeHeight',
+ capHeight:'pixelCapHeight',wireWidth:'pixelWireWidth',wireDepth:'pixelWireDepth'};
+function closePixelEditor(){$('pixelProfileOverlay').hidden=true;$('editPixelProfileBtn').focus()}
+$('editPixelProfileBtn').onclick=()=>{
+ const p=resolvePixelProfile(s);
+ for(const [k,id] of Object.entries(pixelFields))$(id).value=p[k];
+ $('pixelProfileOverlay').hidden=false;$('pixelName').focus();
+};
+$('closePixelProfileBtn').onclick=closePixelEditor;
+$('pixelProfileOverlay').addEventListener('pointerdown',e=>{
+ if(e.target===$('pixelProfileOverlay'))closePixelEditor()
+});
+$('savePixelProfileBtn').onclick=()=>{
+ const data={};
+ for(const [k,id] of Object.entries(pixelFields))
+  data[k]=['name','kind'].includes(k)?$(id).value:Number($(id).value);
+ if(!String(data.name||'').trim()){alert('Enter a profile name.');return}
+ data.id=s.pixelProfileId.startsWith('custom-')?s.pixelProfileId:'custom-'+Date.now().toString(36);
+ const p=normalisePixelProfile(data);
+ s.pixelProfiles=[...(s.pixelProfiles||[]).filter(x=>x.id!==p.id),p].slice(-30);
+ s.pixelProfileId=p.id;s.pixelDiameter=p.bodyDiameter;
+ try{localStorage.setItem(pixelLibraryKey,JSON.stringify(s.pixelProfiles))}
+ catch(e){console.warn('Pixel library not writable',e)}
+ closePixelEditor();syncForm();rebuild();snapshot();
+ setStatus('Custom pixel profile saved: '+p.name+'. Prepare print mesh again.');
+};
+$('deletePixelProfileBtn').onclick=()=>{
+ const id=s.pixelProfileId;
+ if(!id.startsWith('custom-')){alert('Built-in presets cannot be deleted.');return}
+ s.pixelProfiles=(s.pixelProfiles||[]).filter(p=>p.id!==id);
+ s.pixelProfileId='gumdrop';s.pixelDiameter=PIXEL_PRESETS[0].bodyDiameter;
+ try{localStorage.setItem(pixelLibraryKey,JSON.stringify(s.pixelProfiles))}catch(e){}
+ closePixelEditor();syncForm();rebuild();snapshot();
+};
+document.addEventListener('keydown',e=>{
+ if(!$('pixelProfileOverlay').hidden&&e.key==='Escape'){
+  e.preventDefault();e.stopImmediatePropagation();closePixelEditor();
+ }
+},true);
 $('saveBtn').onclick=saveProject;$('projectExportBtn').onclick=saveProject;
 $('loadBtn').onclick=()=>$('loadFile').click();
 $('loadFile').onchange=async e=>{
@@ -691,7 +764,7 @@ $('loadFile').onchange=async e=>{
  try{
   const json=JSON.parse(await file.text());
   if(!json.settings||!Array.isArray(json.crystals))throw Error('Invalid project structure');
-  s={...defaults,...json.settings};if(s.lightingMode==='single')s.pixelCount=1;crystals=safeArray(json.crystals);selectedId=null;
+  s={...defaults,...json.settings};mergePixelLibrary();if(s.lightingMode==='single')s.pixelCount=1;crystals=safeArray(json.crystals);selectedId=null;
   syncForm();rebuild();snapshot();setStatus('Project loaded: '+file.name);
  }catch(err){alert('Could not load project: '+err.message)}
  e.target.value='';
@@ -834,7 +907,7 @@ $('splitExportBtn').onclick=async()=>{
  finally{button.disabled=false}
 };
 $('bomBtn').onclick=()=>{
- const rows=[['Type','Quantity','Notes'],['12V gumdrop pixels',s.pixelCount,'12 mm nominal mounting hole; adjust by '+s.pixelFit+' mm'],['Crystal bodies',crystals.length,'experimental STL; not Boolean merged'],['Integrated base',s.baseType==='none'?0:1,'mounted by '+s.mount],['Mounting holes',planHardware(crystals,s).mounts.length+planHardware(crystals,s).tabHoles.length,s.mount+'; check fit dimensions'],['Edge tabs',planHardware(crystals,s).tabs.length,'Print-fit and strength require verification'],['Planned socket diameter',(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm','preview only']];
+ const rows=[['Type','Quantity','Notes'],['Pixel type: '+resolvePixelProfile(s).name,s.pixelCount,'Nominal '+resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm opening; check measured fit'],['Crystal bodies',crystals.length,'experimental STL; not Boolean merged'],['Integrated base',s.baseType==='none'?0:1,'mounted by '+s.mount],['Mounting holes',planHardware(crystals,s).mounts.length+planHardware(crystals,s).tabHoles.length,s.mount+'; check fit dimensions'],['Edge tabs',planHardware(crystals,s).tabs.length,'Print-fit and strength require verification'],['Planned socket diameter',(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm','preview only']];
  const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
  download(new Blob([csv],{type:'text/csv'}),'crystal-forge-bom.csv');
 };
@@ -850,3 +923,27 @@ document.addEventListener('keydown',e=>{
 });
 syncForm();rebuild();snapshot();
 installTooltips();
+const descriptionsKey='crystal-forge-descriptions';
+let descriptionsEnabled=false;
+try{descriptionsEnabled=localStorage.getItem(descriptionsKey)==='on'}catch(e){}
+function showDescription(el){
+ if(!descriptionsEnabled)return;
+ const info=describeControl(el);if(!info)return;
+ $('contextHelpTitle').textContent=info[0];
+ $('contextHelpBody').textContent=info[1];
+}
+function toggleDescriptionsUI(){
+ $('contextHelp').hidden=!descriptionsEnabled;
+ document.body.classList.toggle('descriptions-active',descriptionsEnabled);
+ $('descriptionsBtn').setAttribute('aria-pressed',String(descriptionsEnabled));
+ $('descriptionsBtn').textContent=descriptionsEnabled?'ⓘ Descriptions: On':'ⓘ Descriptions';
+ if(descriptionsEnabled)showDescription(document.querySelector('[data-state="mount"]'));
+ try{localStorage.setItem(descriptionsKey,descriptionsEnabled?'on':'off')}catch(e){}
+}
+$('descriptionsBtn').onclick=()=>{descriptionsEnabled=!descriptionsEnabled;toggleDescriptionsUI()};
+for(const kind of ['pointerover','focusin','change'])
+ document.addEventListener(kind,e=>{
+  const el=e.target.closest?.('button,input,select');if(el)showDescription(el);
+ });
+toggleDescriptionsUI();
+

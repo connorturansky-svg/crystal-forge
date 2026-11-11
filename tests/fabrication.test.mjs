@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
-import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
+import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,baseProfileHeight,baseEdgeHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
 import {setThreeInstance,prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
+import {PIXEL_PRESETS,normalisePixelProfile,resolvePixelProfile} from '../pixel-profiles.js';
 
 const wasm=await Module();wasm.setup();
 
@@ -17,6 +18,22 @@ function geometryEdges(g){
  }
  return {open:[...edges.values()].filter(x=>x!==2).length,triangles:p.length/9};
 }
+// PR4: geometry stays closed through all hill/plinth modes.
+for(const baseProfile of ['Flat plinth','Plinth + dome','Full dome / hill']){
+ for(const sideWall of [0,50,100]){
+  const config={seed:42,count:8,width:95,height:130,pattern:'Central Spire',
+   familyMix:'Quartz',baseType:'integrated',baseStyle:'Fitted',baseWidth:10,
+   baseProfile,sideWall,baseHeight:25,baseDome:20,baseEdgeRadius:2,domeFalloff:1.8};
+  const cs=generateFormation(config),geometry=baseGeometry(THREE,cs,config);
+  assert.equal(geometryEdges(geometry).open,0,'PR4 base closure '+baseProfile);
+  assert(baseProfileHeight(config,0)>=baseProfileHeight(config,.8));
+  assert(Math.abs(baseProfileHeight(config,1)-baseEdgeHeight(config))<.001);
+  assert(cs.every(c=>Number.isFinite(baseSurfaceHeight(cs,config,c.x,c.z))));
+  geometry.dispose();
+ }
+}
+console.log('PR4 base profile mesh tests passed');
+
 function safetyGeometryCheck(){
  // Geometry alone cannot certify a child-safe product, but it must form a
  // smooth profile with many intermediate rings, no flat polygon at the apex
@@ -218,6 +235,26 @@ for(const edge of [0,.75,2.5,5.5]){
  geo.dispose();
 }
 validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
+// PR4 — selected pixel shapes affect clearance and the manufactured socket.
+{
+ const base={...settings,count:10,baseHeight:25,baseDome:0,cutSockets:true,lightingMode:'single',pixelFit:.15};
+ for(const preset of PIXEL_PRESETS){
+  const cfg={...base,pixelProfileId:preset.id,pixelDiameter:preset.bodyDiameter};
+  const profile=resolvePixelProfile(cfg),plan=planHardware(generateFormation(cfg),cfg);
+  assert.equal(profile.id,preset.id);
+  assert(plan.sockets.every(p=>p.radius>=profile.maxDiameter/2-.001),'Flange included in layout');
+  assert.equal(plan.collisions.length,0);
+ }
+ const custom=normalisePixelProfile({id:'custom-test',name:'Measured test LED',kind:'gumdrop',
+   bodyDiameter:14,bodyHeight:19,flangeDiameter:16,flangeHeight:2,capHeight:3,wireWidth:4,wireDepth:2});
+ const cfg={...base,pixelProfileId:custom.id,pixelDiameter:custom.bodyDiameter,pixelProfiles:[custom]};
+ assert(Math.abs(resolvePixelProfile(cfg).maxDiameter-16.15)<.001);
+ const report=validate('custom-profile-bore',cfg);
+ assert(report.socketsCut>0,'Custom pixel profile creates a cut');
+ assert(report.socketCeilings.every(c=>c.remainingWall>=2.79),'Profile socket has blind roof');
+ assert(report.socketCeilings.every(c=>c.profileId===custom.id),'Selected profile is used in actual cutter');
+ console.log('PR4 pixel clearance and cut tests passed');
+}
 // Tabs must be physical fused geometry with THROUGH holes, not markers.
 const cfgTabs={...settings,count:8,baseHeight:25,baseDome:4,baseWidth:10,
  mount:'Edge fixing tabs',tabCount:3,tabHolesPerTab:2,

@@ -1,5 +1,6 @@
 import {baseOutline,crystalEndRatios} from './geometry-v3.js';
 import {planEdgeTabs} from './edge-tabs.js';
+import {resolvePixelProfile} from './pixel-profiles.js';
 /* Hardware placement planner shared by printable geometry and viewport annotations.
  * All positions are x/z on the underside of the cluster, distances in mm.
  * Conservative XY separation even where drilling depths do not overlap.
@@ -52,8 +53,9 @@ export function planHardware(crystals,s){
   const cx=polygon.reduce((v,p)=>v+p.x,0)/(polygon.length||1),cz=polygon.reduce((v,p)=>v+p.z,0)/(polygon.length||1);
   const clearance=max(1.5,Number(s.hardwareClearance ?? 2.5));
   const sockets=[],mounts=[],messages=[];
-  const socketDiameter=Number(s.pixelDiameter)+Number(s.pixelFit);
-  const socketRadius=socketDiameter/2;
+  const profile=resolvePixelProfile(s);
+  const socketDiameter=profile.boreDiameter;
+  const socketRadius=profile.maxDiameter/2;
   const validHole=(p,radius,others)=>insidePolygon(p,polygon,radius+1.2)&&others.every(q=>dist(p,q)>=radius+q.radius+clearance-1e-5);
   const pixelManual=s.pixelPlacement==='manual',mountManual=s.mountPlacement==='manual';
   const manualPixels=Array.isArray(s.manualPixelHoles)?s.manualPixelHoles:[];
@@ -66,7 +68,7 @@ export function planHardware(crystals,s){
   if(pixelManual&&pixelRequested)manualPixels.slice(0,pixelRequested).forEach((entry,i)=>{
     const p={x:Number(entry.x),z:Number(entry.z)},radius=socketRadius;
     if(Number.isFinite(p.x)&&Number.isFinite(p.z)&&validHole(p,radius,sockets))
-      sockets.push({...p,radius,diameter:socketDiameter,kind:'LED',manual:true,index:i});
+      sockets.push({...p,radius,diameter:socketDiameter,profileId:profile.id,kind:'LED',manual:true,index:i});
     else invalidManualPixels.push({...p,radius,kind:'LED',index:i});
   });
   const ranked=pixelManual?[]:all.slice().sort((a,b)=>b.r*b.h-a.r*a.h);
@@ -86,7 +88,7 @@ export function planHardware(crystals,s){
       const a=c.rotation,p={x:c.x+o.x*Math.cos(a)-o.z*Math.sin(a),z:c.z+o.x*Math.sin(a)+o.z*Math.cos(a)};
       if(Math.hypot(o.x,o.z)+socketRadius+clearance > r-1.0)continue;
       if(!validHole(p,socketRadius,sockets))continue;
-      sockets.push({...p,radius:socketRadius,diameter:socketDiameter,crystalId:c.id,kind:'LED'});
+      sockets.push({...p,radius:socketRadius,diameter:socketDiameter,profileId:profile.id,crystalId:c.id,kind:'LED'});
     }
   }
   // A usable LED need not be entirely within a single crystal root.
@@ -109,7 +111,7 @@ export function planHardware(crystals,s){
     for(const p of candidates){
       if(sockets.length>=pixelRequested)break;
       if(!validHole(p,socketRadius,sockets))continue;
-      sockets.push({...p,radius:socketRadius,diameter:socketDiameter,crystalId:null,kind:'LED',autoFallback:true});
+      sockets.push({...p,radius:socketRadius,diameter:socketDiameter,profileId:profile.id,crystalId:null,kind:'LED',autoFallback:true});
     }
   }
   const mp=mountingProfile(s);
