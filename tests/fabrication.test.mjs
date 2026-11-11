@@ -5,6 +5,7 @@ import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfa
 import {setThreeInstance,prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
+import {planWireRoutes} from '../wire-routing.js';
 import {PIXEL_PRESETS,normalisePixelProfile,resolvePixelProfile} from '../pixel-profiles.js';
 
 const wasm=await Module();wasm.setup();
@@ -255,6 +256,32 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  assert(report.socketCeilings.every(c=>c.profileId===custom.id),'Selected profile is used in actual cutter');
  console.log('PR4 pixel clearance and cut tests passed');
 }
+// PR5: planner and manufactured grooves must agree in a safe representative case.
+{
+ const cfg={...settings,seed:42,count:9,baseType:'integrated',baseStyle:'Circle',
+  baseHeight:25,baseDome:0,baseWidth:32,width:150,lightingMode:'multi',
+  pixelCount:2,cutSockets:true,pixelProfileId:'gumdrop',pixelDiameter:12,
+  pixelPlacement:'manual',manualPixelHoles:[{x:-18,z:0},{x:18,z:0}],
+  mount:'None',wireChannels:true,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0};
+ const cs=generateFormation(cfg),plan=planHardware(cs,cfg);
+ assert.equal(plan.sockets.length,2,'Both manually positioned LEDs fit within the wide circular base');
+ assert(plan.wirePlan.enabled,'Routing enabled');
+ assert(plan.wirePlan.routes.length>0,'At least one physically routed wire groove');
+ assert(plan.wirePlan.lengthMm>=35,'Route length in millimetres is measured');
+ assert.equal(plan.wirePlan.unrouted,0,'Both pixels linked in the simple example');
+ const repeat=planHardware(generateFormation(cfg),cfg);
+ assert.deepEqual(repeat.wirePlan.routes,plan.wirePlan.routes,'Wire routes are deterministic for identical settings');
+ const prepared=validate('wired-groove',cfg);
+ assert.equal(prepared.wireChannelsCut,plan.wirePlan.routes.length,'Manufacturing uses the exact planned groove count');
+ assert.equal(prepared.disconnected,1,'Wiring must not split the model into pieces');
+ assert(prepared.wireLengthMm>=35,'Manufacturing report includes planned route length');
+ const disabled=planWireRoutes(cs,{...cfg,wireChannels:false},plan);
+ assert.equal(disabled.routes.length,0,'No routes with setting off');
+ const vault=planWireRoutes(cs,{...cfg,baseVault:true},plan);
+ assert.equal(vault.routes.length,0,'Do not cut into vault buttresses');
+ assert(vault.messages.length,'Incompatible vault routing is explained');
+}
+
 // Tabs must be physical fused geometry with THROUGH holes, not markers.
 const cfgTabs={...settings,count:8,baseHeight:25,baseDome:4,baseWidth:10,
  mount:'Edge fixing tabs',tabCount:3,tabHolesPerTab:2,

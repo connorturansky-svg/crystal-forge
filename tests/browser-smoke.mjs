@@ -136,6 +136,26 @@ try{
  await page.locator('[data-state="pixelProfileId"]').selectOption('gumdrop');
  await page.locator('#descriptionsBtn').click();
  assert.equal(await page.locator('#descriptionsBtn').getAttribute('aria-pressed'),'false');
+ // PR5: adjustable underside grooves, mirrored guide count and CSV.
+ await page.locator('[data-tab="build"]').click();
+ await page.locator('[data-state="wireChannels"]').check();
+ await page.locator('[data-state="wireExit"]').check();
+ await page.locator('[data-state="wireWidth"]').evaluate(el=>{el.value='3.5';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(250);
+ const wireSettings=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings);
+ assert(wireSettings.wireChannels&&wireSettings.wireExit,'Wire settings saved');
+ assert.equal(wireSettings.wireWidth,3.5,'Wire width saved');
+ assert((await page.locator('#hardwareGuideSummary').innerText()).includes('wire segments'),'Live wire guide summary present');
+ const wireDownload=page.waitForEvent('download');
+ await page.locator('[data-tab="print"]').click();
+ await page.locator('#wiringCsvBtn').click();
+ const wireCSV=await wireDownload;
+ assert(wireCSV.suggestedFilename().includes('wire-routing'),'Wire routing CSV download works');
+ await page.locator('[data-tab="build"]').click();
+ await page.locator('[data-state="wireChannels"]').uncheck();
+ await page.locator('[data-state="wireExit"]').uncheck();
+ await page.waitForTimeout(160);
+ console.log('PR5 wiring controls, output and persistence verified');
  console.log('PR4 help, base profiles, pixel editor and persistence verified');
  console.log('Advanced editor and view controls verified');
  await page.locator('[data-tab="build"]').click();
