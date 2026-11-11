@@ -2,6 +2,11 @@
 
 ## v0.12.0 — 11 November 2026 (PR7 draft)
 
+- **Physical calibration rework:** both the 5-hole and 3-hole fitting coupons engrave exact Ø sizes on the printable top face, in left-to-right order. Full-profile coupons now cut opposing wire slots fully through their two outer walls, not just near the edge.
+- **Printed-fit override:** choose the best-fitting labelled hole after printing and apply its measured tolerance to the global LED fit setting (including individual socket profiles); ⚙ marks the calibration and Reset restores the previous fit. Saved in project JSON.
+- **Public source notice:** added a clearly labelled all-rights-reserved notice for original project code, while recognising GitHub's permitted public viewing/forking and pre-existing third-party dependency rights. Visibility itself is unchanged.
+- **QA:** corrected undeclared fabrication-worker timing variables, added coupon volume/size/override regression checks and switched browser CI to a cached/preinstalled-browser-first path to avoid repeated large downloads.
+
 - Opt-in targeted actual LED-to-crystal Manifold conduits, with cautious root/roof/reach validation and accepted/skipped counts.
 - Different manually placed LEDs can select individual saved seed/bullet/gumdrop/custom profiles for exact planning and cutting.
 - Three-position stepped LED-fit coupon samples flange, housing cap, experimental retention and wire relief.
