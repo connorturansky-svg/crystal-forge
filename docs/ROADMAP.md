@@ -1,6 +1,10 @@
-# Active PR7 — All remaining fabrication phases
+# Next phase — PR8: physical pixel-string routing and identifiable hardware
 
-[Draft PR7](https://github.com/connorturansky-svg/crystal-forge/pull/13) contains new work across all five phases. [PR7 implementation and real-world acceptance](PR7_COMPLETE_FABRICATION.md) is the current source of truth; [PR6 baseline](PR6_ALL_PHASES.md) and [PR5 master plan](PR5_MASTER_IMPLEMENTATION_PLAN.md) retain the earlier full backlog. Issues #6–#10 stay open until their real mechanical, optical and Cura test requirements are satisfied.
+**Status: planning draft; no implementation in PR8 yet.** [PR8 P0 specification](PR8_CRITICAL_WIRING_AND_HARDWARE.md) supersedes the old side-by-side paired-wire assumption as the **highest-priority** software task. **P0-A:** each pixel has opposed IN/OUT cable tails, the first and last tails reach safe base edges even for one pixel, and explicit pixel ordering defines every physical route (not greedy/side-by-side tracks). **P0-B:** numbered P1/P2/… and M1/M2/… 3D markers linked to Build cards, sortable pixel order, and a double-click contextual Add Pixel / Add Mount menu. **P0-C:** shared planner, true Manifold cuts, regression fixtures, export/persistence consistency. **P1:** targeted real light paths, Cura thin-wall/bridging and measured service/strain relief. Track [#7](https://github.com/connorturansky-svg/crystal-forge/issues/7) and [#9](https://github.com/connorturansky-svg/crystal-forge/issues/9) first, then [#6](https://github.com/connorturansky-svg/crystal-forge/issues/6).
+
+## PR7 — merged baseline (v0.12.0)
+
+[PR7](https://github.com/connorturansky-svg/crystal-forge/pull/13) merged into main on 11 November 2026. It delivered substantial real-but-experimental fabrication, pixel fit, optional two parallel grooves, modular assets, Cura advice and regression tests. **Do not confuse PR7's two parallel lanes with the required serial pixel-string routes**; the latter are not implemented. [PR7 implementation/physical acceptance](PR7_COMPLETE_FABRICATION.md), [PR6 baseline](PR6_ALL_PHASES.md) and [PR5 master plan](PR5_MASTER_IMPLEMENTATION_PLAN.md) retain historical detail. Issues #6–#10 remain open until their unfinished functional and physical gates are met.
 
 # PR6 — Combined five-phase draft
 
