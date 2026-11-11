@@ -156,6 +156,7 @@ const SETTINGS={
  "applyShapePresetBtn": ["Apply crystal preset","Apply the selected shape only to the selected unlocked crystal, or to global shape parameters when none is selected."],
  "hardwareSnap": ["Snap hardware coordinates","Applies grid snapping when adding/moving LED or mounting holes and when editing numeric coordinates."],
  "hardwareSnapStep": ["Hardware snap spacing","Grid increment in millimetres for hardware hole placement; can be disabled without changing existing holes."],
+ "fitCouponStyle": ["Pixel-fit calibration method","Stepped includes the current measured body, flange and wire relief; simple uses diameter-only holes. Use five size variations to choose a real fit."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."

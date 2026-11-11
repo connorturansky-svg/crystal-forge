@@ -583,6 +583,29 @@ export function encodeSTL(geometry){
  }
  return new Uint8Array(bytes);
 }
+// A real stepped pixel-body and flange fitting coupon. Each of five pockets
+// uses the EXACT socket cutter from the full build, not a plain round hole.
+export function makePixelSeatCoupon(wasm,s){
+ const profile=resolvePixelProfile(s),keep=[],hold=m=>{keep.push(m);return m};
+ const offsets=[-.2,-.1,0,.1,.2];
+ const width=Math.max(20,profile.maxDiameter+12),pitch=Math.max(21,profile.maxDiameter+10);
+ const roof=Math.max(12,profile.bodyHeight+6),diameters=[];
+ try{
+  const bar=hold(wasm.Manifold.cube([pitch*offsets.length,roof,width]));
+  const cutters=offsets.map((d,i)=>{
+   const adjusted=resolvePixelProfile({...s,pixelFit:Math.max(-.5,Math.min(.8,Number(s.pixelFit||0)+d))});
+   const pos={x:(i+.5)*pitch,z:width/2};
+   const bore=putSocket(wasm,hold,pos,adjusted.maxDiameter/2,roof,-3,adjusted);
+   diameters.push(+adjusted.boreDiameter.toFixed(2));
+   return bore.solid;
+  });
+  const cut=hold(bar.subtract(hold(wasm.Manifold.union(cutters))));
+  assertSolid(cut,'Stepped LED fit coupon');
+  return {geometry:fromResultMesh(cut.getMesh()),diameters,
+   profileName:profile.name,flangeDiameter:profile.flangeDiameter};
+ }finally{cleanupAll(keep)}
+}
+
 export function saveSTL(geometry,filename='crystal-forge-manifold.stl'){
  const blob=new Blob([encodeSTL(geometry)],{type:'model/stl'});
  const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;link.click();

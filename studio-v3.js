@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
-import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,splitPreparedMesh,makeSplitPinCoupon} from './fabrication-v1.js';
+import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,makeSplitPinCoupon} from './fabrication-v1.js';
 import {buildProductionPack} from './production-pack.js';
 import {planSplitJoints} from './split-joints.js';
 import {applyShapePreset} from './design-workflows.js';
@@ -21,7 +21,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
-  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -597,7 +597,7 @@ function schedule(full=true){
  },85);
 }
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix']);
-const previewKeys=new Set(['hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
+const previewKeys=new Set(['fitCouponStyle','hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
@@ -921,8 +921,8 @@ $('calibrationBtn').onclick=async()=>{
  await new Promise(resolve=>setTimeout(resolve,20));
  try{
   const nominal=resolvePixelProfile(s).boreDiameter;
-  const wasm=await loadManifold(),data=makeCalibrationStrip(wasm,nominal);
-  saveSTL(data.geometry,'pixel-fit-calibration-'+nominal.toFixed(1).replace('.','_')+'mm.stl');
+  const wasm=await loadManifold(),data=s.fitCouponStyle==='plain'?makeCalibrationStrip(wasm,nominal):makePixelSeatCoupon(wasm,s);
+  saveSTL(data.geometry,'pixel-fit-'+(s.fitCouponStyle==='plain'?'plain':'stepped')+'-'+nominal.toFixed(1).replace('.','_')+'mm.stl');
   data.geometry.dispose();
   setStatus('Calibration strip downloaded: '+data.diameters.map(d=>d.toFixed(2)).join(' · ')+' mm left-to-right');
  }catch(err){console.error(err);alert('Calibration strip failed: '+err.message)}
