@@ -25,7 +25,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
-  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'single',wirePairSpacing:7,wireWidth:3,wireDepth:2,wireSlack:0,manualEdgeTabs:null,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',wirePairSpacing:7,wireWidth:3,wireDepth:2,wireSlack:0,manualEdgeTabs:null,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -1159,8 +1159,8 @@ $('exportMountPlateBtn').onclick=async()=>{
 };
 $('wiringCsvBtn').onclick=()=>{
  const plan=planHardware(crystals,s),routes=plan.wirePlan?.routes||[];
- const rows=[['Segment','Wire lane','From pixel','To pixel','Start X (mm)','Start Z (mm)','End X (mm)','End Z (mm)','Width (mm)','Depth (mm)','Length (mm)']];
- routes.forEach((r,i)=>rows.push([i+1,r.lane??1,r.from+1,r.to==null?'Exterior':r.to+1,r.a.x.toFixed(1),r.a.z.toFixed(1),r.b.x.toFixed(1),r.b.z.toFixed(1),r.width,r.depth,r.lengthMm.toFixed(1)]));
+ const rows=[['Segment','Kind','From','To','Start X (mm)','Start Z (mm)','End X (mm)','End Z (mm)','Width (mm)','Depth (mm)','Length (mm)']];
+ routes.forEach((r,i)=>rows.push([i+1,r.kind,r.from==null?'EDGE IN':'P'+(r.from+1),r.to==null?'EDGE OUT':'P'+(r.to+1),r.a.x.toFixed(1),r.a.z.toFixed(1),r.b.x.toFixed(1),r.b.z.toFixed(1),r.width,r.depth,r.lengthMm.toFixed(1)]));
  rows.push(['SUMMARY','','','','','','','','','',Math.round((plan.wirePlan?.lengthMm||0)*10)/10]);
  rows.push(['Unrouted pixels',plan.wirePlan?.unrouted||0,'Review Build warnings before printing']);
  const csv=rows.map(row=>row.map(v=>String(v??'').includes(',')?'"'+String(v).replaceAll('"','""')+'"':String(v??'')).join(',')).join('\r\n');
