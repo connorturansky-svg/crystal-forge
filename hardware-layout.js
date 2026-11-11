@@ -1,6 +1,7 @@
 import {baseOutline,crystalEndRatios} from './geometry-v3.js';
 import {planEdgeTabs} from './edge-tabs.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
+import {planWireRoutes} from './wire-routing.js';
 /* Hardware placement planner shared by printable geometry and viewport annotations.
  * All positions are x/z on the underside of the cluster, distances in mm.
  * Conservative XY separation even where drilling depths do not overlap.
@@ -159,7 +160,9 @@ export function planHardware(crystals,s){
   const requestedMounts=mp.preset==='Edge fixing tabs'?
    edgePlan.requested*edgePlan.holesEach:
    mp.enabled&&mountManual?min(20,manualMounts.length):mp.requested;
-  return {sockets,mounts,polygon,collisions,messages,clearance,
+  const wirePlan=planWireRoutes(crystals,s,{sockets,mounts,tabHoles:edgePlan.tabHoles,polygon});
+  messages.push(...wirePlan.messages);
+  return {sockets,mounts,polygon,collisions,messages,clearance,wirePlan,
     invalidManualPixels,invalidManualMounts,
     tabs:edgePlan.tabs,tabHoles:edgePlan.tabHoles,skippedTabs:edgePlan.skipped,
     requestedTabs:edgePlan.requested,
