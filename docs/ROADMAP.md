@@ -1,4 +1,8 @@
-# PR6 — Combined five-phase draft
+# PR7 — Current integrated manufacturing work
+
+[Draft PR7](https://github.com/connorturansky-svg/crystal-forge/pull/12) covers light ports, measured LED fit, true underside routing, modular plate, Cura models, advanced editing and performance. Its [implementation and physical acceptance plan](PR7_MANUFACTURING_COMPLETION.md) distinguishes working source code from unverified hardware, optical and slicer work. The master phase backlog and issues #6–#10 remain active.
+
+# PR6 — Previously integrated five-phase work
 
 A single [draft PR6](https://github.com/connorturansky-svg/crystal-forge/pull/11) implements changes across all five delivery packages. [Full acceptance matrix](PR6_ALL_PHASES.md) distinguishes working code from advanced/physical features still pending. [Original detailed backlog](PR5_MASTER_IMPLEMENTATION_PLAN.md) and issues #6–#10 remain authoritative.
 
