@@ -139,7 +139,11 @@ function positionedInnerCrystal(c,s,openingY,wall){
  mesh.updateMatrixWorld(true);
  return mesh;
 }
-function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
+function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile,{includeLocalWireRelief=true}={}){
+ // The legacy stand-alone socket cutter adds fixed-axis local wire slots.
+ // When used with the new serial string route, those become disconnected
+ // phantom lines across each pixel; the shared wirePlan must own all grooves.
+
  const p=profile||resolvePixelProfile({pixelDiameter:12,pixelFit:0});
  // The measured housing enters from the real bottom face (Y=0). The
  // extra below-bed cutter length only opens the bore, not its usable depth.
@@ -162,7 +166,7 @@ function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
  if(p.kind!=='seed'&&p.flangeHeight>.1&&p.maxDiameter>p.boreDiameter+.1)
   cutters.push(cylinder(p.maxDiameter/2,-.5,Math.min(depth,p.flangeHeight+.5)));
  cutters.push(hold(wasm.Manifold.sphere(bodyRadius,32).scale([1,capRise/bodyRadius,1]).translate([pos.x,shaftEnd,pos.z])));
- if(p.wireWidth>.1&&p.wireDepth>.1){
+ if(includeLocalWireRelief&&p.wireWidth>.1&&p.wireDepth>.1){
   // Two shallow underside cable reliefs; not full wiring channels.
   const w=Math.max(.8,p.wireWidth+p.clearance),h=Math.max(.2,Math.min(p.wireDepth,Math.max(.2,roofY-2.8))),len=bodyRadius+4;
   relievedDepth=h;
@@ -438,7 +442,11 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
    const cutters=[];
    for(const pos of hardware.sockets){
     const roof=baseSurfaceHeight(crystals,s,pos.x,pos.z);
-    const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolveSocketProfile(s,pos));
+    const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolveSocketProfile(s,pos),{
+      // Serial mode already cuts the correct opposed IN/OUT cable groove;
+      // do not also cut legacy fixed-axis independent socket reliefs.
+      includeLocalWireRelief:s.wireMode!=='string'
+     });
     cutters.push(bore.solid);
     socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
       straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId,retentionLip:bore.retentionLip,requestedBodyDepth:bore.requestedBodyDepth,
@@ -447,7 +455,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
      warnings.push('LED at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+
        bore.usableBodyDepth.toFixed(1)+' mm usable depth, less than the measured B length '+
        bore.requestedBodyDepth.toFixed(1)+' mm. Increase base height or change the LED profile.');
-    if(bore.wireReliefDepth+.1<resolvePixelProfile(s).wireDepth)
+    if(s.wireMode!=='string'&&bore.wireReliefDepth+.1<resolveSocketProfile(s,pos).wireDepth)
      warnings.push('Wire relief depth was reduced to preserve the roof. Verify cable clearance in Cura.');
     if(bore.shaftEnd<20)warnings.push('LED bore at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+Math.max(0,bore.shaftEnd).toFixed(1)+' mm of full-width clearance. Confirm the actual LED housing fits.');
    }

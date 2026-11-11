@@ -1,4 +1,14 @@
-# PR11 — v0.14.1 production hardening (current draft)
+# PR12 — v0.14.2 pixel-string cable geometry fix (draft)
+
+**Baseline:** PR11 [#17](https://github.com/connorturansky-svg/crystal-forge/pull/17) merged. User screenshot revealed two short disconnected relief slots across every LED socket despite the main connected cable path being correct.
+
+**Root cause:** `putSocket()` unconditionally created two fixed-axis local wire reliefs even when the newer `wirePlan.routes` had a fully planned serial IN/OUT string. **Fix:** use only the planned connected route in serial mode; retain older local reliefs for legacy modes and purpose-built coupon exports. [Test/inspection guide](PR12_CABLE_GEOMETRY_TEST_GUIDE.md).
+
+**Release gate:** exact latest-head static, browser and Manifold checks, manual Build → Prepare → Cura underside comparison and measured real cable fit. Physical Cura/light/mount tests still gate production-ready status.
+
+---
+
+# PR11 — v0.14.1 production hardening (merged)
 
 PR10 [#16](https://github.com/connorturansky-svg/crystal-forge/pull/16) is merged into `main`. PR11 safeguards saved designs and backup recovery, corrects manufacturing cache validity for new routing parameters, and broadens CI triggers. [PR11 test guide](PR11_HARDENING_TEST_GUIDE.md).
 

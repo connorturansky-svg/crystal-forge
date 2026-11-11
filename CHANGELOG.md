@@ -1,5 +1,14 @@
 # Crystal Forge — Changelog
 
+## v0.14.2 — PR12 unified socket wiring (draft)
+
+- **Corrected duplicate cable grooves:** string mode no longer adds two independent, fixed-axis short socket relief cuts in addition to the correct continuous IN → P1 → Pn → OUT cable route. These old cuts caused the user's disconnected pink lines across pixel holes.
+- **Single manufacturing authority:** the shared pixel-string plan and its Manifold grooves are now responsible for all string-mode cable channels. Every socket still has its normal measured hole/cap geometry.
+- **Backward compatibility:** legacy single/parallel routing retains its former shallow local wire reliefs. Full-body three/five-size printed pixel fitting coupons still use deliberate open wire exits.
+- **Regression:** real Manifold tests compare material volume, serial and legacy socket relief depths, and approved single-/multi-pixel routing grooves.
+- **Verification:** automated CI and manual Cura/actual LED wire fit are separate release gates. No claims of physical safety or verified light transmission.
+
+
 ## v0.14.1 — PR11 hardening candidate (draft, not deployed)
 - Prevent silent eviction at 40 named projects; existing over-limit project data remains readable.
 - Prevalidate private GitHub vault merges, retain unique backups and roll back interrupted local writes.
