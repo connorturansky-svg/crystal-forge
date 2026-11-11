@@ -1230,6 +1230,7 @@ $('productionPackBtn').onclick=async()=>{
  const button=$('productionPackBtn');button.disabled=true;
  try{
   const assemblyFiles=[],assemblyWarnings=[],wasm=await loadManifold();
+   let splitManifest=null;
   if(s.mount==='Detachable plate'){
    const plan=planDetachablePlate(s,planHardware(crystals,s));
    if(plan.valid){
@@ -1245,6 +1246,11 @@ $('productionPackBtn').onclick=async()=>{
     $('prepareStatus').textContent='Splitting prepared model into '+splitPlan.pieceCount+' printer-bed-sized parts…';
     await new Promise(resolve=>requestAnimationFrame(resolve));
     const parts=splitPreparedMeshGrid(wasm,manufacturingReport.mesh,splitPlan);
+     splitManifest={...splitPlan,parts:parts.map(part=>({
+      file:'auto-bed-part-'+String(part.index).padStart(2,'0')+'.stl',
+      index:part.index,dimensionsXHeightZmm:part.bounds,
+      volumeMm3:part.volume,triangles:part.triangles
+     })),instructions:'Original mesh coordinates preserved. Orient/rotate each part on the Cura bed and test your actual joining strategy. No mating connectors or overhead ratings.'};
     try{
      for(const part of parts)assemblyFiles.push({path:'05_Assembly/auto-bed-part-'+
       String(part.index).padStart(2,'0')+'.stl',bytes:encodeSTL(part.geometry)});
@@ -1272,7 +1278,7 @@ $('productionPackBtn').onclick=async()=>{
    assemblyWarnings.push(...layout.messages);
   }
   const release=buildProductionPack({settings:s,crystals,report:manufacturingReport,
-   stlBytes:encodeSTL(manufacturingMesh.geometry),extraFiles:assemblyFiles,assemblyWarnings});
+   stlBytes:encodeSTL(manufacturingMesh.geometry),extraFiles:assemblyFiles,assemblyWarnings,splitManifest});
   download(new Blob([release.bytes],{type:'application/zip'}),release.filename);
   setStatus('Downloaded production pack · '+release.files.length+' files'+(release.curaIncluded?' including Cura profile':' (no compatible Cura profile)'));
  }catch(error){console.error(error);alert('Production pack failed: '+error.message)}
