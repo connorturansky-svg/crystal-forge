@@ -566,23 +566,25 @@ export function save3MF(geom,filename='crystal-forge.3mf'){
 }
 
 
-export function makeCalibrationStrip(wasm){
+export function makeCalibrationStrip(wasm,nominal=12){
  const keep=[];const hold=o=>{keep.push(o);return o};
  try{
   // X long, Y upward, Z across: flat-bottom 5mm thick FDM calibration.
-  const bar=hold(wasm.Manifold.cube([112,5,22]));
+  const diameter=Math.max(2,Math.min(30,Number(nominal)||12));
+  const pitch=Math.max(12,diameter+9),depth=diameter+10;
+  const bar=hold(wasm.Manifold.cube([pitch*5,5,depth]));
   const holes=[];
   for(let i=0;i<5;i++){
-   const dia=11.8+i*.1;
+   const dia=diameter+(i-2)*.1;
    const core=hold(wasm.Manifold.cylinder(9,dia/2,dia/2,40));
    const turned=hold(core.rotate([-90,0,0]));
-   const moved=hold(turned.translate([12+i*22,-2,11]));
+   const moved=hold(turned.translate([pitch*(i+.5),-2,depth/2]));
    holes.push(moved);
   }
   const allHoles=hold(wasm.Manifold.union(holes));
   const strip=hold(bar.subtract(allHoles));
   assertSolid(strip,'Socket calibration strip');
-  return {geometry:fromResultMesh(strip.getMesh()),diameters:[11.8,11.9,12,12.1,12.2],triangles:strip.numTri()};
+  return {geometry:fromResultMesh(strip.getMesh()),diameters:Array.from({length:5},(_,i)=>Math.round((diameter+(i-2)*.1)*100)/100),triangles:strip.numTri()};
  }finally{cleanupAll(keep)}
 }
 export function splitPreparedMesh(wasm,mesh,cutX=0){

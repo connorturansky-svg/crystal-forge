@@ -887,12 +887,13 @@ $('calibrationBtn').onclick=async()=>{
  const button=$('calibrationBtn');button.disabled=true;button.textContent='Generating calibration strip…';
  await new Promise(resolve=>setTimeout(resolve,20));
  try{
-  const wasm=await loadManifold(),data=makeCalibrationStrip(wasm);
-  saveSTL(data.geometry,'12mm-pixel-fit-calibration-11_8-to-12_2.stl');
+  const nominal=resolvePixelProfile(s).boreDiameter;
+  const wasm=await loadManifold(),data=makeCalibrationStrip(wasm,nominal);
+  saveSTL(data.geometry,'pixel-fit-calibration-'+nominal.toFixed(1).replace('.','_')+'mm.stl');
   data.geometry.dispose();
-  setStatus('Calibration strip downloaded · five holes 11.8–12.2 mm, left to right');
+  setStatus('Calibration strip downloaded: '+data.diameters.map(d=>d.toFixed(2)).join(' · ')+' mm left-to-right');
  }catch(err){console.error(err);alert('Calibration strip failed: '+err.message)}
- finally{button.disabled=false;button.textContent='⌖ Generate 12 mm pixel-fit test strip (STL)'}
+ finally{button.disabled=false;button.textContent='⌖ Generate selected pixel-fit test strip (STL)'}
 };
 $('splitExportBtn').onclick=async()=>{
  if(!verifyPrepared()||!s.splitParts)return;

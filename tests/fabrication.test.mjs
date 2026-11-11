@@ -309,6 +309,10 @@ assert.equal(combo.disconnected,1,'Combined hollow and mounted LED assembly must
 verifyClearance('full-assembly',assembly({...settings,hollowCrystals:true,cutSockets:true,mount:'Magnet inserts'}).crystals,{...settings,hollowCrystals:true,cutSockets:true,mount:'Magnet inserts'});
 const cal=makeCalibrationStrip(wasm);
 assert(cal.triangles>50,'Calibration strip created');
+const seedCal=makeCalibrationStrip(wasm,5.15);
+assert.equal(seedCal.diameters.length,5);
+assert(Math.abs(seedCal.diameters[2]-5.15)<1e-5,'Calibration uses selected seed pixel size');
+seedCal.geometry.dispose();
 console.log('calibration',cal.diameters.join(','));
 cal.geometry.dispose();
 const {meshes,crystals}=assembly(settings);

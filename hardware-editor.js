@@ -1,5 +1,6 @@
 /* Build-stage placement/inspection: same authoritative plan as fabrication. */
 import {planHardware} from './hardware-layout.js';
+import {resolvePixelProfile} from './pixel-profiles.js';
 
 export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,onEdit,onStatus}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
@@ -132,7 +133,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const valid=data.insideBase&&placementValid(kind,data.pos);
   lastCursor={...data,valid,kind};
   const s=getSettings();
-  const diameter=kind==='pixel'?Math.max(Number(s.pixelDiameter)+Number(s.pixelFit),Number(s.pixelDiameter),Number(s.pixelDiameter)+.5):
+  const diameter=kind==='pixel'?resolvePixelProfile(s).maxDiameter:
    s.mount==='Magnet inserts'?10.2:s.mount==='Threaded insert M3'?4.2:Number(s.mountHoleDiameter||4.5);
   const radius=Math.max(1,diameter/2);
   preview.scale.setScalar(radius);
