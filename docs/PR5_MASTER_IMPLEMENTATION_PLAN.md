@@ -4,6 +4,64 @@
 
 This is the single consolidated implementation queue for the unfinished design discussions, engineering risks and future phases. **PR5 contains code for the first wiring/calibration phase plus this plan. The remaining phases are NOT finished merely because they appear here.** An individual code/test/slicer gate is required before advancing each item.
 
+## Five large delivery packages — priority order
+
+These five packages consolidate **all ten original detailed phases** and the newly requested Cura work. Each is intended to be a substantial implementation milestone with its own regression, Cura and physical-print gate. Work already committed in PR5 is clearly distinguished from work still queued.
+
+| Large package | Core deliverables | Original phases | Status |
+| --- | --- | --- | --- |
+| **A. Cura & reliable fabrication** | Cura profile download, quality/nozzle/material controls, support/roof/bridge diagnostics, nozzle-aware slicing advice, machine volumes | 0, 4, 7, 9 plus the new Cura phase | **Generator now in PR5; validation and advanced advice queued** |
+| **B. LEDs, wiring & real light paths** | Measured LED library, retention clips, strain relief, wiring exits, per-pixel controls, cutaway and verified shared illumination | 1, 2, 3 | **Wiring prototype PR5; physical/optical features queued** |
+| **C. Modular construction & mounting** | Auto splitting, key/dowel joints, detachable mounting plates, magnets/M3/keyholes, assembly and safety instructions | 5, plus mounting parts of 9 | Queued |
+| **D. Creative editor & hardware placement** | Drag/snap hardware editor, individual shapes/multiple selection, model templates, project migrations, materials/look development, contextual help | 0, 6, 8 | Queued |
+| **E. Production QA & distributable projects** | 10–60 crystal benchmarks, worker cancellation, real Cura checks, export pack/BOM/wiring diagram, physical print tests, documentation and workshops | 7, 9 | Continuous; final release gate queued |
+
+### Package A — Slicer-ready fabrication and Cura profiles
+
+**Immediate implementation:** an importable Cura profile generator, with Ultimaker 3 Extended, Ultimaker 2+, selected nozzle diameter, PLA/PETG and Fast-to-Fine quality. Nozzle selection must reject incompatible machine hardware. Profiles use the existing machine/material configuration in Cura; they do not generate G-code or replace printer firmware.
+
+**Quality scale:** increasing quality reduces layer height and speed while generally increasing wall count and top/bottom layers. The separate print-intent selector controls infill for translucent lighting, balance or durability. Never assume zero infill yields open optical channels.
+
+**Remaining scope:** verify imports in actual installed Cura for both machines, generate model-derived nozzle feature warnings, improve bridging and roof assessment, suggest support strategy and nozzle-aware wall requirements, add more printers/materials only after calibration and provide a print-checklist export.
+
+**Acceptance:** machine/nozzle compatibility, real Cura import of the generated archive, correct material and AA core selected, real nozzle test coupons, and sliced layer-by-layer checks.
+
+### Package B — Physical LED mounts and illumination
+
+**Scope:** extend measured profile sections, LED-specific multi-pixel selection, reversible clips and adapters, strain relief, wiring channels/edge exits, cable-length management, optical cutaway diagnosis and targeted root opening (rather than expensive global hollowing). Ensure every *intended* spike has an inspectable light path.
+
+**Acceptance:** physical gumdrop/seed/bullet samples, removable working LED access, inspected cable channels and light passing into each targeted crystal; blocked spikes reported.
+
+### Package C — Modular print and installation
+
+**Scope:** model-splitting based on selected printer X/Y/Z, more cut planes, dowel/alignment keys with measured tolerances, mating detachable plates and keyholes, mounting tabs and M3/magnet pockets, assembly guide, LED access between parts, secondary retention plans.
+
+**Acceptance:** oversized print assembles correctly, separate parts remain connected by tested mechanical joints and all safety limits are communicated. Software cannot certify overhead load capacity.
+
+### Package D — Studio and direct hardware editing
+
+**Scope:** on-canvas drag/snap of LED and mount holes, underside editing, multi-select and transformations, shape presets and batch variations, persistent templates, creative material previews, self-explanatory settings and versioned project migrations.
+
+**Acceptance:** new user completes the Design → Build → Print workflow, preserves selection/locks and hardware after JSON export/reimport, and can undo/redo without losing parts.
+
+### Package E — Production-hardening and project handoff
+
+**Scope:** prepare-worker timing and recovery for 10/16/40/60 crystals, repeat/cancel/cache tests, exact-head CI, STL/3MF/Cura validation, downloadable manufacturing pack, full BOM, wiring map, calibration prints, physical print quality and assembly checklists, workshop guidance and release/version history.
+
+**Acceptance:** reproducible sample project collection, successful real prints for defined cases, validated Cura settings and measured hardware clearance, benchmark budgets, complete project release bundle.
+
+### Dedicated Cura Profile Generator — executable phase inside Package A
+
+- Machines: Ultimaker 3 Extended with AA **0.25 / 0.4 / 0.8 mm**, and Ultimaker 2+ with **0.25 / 0.4 / 0.6 / 0.8 mm**.
+- Material choices: PLA / PETG. Select matching actual filament in Cura; avoid prescribing a universal temperature for unknown brands.
+- Quality slider: 0 = Fast (taller layers, faster print, fewer shells); 100 = Fine (shorter layers, slower print, more shells and surface layers). Separate intent sets 0% infill for translucent, 10–15% balanced or 25–30% durable.
+- Export: machine/nozzle/material-specific custom Cura quality overrides inside a ZIP-form .curaprofile file, with global and extruder sections. Selected printer and print core must already exist in Cura. This is **not** a complete replacement machine/material definition.
+- Implemented in PR5: generator module, print-panel controls and downloadable profile. Unit and browser tests cover ZIP structure, option combinations, compatibility and the downloaded file. Real Cura import remains a **manual acceptance gate**.
+- Next: model-aware overrides, materials by supplier, estimated print time after slicing, custom visual profile editor, matched Cura project 3MF export, nozzle-aware print orientation and optical-path screening.
+- Official references: https://support.ultimaker.com/articles/Knowledge/1667411286867 ; https://support.ultimaker.com/articles/Knowledge/1667411296273 ; https://support.ultimaker.com/articles/Knowledge/1667337922171 ; https://github.com/Ultimaker/Cura/blob/main/plugins/CuraProfileReader/CuraProfileReader.py .
+
+**Delivery rule:** prioritise Package A and the current prototype part of B in PR5. Start follow-on large packages immediately as dedicated GitHub tracking milestones, but implement them in reviewable sub-PRs. Do not label queued mechanical or optical functions as completed merely because they are in the master roadmap.
+
 ## Product rules that every phase must preserve
 
 1. Fast, editable Three.js preview is **not** the joined Manifold printable mesh.
