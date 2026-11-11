@@ -2,6 +2,7 @@
  * Never interpret a reachable position as a proven unblocked lumen.
  */
 import {planHardware} from './hardware-layout.js';
+import {planCrystalLightPorts} from './light-port-plan.js';
 export function assessOpticalAccess(crystals,s,report=null){
  const plan=planHardware(crystals,s),sockets=plan.sockets;
  const hasOpenInterior=!!(s.baseVault||s.hollowCrystals||s.targetedLightPaths);
@@ -20,6 +21,8 @@ export function assessOpticalAccess(crystals,s,report=null){
   else if(s.targetedLightPaths&&report?.targetedLightSkipped?.some(v=>v.id===c.id)){status='Conduit skipped';reason='Targeted planner rejected the geometry.'}
   else if(!hasOpenInterior){status='No modeled shared passage';reason='Solid roots can block light even if sparse infill is 0%.'}
   else if(narrow){status='Restricted root (review)';reason='Small root may not accommodate a safe light passage.'}
+  else if(cutIds.has(c.id)){status='Modeled passage — inspect Cura';reason='A tapered direct bore was subtracted from the prepared mesh, but continuous open access and lighting are not yet verified.';}
+  else if(planned.requested&&planned.enabled){status='Direct bore skipped / unverified';reason='No manufactured vault-to-spike opening was reported for this crystal.';}
   else{
    status='Candidate only — inspect slice';
    reason=s.targetedLightPaths?'A targeted physical bore was requested, but actual optical connectivity must be verified in Cura and with a working LED.':s.baseVault?'Base vault exists, but individual root-to-vault optical access is not proven.':
@@ -28,7 +31,7 @@ export function assessOpticalAccess(crystals,s,report=null){
   return {id:c.id,name:c.name,nearestPixel:nearest===null?null:nearest+1,distanceMm:Number.isFinite(distanceMm)?Math.round(distanceMm*10)/10:null,
    rootRadiusMm:Math.round(rootRadius*10)/10,status,reason};
  });
- return {status:'Unverified optical connectivity',results,acceptedPixels:sockets.length,skippedPassages:skipped,
+ return {status:'Unverified optical connectivity',results,acceptedPixels:sockets.length,plannedDirectPorts:planned.ports.length,cutDirectPorts:cutIds.size,skippedPassages:skipped,
   missingSources:results.filter(r=>r.nearestPixel===null).length,
   note:'This is a geometric proximity/feature audit, not a ray tracer or proof of LED-to-spike openness. Inspect real Cura slices and physical illumination.'};
 }
