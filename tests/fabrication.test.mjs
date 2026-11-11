@@ -290,11 +290,26 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  assert(cutOne.volumeMm3<noExit.volumeMm3-1,'Actual underside groove removes measurable material');
  // PR9: real cutter must subtract opposed entry + exit for ONE serial pixel,
  // and route the same ordered connections as the Build/CSV planner.
+ // PR12: remove short disconnected local wire-relief slots from actual serial
+ // sockets; only the connected route's Manifold groove may cross each pixel.
+ const noStringWires={...one,wireMode:'string',wireChannels:false,wireWidth:2,wireDepth:1.4};
+ const plainSerial=validate('PR12 clean string socket without orphan slots',noStringWires);
+ assert(plainSerial.socketCeilings.every(p=>p.wireReliefDepth===0),
+  'Serial-mode sockets must have no disconnected fixed-axis wire relief');
+ const oldLocalRelief=validate('PR12 legacy local socket relief',{
+  ...noStringWires,wireMode:'single'
+ });
+ assert(oldLocalRelief.socketCeilings.some(p=>p.wireReliefDepth>0),
+  'Legacy single-wire modes retain the original relief cutter');
+ assert(plainSerial.volumeMm3>oldLocalRelief.volumeMm3+1,
+  'The actual string-mode Manifold solid has no extra unrelated relief cuts');
  const serialOne={...one,wireMode:'string',wireWidth:2,wireDepth:1.4};
  const serialPlan=planHardware(generateFormation(serialOne),serialOne);
  assert(serialPlan.wirePlan.ready,'Single string LED gets two complete physical edge routes');
  assert.deepEqual(serialPlan.wirePlan.connections.map(x=>x.kind),['input','output']);
  const serialMesh=validate('PR9 single-pixel IN and OUT grooves',serialOne);
+ assert(serialMesh.socketCeilings.every(p=>p.wireReliefDepth===0),
+  'Valid serial string must not cut orphan reliefs underneath the connected path');
  assert.equal(serialMesh.wireChannelsCut,serialPlan.wirePlan.routes.length,
   'Manifold removes every approved IN/OUT groove in the string plan');
  const uncutSerial=validate('PR9 single-pixel wiring OFF',{...serialOne,wireChannels:false});
@@ -306,6 +321,8 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  assert.deepEqual(serialTwoPlan.wirePlan.connections.map(x=>x.kind),['input','link','output']);
  const serialTwoMesh=validate('PR9 two-pixel serial cable grooves',serialTwo);
  assert.equal(serialTwoMesh.wireChannelsCut,serialTwoPlan.wirePlan.routes.length);
+ assert(serialTwoMesh.socketCeilings.every(p=>p.wireReliefDepth===0),
+  'Every socket in a multi-pixel string must have only planned string routes');
 
  assert(prepared.roofReview?.needsCura,'Prepared model reports roof proxy and Cura caveat');
  const smallPrinter=validate('custom-printer',{...settings,printer:'Custom / other',printerX:30,printerY:30,printerZ:50});
