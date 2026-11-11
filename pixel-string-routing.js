@@ -93,6 +93,7 @@ export function planPixelStringRoutes(crystals,s,hardware){
   if(!points||points.length<2)return false;
   for(let i=1;i<points.length;i++){
    const a=points[i-1],b=points[i],n=Math.max(2,Math.ceil(gap(a,b)/1.5));
+   if(edge&&((i===1&&!inside(points[0],poly))||(i===points.length-1&&!inside(points.at(-1),poly))))continue;
    for(const o of mounts){
     if(gap(closest(o,a,b),o)<(Number(o.radius)||0)+width/2+1.2)return false;
    }
@@ -149,7 +150,7 @@ export function planPixelStringRoutes(crystals,s,hardware){
    const points=input?curve(port,end,heading,direction,p,null,true)?.slice().reverse():
     curve(port,end,heading,direction,p,null,true);
    if(!points)continue;
-   const full=input?[outside,...points.slice(1)]:[...points,outside];
+   const full=input?[outside,...points]:[...points,outside];
    const allowed=input?Number(s.wireInputTailLength)||null:Number(s.wireOutputTailLength)||null;
    if(!add(kind,input?null:index,input?index:null,full,p,null,allowed))continue;
    if(input){plan.entryAdded=true;plan.entryPoint=end}else{plan.exitAdded=true;plan.exitPoint=end}
