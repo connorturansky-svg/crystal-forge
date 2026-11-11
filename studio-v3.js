@@ -840,6 +840,7 @@ $('cloudDisconnect').onclick=()=>{
 $('cloudPull').onclick=()=>cloudAction(async()=>{
  if(!cloudVault.connected)throw Error('Connect to your private GitHub repository first.');
  if(!confirm('Pull cloud data? Your current local data will be backed up. The cloud project becomes active; custom profiles and templates are merged.'))return;
+ cloudVault.setAuto(false);$('cloudAuto').checked=false;
  const result=await cloudVault.pull();
  restore(localStorage.getItem('crystal-forge-v3'));
  refreshSavedTemplates();
@@ -855,7 +856,8 @@ $('cloudHistoryRefresh').onclick=()=>cloudAction(async()=>{await refreshCloudHis
 $('cloudHistoryRestore').onclick=()=>cloudAction(async()=>{
  const sha=$('cloudHistory').value;
  if(!sha)throw Error('Select a previous private GitHub vault version.');
- if(!confirm('Restore the selected historical vault? Your current local project is backed up first. Sync Now will create a NEW GitHub commit; older commits remain available.'))return;
+ if(!confirm('Restore the selected historical vault? Your current local project is backed up first. Auto-sync will be paused so you can inspect the result before pressing Sync Now. Older commits remain available.'))return;
+ cloudVault.setAuto(false);$('cloudAuto').checked=false;
  const result=await cloudVault.restoreVersion(sha);
  if(result.projectRestored)restore(localStorage.getItem('crystal-forge-v3'));
  else mergePixelLibrary();
@@ -883,7 +885,7 @@ $('cloudBackupImport').onchange=async event=>{
   const json=JSON.parse(await file.text());
   const result=mergeVault(localStorage,json,{restoreProject:true});
   if(result.projectRestored)restore(localStorage.getItem('crystal-forge-v3'));
-  else mergePixelLibrary();
+  else {mergePixelLibrary();syncForm();hardwareUI?.refresh()}
   refreshSavedTemplates();refreshSavedProjects();snapshot();cloudVault?.schedule();
   setStatus('Imported backup: '+result.projects+' named projects, '+result.profiles+' custom pixels, '+
    result.templates+' templates. Previous local data backed up under '+result.backupKey);
