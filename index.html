@@ -189,6 +189,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="advanced-only"><div class="control"><label>Experimental LED retention ridge <output data-out="pixelRetentionLip"></output></label><input data-state="pixelRetentionLip" type="range" min="0" max=".7" step=".05"><p class="note">0 = smooth opening. Creates a short narrowing band above the flange. Can prevent insertion or crack the print: test the real LED first.</p></div></div>
 <div class="control"><label>Nominal socket diameter <output data-out="pixelDiameter"></output></label><input data-state="pixelDiameter" type="range" min="2" max="30" step=".1"></div>
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
+<div class="buttonrow"><button id="fitOverrideToolBtn" type="button" hidden title="Review the calibrated hole">⚙ Calibrated fit</button><button id="resetFitOverrideBtn" type="button" hidden>↺ Reset calibration</button></div>
 <div class="divider"></div><div class="cardtitle" style="padding:6px 0">⤳ Optional underside wiring channels</div>
 <label class="checks"><input type="checkbox" data-state="wireChannels"> Carve underside wire channels between accepted LEDs</label>
 <label class="checks"><input type="checkbox" data-state="wireExit"> Route first pixel to a safe base edge</label>
@@ -280,10 +281,15 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="note">Exports use only the prepared manufacturing mesh. Changing geometry or Build options requires preparing again.</div>
 <div class="divider"></div>
 <button id="steppedPixelCouponBtn" type="button" style="width:100%">⌖ Generate stepped pixel + wire-relief fit coupon</button>
-<p class="note">Three actual profile-shaped underside sockets, spaced at −0.15 / nominal / +0.15 mm. Test the LED flange, dome, existing retention band and cable exits before using these cuts on a full cluster.</p>
+<p class="note">Three physically engraved socket diameters (left → right). Their two cable grooves now cut completely through the coupon’s external side walls. Test flange fit, wire relief and extraction.</p>
 <div class="buttonrow"><button id="wiringCsvBtn">↓ Wiring plan CSV</button><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div><div class="divider"></div>
 <div class="control"><label>Calibration strip type</label><select data-state="fitCouponStyle"><option value="stepped">Stepped body, cap, flange and wire relief</option><option value="plain">Simple diameter-only holes</option></select></div>
-<button id="calibrationBtn" style="width:100%">⌖ Generate selected pixel-fit test strip (STL)</button><p class="note">Five diameters around your selected pixel's current bore (+/− 0.2 mm in 0.1 mm steps). Print in the intended material and check real fit, flange and wire routing.</p>
+<button id="calibrationBtn" style="width:100%">⌖ Generate selected pixel-fit test strip (STL)</button>
+<p class="note">Five sizes from left to right, each labelled in millimetres by engraved numerals on the coupon's top face. Full-body samples have wire channels opening through both side walls.</p>
+<div class="control"><label>After printing: select the hole that fits best (left → right)</label><select id="fitResultSelect" aria-label="Choose the best-fitting printed hole"><option value="">Download a coupon to select the fitting hole</option></select></div>
+<p id="fitCalibrationStatus" class="note" aria-live="polite">Print a sample and test the real LED, then select the hole that fits best.</p>
+<button id="applyFitResultBtn" type="button" disabled style="width:100%">✓ Apply tested fit to all pixel sockets</button>
+<p class="note">The ⚙ symbol beside Fit adjustment marks a coupon-calibrated override. Reset returns to your previous clearance.</p>
 <div class="advanced-only"><div class="divider"></div>
 <div class="control"><label>Modular cut plane X <output data-out="splitX"></output></label><input data-state="splitX" type="range" min="-100" max="100" step="1"></div>
 <label class="checks"><input data-state="splitParts" type="checkbox"> Enable split exports (two parts)</label>
