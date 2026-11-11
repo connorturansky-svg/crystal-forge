@@ -22,7 +22,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
-  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountPlateThickness:4.5,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountPlateThickness:4.5,mountSpacing:40,wireChannels:false,wireExit:true,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -1012,6 +1012,12 @@ $('exportMountPlateBtn').onclick=async()=>{
   setStatus('Matching plate exported: '+plate.holes+' M3-style fixing bores and '+plate.windows+' pixel windows. Test actual bolts and strength.');
  }catch(err){console.error(err);alert('Detachable plate failed: '+err.message)}
  finally{button.disabled=false}
+};
+$('singleWireExitBtn').onclick=()=>{
+ s.wireChannels=true;s.wireExit=true;
+ disposeManufacturing();syncForm();hardwareUI?.refresh();updateLEDs();renderInfo();snapshot();
+ snapView('bottom');
+ setStatus('Push-fit cable route planned to the outside edge. Cyan shows the guide; use Print → Prepare print mesh and BOT to inspect the real open groove.');
 };
 $('wiringCsvBtn').onclick=()=>{
  const plan=planHardware(crystals,s),routes=plan.wirePlan?.routes||[];

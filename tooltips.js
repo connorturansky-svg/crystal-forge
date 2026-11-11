@@ -166,6 +166,9 @@ const SETTINGS={
  "pixelCapHeight": ["E · Rounded cap height","The curved upper end is included within overall body length B, not added on top."],
  "pixelWireWidth": ["F · Wire exit width","Total across the cable bundle so each opposite underside channel can accommodate the wires."],
  "pixelWireDepth": ["G · Wire exit depth","How deeply the two short cable recesses cut into the underside to clear the wire bundle."],
+ "singleWireExitBtn": ["Create a real underside wire route","Enables both wire channels and a perimeter exit, then shows the underside. Prepare Print cuts the cyan planned volume from the actual STL."],
+ "wireChannels": ["Carve open-bottom grooves","Cuts routes between accepted LEDs. With one LED, also enable the edge-exit option or no route will exist."],
+ "wireExit": ["Cut a wire route through the edge","Adds a real shallow groove from an LED socket out through the perimeter. The groove must be tested with actual insulated wire."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."

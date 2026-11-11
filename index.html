@@ -188,13 +188,15 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
 <div class="divider"></div><div class="cardtitle" style="padding:6px 0">⤳ Optional underside wiring channels</div>
 <label class="checks"><input type="checkbox" data-state="wireChannels"> Carve underside wire channels between accepted LEDs</label>
-<label class="checks"><input type="checkbox" data-state="wireExit"> Route first pixel to the nearest feasible base edge</label>
+<label class="checks"><input type="checkbox" data-state="wireExit"> Cut a real cable groove from the first LED to the outside edge</label>
+<button id="singleWireExitBtn" type="button" style="width:100%;margin:6px 0">⌁ Make a push-fit underside groove to the edge</button>
+<p id="wireRouteStatus" class="note" aria-live="polite">Enable wiring to plan real cut channels.</p>
 <div class="advanced-only">
 <div class="control"><label>Channel width <output data-out="wireWidth"></output></label><input data-state="wireWidth" type="range" min="1.5" max="9" step=".25"></div>
 <div class="control"><label>Channel depth <output data-out="wireDepth"></output></label><input data-state="wireDepth" type="range" min=".8" max="5" step=".2"></div>
 <div class="control"><label>Extra cable slack <output data-out="wireSlack"></output></label><input data-state="wireSlack" type="range" min="0" max="30" step="5"></div>
 </div>
-<p class="note">Cyan guides show the accepted paths. These are open-bottom grooves, not protected wire conduits. Connections that cross screws, thin walls or the edge are skipped; slack is best-effort. Wire paths are disabled for the optional base vault and experimental full hollowing.</p>
+<p class="note">Bright cyan 3D ribbons show the width and depth of planned grooves only. For a single LED, a perimeter exit is essential; without it there is no connecting run. Press BOT for the underside. After Print → Prepare print mesh, view the real dark recessed channel on the manufacturing mesh (not just the guide). Grooves are open-bottom and require a physical wire/strain relief test. Routes remain unavailable with vault or whole-cluster hollowing.</p>
 <p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p><div class="divider"></div><label class="checks"><input data-state="glowPreview" type="checkbox"> Preview the whole cluster glowing one colour</label>
 <div class="control"><label>Simulated LED colour</label><select data-state="glowColour"><option value="0x77c4ff">Ice blue</option><option value="0xffa3df">Pink</option><option value="0xa58bff">Purple</option><option value="0xffdb8b">Warm white</option><option value="0x9affbc">Green</option><option value="0xffffff">Cool white</option></select></div>
 <p class="note">Illustrative glow only — real brightness depends on filament translucency, wall thickness, cavity connectivity and LED placement.</p>
