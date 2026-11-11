@@ -5,7 +5,7 @@
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, touch-considerate crystal sculptures. Physical safety and print strength must still be verified. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/
 
-Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three.js and the Manifold WebAssembly geometry library load from the internet. Projects stay local by default. You can optionally connect to your own private GitHub repository to back up and sync editable projects, custom measured pixel profiles and templates. Authentication uses a narrowly scoped token held only in memory, not automatic OAuth; see the migration guide.
+Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three.js and the Manifold WebAssembly geometry library load from the internet. Projects stay local by default. Save multiple named editable designs in the project library, and import/export a complete backup. You can optionally connect to your own private GitHub repository to sync every named project, the active model, custom measured pixel profiles and templates, and restore previous revisions. Authentication uses a narrowly scoped token held only in memory, not automatic OAuth; see the migration guide.
 
 
 ## Source visibility and reuse
