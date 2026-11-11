@@ -18,8 +18,8 @@ export function buildProductionPack({settings,crystals,report,stlBytes,extraFile
   ['03_Reports/print-checklist.txt',printChecklistText(assurance,s)],
   ['03_Reports/optical-audit.csv',opticalAuditCSV(optical)],
   ['03_Reports/wiring-plan.csv',csv([
-   ['Segment','From pixel','To pixel','X1','Z1','X2','Z2','Width mm','Depth mm','Length mm'],
-   ...(hardware.wirePlan?.routes||[]).map((r,i)=>[i+1,r.from+1,r.to==null?'Edge':r.to+1,r.a.x,r.a.z,r.b.x,r.b.z,r.width,r.depth,r.lengthMm.toFixed(1)])
+   ['Segment','Wire lane','From pixel','To pixel','X1','Z1','X2','Z2','Width mm','Depth mm','Length mm'],
+   ...(hardware.wirePlan?.routes||[]).map((r,i)=>[i+1,r.lane??1,r.from+1,r.to==null?'Edge':r.to+1,r.a.x,r.a.z,r.b.x,r.b.z,r.width,r.depth,r.lengthMm.toFixed(1)])
   ])],
   ['03_Reports/parts-list.csv',csv([
    ['Component','Count','Notes'],
