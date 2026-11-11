@@ -9,6 +9,7 @@ self.onmessage=async(event)=>{
  try{
   self.postMessage({type:'progress',stage:'Loading background fabrication engine…'});
   const wasm=await loadManifold();
+  const engineReadyAt=performance.now();
   self.postMessage({type:'progress',stage:'Merging crystals, cutting shared chamber and hardware…'});
   await new Promise(resolve=>setTimeout(resolve,10));
   const objects=data.components.map(input=>{
@@ -21,12 +22,17 @@ self.onmessage=async(event)=>{
    mesh.userData=input.userData||{};
    return mesh;
   });
+  const manufacturingStart=performance.now();
   const result=prepareFabrication({wasm,meshes:objects,crystals:data.crystals,settings:data.settings});
+  const manufacturingEnd=performance.now();
   for(const obj of objects)obj.geometry.dispose();
   const positions=new Float32Array(result.geometry.getAttribute('position').array);
   result.geometry.dispose();
   const report=result.report;
   report.preparationMs=Math.round(performance.now()-started);
+  report.timings={engineReadyMs:Math.round(engineReadyAt-started),
+   manifoldMs:Math.round(manufacturingEnd-manufacturingStart),
+   geometryTransferMs:Math.round(performance.now()-manufacturingEnd)};
   self.postMessage({type:'complete',positions,report},
    [positions.buffer,report.mesh.points.buffer,report.mesh.triangles.buffer]);
  }catch(error){

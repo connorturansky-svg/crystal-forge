@@ -59,6 +59,11 @@ function measure(label,overrides={}){
   for(const m of meshes)m.geometry.dispose();
  }
 }
+if(process.env.CRYSTAL_FORGE_BENCHMARK_EXTENDED==='1'){
+ for(const count of [10,16,40,60])
+  measure('scale-'+count,{count,width:Math.max(110,85+count*3),height:135});
+ console.log('Extended 10/16/40/60 crystal benchmark complete; compare only on the same runner.');
+}
 const normal=measure('cura-first-solid');
 const vaulted=measure('zero-infill-vault',{baseVault:true});
 console.log(JSON.stringify({result:'BENCHMARK COMPLETED',wasmInitMs:Math.round(initMs),

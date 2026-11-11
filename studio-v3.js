@@ -854,11 +854,15 @@ async function buildManufacturing(){
   const id=++preparationSerial;
   const result=await new Promise((resolve,reject)=>{
    let worker;
-   try{worker=persistentFabricationWorker||new Worker(new URL('./fabrication-worker.js',import.meta.url),{type:'module'});
-    persistentFabricationWorker=worker;}
+   try{
+    worker=persistentFabricationWorker;
+    if(!worker){
+     worker=new Worker(new URL('./fabrication-worker.js',import.meta.url),{type:'module'});
+     persistentFabricationWorker=worker;window.__crystalForgeWorkerStarts++;
+    }
+   }
    catch(error){reject(error);return}
    activePreparationWorker=worker;activePreparationReject=reject;
-   window.__crystalForgeWorkerStarts++;
    worker.onmessage=event=>{
     const data=event.data;if(id!==preparationSerial)return;
     if(data.type==='progress')$('prepareStatus').textContent=data.stage;
@@ -889,7 +893,9 @@ async function buildManufacturing(){
   }));
   manufacturingMesh.visible=false;scene.add(manufacturingMesh);
   updateAppearance();renderManufactureReport(result.report);createHardwareAnnotations();
-  $('prepareStatus').textContent='✓ Mesh prepared off-thread in '+(result.report.preparationMs/1000).toFixed(1)+' s. Review warnings.';
+  $('prepareStatus').textContent='✓ Mesh prepared off-thread in '+(result.report.preparationMs/1000).toFixed(1)+
+   ' s (Manifold '+((result.report.timings?.manifoldMs||0)/1000).toFixed(1)+' s; engine '+
+   ((result.report.timings?.engineReadyMs||0)/1000).toFixed(1)+' s). Review warnings.';
   $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;$('productionPackBtn').disabled=false;
   $('splitExportBtn').disabled=!s.splitParts;
   $('showManufacturing').checked=true;manufacturingView(true);applyPrintHeatmap();
