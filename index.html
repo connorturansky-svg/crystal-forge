@@ -150,6 +150,14 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="buttonrow"><select id="shapePresetSelect" aria-label="Crystal shaping preset"><option>Classic Quartz</option><option>Tall Needles</option><option>Broad Geode</option><option>Soft Rounded</option><option>Blade Shards</option></select><button type="button" id="applyShapePresetBtn">Apply preset</button></div>
 <p class="note">Applies to the selected unlocked crystal or globally when none is selected. Presets can be refined with the sliders and undone.</p>
 <div class="control"><label>Crystal family</label><select data-state="familyMix"><option>Quartz</option><option>Shard</option><option>Blade</option><option>Cubic</option><option>Double terminated</option><option>Fantasy</option><option>Mixed</option></select></div>
+<div id="familyWeightsControls" hidden><p class="note">Mixed family weights. 0× excludes a family; higher numbers make it more likely. Reproducible for the same seed.</p>
+<div class="control"><label>Quartz<output>1×</output></label><input type="range" data-family-weight="Quartz" min="0" max="10" step="1" value="1"></div>
+<div class="control"><label>Shard<output>1×</output></label><input type="range" data-family-weight="Shard" min="0" max="10" step="1" value="1"></div>
+<div class="control"><label>Blade<output>1×</output></label><input type="range" data-family-weight="Blade" min="0" max="10" step="1" value="1"></div>
+<div class="control"><label>Cubic<output>1×</output></label><input type="range" data-family-weight="Cubic" min="0" max="10" step="1" value="1"></div>
+<div class="control"><label>Double terminated<output>1×</output></label><input type="range" data-family-weight="Double terminated" min="0" max="10" step="1" value="1"></div>
+<div class="control"><label>Fantasy<output>1×</output></label><input type="range" data-family-weight="Fantasy" min="0" max="10" step="1" value="1"></div>
+</div>
 <div class="control"><label>Bottom width adjustment <output data-out="bottomScale"></output></label><input data-state="bottomScale" type="range" min=".15" max="5" step=".05"></div>
 <div class="control"><label>Top / shoulder width adjustment <output data-out="topScale"></output></label><input data-state="topScale" type="range" min=".15" max="5" step=".05"></div>
 <p class="note">Top and bottom are separate adjustments relative to Crystal starting size: 0% = unchanged, negative = narrower, positive = wider (up to +400%).</p>
