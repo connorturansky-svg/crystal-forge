@@ -80,6 +80,7 @@ jobs:
         continue-on-error: true
         env:
           CRYSTAL_FORGE_MAX_PREP_MS: '90000'
+          CRYSTAL_FORGE_BENCH_EXTENDED: '1'
         run: |
           npm run test:benchmark > benchmark-run.log 2>&1
           cat benchmark-run.log
