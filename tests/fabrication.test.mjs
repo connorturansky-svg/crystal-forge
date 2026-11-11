@@ -333,6 +333,15 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  const serialTwoPlan=planHardware(generateFormation(serialTwo),serialTwo);
  assert(serialTwoPlan.wirePlan.ready,'Two physical pixels have IN, ordered link and OUT paths');
  assert.deepEqual(serialTwoPlan.wirePlan.connections.map(x=>x.kind),['input','link','output']);
+ // Final-phase fail-closed test: impossible 5 mm pixel-to-pixel spacing
+ // must never produce an STL with missing / partial serial wire grooves.
+ const impossible={...serialTwo,pixelStringSpacing:5};
+ const impossibleAssembly=assembly(impossible);
+ try{
+  assert.throws(()=>prepareFabrication({wasm,meshes:impossibleAssembly.meshes,
+   crystals:impossibleAssembly.crystals,settings:impossible}),/Pixel string route invalid/,
+   'Fail closed rather than exporting a printable body without its planned wiring');
+ }finally{impossibleAssembly.meshes.forEach(m=>m.geometry.dispose())}
  const serialTwoMesh=validate('PR9 two-pixel serial cable grooves',serialTwo);
  assert.equal(serialTwoMesh.wireChannelsCut,serialTwoPlan.wirePlan.routes.length);
  assert(serialTwoMesh.socketCeilings.every(p=>p.wireReliefDepth===0),
