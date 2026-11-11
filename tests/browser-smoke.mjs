@@ -133,7 +133,7 @@ try{
  await page.locator('#pixelName').fill('Measured gumdrop');
  await page.locator('#pixelBodyDiameter').fill('13.5');
  assert(await page.locator('#pixelProfileDiagram svg').count(),'Dimensioned LED diagram is visible');
- assert((await page.locator('#pixelProfileDiagram [data-profile-field="pixelBodyDiameter"]').innerText()).includes('A 13.5 mm'),
+ assert((await page.locator('#pixelProfileDiagram [data-profile-field="pixelBodyDiameter"]').textContent()).includes('A 13.5 mm'),
   'Body width A changes live with input');
  await page.locator('#pixelProfileDiagram [data-profile-field="pixelCapHeight"]').click();
  assert.equal(await page.evaluate(()=>document.activeElement?.id),'pixelCapHeight','Clicking E focuses the cap dimension input');
