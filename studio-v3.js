@@ -12,7 +12,9 @@ import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
+import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
 import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
+import {adviseCuraForModel} from './cura-model-advisor.js';
 import {assessPrintQuality,printChecklistText} from './print-quality.js';
 import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
 
@@ -80,8 +82,8 @@ function format(k,v){
  if(k==='crystalSize'||k==='studioBrightness')return Math.round(Number(v)*100)+'%';
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
- if(['mountHoleDiameter','mountHoleDepth','mountSpacing','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
- if(k==='curaQuality')return v+'%';if(k==='hardwareSnapStep')return Number(v).toFixed(1)+' mm';if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
+ if(['mountHoleDiameter','mountHoleDepth','mountSpacing','mountPlateThickness','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
+ if(k==='curaQuality')return v+'%';if(k==='lightPortReach')return v+'%';if(k==='hardwareSnapStep')return Number(v).toFixed(1)+' mm';if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
 }
 const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
 function selectedCrystal(){return crystals.find(c=>c.id===selectedId)||null}
@@ -139,6 +141,7 @@ function syncForm(){
  $('projectName').textContent=s.title;
  syncShapeControls();
  $('edgeTabSettings').hidden=s.mount!=='Edge fixing tabs';
+ $('detachablePlateSettings').hidden=s.mount!=='Detachable plate';
  $('customPrinterSettings').hidden=s.printer!=='Custom / other';
  updateCuraProfileSummary();
  $('floatBtn').classList.toggle('active',!!s.floatView);
@@ -160,7 +163,7 @@ let manufacturingMesh=null,manufacturingReport=null,preparedSource=null;
 const relevantManufacturingKeys=[
  'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
- 'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightingMode','pixelCount','pixelDiameter',
+ 'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightPorts','lightPortDiameter','lightPortReach','lightingMode','pixelCount','pixelDiameter',
  'pixelFit','pixelRetentionLip','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireMode','wirePairSpacing','wireWidth','wireDepth','wireSlack','cutSockets','hollowCrystals','targetedLightPaths','lightBoreDiameter','lightReach','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','printerX','printerY','printerZ','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','manualEdgeTabs','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
 ];
 function sourceHash(){
@@ -599,7 +602,7 @@ function schedule(full=true){
  },85);
 }
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix']);
-const previewKeys=new Set(['hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
+const previewKeys=new Set(['fitCouponStyle','hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
@@ -616,7 +619,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
     if(profile)s.pixelDiameter=profile.bodyDiameter;
     syncForm();
    }
-  if(key==='mount')$('edgeTabSettings').hidden=value!=='Edge fixing tabs';
+  if(key==='mount'){$('edgeTabSettings').hidden=value!=='Edge fixing tabs';$('detachablePlateSettings').hidden=value!=='Detachable plate'}
    if(key==='printer')$('customPrinterSettings').hidden=value!=='Custom / other';
    if(key==='printer'||key.startsWith('cura'))updateCuraProfileSummary();
   if(key==='lightingMode'&&value==='single')s.pixelCount=1;
@@ -751,10 +754,29 @@ document.addEventListener('keydown',e=>{
 const pixelFields={name:'pixelName',kind:'pixelKind',bodyDiameter:'pixelBodyDiameter',
  bodyHeight:'pixelBodyHeight',flangeDiameter:'pixelFlangeDiameter',flangeHeight:'pixelFlangeHeight',
  capHeight:'pixelCapHeight',wireWidth:'pixelWireWidth',wireDepth:'pixelWireDepth'};
+function updatePixelProfileDiagram(){
+ const values={};
+ for(const [k,id] of Object.entries(pixelFields))
+  values[k]=k==='kind'||k==='name'?$(id).value:Number($(id).value);
+ $('pixelProfileDiagram').innerHTML=renderPixelProfileDiagram(values);
+ const profile=normalisePixelProfile(values);
+ const adjusted=profile.bodyDiameter+Number(s.pixelFit||0);
+ $('pixelProfileDimensionsNotice').textContent='Nominal body Ø '+profile.bodyDiameter.toFixed(1)+
+  ' mm · full length '+profile.bodyHeight.toFixed(1)+' mm (includes curved cap) · current socket fit adjustment '+
+  (Number(s.pixelFit||0)>=0?'+':'')+Number(s.pixelFit||0).toFixed(2)+' mm · resulting body bore Ø '+
+  adjusted.toFixed(2)+' mm. Tap a letter to edit its field.';
+}
+for(const field of Object.values(pixelFields))
+ $(field).addEventListener('input',updatePixelProfileDiagram);
+$('pixelProfileDiagram').addEventListener('click',e=>{
+ const field=e.target.closest?.('[data-profile-field]')?.dataset.profileField;
+ if(field&&PIXEL_DIMENSIONS.some(dim=>dim.field===field))$(field).focus();
+});
 function closePixelEditor(){$('pixelProfileOverlay').hidden=true;$('editPixelProfileBtn').focus()}
 $('editPixelProfileBtn').onclick=()=>{
  const p=resolvePixelProfile(s);
  for(const [k,id] of Object.entries(pixelFields))$(id).value=p[k];
+ updatePixelProfileDiagram();
  $('pixelProfileOverlay').hidden=false;$('pixelName').focus();
 };
 $('closePixelProfileBtn').onclick=closePixelEditor;
@@ -837,11 +859,15 @@ async function buildManufacturing(){
   const id=++preparationSerial;
   const result=await new Promise((resolve,reject)=>{
    let worker;
-   try{worker=persistentFabricationWorker||new Worker(new URL('./fabrication-worker.js',import.meta.url),{type:'module'});
-    persistentFabricationWorker=worker;}
+   try{
+    worker=persistentFabricationWorker;
+    if(!worker){
+     worker=new Worker(new URL('./fabrication-worker.js',import.meta.url),{type:'module'});
+     persistentFabricationWorker=worker;window.__crystalForgeWorkerStarts++;
+    }
+   }
    catch(error){reject(error);return}
    activePreparationWorker=worker;activePreparationReject=reject;
-   window.__crystalForgeWorkerStarts++;
    worker.onmessage=event=>{
     const data=event.data;if(id!==preparationSerial)return;
     if(data.type==='progress')$('prepareStatus').textContent=data.stage;
@@ -872,7 +898,9 @@ async function buildManufacturing(){
   }));
   manufacturingMesh.visible=false;scene.add(manufacturingMesh);
   updateAppearance();renderManufactureReport(result.report);createHardwareAnnotations();
-  $('prepareStatus').textContent='✓ Mesh prepared off-thread in '+(result.report.preparationMs/1000).toFixed(1)+' s. Review warnings.';
+  $('prepareStatus').textContent='✓ Mesh prepared off-thread in '+(result.report.preparationMs/1000).toFixed(1)+
+   ' s (Manifold '+((result.report.timings?.manifoldMs||0)/1000).toFixed(1)+' s; engine '+
+   ((result.report.timings?.engineReadyMs||0)/1000).toFixed(1)+' s). Review warnings.';
   $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;$('productionPackBtn').disabled=false;
   $('splitExportBtn').disabled=!s.splitParts;
    $('detachablePlateBtn').disabled=s.mount!=='Detachable plate';
@@ -979,8 +1007,8 @@ $('calibrationBtn').onclick=async()=>{
  await new Promise(resolve=>setTimeout(resolve,20));
  try{
   const nominal=resolvePixelProfile(s).boreDiameter;
-  const wasm=await loadManifold(),data=makeCalibrationStrip(wasm,nominal);
-  saveSTL(data.geometry,'pixel-fit-calibration-'+nominal.toFixed(1).replace('.','_')+'mm.stl');
+  const wasm=await loadManifold(),data=s.fitCouponStyle==='plain'?makeCalibrationStrip(wasm,nominal):makePixelSeatCoupon(wasm,s);
+  saveSTL(data.geometry,'pixel-fit-'+(s.fitCouponStyle==='plain'?'plain':'stepped')+'-'+nominal.toFixed(1).replace('.','_')+'mm.stl');
   data.geometry.dispose();
   setStatus('Calibration strip downloaded: '+data.diameters.map(d=>d.toFixed(2)).join(' · ')+' mm left-to-right');
  }catch(err){console.error(err);alert('Calibration strip failed: '+err.message)}
@@ -1009,6 +1037,15 @@ $('splitExportBtn').onclick=async()=>{
 
 function updateCuraProfileSummary(){
  const target=$('curaProfileSummary'),warn=$('curaProfileWarning'),button=$('curaProfileBtn');
+ const advice=adviseCuraForModel(crystals,s);
+ const adviceNode=$('curaModelAdvice'),recommend=$('curaRecommendedNozzleBtn');
+ if(adviceNode)adviceNode.textContent=advice.supported?
+  'Model-aware candidate: '+advice.nozzle.toFixed(2)+' mm nozzle · smallest screened feature '+
+  advice.featureWidthMm.toFixed(2)+' mm · approximately '+advice.estimatedLayers+
+  ' full-height layers. '+advice.reasons.at(0)+' Not a support, optical or flow guarantee.':
+  advice.reason;
+ if(recommend){recommend.disabled=!advice.supported;
+  recommend.textContent=advice.supported?'Use '+advice.nozzle.toFixed(2)+' mm candidate nozzle':'No compatible automatic choice';}
  if(!target||!warn||!button)return;
  try{
   const p=calculateCuraSettings({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
@@ -1022,6 +1059,12 @@ function updateCuraProfileSummary(){
   warn.textContent=err.message;button.disabled=true;button.title=err.message;
  }
 }
+$('curaRecommendedNozzleBtn').onclick=()=>{
+ const a=adviseCuraForModel(crystals,s);
+ if(!a.supported)return;
+ s.curaNozzle=a.nozzle;syncForm();updateCuraProfileSummary();snapshot();
+ setStatus('Candidate nozzle '+a.nozzle+' mm selected in profile preview only. Fit the matching hardware and inspect the actual Cura slice.');
+};
 $('curaProfileBtn').onclick=()=>{
  try{
   const p=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});

@@ -139,10 +139,15 @@ function positionedInnerCrystal(c,s,openingY,wall){
 }
 function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
  const p=profile||resolvePixelProfile({pixelDiameter:12,pixelFit:0});
- const tipY=Math.max(start+1.4,Math.min(roofY-2.8,start+p.bodyHeight)),available=tipY-start;
- const capRise=Math.min(Math.max(.35,p.capHeight),2.5,available*.24);
+ // The measured housing enters from the real bottom face (Y=0). The
+ // extra below-bed cutter length only opens the bore, not its usable depth.
+ const requestedBodyDepth=Math.max(1,Number(p.bodyHeight)||22);
+ const tipY=Math.max(start+1.4,Math.min(roofY-2.8,requestedBodyDepth)),available=tipY-start;
+ // Curved cap E is included within total B, not added on top.
+ const capRise=Math.min(Math.max(.35,Number(p.capHeight)||.35),Math.max(.35,Math.max(0,tipY)*.65));
  const shaftEnd=tipY-capRise,depth=Math.max(.5,shaftEnd-start);
  const bodyRadius=Math.max(.8,p.boreDiameter/2),cutters=[];
+ let relievedDepth=0;
  const cylinder=(r,y,h)=>hold(wasm.Manifold.cylinder(h,r,r,32).rotate([-90,0,0]).translate([pos.x,y,pos.z]));
  const lip=Math.min(.7,Math.max(0,Number(p.retentionLip)||0));
  const lipFrom=Math.max(1.9,Number(p.flangeHeight||0)+.8),lipWidth=1.4;
@@ -157,14 +162,16 @@ function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
  cutters.push(hold(wasm.Manifold.sphere(bodyRadius,32).scale([1,capRise/bodyRadius,1]).translate([pos.x,shaftEnd,pos.z])));
  if(p.wireWidth>.1&&p.wireDepth>.1){
   // Two shallow underside cable reliefs; not full wiring channels.
-  const w=Math.max(.8,p.wireWidth+p.clearance),h=Math.min(3,p.wireDepth),len=bodyRadius+4;
+  const w=Math.max(.8,p.wireWidth+p.clearance),h=Math.max(.2,Math.min(p.wireDepth,Math.max(.2,roofY-2.8))),len=bodyRadius+4;
+  relievedDepth=h;
   for(const sign of [-1,1]){
    cutters.push(hold(wasm.Manifold.cube([w,h+.5,len])
     .translate([pos.x-w/2,-.4,pos.z+(sign===1?bodyRadius*.35:-bodyRadius-4)])));
   }
  }
  return {solid:hold(wasm.Manifold.union(cutters)),roofY,tipY,shaftEnd,
-  capRise,remainingWall:roofY-tipY,profileId:p.id,retentionLip:lip};
+  capRise,remainingWall:roofY-tipY,profileId:p.id,retentionLip:lip,
+  requestedBodyDepth,usableBodyDepth:Math.max(0,tipY),wireReliefDepth:relievedDepth};
 }
 function cleanupAll(list){
  for(const m of list){try{m.delete()}catch(e){}}
@@ -304,6 +311,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
    combined=joined;
   }
   let hollowed=0,hollowPorts=0,skippedHollowPorts=0;
+  let directLightPorts=0,skippedDirectLightPorts=0,lightPortDetails=[];
   let vault={applied:false,supportCount:0,pitch:0,gapEstimate:0};
   if(s.baseVault&&s.hollowCrystals)warnings.push('Base vault is unavailable during experimental whole-cluster hollowing.');
   if(s.baseVault&&!s.hollowCrystals){
@@ -312,6 +320,42 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
    if(made.cutter){
     const carved=hold(combined.subtract(made.cutter));assertSolid(carved,'Open underside zero-infill vault');
     combined=carved;
+   }
+  }
+  // Opt-in direct roof-to-spike passages: efficient Boolean cuts after
+  // the open underside vault is manufactured, and before pixel drilling.
+  const portPlan=planCrystalLightPorts(crystals,s);
+  if(portPlan.requested){
+   if(!vault.applied||!portPlan.enabled){
+    warnings.push(portPlan.reason||'Direct ports require a valid open underside vault.');
+   }else{
+    const cutters=[];
+    for(const port of portPlan.ports){
+     const c=crystals.find(x=>x.id===port.id),obj=live.find(m=>m.userData?.crystalId===port.id);
+     if(!c||!obj){skippedDirectLightPorts++;continue}
+     obj.updateMatrixWorld(true);
+     const baseY=baseSurfaceHeight(crystals,s,c.x,c.z);
+     const root=new THREE.Vector3(0,0,0).applyMatrix4(obj.matrixWorld);
+     const start=new THREE.Vector3(root.x,Math.max(.8,baseY-port.roofPenetration),root.z);
+     const sy=Math.max(.1,Number(c.sy??c.scale??1));
+     const upper=Math.min(c.h*.72,port.reach/sy);
+     const end=new THREE.Vector3((c.leanX||0)*upper,upper,(c.leanZ||0)*upper).applyMatrix4(obj.matrixWorld);
+     if(!Number.isFinite(end.y)||end.y<baseY+3||end.distanceTo(start)<9){
+      skippedDirectLightPorts++;continue;
+     }
+     const bore=lightTunnel(wasm,start,end,port.radius,Math.max(.5,port.radius*.65));
+     if(!bore){skippedDirectLightPorts++;continue}
+     cutters.push(hold(bore));directLightPorts++;
+     lightPortDetails.push({id:port.id,name:port.name,diameter:port.diameter,
+      startY:+start.y.toFixed(2),endY:+end.y.toFixed(2),status:'Modeled bore — inspect in Cura'});
+    }
+    skippedDirectLightPorts+=portPlan.skipped.length;
+    if(cutters.length){
+     const opened=hold(combined.subtract(hold(wasm.Manifold.union(cutters))));
+     assertSolid(opened,'Direct vault-to-crystal light bores');combined=opened;
+    }
+    if(skippedDirectLightPorts)warnings.push(skippedDirectLightPorts+' crystal(s) had no safe estimated direct bore and may remain unlit.');
+    warnings.push('Real vault-to-crystal passages were modeled. Inspect final cross-sections, remaining walls and light transmission physically.');
    }
   }
   if(s.hollowCrystals){
@@ -395,7 +439,14 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
     const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolveSocketProfile(s,pos));
     cutters.push(bore.solid);
     socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
-      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId,retentionLip:bore.retentionLip});
+      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId,retentionLip:bore.retentionLip,requestedBodyDepth:bore.requestedBodyDepth,
+      usableBodyDepth:bore.usableBodyDepth,wireReliefDepth:bore.wireReliefDepth});
+    if(bore.usableBodyDepth<bore.requestedBodyDepth-.1)
+     warnings.push('LED at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+
+       bore.usableBodyDepth.toFixed(1)+' mm usable depth, less than the measured B length '+
+       bore.requestedBodyDepth.toFixed(1)+' mm. Increase base height or change the LED profile.');
+    if(bore.wireReliefDepth+.1<resolvePixelProfile(s).wireDepth)
+     warnings.push('Wire relief depth was reduced to preserve the roof. Verify cable clearance in Cura.');
     if(bore.shaftEnd<20)warnings.push('LED bore at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+Math.max(0,bore.shaftEnd).toFixed(1)+' mm of full-width clearance. Confirm the actual LED housing fits.');
    }
    const holes=hold(wasm.Manifold.union(cutters));
@@ -588,6 +639,29 @@ export function encodeSTL(geometry){
  }
  return new Uint8Array(bytes);
 }
+// A real stepped pixel-body and flange fitting coupon. Each of five pockets
+// uses the EXACT socket cutter from the full build, not a plain round hole.
+export function makePixelSeatCoupon(wasm,s){
+ const profile=resolvePixelProfile(s),keep=[],hold=m=>{keep.push(m);return m};
+ const offsets=[-.2,-.1,0,.1,.2];
+ const width=Math.max(20,profile.maxDiameter+12),pitch=Math.max(21,profile.maxDiameter+10);
+ const roof=Math.max(12,profile.bodyHeight+6),diameters=[];
+ try{
+  const bar=hold(wasm.Manifold.cube([pitch*offsets.length,roof,width]));
+  const cutters=offsets.map((d,i)=>{
+   const adjusted=resolvePixelProfile({...s,pixelFit:Math.max(-.5,Math.min(.8,Number(s.pixelFit||0)+d))});
+   const pos={x:(i+.5)*pitch,z:width/2};
+   const bore=putSocket(wasm,hold,pos,adjusted.maxDiameter/2,roof,-3,adjusted);
+   diameters.push(+adjusted.boreDiameter.toFixed(2));
+   return bore.solid;
+  });
+  const cut=hold(bar.subtract(hold(wasm.Manifold.union(cutters))));
+  assertSolid(cut,'Stepped LED fit coupon');
+  return {geometry:fromResultMesh(cut.getMesh()),diameters,
+   profileName:profile.name,flangeDiameter:profile.flangeDiameter};
+ }finally{cleanupAll(keep)}
+}
+
 export function saveSTL(geometry,filename='crystal-forge-manifold.stl'){
  const blob=new Blob([encodeSTL(geometry)],{type:'model/stl'});
  const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;link.click();
@@ -682,6 +756,37 @@ export function splitPreparedMesh(wasm,mesh,cutX=0,jointPlan=null){
   result.joints=bores.length;
   return result;
  }finally{cleanupAll(keep)}
+}
+
+// Export a separate mating plate with holes matching the two BLIND
+// M3-style pockets in the base. Requires actual mechanical hardware and
+// independent strength testing; no printed structural rating is implied.
+export function makeDetachableMountPlate(wasm,s,hardware){
+ if(s.mount!=='Detachable plate')throw new Error('Select Detachable plate first.');
+ if(!hardware?.mounts||hardware.mounts.length!==2)
+  throw new Error('Two accepted matching mount holes are required. Reposition LED sockets or adjust the mount spacing.');
+ const holes=hardware.mounts,owned=[],hold=m=>{owned.push(m);return m};
+ const pad=10,thickness=Math.max(3,Math.min(8,Number(s.mountPlateThickness)||4.5));
+ const minX=Math.min(...holes.map(p=>p.x))-pad,maxX=Math.max(...holes.map(p=>p.x))+pad;
+ const minZ=Math.min(...holes.map(p=>p.z))-pad,maxZ=Math.max(...holes.map(p=>p.z))+pad;
+ const w=Math.max(24,maxX-minX),d=Math.max(24,maxZ-minZ);
+ const originX=(minX+maxX)/2-w/2,originZ=(minZ+maxZ)/2-d/2;
+ try{
+  const solid=hold(wasm.Manifold.cube([w,thickness,d]).translate([originX,0,originZ]));
+  const cutters=holes.map(p=>hold(wasm.Manifold.cylinder(thickness+2,p.radius+.45,p.radius+.45,40)
+   .rotate([-90,0,0]).translate([p.x,-1,p.z])));
+  let windows=0;
+  for(const p of hardware.sockets||[]){
+   if(p.x<originX-1||p.x>originX+w+1||p.z<originZ-1||p.z>originZ+d+1)continue;
+   cutters.push(hold(wasm.Manifold.cylinder(thickness+2,p.radius+1.4,p.radius+1.4,40)
+    .rotate([-90,0,0]).translate([p.x,-1,p.z])));
+   windows++;
+  }
+  const part=hold(solid.subtract(hold(wasm.Manifold.union(cutters))));
+  assertSolid(part,'Mating detachable plate');
+  return {geometry:fromResultMesh(part.getMesh()),holes:holes.length,windows,
+   thickness,width:w,depth:d,warnings:['Verify M3 insert, bolt head, cable access and loading. Printed plates are not safety-rated hardware.']};
+ }finally{cleanupAll(owned)}
 }
 
 export function makeSplitPinCoupon(wasm,points=[]){
