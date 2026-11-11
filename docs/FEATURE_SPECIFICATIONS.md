@@ -167,3 +167,19 @@ Create a 16-crystal clustered design with a 25 mm integrated base and dome; test
 - **Implementation:** `tooltips.js` provides one non-interactive tooltip on hover or keyboard focus, with per-setting/button meaning. New input definitions require entries; tooltips close on click/Escape and stay within viewport.
 - **Acceptance:** hover and keyboard focus show the right title/explanation, do not cover interaction, disappear when leaving, and don't change model state.
 - **Status:** implemented in v0.8 branch; hover regression added.
+
+## F19 — PR4 continuous base profiles (v0.9 draft)
+- **Requirements:** eliminate the visible plinth-to-dome step; support a nearly full-dome/hill shape.
+- **Controls:** Flat plinth / Plinth + dome / Full dome / hill; height, falloff and side-wall amount.
+- **Implementation:** shared `baseProfileHeight` and `baseEdgeHeight` are used in the dome mesh and root placement; the mound profile is tangent-level at the outer rim.
+- **Acceptance:** watertight geometry across profile/side-wall settings, root seating, preview and manufacturing agreement, slicer review for thin edges and long bridges.
+
+## F20 — PR4 measured LED profiles (v0.9 draft)
+- **Requirements:** Seed, Bullet, Gumdrop and reusable custom profiles with actual cutouts.
+- **Implementation:** `pixel-profiles.js` normalises measurements; the editor stores custom profiles both in portable JSON and a local library. Planner reserves flange radius; fabrication cutter removes nominal body, flange, blind domed cap and two underside wire reliefs.
+- **Limitations:** generic presets are estimates, not manufacturer-specific certified sizes; no retention lip, complete wire routes, guaranteed illumination or physically tested print.
+
+## F21 — PR4 contextual descriptions mode (v0.9 draft)
+- **Requirements:** visible explanations without hovering, including specific mounting types.
+- **Implementation:** optional persistent Descriptions panel alongside original hover help; content changes on hover, focus and select changes, with mobile/narrow view support.
+- **Acceptance:** no model regeneration, semantic/keyboard interaction, explanatory text for every mounting preset.

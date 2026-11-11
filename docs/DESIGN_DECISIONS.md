@@ -149,3 +149,17 @@ If source behaviour contradicts an accepted requirement, log a bug rather than r
 - **Why:** the previous bore punched through the top, risking appearance, waterproofing and structural continuity.
 - **Consequence:** minimum modeled roof is a geometric bound only; Cura layers and physical printed thickness must still be inspected.
 
+
+### ADR-020 — Integrated radial mound surface, rather than stacked crown
+- **Status:** PR4 draft implementation.
+- **Decision:** base top and dome share one tangent-continuous radial elevation curve, including the full hill variant. Flat mode suppresses dome rise.
+- **Tradeoff:** thin full-hill perimeters, unsupported overhangs and vault roof remain subject to Cura validation.
+
+### ADR-021 — Measured LED shapes with backward-compatible bore size
+- **Status:** PR4 draft implementation.
+- **Decision:** default generic gumdrop profile retains existing nominal 12 mm bore setting; seed, bullet and saved profiles provide different physical cutters, with flange clearance and shallow cable relief.
+- **Tradeoff:** custom profiles travel with JSON and browser storage but are not a calibrated manufacturer component library. The user's independent fit adjustment still applies.
+
+### ADR-022 — Reusable explanations, not duplicate control settings
+- **Status:** PR4 draft implementation.
+- **Decision:** add an opt-in right-hand descriptions panel driven by the same contextual lookup as the existing hover tooltip, with specific mounting behaviour explained.
