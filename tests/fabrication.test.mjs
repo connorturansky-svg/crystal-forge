@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
 import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,baseProfileHeight,baseEdgeHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
-import {setThreeInstance,prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
+import {setThreeInstance,prepareFabrication,makeCalibrationStrip,splitPreparedMesh,makeSplitPinCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
 import {planWireRoutes} from '../wire-routing.js';
@@ -353,6 +353,13 @@ const result=prepareFabrication({wasm,meshes,crystals,settings});
 const halves=splitPreparedMesh(wasm,result.report.mesh,0);
 assert(halves.some(Boolean),'Split produced at least one part');
 halves.forEach(v=>v?.geometry.dispose());
+const keyed=splitPreparedMesh(wasm,result.report.mesh,0,{points:[{x:0,z:10,y:7,diameter:4,depth:5,clearance:.3}]});
+assert.equal(keyed.joints,1,'Optional split-part dowel planning applied');
+assert(keyed.some(Boolean),'Keyed split export produced real geometry');
+keyed.forEach(v=>v?.geometry.dispose());
+const pins=makeSplitPinCoupon(wasm,[{diameter:4,depth:5}]);
+assert(pins.geometry.getAttribute('position').count>30,'Separate printable alignment pin geometry exists');
+pins.geometry.dispose();
 result.geometry.dispose();
 
 // Simulate browser download click to inspect the actual exported Blob bytes.
@@ -362,8 +369,11 @@ globalThis.document={
 };
 const {meshes:exportMeshes,crystals:exportCrystals}=assembly(settings);
 const exported=prepareFabrication({wasm,meshes:exportMeshes,crystals:exportCrystals,settings});
+const directSTL=encodeSTL(exported.geometry);
+assert(directSTL instanceof Uint8Array&&directSTL.length>84,'Production pack binary STL bytes');
 const stl=saveSTL(exported.geometry);
 const stlData=new DataView(await stl.arrayBuffer());
+assert.equal(directSTL.byteLength,stlData.byteLength,'Direct encoder and traditional download match');
 assert.equal(stlData.getUint32(80,true),exported.report.triangleCount,'STL triangle count');
 let minZ=Infinity,maxZ=-Infinity;
 for(let i=0;i<stlData.getUint32(80,true);i++){
