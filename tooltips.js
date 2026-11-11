@@ -190,10 +190,11 @@ const SETTINGS={
   "LED bore diameter",
   "Nominal body diameter of the LED opening before adding the fit allowance."
  ],
- "pixelFit": [
-  "LED fit allowance",
-  "Adds or removes a small clearance from the nominal LED bore. Confirm with a test print."
- ],
+ "pixelFit": ["LED socket fit clearance","Global fit tolerance. After a physical coupon print, select the best-fitting hole and apply its measured allowance to all LED socket types."],
+ "fitOverrideToolBtn": ["Calibrated LED fit","The current clearance came from a printed test coupon; click to review the matching hole."],
+ "resetFitOverrideBtn": ["Reset fit override","Restore the global allowance in use before the coupon calibration was applied."],
+ "fitResultSelect": ["Physical fit result","Select a labelled hole from the printed left-to-right fit test sample."],
+ "applyFitResultBtn": ["Apply measured clearance","Applies the chosen coupon clearance to all LED socket cutters and invalidates the prepared model."],
  "cutSockets": [
   "Cut LED holes",
   "Physically subtracts valid LED bores from the prepared print model. Disable if no bores are wanted."
