@@ -1,6 +1,15 @@
 # AI handover — read immediately after AGENTS.md
 
-**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.10.0 (PR5 merged). **Active:** draft PR #11 v0.11.0 on `feat/pr6-all-phases`.
+**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.11.0 (PR6 merged). **Active:** draft PR #12 v0.12.0 on `feat/pr7-lightpaths-hardware-print-performance`.
+
+## PR7 handover (11 November 2026)
+
+- PR: https://github.com/connorturansky-svg/crystal-forge/pull/12. Full implementation/physical acceptance: `docs/PR7_MANUFACTURING_COMPLETION.md`.
+- **Latest user issue:** lone LED with `wireExit=false` had no physical groove; now explicit warning and one-click route-to-edge, edge cutter actually exits base, other LED flanges are obstacles. 3D cyan volumes show planned width/depth, BOT/Prepare Print show actual cut.
+- `pixel-profile-diagram.js`: A–G live measured SVG, clickable letters; B includes cap E. `putSocket` corrected to actual positive Y body depth instead of starting from -3 mm, cap and wire relief honor profile with truncation warnings. Stepped coupon made with the real cavity cutter.
+- `light-port-plan.js` makes opt-in vault-to-spike channels and reports cut/skipped bores, not guaranteed optical connection. Detached M3-style plate STL implemented, not load-rated.
+- `cura-model-advisor.js` model-derived nozzle recommendation with explicit opt-in; worker-stage timing and extended 10/16/40/60 benchmark added.
+- Keep PR7 draft until final SHA static, browser and Manifold tests plus Cura actual slices, LED/wire fit samples, optical and plate strength are reviewed.
 
 ## PR6 all-phase handover (11 November 2026)
 
