@@ -64,13 +64,24 @@ export function sampleCableCurve(start,end,startDirection,endDirection,{minBendR
  }
  return points.filter((p,i,arr)=>i===0||gap(arr[i-1],p)>.0001);
 }
-const boundaryChoices=(port,poly,manual)=>{
+const cross=(a,b)=>a.x*b.z-a.z*b.x;
+const boundaryChoices=(port,poly,manual,direction)=>{
  if(manual&&Number.isFinite(manual.x)&&Number.isFinite(manual.z)){
   return poly.map((a,i)=>closest(manual,a,poly[(i+1)%poly.length]))
    .sort((a,b)=>gap(a,manual)-gap(b,manual)).slice(0,1);
  }
- return poly.map((a,i)=>closest(port,a,poly[(i+1)%poly.length]))
-  .sort((a,b)=>gap(a,port)-gap(b,port))
+ const rays=[];
+ for(let i=0;i<poly.length;i++){
+  const a=poly[i],b=poly[(i+1)%poly.length],edge={x:b.x-a.x,z:b.z-a.z};
+  const ap={x:a.x-port.x,z:a.z-port.z},den=cross(direction,edge);
+  if(Math.abs(den)<1e-8)continue;
+  const t=cross(ap,edge)/den,u=cross(ap,direction)/den;
+  if(t>0&&u>=0&&u<=1)rays.push({point:plus(port,direction,t),t});
+ }
+ rays.sort((a,b)=>a.t-b.t);
+ const fallback=poly.map((a,i)=>closest(port,a,poly[(i+1)%poly.length]))
+  .sort((a,b)=>gap(a,port)-gap(b,port));
+ return [...rays.map(x=>x.point),...fallback]
   .filter((a,i,arr)=>arr.findIndex(b=>gap(a,b)<.5)===i);
 };
 export function planPixelStringRoutes(crystals,s,hardware){
@@ -144,7 +155,7 @@ export function planPixelStringRoutes(crystals,s,hardware){
   const heading=input?axisIn(p):axisOut(p);
   const manual=input?{x:Number(s.wireEntryX),z:Number(s.wireEntryZ)}:{x:Number(s.wireOutputX),z:Number(s.wireOutputZ)};
   const explicit=input?s.wireEntryX!==undefined&&s.wireEntryZ!==undefined:s.wireOutputX!==undefined&&s.wireOutputZ!==undefined;
-  for(const end of boundaryChoices(port,poly,explicit?manual:null)){
+  for(const end of boundaryChoices(port,poly,explicit?manual:null,heading)){
    if(!input&&plan.entryPoint&&gap(end,plan.entryPoint)<Math.max(width*2+3,10))continue;
    const direction=unit(port,end),outside=plus(end,direction,width+3);
    const points=input?curve(port,end,heading,direction,p,null,true)?.slice().reverse():
