@@ -13,6 +13,7 @@ import {resolvePixelProfile,resolveSocketProfile} from './pixel-profiles.js';
 import {estimateRoofReview} from './print-advisor.js';
 import {planTargetedLightPaths} from './targeted-light-paths.js';
 import {planDetachablePlate} from './detachable-plate.js';
+import {calibrationSpec,couponLegendCuts} from './fit-calibration.js';
 
 let modulePromise=null;
 export async function loadManifold(){
@@ -642,24 +643,36 @@ export function encodeSTL(geometry){
 }
 // A real stepped pixel-body and flange fitting coupon. Each of five pockets
 // uses the EXACT socket cutter from the full build, not a plain round hole.
-export function makePixelSeatCoupon(wasm,s){
- const profile=resolvePixelProfile(s),keep=[],hold=m=>{keep.push(m);return m};
- const offsets=[-.2,-.1,0,.1,.2];
- const width=Math.max(20,profile.maxDiameter+12),pitch=Math.max(21,profile.maxDiameter+10);
- const roof=Math.max(12,profile.bodyHeight+6),diameters=[];
+export function makePixelSeatCoupon(wasm,s,{openWireExits=true}={}){
+ const spec=calibrationSpec(s,'stepped'),profile=resolvePixelProfile(s),keep=[],hold=m=>{keep.push(m);return m};
+ const labels=spec.captions,pitch=Math.max(32,profile.maxDiameter+20),
+  width=Math.max(32,profile.maxDiameter+22),roof=Math.max(12,profile.bodyHeight+6);
  try{
-  const bar=hold(wasm.Manifold.cube([pitch*offsets.length,roof,width]));
-  const cutters=offsets.map((d,i)=>{
-   const adjusted=resolvePixelProfile({...s,pixelFit:Math.max(-.5,Math.min(.8,Number(s.pixelFit||0)+d))});
-   const pos={x:(i+.5)*pitch,z:width/2};
+  const bar=hold(wasm.Manifold.cube([pitch*spec.fits.length,roof,width]));
+  const cutters=[],legend=[],wireExits=[];
+  for(let i=0;i<spec.fits.length;i++){
+   const fit=spec.fits[i],adjusted=resolvePixelProfile({...s,pixelFit:fit});
+   const centreX=(i+.5)*pitch,pos={x:centreX,z:width/2};
    const bore=putSocket(wasm,hold,pos,adjusted.maxDiameter/2,roof,-3,adjusted);
-   diameters.push(+adjusted.boreDiameter.toFixed(2));
-   return bore.solid;
-  });
-  const cut=hold(bar.subtract(hold(wasm.Manifold.union(cutters))));
-  assertSolid(cut,'Stepped LED fit coupon');
-  return {geometry:fromResultMesh(cut.getMesh()),diameters,
-   profileName:profile.name,flangeDiameter:profile.flangeDiameter};
+   cutters.push(bore.solid);
+   // On a FULL profile sample, wiring must reach both external side walls.
+   // Extend the underside cut a full mm beyond each edge. The same
+   // measured F/G relief still determines the groove's width and depth.
+   if(openWireExits&&adjusted.wireWidth>.1&&adjusted.wireDepth>.1){
+    const laneWidth=Math.max(.8,adjusted.wireWidth+adjusted.clearance);
+    const laneDepth=Math.min(adjusted.wireDepth,Math.max(.2,roof-2.8));
+    wireExits.push(hold(wasm.Manifold.cube([laneWidth,laneDepth+.6,width+2])
+      .translate([centreX-laneWidth/2,-.5,-1])));
+   }
+   legend.push(...couponLegendCuts(wasm,hold,labels[i],centreX,width-8,roof));
+  }
+  let cut=hold(bar.subtract(hold(wasm.Manifold.union([...cutters,...wireExits]))));
+  if(legend.length)cut=hold(cut.subtract(hold(wasm.Manifold.union(legend))));
+  assertSolid(cut,'Engraved stepped LED-fit coupon');
+  return {geometry:fromResultMesh(cut.getMesh()),diameters:spec.diameters,
+   captions:labels,profileName:profile.name,flangeDiameter:profile.flangeDiameter,
+   labelsEngraved:labels.length,wireExitsOpen:openWireExits&&wireExits.length===spec.fits.length,
+   wireExitCount:wireExits.length*2,volumeMm3:cut.volume(),triangles:cut.numTri()};
  }finally{cleanupAll(keep)}
 }
 
@@ -710,26 +723,27 @@ export function save3MF(geom,filename='crystal-forge.3mf'){
 
 
 export function makeCalibrationStrip(wasm,nominal=12){
- const keep=[];const hold=o=>{keep.push(o);return o};
+ const keep=[],hold=o=>{keep.push(o);return o};
  try{
-  // X long, Y upward, Z across: flat-bottom 5mm thick FDM calibration.
-  const diameter=Math.max(2,Math.min(30,Number(nominal)||12));
-  const pitch=Math.max(12,diameter+9),depth=diameter+10;
-  const bar=hold(wasm.Manifold.cube([pitch*5,5,depth]));
-  const holes=[];
+  const diameter=Math.max(2,Math.min(30,Number(nominal)||12)),fits=[-.2,-.1,0,.1,.2],
+   diameters=fits.map(delta=>Math.round((diameter+delta)*100)/100),
+   captions=diameters.map(d=>d.toFixed(2));
+  const pitch=Math.max(32,diameter+20),width=Math.max(28,diameter+20),height=5;
+  const bar=hold(wasm.Manifold.cube([pitch*5,height,width])),holes=[],legend=[];
   for(let i=0;i<5;i++){
-   const dia=diameter+(i-2)*.1;
-   const core=hold(wasm.Manifold.cylinder(9,dia/2,dia/2,40));
-   const turned=hold(core.rotate([-90,0,0]));
-   const moved=hold(turned.translate([pitch*(i+.5),-2,depth/2]));
-   holes.push(moved);
+   const core=hold(wasm.Manifold.cylinder(9,diameters[i]/2,diameters[i]/2,40)
+    .rotate([-90,0,0]).translate([pitch*(i+.5),-2,width/2]));
+   holes.push(core);
+   legend.push(...couponLegendCuts(wasm,hold,captions[i],pitch*(i+.5),width-8,height));
   }
-  const allHoles=hold(wasm.Manifold.union(holes));
-  const strip=hold(bar.subtract(allHoles));
-  assertSolid(strip,'Socket calibration strip');
-  return {geometry:fromResultMesh(strip.getMesh()),diameters:Array.from({length:5},(_,i)=>Math.round((diameter+(i-2)*.1)*100)/100),triangles:strip.numTri()};
+  let strip=hold(bar.subtract(hold(wasm.Manifold.union(holes))));
+  if(legend.length)strip=hold(strip.subtract(hold(wasm.Manifold.union(legend))));
+  assertSolid(strip,'Engraved bore calibration strip');
+  return {geometry:fromResultMesh(strip.getMesh()),diameters,captions,labelsEngraved:captions.length,
+   volumeMm3:strip.volume(),triangles:strip.numTri()};
  }finally{cleanupAll(keep)}
 }
+
 export function splitPreparedMesh(wasm,mesh,cutX=0,jointPlan=null){
  const keep=[];const hold=o=>{keep.push(o);return o};
  try{
@@ -816,7 +830,36 @@ export function makeDetachablePlate(wasm,plan){
  }finally{cleanupAll(keep)}
 }
 
-export function makeSteppedPixelCoupon(wasm,settings){
+export function makeSteppedPixelCoupon(wasm,settings,{openWireExits=true}={}){
+ const spec=calibrationSpec(settings,'full'),p=resolvePixelProfile(settings),keep=[],hold=x=>{keep.push(x);return x};
+ try{
+  const pitch=Math.max(32,p.maxDiameter+20),thick=Math.max(16,p.bodyHeight+6),
+   width=Math.max(32,p.maxDiameter+22),body=hold(wasm.Manifold.cube([pitch*3,thick,width]));
+  const cuts=[],wireExits=[],legend=[];
+  for(let i=0;i<3;i++){
+   const centreX=pitch*(i+.5),at={x:centreX,z:width/2},fit=spec.fits[i];
+   const profile=resolvePixelProfile({...settings,pixelFit:fit});
+   const bore=putSocket(wasm,hold,at,profile.maxDiameter/2,thick,-3,profile);
+   cuts.push(bore.solid);
+   if(openWireExits&&profile.wireWidth>.1&&profile.wireDepth>.1){
+    const laneWidth=Math.max(.8,profile.wireWidth+profile.clearance);
+    const laneDepth=Math.min(profile.wireDepth,Math.max(.2,thick-2.8));
+    wireExits.push(hold(wasm.Manifold.cube([laneWidth,laneDepth+.6,width+2])
+     .translate([centreX-laneWidth/2,-.5,-1])));
+   }
+   legend.push(...couponLegendCuts(wasm,hold,spec.captions[i],centreX,width-8,thick));
+  }
+  let finished=hold(body.subtract(hold(wasm.Manifold.union([...cuts,...wireExits]))));
+  if(legend.length)finished=hold(finished.subtract(hold(wasm.Manifold.union(legend))));
+  assertSolid(finished,'Engraved three-position stepped LED socket coupon');
+  return {geometry:fromResultMesh(finished.getMesh()),diameters:spec.diameters,
+   captions:spec.captions,labelsEngraved:spec.captions.length,
+   wireExitsOpen:openWireExits&&wireExits.length===3,wireExitCount:wireExits.length*2,
+   volumeMm3:finished.volume(),profileName:p.name,triangles:finished.numTri()};
+ }finally{cleanupAll(keep)}
+}
+
+
  const p=resolvePixelProfile(settings),keep=[],hold=x=>{keep.push(x);return x};
  try{
   const pitch=Math.max(22,p.maxDiameter+11),thick=Math.max(16,p.bodyHeight+6),width=Math.max(18,p.maxDiameter+8);
