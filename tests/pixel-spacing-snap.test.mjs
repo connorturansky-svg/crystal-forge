@@ -54,6 +54,10 @@ assert(far.links.every(link=>link.status==='skipped'));
 assert(far.links.some(link=>/fine-adjustment window/.test(link.reason)));
 
 // Reject unsupported configurations without touching original data.
+const tight=snapPixelsToWireLength(crystals,s,{maxMoveMm:.5});
+assert(!tight.changed,'When each socket can move only 0.5 mm, the 2 mm shortage must not be silently corrected');
+assert(tight.links.every(c=>c.status==='skipped'),
+ 'All internal runs must remain visibly unresolved at insufficient correction distance');
 const disabled=snapPixelsToWireLength(crystals,{...s,wireChannels:false});
 assert(!disabled.changed&&/Enable Pixel string/.test(disabled.reason));
 const legacy=snapPixelsToWireLength(crystals,{...s,wireMode:'parallel'});
