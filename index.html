@@ -53,6 +53,17 @@ button.utility-button{white-space:nowrap}
 .dialog-backdrop{position:fixed;inset:0;z-index:999;background:#081527b3;display:flex;align-items:center;justify-content:center;padding:18px}
 [hidden]{display:none!important}
 .dialog{background:#152238;border:1px solid #536d8e;border-radius:18px;width:min(680px,100%);max-height:min(85vh,850px);display:flex;flex-direction:column;box-shadow:0 30px 90px #0009;overflow:hidden}
+#pixelProfileOverlay .dialog{width:min(1020px,100%);max-height:92vh}
+.pixel-profile-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(310px,.85fr);gap:18px;align-items:start;margin:13px 0}
+.pixel-profile-diagram{border:1px solid #426c85;border-radius:13px;overflow:hidden;background:#10263c}
+.pixel-profile-diagram svg{display:block;width:100%;height:auto}
+.pixel-profile-field-note{line-height:1.6;font-size:11px;color:#a6cadf}
+.pixel-measure-key{font-size:11px;min-width:21px;display:inline-flex;justify-content:center;align-items:center;border:1px solid #43ccce;color:#b9fcf5;border-radius:5px;margin-right:7px;padding:2px 4px;font-weight:800}
+.pixel-dimension{stroke:#4ddad7;stroke-width:1.8}
+.pixel-dimension-label{font-size:12px;font-weight:800;fill:#a9fff7;text-anchor:middle;cursor:pointer}
+.pixel-dimension-label:hover{fill:#fff}
+@media(max-width:760px){.pixel-profile-layout{grid-template-columns:1fr}#pixelProfileOverlay .dialog{max-height:94vh}}
+body.theme-light .pixel-profile-field-note{color:#456d87}
 .dialog-header{display:flex;justify-content:space-between;align-items:center;padding:16px 19px;border-bottom:1px solid #344969}
 .dialog-header h2{font-size:19px;margin:0}
 .dialog-tabs{display:flex;gap:8px;padding:14px 18px 0}
@@ -152,6 +163,10 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="card teal"><div class="cardtitle"><span class="symbol">⌂</span> Zero-infill base structure</div><div class="cardbody">
 <label class="checks"><input data-state="baseVault" type="checkbox"> Create open underside cavity with permanent tapered buttresses</label>
 <div class="control"><label>Buttress spacing <output data-out="vaultSupportPitch"></output></label><input data-state="vaultSupportPitch" type="range" min="16" max="40" step="1"></div>
+<label class="checks"><input data-state="lightPorts" type="checkbox"> Cut roof-to-crystal light passages</label>
+<div class="advanced-only"><div class="control"><label>Light passage diameter <output data-out="lightPortDiameter"></output></label><input data-state="lightPortDiameter" type="range" min="1.5" max="8" step=".1"></div>
+<div class="control"><label>Passage reach into crystal <output data-out="lightPortReach"></output></label><input data-state="lightPortReach" type="range" min="25" max="72" step="1"></div></div>
+<p class="note">Requires an open underside vault. Carves tapered bores through the base roof into eligible crystals, following their actual lean. Too-narrow spikes are skipped. Inspect cross-sections and perform a lit test; not a guaranteed light path.</p>
 <p class="note">Optional real mesh geometry: carves the mound, keeps collars around hardware, and adds integral support columns with sloped crowns. Crystal spike infill remains controlled by Cura.</p>
 <p class="note warning">This reduces bridging distances but does not guarantee a zero-infill or support-free print. Inspect Cura layer previews at the mound roof and LED vents.</p>
 </div></div>
@@ -196,6 +211,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Custom hole diameter <output data-out="mountHoleDiameter"></output></label><input data-state="mountHoleDiameter" type="range" min="2.5" max="12" step=".1"></div>
 <div class="control"><label>Hole spacing <output data-out="mountSpacing"></output></label><input data-state="mountSpacing" type="range" min="10" max="150" step="1"></div>
 <div class="control"><label>Custom hole depth <output data-out="mountHoleDepth"></output></label><input data-state="mountHoleDepth" type="range" min="2" max="30" step=".5"></div>
+<div id="detachablePlateSettings" hidden><div class="control"><label>Mating plate thickness <output data-out="mountPlateThickness"></output></label><input data-state="mountPlateThickness" type="range" min="3" max="8" step=".5"></div>
+<p class="note">Two blind M3-style fixing pockets are cut underneath the cluster. Prepare Print, then export the separately printable matching plate. Verify real screw dimensions, wiring and strength.</p></div>
 <div id="edgeTabSettings" hidden><div class="divider"></div><strong>Semicircular perimeter fixing tabs</strong>
 <div class="control"><label>Number of tabs <output data-out="tabCount"></output></label><input data-state="tabCount" type="range" min="0" max="24" step="1"></div>
 <div class="control"><label>Holes per tab <output data-out="tabHolesPerTab"></output></label><input data-state="tabHolesPerTab" type="range" min="1" max="6" step="1"></div>
@@ -282,6 +299,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Quality (faster → finer) <output data-out="curaQuality"></output></label><input data-state="curaQuality" type="range" min="0" max="100" step="5"></div>
 <div class="control"><label>Printing intention</label><select data-state="curaIntent"><option value="light">Translucent / light transmission (0% infill)</option><option value="balanced">Balanced durability (10–15% infill)</option><option value="durable">Stronger / robust (25–30% infill)</option></select></div>
 <div id="curaProfileSummary" class="softnotice" aria-live="polite">Profile settings will appear here.</div>
+<div id="curaModelAdvice" class="note" aria-live="polite">Choose a machine to screen crystal features against supported nozzles.</div>
+<button id="curaRecommendedNozzleBtn" type="button" style="width:100%;margin:4px 0 9px">Use candidate nozzle for this model</button>
 <p class="note warning" id="curaProfileWarning">Import to Cura after selecting the correct printer, nozzle and material. Confirm actual walls, support and light access in the slicer.</p>
 <button id="curaProfileBtn" class="primary" type="button" style="width:100%">↓ Download Cura profile (.curaprofile)</button>
 <p class="note">This creates importable Cura 5-style quality overrides—not printer firmware or G-code. 0% infill does not guarantee an open light path; print cores and nozzles must match the physical machine.</p>
@@ -314,18 +333,22 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div id="pixelProfileOverlay" class="dialog-backdrop" hidden>
 <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="pixelEditorTitle">
 <div class="dialog-header"><h2 id="pixelEditorTitle">Reusable pixel profiles</h2><button id="closePixelProfileBtn">✕ Close</button></div>
-<div class="dialog-body"><p>Measure the real LED. Generic defaults are not verified manufacturer specifications.</p>
-<div class="grid2">
+<div class="dialog-body"><p>Measure the real LED in millimetres. The drawing updates as you type. Click any letter in the illustration to focus its matching field.</p>
+<div class="pixel-profile-layout"><div>
+<div id="pixelProfileDiagram" class="pixel-profile-diagram" aria-live="polite"></div>
+<p id="pixelProfileDimensionsNotice" class="pixel-profile-field-note">A–G describe the LED body, cap, flange and two opposing cable-exit slots. These are nominal LED dimensions, not extra printer clearance.</p>
+</div><div><div class="grid2">
 <div class="control"><label>Name</label><input id="pixelName" type="text" maxlength="70"></div>
 <div class="control"><label>Shape</label><select id="pixelKind"><option value="gumdrop">Gumdrop</option><option value="bullet">Bullet</option><option value="seed">Seed</option></select></div>
-<div class="control"><label>Body diameter (mm)</label><input id="pixelBodyDiameter" type="number" min="2" max="30" step=".1"></div>
-<div class="control"><label>Body length (mm)</label><input id="pixelBodyHeight" type="number" min="3" max="50" step=".1"></div>
-<div class="control"><label>Flange diameter (mm)</label><input id="pixelFlangeDiameter" type="number" min="2" max="38" step=".1"></div>
-<div class="control"><label>Flange height (mm)</label><input id="pixelFlangeHeight" type="number" min="0" max="10" step=".1"></div>
-<div class="control"><label>Upper dome height (mm)</label><input id="pixelCapHeight" type="number" min="0" max="12" step=".1"></div>
-<div class="control"><label>Wire relief width (mm)</label><input id="pixelWireWidth" type="number" min="0" max="12" step=".1"></div>
-<div class="control"><label>Wire relief depth (mm)</label><input id="pixelWireDepth" type="number" min="0" max="8" step=".1"></div>
-</div><p class="note warning">Profile cutters are blind, with an optional flange and two shallow underside wire slots. Retaining clips and complete cable routes are not generated.</p>
+<div class="control"><label><span><b class="pixel-measure-key">A</b> Body diameter (mm)</span></label><input id="pixelBodyDiameter" type="number" min="2" max="30" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">B</b> Body length (mm)</span></label><input id="pixelBodyHeight" type="number" min="3" max="50" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">C</b> Flange diameter (mm)</span></label><input id="pixelFlangeDiameter" type="number" min="2" max="38" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">D</b> Flange height (mm)</span></label><input id="pixelFlangeHeight" type="number" min="0" max="10" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">E</b> Upper dome height (mm)</span></label><input id="pixelCapHeight" type="number" min="0" max="12" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">F</b> Wire relief width (mm)</span></label><input id="pixelWireWidth" type="number" min="0" max="12" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">G</b> Wire relief depth (mm)</span></label><input id="pixelWireDepth" type="number" min="0" max="8" step=".1"></div>
+</div></div></div>
+<p class="note warning">B is the full body length including E (curved cap). C/D describe the collar at the wire end. F/G describe each of two opposite wire outlets. The overall drilled hole adds the Build → Fit adjustment separately; these are not guaranteed manufacturer dimensions.</p>
 <div class="buttonrow"><button class="primary" id="savePixelProfileBtn">Save to profile library</button><button id="deletePixelProfileBtn">Delete selected custom profile</button></div>
 </div></section></div>
 <div id="infoOverlay" class="dialog-backdrop" hidden>
