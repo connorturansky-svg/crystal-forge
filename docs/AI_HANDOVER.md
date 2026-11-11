@@ -1,5 +1,18 @@
 # AI handover — read immediately after AGENTS.md
 
+## PR10 active implementation (11 November 2026)
+
+**PR:** [#16 — smooth pixel-string routing, Cura profile compatibility and private profile sync](https://github.com/connorturansky-svg/crystal-forge/pull/16); branch `feat/pr10-cable-geometry-cura-sync`. Merged PR9 is the base; do not change live `main` until green exact-head static, browser and Manifold tests. [Hands-on test guide](PR10_TEST_GUIDE.md) covers every manual acceptance case.
+
+Key user intent: actual pixel IN and OUT must stay 180° collinear and the **physical cable channel** must leave/enter on those tangents; curves only between pixels, never rigid elbow turns. A chosen 25/50/100/custom cable length is a centre-to-centre physical limit along the curve; show length and red warning; blocked or overstretched strings must not be cut into the STL. Let user Set P1, reverse, see arrows and drag selected P/M markers without losing camera orbit.
+
+Core changes: `pixel-string-routing.js` sampled cubic curve planner, radius/obstacle checking and previewRoutes for blocked red displays; Manifold cutters use actual `routes` segments from the same plan. `hardware-editor.js` arrows, labels, start/reverse and click-hold editing. `cura-profiles.js` no longer forces universal `normal` metadata; explicit or automatic Cura quality type and text fallback, with manufacturing-pack fallback. `github-vault.js` uses explicitly user-entered scoped token **only in memory** and a separate PRIVATE repo; SHA guarded push, backup-before-pull, migration of custom profiles/templates/active project and ALL named models from `project-library.js`, backup JSON import, in-app historical GitHub commit listing/restore. Auto-sync pauses on history restore and remote pull to avoid unexpected writes. This is NOT OAuth/PKCE, credentialless permanent sign-in, remote Cura verification or physical installation certification.
+
+Preserve historical docs and open issues for still-unbuilt projects, advanced quality/migration and engineering proof. Never claim a previously local custom gumdrop has been migrated unless the original browser uploaded it.
+
+---
+
+
 ## Active PR9 implementation — 11 November 2026
 
 **Draft PR #15:** https://github.com/connorturansky-svg/crystal-forge/pull/15 · branch `feat/pr9-combined-roadmap-implementation`. Read [PR9 test guide](PR9_TEST_GUIDE.md) before QA. **Do not merge until all three GitHub Actions suites succeed on the exact latest head.**

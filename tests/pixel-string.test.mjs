@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {generateFormation} from '../geometry-v3.js';
 import {planHardware} from '../hardware-layout.js';
-import {pixelStringPort} from '../pixel-string-routing.js';
+import {pixelStringPort,pixelStringAxis,sampleCableCurve} from '../pixel-string-routing.js';
 import {ensureHardwareIds,movePixelInString,hardwareName} from '../hardware-identity.js';
 
 const base={
@@ -55,4 +55,28 @@ assert(!blocked.wirePlan.ready,'Coincident user-picked input/output exits are no
 assert.equal(blocked.wirePlan.routes.length,0,'No partial disconnected geometry is sent to Manifold');
 const disabled=planHardware(crystals,{...base,wireChannels:false});
 assert.equal(disabled.wirePlan.routes.length,0,'Groove toggle remains authoritative');
+// PR10: the ports are always collinear, and curve tangents follow the same axis.
+for(const angle of [-180,-95,0,30,90,179]){
+ const pixel={x:5,z:8,radius:6,wireAngle:angle};
+ const start=pixelStringPort(pixel,'input'),end=pixelStringPort(pixel,'output');
+ const axis=pixelStringAxis(pixel);
+ const a={x:start.x-pixel.x,z:start.z-pixel.z},b={x:end.x-pixel.x,z:end.z-pixel.z};
+ assert(Math.abs(a.x+b.x)<1e-8&&Math.abs(a.z+b.z)<1e-8,
+  'IN/OUT ports must remain exactly 180 degrees apart at '+angle);
+ assert(Math.abs(a.x*axis.z-a.z*axis.x)<1e-8,'IN/OUT are on actual rotated pixel axis');
+}
+const smooth=sampleCableCurve({x:0,z:0},{x:80,z:32},
+ {x:1,z:0},{x:0,z:1},{minBendRadius:3,slack:0});
+assert(smooth&&smooth.length>5,'Curve can connect noncollinear opposed ports smoothly');
+assert(Math.abs(smooth[1].z-smooth[0].z)<1e-5,'First segment is tangent to source pixel axis');
+assert(Math.abs(smooth.at(-1).x-smooth.at(-2).x)<1e-5,'Final segment is tangent to destination pixel axis');
+const close={...chain,pixelStringSpacing:10};
+const tooLong=planHardware(crystals,close).wirePlan;
+assert(tooLong.overLengthCount>=1,'Exceeding 10 mm budget is highlighted as too long');
+assert.equal(tooLong.ready,false,'Too-short physical string cannot be manufactured as safe geometry');
+assert.equal(tooLong.routes.length,0,'Overlength string cuts are refused rather than silently printed');
+assert(tooLong.previewRoutes.length>0,'Unprintable overlength path remains visible for red highlighting');
+assert(tooLong.connections.some(c=>c.overLength&&c.lengthMm>c.allowedMm),
+ 'Measured curved route length determines over-budget flag');
+console.log('PR10 collinear 180-degree ports, tangent curve geometry and fail-closed spacing checks passed');
 console.log('PR9 pixel-string topology, opposed perimeter tails, serial order and identities passed');

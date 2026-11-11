@@ -13,6 +13,8 @@ import {buildPixelStringMap} from './pixel-string-export.js';
 import {createHardwareEditor} from './hardware-editor.js';
 import {installResizablePanels} from './workspace-panels.js';
 import {saveTemplate,readTemplates,findTemplate,deleteTemplate} from './project-templates.js';
+import {GitHubVault,captureVault,mergeVault} from './github-vault.js';
+import {saveNamedProject,listSavedProjects,loadNamedProject,deleteNamedProject} from './project-library.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
@@ -29,12 +31,12 @@ const defaults={
   familyMix:'Quartz',familyWeights:{Quartz:1,Shard:1,Blade:1,Cubic:1,'Double terminated':1,Fantasy:1},bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
-  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',wirePairSpacing:7,wireWidth:3,wireDepth:2,wireSlack:0,manualEdgeTabs:null,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
-  printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',pixelStringSpacing:50,wireMinBendRadius:5,wireInputTailLength:0,wireOutputTailLength:0,wireDirectionArrows:true,wireShowLengths:true,wirePairSpacing:7,wireWidth:3,wireDepth:2,wireSlack:0,manualEdgeTabs:null,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaQualityType:'auto',curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
 let s={...defaults},crystals=[],selectedId=null,activeTool='select',cameraTween=null;
-let hardwareUI=null;
+let hardwareUI=null,cloudVault=null;
 try{
   const saved=JSON.parse(localStorage.getItem('crystal-forge-v3')||'null');
   if(saved?.settings){s={...defaults,...saved.settings};crystals=safeArray(saved.crystals);selectedId=saved.selectedId||null}
@@ -77,6 +79,7 @@ function snapshot(){
 }
 function persist(){
  try{localStorage.setItem('crystal-forge-v3',JSON.stringify({settings:s,crystals,selectedId}))}catch(e){console.warn(e)}
+ cloudVault?.schedule();
 }
 function restore(str){
  try{const v=JSON.parse(str);s={...defaults,...v.settings};mergePixelLibrary();crystals=safeArray(v.crystals);selectedId=v.selectedId||null;syncForm();rebuild();persist()}catch(e){console.error(e)}
@@ -172,6 +175,7 @@ function syncForm(){
   const label=e.closest('.control')?.querySelector('output');if(label)label.textContent=n+'×';
  }
  $('familyWeightsControls').hidden=s.familyMix!=='Mixed';
+ if($('wireSpacingPreset'))$('wireSpacingPreset').value=[25,50,100].includes(Number(s.pixelStringSpacing))?String(s.pixelStringSpacing):'custom';
  $('actualHole').textContent=resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm';
  syncFitCalibration();
  $('pixelBaseDepthHint').textContent=s.baseHeight>=resolvePixelProfile(s).bodyHeight+1?'Base accommodates selected nominal LED depth.':'Base is shallower than selected LED housing. Check fit.';
@@ -764,12 +768,140 @@ function refreshSavedTemplates(selected=''){
  list.value=selected;
 }
 refreshSavedTemplates();
+function refreshSavedProjects(selected=''){
+ const select=$('savedProjectSelect');if(!select)return;
+ select.replaceChildren(new Option('Choose a saved project…',''));
+ for(const project of listSavedProjects(localStorage))select.add(new Option(project.name,project.id));
+ select.value=selected;
+}
+refreshSavedProjects();
+$('saveNamedProjectBtn').onclick=()=>{
+ const name=prompt('Save this complete project as',s.title||'Untitled crystal');
+ if(!name?.trim())return;
+ try{
+  const saved=saveNamedProject(localStorage,name,s,crystals);
+  refreshSavedProjects(saved.id);cloudVault?.schedule();
+  setStatus('Saved '+saved.name+' into your complete project library');
+ }catch(err){alert('Could not save project: '+err.message)}
+};
+$('openNamedProjectBtn').onclick=()=>{
+ const project=loadNamedProject(localStorage,$('savedProjectSelect').value);
+ if(!project){setStatus('Choose a saved project first');return}
+ if(!confirm('Open '+project.name+'? Your current unsaved working model will be saved into the named project library first.'))return;
+ try{
+  saveNamedProject(localStorage,s.title||'Previous active project',s,crystals);
+  restore(JSON.stringify({settings:project.settings,crystals:project.crystals,selectedId:null}));
+  snapshot();refreshSavedProjects(project.id);cloudVault?.schedule();
+  setStatus('Opened editable saved project '+project.name+'; previous active model backed up in your project library.');
+ }catch(err){alert('Could not open project: '+err.message)}
+};
+$('deleteNamedProjectBtn').onclick=()=>{
+ const id=$('savedProjectSelect').value;
+ if(!id||!confirm('Delete this project from the synced project library? The active design will not be deleted.'))return;
+ deleteNamedProject(localStorage,id);refreshSavedProjects();cloudVault?.schedule();
+ setStatus('Deleted named project from the library; earlier private GitHub commits may still contain it.');
+};
+cloudVault=new GitHubVault({storage:localStorage,onStatus:message=>{
+ const el=$('cloudStatus');if(el)el.textContent=message;
+}});
+$('cloudRepo').value=localStorage.getItem('crystal-forge-private-repo-name')||'';
+const refreshCloudHistory=async()=>{
+ const selector=$('cloudHistory');
+ selector.replaceChildren(new Option('Loading private history…',''));
+ const history=await cloudVault.listHistory();
+ selector.replaceChildren(new Option(history.length?'Select a historical backup…':'No backups saved yet',''));
+ for(const entry of history){
+  const label=(entry.date?new Date(entry.date).toLocaleString()+' · ':'')+entry.sha.slice(0,9)+' · '+entry.message.slice(0,54);
+  selector.add(new Option(label,entry.sha));
+ }
+ return history.length;
+};
+const cloudAction=async(action)=>{
+ const buttons=['cloudConnect','cloudPull','cloudPush','cloudDisconnect','cloudHistoryRefresh','cloudHistoryRestore'].map($);
+ buttons.forEach(b=>{b.disabled=true});
+ try{await action()}catch(error){
+  console.error('Cloud vault operation',error);
+  $('cloudStatus').textContent=error.name==='CloudConflictError'?'Cloud conflict — '+error.message:error.message;
+ }finally{buttons.forEach(b=>{b.disabled=false})}
+};
+$('cloudConnect').onclick=()=>cloudAction(async()=>{
+ const repo=$('cloudRepo').value.trim(),token=$('cloudToken').value;
+ const result=await cloudVault.connect(repo,token);
+ $('cloudToken').value='';
+ localStorage.setItem('crystal-forge-private-repo-name',repo);
+ $('cloudAuto').checked=false;
+ $('cloudStatus').textContent=result.exists?'Connected to private '+repo+'. Pull + merge before uploading.':'Connected to private '+repo+'. Click Sync Now to create your backup.';
+ await refreshCloudHistory();
+});
+$('cloudDisconnect').onclick=()=>{
+ cloudVault.disconnect();$('cloudToken').value='';$('cloudAuto').checked=false;
+ $('cloudHistory').replaceChildren(new Option('Connect and refresh history…',''));
+};
+$('cloudPull').onclick=()=>cloudAction(async()=>{
+ if(!cloudVault.connected)throw Error('Connect to your private GitHub repository first.');
+ if(!confirm('Pull cloud data? Your current local data will be backed up. The cloud project becomes active; custom profiles and templates are merged.'))return;
+ cloudVault.setAuto(false);$('cloudAuto').checked=false;
+ const result=await cloudVault.pull();
+ restore(localStorage.getItem('crystal-forge-v3'));
+ refreshSavedTemplates();
+ refreshSavedProjects();
+ $('cloudStatus').textContent='Pulled and merged. Local backup key: '+result.backupKey+'. Cloud auto-sync is available.';
+});
+$('cloudPush').onclick=()=>cloudAction(async()=>{
+ if(!cloudVault.connected)throw Error('Connect to your private GitHub repository first.');
+ await cloudVault.push();
+ await refreshCloudHistory();
+});
+$('cloudHistoryRefresh').onclick=()=>cloudAction(async()=>{await refreshCloudHistory()});
+$('cloudHistoryRestore').onclick=()=>cloudAction(async()=>{
+ const sha=$('cloudHistory').value;
+ if(!sha)throw Error('Select a previous private GitHub vault version.');
+ if(!confirm('Restore the selected historical vault? Your current local project is backed up first. Auto-sync will be paused so you can inspect the result before pressing Sync Now. Older commits remain available.'))return;
+ cloudVault.setAuto(false);$('cloudAuto').checked=false;
+ const result=await cloudVault.restoreVersion(sha);
+ if(result.projectRestored)restore(localStorage.getItem('crystal-forge-v3'));
+ else mergePixelLibrary();
+ refreshSavedProjects();refreshSavedTemplates();snapshot();
+ $('cloudStatus').textContent='Historical vault restored locally. '+result.projects+' saved projects recovered. Sync Now creates a new remote revision.';
+});
+$('cloudAuto').onchange=()=>{
+ const enabled=cloudVault.setAuto($('cloudAuto').checked);
+ $('cloudAuto').checked=enabled;
+ if(!enabled)$('cloudStatus').textContent='Auto-sync unavailable until connected and first pull is reconciled.';
+ else {$('cloudStatus').textContent='Auto-sync enabled for this browser session.';cloudVault.schedule()}
+};
+$('cloudBackup').onclick=()=>{
+ const data=captureVault(localStorage);
+ download(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),
+  'crystal-forge-complete-backup-'+new Date().toISOString().slice(0,10)+'.json');
+ setStatus('Downloaded complete local project, saved projects, custom profiles and templates');
+};
+$('cloudBackupImport').onchange=async event=>{
+ const file=event.target.files?.[0];if(!file)return;
+ if(!confirm('Import this full Crystal Forge backup? The active model may be replaced; local data will be backed up first and named projects/profiles/templates merged.')){
+  event.target.value='';return;
+ }
+ try{
+  const json=JSON.parse(await file.text());
+  const result=mergeVault(localStorage,json,{restoreProject:true});
+  if(result.projectRestored)restore(localStorage.getItem('crystal-forge-v3'));
+  else {mergePixelLibrary();syncForm();hardwareUI?.refresh()}
+  refreshSavedTemplates();refreshSavedProjects();snapshot();cloudVault?.schedule();
+  setStatus('Imported backup: '+result.projects+' named projects, '+result.profiles+' custom pixels, '+
+   result.templates+' templates. Previous local data backed up under '+result.backupKey);
+ }catch(err){alert('Could not import Crystal Forge backup: '+err.message)}
+ finally{event.target.value=''}
+};
+window.addEventListener('storage',e=>{
+ if(['crystal-forge-pixel-library','crystal-forge-project-templates-v1','crystal-forge-project-library-v1'].includes(e.key))
+  cloudVault?.schedule();
+});
 $('saveTemplateBtn').onclick=()=>{
  const name=prompt('Name this reusable Crystal Forge design',s.title||'Untitled cluster');
  if(!name?.trim())return;
  try{
   const saved=saveTemplate(localStorage,name.trim(),s,crystals);
-  refreshSavedTemplates(saved.id);setStatus('Saved reusable design '+saved.name);
+  refreshSavedTemplates(saved.id);cloudVault?.schedule();setStatus('Saved reusable design '+saved.name);
  }catch(err){alert('Could not save template: '+err.message)}
 };
 $('loadTemplateBtn').onclick=()=>{
@@ -783,7 +915,7 @@ $('loadTemplateBtn').onclick=()=>{
 $('deleteTemplateBtn').onclick=()=>{
  const id=$('templateSelect').value;
  if(!id||!confirm('Delete this locally saved template?'))return;
- deleteTemplate(localStorage,id);refreshSavedTemplates();setStatus('Deleted saved template');
+ deleteTemplate(localStorage,id);refreshSavedTemplates();cloudVault?.schedule();setStatus('Deleted saved template');
 };
 $('applyShapePresetBtn').onclick=()=>{
  const preset=$('shapePresetSelect').value;
@@ -1210,10 +1342,10 @@ function updateCuraProfileSummary(){
   recommend.textContent=advice.supported?'Use '+advice.nozzle.toFixed(2)+' mm candidate nozzle':'No compatible automatic choice';}
  if(!target||!warn||!button)return;
  try{
-  const p=calculateCuraSettings({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
+  const p=calculateCuraSettings({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent,qualityType:s.curaQualityType});
   target.textContent='Layer '+p.layerHeight.toFixed(3)+' mm · First layer '+p.initialHeight.toFixed(2)+' mm · '+p.wallCount+
    ' walls · '+p.topLayers+' top / '+p.bottomLayers+' bottom layers · '+p.density+'% infill · '+p.speed+
-   ' mm/s · '+p.adhesion+' adhesion';
+   ' mm/s · '+p.adhesion+' adhesion · Cura base quality type: '+p.qualityType;
   warn.textContent=p.warnings.filter(x=>x.includes('0% infill')||x.includes('support')||x.includes('nozzle')).join(' ');
   button.disabled=false;button.title='Export Cura quality changes for '+p.machine;
  }catch(err){
@@ -1227,9 +1359,16 @@ $('curaRecommendedNozzleBtn').onclick=()=>{
  s.curaNozzle=a.nozzle;syncForm();updateCuraProfileSummary();snapshot();
  setStatus('Candidate nozzle '+a.nozzle+' mm selected in profile preview only. Fit the matching hardware and inspect the actual Cura slice.');
 };
+$('curaFallbackBtn').onclick=()=>{
+ try{
+  const p=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent,qualityType:s.curaQualityType});
+  download(new Blob([p.fallbackText],{type:'text/plain'}),p.fallbackFilename);
+  setStatus('Downloaded manual Cura settings: useful even if your configuration rejects that quality type.');
+ }catch(err){alert(err.message)}
+};
 $('curaProfileBtn').onclick=()=>{
  try{
-  const p=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
+  const p=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent,qualityType:s.curaQualityType});
   download(new Blob([p.bytes],{type:'application/zip'}),p.filename);
   setStatus('Downloaded Cura profile '+p.title+' · select matching hardware and material in Cura before importing');
  }catch(err){console.error('Cura profile download',err);alert(err.message)}
@@ -1250,6 +1389,11 @@ $('resetTabsBtn').onclick=()=>{
  if(s.mount!=='Edge fixing tabs')s.mount='Edge fixing tabs';
  syncForm();rebuild();snapshot();
  setStatus('Restored automatic equally spaced edge tabs');
+};
+$('wireSpacingPreset').onchange=()=>{
+ const value=$('wireSpacingPreset').value;
+ if(value==='custom'){document.querySelector('[data-state="pixelStringSpacing"]')?.focus();return}
+ s.pixelStringSpacing=Number(value);syncForm();rebuild();snapshot();
 };
 $('singleWireExitBtn').onclick=()=>{
  s.wireChannels=true;s.wireExit=true;syncForm();rebuild();snapshot();

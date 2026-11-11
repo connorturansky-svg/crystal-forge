@@ -203,6 +203,13 @@ try{
  const savedCura=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings);
  assert.equal(savedCura.curaMaterial,'PETG');
  assert.equal(savedCura.curaQuality,90);
+ await page.locator('[data-state="curaQualityType"]').selectOption('coarse');
+ assert((await page.locator('#curaProfileSummary').innerText()).includes('coarse'),'Cura now allows matching installed quality type');
+ const fallbackDownload=page.waitForEvent('download');
+ await page.locator('#curaFallbackBtn').click();
+ const fallback=await fallbackDownload;
+ assert(fallback.suggestedFilename().endsWith('-manual-settings.txt'),'Cura plain text settings fallback downloaded');
+ await page.locator('[data-state="curaQualityType"]').selectOption('auto');
  const curaPromise=page.waitForEvent('download');
  await page.locator('#curaProfileBtn').click();
  const curaDownload=await curaPromise;
@@ -229,7 +236,40 @@ try{
  assert(await page.locator('#templateSelect').count(),'Saved reusable design picker exists');
  assert(await page.locator('#batchSelectedCount').count(),'Batch crystal editing panel exists');
  assert.equal(await page.locator('[data-state="wireMode"]').inputValue(),'string','New projects start with physical IN / OUT string mode');
+ await page.locator('#wireSpacingPreset').selectOption('25');
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.pixelStringSpacing===25,null,{timeout:8000});
+ assert.equal(Number(await page.locator('[data-state="pixelStringSpacing"]').inputValue()),25,'Measured 25 mm cable spacing preset persists');
+ await page.locator('#wireSpacingPreset').selectOption('50');
+ assert(await page.locator('#reversePixelStringBtn').count(),'Reverse physical string direction control exists');
+ assert(await page.locator('[data-state="wireDirectionArrows"]').isChecked(),'Track direction arrows default on');
+ assert(await page.locator('[data-state="wireShowLengths"]').isChecked(),'Cable lengths default visible');
  await page.locator('[data-tab="design"]').click();
+ // Save a full named project, change the active settings, then restore it.
+ const originalWidth=Number(await page.locator('[data-state="width"]').inputValue());
+ page.once('dialog',d=>d.accept('PR10 multi-computer fixture'));
+ await page.locator('#saveNamedProjectBtn').click();
+ assert(await page.locator('#savedProjectSelect option').count()===2,'Named full project saved to library');
+ assert.equal(await page.locator('#savedProjectSelect option').nth(1).innerText(),'PR10 multi-computer fixture');
+ await page.locator('[data-state="width"]').evaluate(el=>{
+  el.value=String(Number(el.value)+15);el.dispatchEvent(new Event('input',{bubbles:true}));
+ });
+ await page.waitForFunction(w=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.width!==w,originalWidth,{timeout:8000});
+ page.once('dialog',d=>d.accept());
+ await page.locator('#openNamedProjectBtn').click();
+ await page.waitForFunction(w=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.width===w,originalWidth,{timeout:8000});
+ assert(await page.locator('#savedProjectSelect option').count()>=3,'Previous active project also backed up on open');
+ assert(await page.locator('#cloudBackupImport').count(),'Complete portable vault backup may be reimported');
+ assert(await page.locator('#cloudHistory').count()&&await page.locator('#cloudHistoryRestore').count(),
+  'Private cloud vault history and restore controls are present');
+ console.log('PR10 named multi-project save/open and active-project rollback verified');
+ assert(await page.locator('#cloudRepo').count(),'Private GitHub cloud vault panel is available');
+ await page.locator('.cloud-sync-panel summary').click();
+ const backupDownload=page.waitForEvent('download');
+ await page.locator('#cloudBackup').click();
+ const backup=await backupDownload;
+ assert(backup.suggestedFilename().includes('complete-backup'),'Complete user data backup is downloadable');
+ assert((await page.locator('#cloudStatus').innerText()).includes('Not connected'),'Cloud auth is opt-in');
+ await page.locator('.cloud-sync-panel summary').click();
  await page.locator('[data-state="familyMix"]').selectOption('Mixed');
  assert(await page.locator('#familyWeightsControls').isVisible(),'Mixed families expose six weighted sliders');
  await page.locator('[data-family-weight="Fantasy"]').evaluate(el=>{el.value='9';el.dispatchEvent(new Event('input',{bubbles:true}))});
@@ -350,7 +390,32 @@ try{
  const marker=page.locator('.hardware-marker[data-hw-kind="pixel"]').first();
  await marker.evaluate(el=>el.click());
  assert(await page.locator('[data-hw-card-kind="pixel"].selected').count(),'3D P label selects matching Build card');
- await page.mouse.dblclick(contextPoint.x,contextPoint.y);
+ const draggedId=await marker.getAttribute('data-hw-id');
+ const start=await page.evaluate(id=>{
+  const p=JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualPixelHoles.find(p=>p.id===id);
+  return {x:p.x,z:p.z};
+ },draggedId);
+ const markerRect=await marker.boundingBox();
+ assert(markerRect,'Selected P marker is visible and can be directly manipulated');
+ await page.mouse.move(markerRect.x+markerRect.width/2,markerRect.y+markerRect.height/2);
+ await page.mouse.down();
+ await page.mouse.move(contextPoint.x,contextPoint.y,{steps:9});
+ await page.mouse.up();
+ await page.waitForTimeout(120);
+ const moved=await page.evaluate(id=>{
+  const p=JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualPixelHoles.find(p=>p.id===id);
+  return {x:p.x,z:p.z};
+ },draggedId);
+ assert(Math.hypot(moved.x-start.x,moved.z-start.z)>1,'Second click-and-hold on selected P marker moves the physical pixel');
+ assert(await page.locator('.hardware-marker[data-hw-id="'+draggedId+'"]').count(),'Direct manipulation preserves a stable pixel ID');
+ console.log('PR10 selected 3D pixel click-hold moves the real saved position without renumbering');
+ // The original free location now contains the dragged LED. Find ANOTHER empty
+ // place so the old contextual Add Pixel test still exercises a valid hole.
+ await page.locator('#placePixelBtn').click();
+ const newContextPoint=await findValidPixel();
+ assert(newContextPoint,'Another free base point exists after moving selected P marker');
+ await page.keyboard.press('Escape');
+ await page.mouse.dblclick(newContextPoint.x,newContextPoint.y);
  assert(await page.locator('.hardware-context-menu:not([hidden])').count(),'Double-click blank model opens Add Pixel / Mount menu');
  const countBeforeContext=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualPixelHoles.length);
  await page.locator('[data-context-add="pixel"]').click();

@@ -1,5 +1,14 @@
 # Crystal Forge — Changelog
 
+## v0.14.0 — PR10 development candidate (experimental)
+
+- **Physical LED cabling:** strict 180° opposed input/output ports, straight tangent socket exits, sampled smooth curves shared between 3D preview and Manifold cuts, minimum bend-radius screening and red over-length diagnostics for selectable 25/50/100/custom cable spacings. Choose P1 or reverse the string, toggle arrowheads and run-length labels.
+- **Interaction:** click-hold selected P/M markers to move holes with valid/invalid previews, while preserving blank-area orbit. Higher contrast for hardware cards.
+- **Cura compatibility:** dynamic or explicitly selectable base `quality_type` instead of fixed `normal` (which failed on the user's UM2+ 0.8 mm). Manual settings text fallback when imported Cura profiles are hidden.
+- **Private cross-device GitHub vault:** explicit private repo, fine-grained user token held only in memory, SHA conflict checks, local backup-before-pull, merged measured LED profiles/templates/**multiple named projects**, full local JSON backup import/export and in-app restoration of older private GitHub commit versions. Auto-sync pauses during cloud pull/history restore. No public repository/token leaks or unattended OAuth.
+- **QA:** expanded spline, spacing, Cura, cross-device conflict and browser/manufacturing checks. See [PR10 acceptance](docs/PR10_TEST_GUIDE.md). Real Cura import, measured fit, optical performance and structural load verification remain outstanding.
+
+
 ## v0.13.0 — PR9 combined prototype (experimental, unmerged)
 
 - **Serial pixel routing:** every pixel has opposed physical cable-bundle IN/OUT ports; first and final tails have distinct base-perimeter openings, even for one pixel. Ordered P1→Pn grooving replaces side-by-side wires for new designs. Invalid paths prevent partial manufacturing; old single/paired grooves remain labelled legacy.

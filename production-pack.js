@@ -48,8 +48,9 @@ export function buildProductionPack({settings,crystals,report,stlBytes,extraFile
  assets.push(['03_Reports/manufacturing-report.json',JSON.stringify(condensed,null,2)]);
  let curaIncluded=false,curaWarning='';
  try{
-  const profile=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
-  assets.push(['04_Cura/'+profile.filename,profile.bytes]);curaIncluded=true;
+  const profile=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent,qualityType:s.curaQualityType||'auto'});
+  assets.push(['04_Cura/'+profile.filename,profile.bytes]);
+  assets.push(['04_Cura/'+profile.fallbackFilename,profile.fallbackText]);curaIncluded=true;
  }catch(err){curaWarning=err.message}
  const instructions=[
   'CRYSTAL FORGE — PRODUCTION PACK',

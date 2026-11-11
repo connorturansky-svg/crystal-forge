@@ -1,11 +1,11 @@
-# Crystal Forge — Browser Studio v0.13.0 candidate
+# Crystal Forge — Browser Studio v0.14.0 candidate
 
-**Development candidate v0.13.0 / [PR #15](https://github.com/connorturansky-svg/crystal-forge/pull/15).** The public GitHub Pages app remains v0.12 until this draft PR merges. This version includes physical pixel-string IN/OUT grooves, numbered/ordered hardware, batch crystal edits, six-family weights, adjustable panels, saved templates, RGB index exports and cutaway preview. Follow the [PR9 hands-on test guide](docs/PR9_TEST_GUIDE.md). Physical Cura, filament, optical and mounting validation remains outstanding.
+**Active draft [PR #16](https://github.com/connorturansky-svg/crystal-forge/pull/16).** This experimental version includes smooth opposed cable paths, length-budgets/rotation and direction UI, click-hold hardware positioning, Cura quality-type selection and optional private GitHub syncing. The live application stays on the last merged release until this PR is reviewed. [PR10 test + migration guide](docs/PR10_TEST_GUIDE.md). Physical Cura/LED/mechanical validation is outstanding.
 
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, touch-considerate crystal sculptures. Physical safety and print strength must still be verified. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/
 
-Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three.js and the Manifold WebAssembly geometry library load from the internet. Project files and theme preference are stored locally in your browser; export JSON for backups or moving to another computer.
+Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three.js and the Manifold WebAssembly geometry library load from the internet. Projects stay local by default. Save multiple named editable designs in the project library, and import/export a complete backup. You can optionally connect to your own private GitHub repository to sync every named project, the active model, custom measured pixel profiles and templates, and restore previous revisions. Authentication uses a narrowly scoped token held only in memory, not automatic OAuth; see the migration guide.
 
 
 ## Source visibility and reuse
