@@ -9,6 +9,7 @@ self.onmessage=async(event)=>{
  try{
   self.postMessage({type:'progress',stage:'Loading background fabrication engine…'});
   const wasm=await loadManifold();
+  const engineReadyAt=performance.now();
   self.postMessage({type:'progress',stage:'Merging crystals, cutting shared chamber and hardware…'});
   await new Promise(resolve=>setTimeout(resolve,10));
   const objects=data.components.map(input=>{
@@ -28,6 +29,9 @@ self.onmessage=async(event)=>{
   result.geometry.dispose();
   const report=result.report;
   report.preparationMs=Math.round(performance.now()-started);
+  report.timings={engineReadyMs:Math.round(engineReadyAt-started),
+   manifoldMs:Math.round(manufacturingEnd-manufacturingStart),
+   geometryTransferMs:Math.round(performance.now()-manufacturingEnd)};
   self.postMessage({type:'complete',positions,report},
    [positions.buffer,report.mesh.points.buffer,report.mesh.triangles.buffer]);
  }catch(error){
