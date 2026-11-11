@@ -140,9 +140,10 @@ function positionedInnerCrystal(c,s,openingY,wall){
  return mesh;
 }
 function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile,{includeLocalWireRelief=true}={}){
- // The legacy stand-alone socket cutter adds fixed-axis local wire slots.
- // When used with the new serial string route, those become disconnected
- // phantom lines across each pixel; the shared wirePlan must own all grooves.
+ // Legacy standalone LED seats can have local cable exit reliefs.
+ // They MUST NOT be combined with any external planned wiring grooves:
+ // those cuts use a different fixed axis and appear as disconnected stubs.
+ // Even saved legacy single/parallel projects obey this rule.
 
  const p=profile||resolvePixelProfile({pixelDiameter:12,pixelFit:0});
  // The measured housing enters from the real bottom face (Y=0). The
@@ -443,9 +444,12 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
    for(const pos of hardware.sockets){
     const roof=baseSurfaceHeight(crystals,s,pos.x,pos.z);
     const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolveSocketProfile(s,pos),{
-      // Serial mode already cuts the correct opposed IN/OUT cable groove;
-      // do not also cut legacy fixed-axis independent socket reliefs.
-      includeLocalWireRelief:s.wireMode!=='string'
+      // PR13: PR12 only suppressed local slots in 'string' mode. Previously
+      // saved single/parallel designs also generate a connected external route
+      // but retained spurious independent slots at every yellow LED ring.
+      // Any enabled routing plan owns the groove geometry across ALL modes.
+      // A standalone legacy LED may retain its local relief when routing is off.
+      includeLocalWireRelief:!s.wireChannels&&s.wireMode!=='string'
      });
     cutters.push(bore.solid);
     socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
@@ -455,7 +459,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
      warnings.push('LED at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+
        bore.usableBodyDepth.toFixed(1)+' mm usable depth, less than the measured B length '+
        bore.requestedBodyDepth.toFixed(1)+' mm. Increase base height or change the LED profile.');
-    if(s.wireMode!=='string'&&bore.wireReliefDepth+.1<resolveSocketProfile(s,pos).wireDepth)
+    if(!s.wireChannels&&s.wireMode!=='string'&&bore.wireReliefDepth+.1<resolveSocketProfile(s,pos).wireDepth)
      warnings.push('Wire relief depth was reduced to preserve the roof. Verify cable clearance in Cura.');
     if(bore.shaftEnd<20)warnings.push('LED bore at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+Math.max(0,bore.shaftEnd).toFixed(1)+' mm of full-width clearance. Confirm the actual LED housing fits.');
    }
