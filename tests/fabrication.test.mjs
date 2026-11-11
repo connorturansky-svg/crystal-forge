@@ -277,6 +277,8 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  const roof=estimateRoofReview(plan.polygon,cfg,{});
  assert(roof.needsCura&&Number.isFinite(roof.estimateMm),'Roof span review remains advisory');
  const prepared=validate('wired-groove',cfg);
+ assert(prepared.socketCeilings.every(socket=>socket.wireReliefDepth===0),
+  'PR13: two legacy-routed pixels must have no detached local relief cuts');
  assert.equal(prepared.wireChannelsCut,plan.wirePlan.routes.length,'Manufacturing uses the exact planned groove count');
  assert.equal(prepared.disconnected,1,'Wiring must not split the model into pieces');
  assert(prepared.wireLengthMm>=35,'Manufacturing report includes planned route length');
@@ -284,6 +286,8 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  const plannedOne=planHardware(generateFormation(one),one);
  assert(plannedOne.wirePlan.exitAdded,'One accepted pixel extends a channel to the edge');
  const cutOne=validate('single-pixel-exit-groove',one);
+ assert(cutOne.socketCeilings.every(socket=>socket.wireReliefDepth===0),
+  'PR13: legacy single-groove wiring must not leave separate pixel-side stubs when routed');
  const noExit=validate('single-pixel-no-exit',{...one,wireExit:false});
  assert(cutOne.wireChannelsCut>0,'Single pixel groove reaches real Manifold cutter');
  assert.equal(noExit.wireChannelsCut,0,'Without edge exit there is no single-pixel groove');
@@ -300,7 +304,16 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
   ...noStringWires,wireMode:'single'
  });
  assert(oldLocalRelief.socketCeilings.some(p=>p.wireReliefDepth>0),
-  'Legacy single-wire modes retain the original relief cutter');
+  'When external routing is OFF, legacy stand-alone sockets retain local exits');
+ const pairedWithRoutes=validate('PR13 parallel wiring without extra stubs',
+  {...cfg,wireMode:'parallel',wireChannels:true,wireExit:true,wirePairSpacing:8});
+ assert(pairedWithRoutes.socketCeilings.every(p=>p.wireReliefDepth===0),
+  'PR13: legacy parallel routing never adds separate fixed-axis reliefs');
+ const legacyWithRoutes=validate('PR13 saved legacy single with routed groove',
+  {...one,wireMode:'single',wireChannels:true,wireExit:true});
+ assert(legacyWithRoutes.wireChannelsCut>0,'Saved legacy project retains its main connected track');
+ assert(legacyWithRoutes.socketCeilings.every(p=>p.wireReliefDepth===0),
+  'PR13: saved legacy single layout has no orphan LED reliefs when routed');
  assert(plainSerial.volumeMm3>oldLocalRelief.volumeMm3+1,
   'The actual string-mode Manifold solid has no extra unrelated relief cuts');
  const serialOne={...one,wireMode:'string',wireWidth:2,wireDepth:1.4};
