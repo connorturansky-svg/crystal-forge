@@ -9,6 +9,7 @@ import {planDetachablePlate} from './detachable-plate.js';
 import {applyShapePreset} from './design-workflows.js';
 setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
+import {buildPixelStringMap} from './pixel-string-export.js';
 import {createHardwareEditor} from './hardware-editor.js';
 import {installResizablePanels} from './workspace-panels.js';
 import {saveTemplate,readTemplates,findTemplate,deleteTemplate} from './project-templates.js';
@@ -1200,6 +1201,11 @@ $('exportMountPlateBtn').onclick=async()=>{
   setStatus('Registered mounting plate exported. Test real M3 fasteners, cable access and printed material strength.');
  }catch(err){console.error(err);alert('Registered plate export failed: '+err.message)}
  finally{button.disabled=false}
+};
+$('pixelStringMapBtn').onclick=()=>{
+ const hardware=planHardware(crystals,s);
+ download(new Blob([buildPixelStringMap(hardware)],{type:'text/csv'}),'crystal-forge-pixel-string-order.csv');
+ setStatus('Downloaded P1 → Pn string index and 1-based RGB channel map. Actual controller configuration not set.');
 };
 $('wiringCsvBtn').onclick=()=>{
  const plan=planHardware(crystals,s),routes=plan.wirePlan?.routes||[];
