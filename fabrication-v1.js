@@ -765,6 +765,51 @@ export function makeCalibrationStrip(wasm,nominal=12){
  }finally{cleanupAll(keep)}
 }
 
+// Optional printer-bed-aware rectangular grid partition. Every returned part
+// remains in ORIGINAL coordinates: the operator can position/rotate it in Cura.
+// Inter-piece connectors are NOT implied or invented by this function.
+export function splitPreparedMeshGrid(wasm,mesh,plan){
+ if(!plan?.ready||!plan.needed||!Array.isArray(plan.cutsX)||!Array.isArray(plan.cutsZ))
+  throw Error('Create a valid multi-piece bed splitting plan before partitioning.');
+ if(!mesh?.points?.length||!mesh?.triangles?.length)throw Error('Prepared Manifold geometry is required.');
+ const owned=[],hold=o=>{owned.push(o);return o};
+ try{
+  const input=new wasm.Mesh({numProp:3,vertProperties:new Float32Array(mesh.points),
+   triVerts:new Uint32Array(mesh.triangles)});
+  input.merge();
+  const source=hold(new wasm.Manifold(input));assertSolid(source,'Bed splitting input');
+  let items=[source];
+  for(const [axis,cuts] of [['x',plan.cutsX],['z',plan.cutsZ]]){
+   for(const cut of cuts){
+    const next=[],normal=axis==='x'?[1,0,0]:[0,0,1],idx=axis==='x'?0:2;
+    for(const part of items){
+     const bounds=part.boundingBox();
+     if(cut<=bounds.min[idx]+.01||cut>=bounds.max[idx]-.01){next.push(part);continue}
+     const halves=part.splitByPlane(normal,cut);
+     halves.forEach(hold);
+     next.push(...halves.filter(q=>!q.isEmpty()));
+    }
+    items=next;
+    if(items.length>plan.pieceCount)throw Error('Unexpected extra body count during bed splitting');
+   }
+  }
+  if(items.length<2||items.length>plan.pieceCount)
+   throw Error('Bed split yielded '+items.length+' parts but expected '+plan.pieceCount);
+  const total=items.reduce((v,m)=>v+m.volume(),0),original=source.volume();
+  if(Math.abs(total-original)>Math.max(1,original*.002))
+   throw Error('Bed split changed solid volume by more than 0.2%');
+  return items.map((part,i)=>{
+   assertSolid(part,'Bed split part '+(i+1));
+   const bb=part.boundingBox();
+   const w=bb.max[0]-bb.min[0],d=bb.max[2]-bb.min[2],h=bb.max[1]-bb.min[1];
+   if(w>plan.usableX+.1||d>plan.usableZ+.1||h>plan.printerLimit[2]+.1)
+    throw Error('Bed split part '+(i+1)+' exceeds usable printer dimensions');
+   return {geometry:fromResultMesh(part.getMesh()),index:i+1,
+    volume:part.volume(),triangles:part.numTri(),bounds:[w,h,d]};
+  });
+ }finally{cleanupAll(owned)}
+}
+
 export function splitPreparedMesh(wasm,mesh,cutX=0,jointPlan=null){
  const keep=[];const hold=o=>{keep.push(o);return o};
  try{
