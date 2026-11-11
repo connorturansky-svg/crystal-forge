@@ -120,6 +120,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 .workspace-resizer{position:absolute;top:0;bottom:0;width:9px;z-index:7;cursor:col-resize;background:transparent;touch-action:none}
 .workspace-resizer:hover,.workspace-resizer:focus-visible{background:#45b9e6aa;outline:1px solid #8ee8ff}
 .workspace-resizer[hidden]{display:none!important}
+.treeentry.child.batch-selected{border-color:#2cc6fa;background:#214665}
+.treeentry.child input[data-batch-id]{width:15px;height:15px;accent-color:#4ce9ff;margin-right:3px;cursor:pointer}
 </style></head>
 <body class="simple">
 <header class="topbar">
@@ -372,6 +374,13 @@ body.theme-light .control-tooltip span{color:#334c6b}
 </main>
 <aside class="right"><div id="contextHelp" class="card teal" hidden><div class="cardtitle">ⓘ Control descriptions</div><div class="cardbody"><strong id="contextHelpTitle">Select a control</strong><p id="contextHelpBody" class="note">Hover or focus any setting for an explanation.</p><p class="note">Printed hardware still needs measurement and physical testing.</p></div></div><div class="panelhead"><h2>Project explorer</h2><span>LIVE OBJECTS</span></div>
 <div class="card purple"><div class="cardtitle"><span class="symbol">☷</span> Object tree <span class="pill" id="treeCount">0</span></div><div class="cardbody tree" id="objectTree"></div></div>
+<div class="card teal"><div class="cardtitle">◈ Batch crystal selection <span id="batchSelectedCount" class="pill">0</span></div><div class="cardbody">
+<p class="note">Tick crystals in the tree or Ctrl-click a crystal in the 3D view. Group actions skip locked crystals; individual gizmo editing remains available.</p>
+<div class="buttonrow"><button type="button" id="batchSelectAll">Select all</button><button type="button" id="batchClear">Clear selection</button></div>
+<div class="grid2"><div class="control"><label>Move X (mm)</label><input id="batchMoveX" type="number" value="0" step="1"></div><div class="control"><label>Move Z (mm)</label><input id="batchMoveZ" type="number" value="0" step="1"></div></div>
+<div class="buttonrow"><button id="batchApplyMove" type="button">Move group</button><button id="batchScaleDown" type="button">−10% size</button><button id="batchScaleUp" type="button">+10% size</button></div>
+<div class="buttonrow"><button id="batchLock" type="button">Lock group</button><button id="batchHide" type="button">Hide group</button></div>
+</div></div>
 <div class="card blue"><div class="cardtitle"><span class="symbol">✥</span> Selected object</div><div class="cardbody" id="selectionPane"><p class="note">Select a crystal to edit its position and dimensions.</p></div></div>
 <div class="card teal"><div class="cardtitle"><span class="symbol">▧</span> Model information</div><div class="cardbody">
 <div class="stat"><span>Triangles</span><strong id="triangleCount">—</strong></div><div class="stat"><span>Footprint</span><strong id="footprint">—</strong></div><div class="stat"><span>Height</span><strong id="modelHeight">—</strong></div><div class="stat"><span>Pixels planned</span><strong id="pixelStats">—</strong></div>
