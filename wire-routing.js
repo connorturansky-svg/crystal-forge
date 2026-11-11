@@ -67,7 +67,7 @@ export function planWireRoutes(crystals,s,hardware){
   return null;
  };
  const route=(from,to,kind,fromIndex,toIndex,edge=false)=>{
-  const heading=Math.atan2(to.z-from.z,to.x-from.x)-Math.PI/2;
+  const heading=Math.atan2(to.z-from.z,to.x-from.x);
   const segments=[];
   for(let lane=0;lane<lanes;lane++){
    const sign=lanes===1?0:(lane===0?-1:1);
