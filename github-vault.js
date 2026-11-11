@@ -24,7 +24,7 @@ export function validateVault(data){
  if(data.project!=null&&(!data.project.settings||!Array.isArray(data.project.crystals)))
   throw Error('Cloud project is not an editable Crystal Forge project.');
  const serialized=JSON.stringify(data);
- if(serialized.length>8_000_000)throw Error('Vault is too large for this single-file sync; export an archive.');
+ if(new TextEncoder().encode(serialized).length>900_000)throw Error('Vault exceeds the GitHub Contents inline-file limit. Export an archive and reduce stored items.');
  return deep(data);
 }
 export function mergeVault(storage,data,{restoreProject=true}={}){
@@ -33,10 +33,17 @@ export function mergeVault(storage,data,{restoreProject=true}={}){
  const backupKey=PREFIX+Date.now();
  storage.setItem(backupKey,JSON.stringify(local));
  const merge=(ours,theirs)=>{const byId=new Map();
-  for(const item of [...theirs,...ours]){
-   if(!item||typeof item!=='object')continue;
-   const id=String(item.id||item.name||'unknown');
-   if(!byId.has(id))byId.set(id,item);
+  for(const [source,items] of [['local',ours],['cloud',theirs]]){
+   for(const item of items){
+    if(!item||typeof item!=='object')continue;
+    let id=String(item.id||item.name||'unknown');
+    if(!byId.has(id)){byId.set(id,item);continue}
+    if(JSON.stringify(byId.get(id))===JSON.stringify(item))continue;
+    // Preserve BOTH conflicting user-defined items, never silently replace.
+    const base=id+'-'+source;let n=1,copyId=base;
+    while(byId.has(copyId))copyId=base+'-'+(++n);
+    byId.set(copyId,{...item,id:copyId,name:String(item.name||id)+' ('+source+' import)'});
+   }
   }
   return [...byId.values()];
  };
