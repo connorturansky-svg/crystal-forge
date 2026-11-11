@@ -20,8 +20,8 @@ export function planWireRoutes(crystals,s,hardware){
  const plan={enabled:!!s.wireChannels,routes:[],lengthMm:0,unrouted:0,exitAdded:false,messages:[]};
  if(!plan.enabled)return plan;
  const sockets=hardware.sockets||[],poly=hardware.polygon||[];
- if(!s.cutSockets||s.baseType==='none'||poly.length<3){
-  plan.messages.push('Wiring grooves require an integrated base and cut LED sockets.');return plan;
+ if(!s.cutSockets||s.baseType==='none'||poly.length<3||s.baseVault||s.hollowCrystals){
+  plan.messages.push('Wiring grooves require an integrated solid base and cut LED sockets; disable vault and experimental full hollowing for this route mode.');return plan;
  }
  if(!sockets.length){plan.messages.push('No accepted sockets for wiring.');return plan}
  const width=limit(Number(s.wireWidth)||3,1.5,9),depth=limit(Number(s.wireDepth)||2,.8,5),

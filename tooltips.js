@@ -140,6 +140,11 @@ const SETTINGS={
   "Choose one shared LED, multiple LEDs or no lighting. Actual channels need inspecting in Cura."
  ],
  "pixelProfileId": ["Pixel profile","Choose a seed, bullet, gumdrop or saved custom profile. Dimensions change the actual manufacturing cut."],
+ "wireChannels": ["Carve underside wire grooves","When enabled, cut actual shallow channels joining multiple accepted LED sockets. Not continuous optical channels or guaranteed strain relief."],
+ "wireExit": ["Cable exit","Attempt to route one groove to the nearest safe perimeter edge; may be skipped if the wall is too thin."],
+ "wireWidth": ["Wire channel width","Width of each open-bottom cable groove. Measure actual cable insulation and keep material around nearby holes."],
+ "wireDepth": ["Wire channel depth","Depth of the underside cable groove. Increasing it leaves less plastic above the cable."],
+ "wireSlack": ["Extra routing slack","Try a bend in the routing groove for additional cable slack. Fallback to a direct path when a bent route would cross an obstacle."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."
@@ -305,6 +310,7 @@ const BUTTONS={
   "Download 3MF",
   "Exports the prepared print geometry as a 3MF project model for slicing."
  ],
+ "wiringCsvBtn": ["Export wiring plan CSV","Download accepted underside channel segments and lengths, including skipped-route counts. These are estimates; check your wiring physically."],
  "bomBtn": [
   "Parts list",
   "Downloads a CSV estimate of LEDs, crystals and mounting features."

@@ -91,7 +91,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 </style></head>
 <body class="simple">
 <header class="topbar">
-<div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.9.0 · Cluster Studio</span><span class="filename" id="projectName">Untitled cluster</span></div>
+<div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.10.0 · Cluster Studio</span><span class="filename" id="projectName">Untitled cluster</span></div>
 <nav class="workspace-tabs"><button class="active" data-tab="design">◇ Design</button><button data-tab="build">⚙ Build</button><button data-tab="print">▣ Print</button></nav>
 <div class="topcluster utility"><div class="modebar"><button id="simpleBtn" class="active">Simple</button><button id="advancedBtn">Advanced</button></div><button id="themeBtn" class="utility-button" title="Switch to light theme" aria-label="Switch theme">☀ Light</button><button id="helpBtn" class="utility-button" title="Help and keyboard shortcuts">? Help</button><button id="descriptionsBtn" class="utility-button" aria-pressed="false" title="Show a panel explaining controls and mounting types">ⓘ Descriptions</button><button id="changelogBtn" class="utility-button" title="Version history and changes">✦ What’s new</button><button id="saveBtn" title="Download editable project">↓ Save</button><button id="loadBtn" title="Open project">↑ Open</button><input type="file" id="loadFile" accept=".json,application/json"></div>
 </header>
@@ -168,6 +168,15 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <p id="pixelProfileDetails" class="note">Preset dimensions are approximate. Measure the real LED before printing.</p>
 <div class="control"><label>Nominal socket diameter <output data-out="pixelDiameter"></output></label><input data-state="pixelDiameter" type="range" min="10" max="15" step=".1"></div>
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
+<div class="divider"></div><div class="cardtitle" style="padding:6px 0">⤳ Optional underside wiring channels</div>
+<label class="checks"><input type="checkbox" data-state="wireChannels"> Carve underside wire channels between accepted LEDs</label>
+<label class="checks"><input type="checkbox" data-state="wireExit"> Route first pixel to the nearest feasible base edge</label>
+<div class="advanced-only">
+<div class="control"><label>Channel width <output data-out="wireWidth"></output></label><input data-state="wireWidth" type="range" min="1.5" max="9" step=".25"></div>
+<div class="control"><label>Channel depth <output data-out="wireDepth"></output></label><input data-state="wireDepth" type="range" min=".8" max="5" step=".2"></div>
+<div class="control"><label>Extra cable slack <output data-out="wireSlack"></output></label><input data-state="wireSlack" type="range" min="0" max="30" step="5"></div>
+</div>
+<p class="note">Cyan guides show the accepted paths. These are open-bottom grooves, not protected wire conduits. Connections that cross screws, thin walls or the edge are skipped; slack is best-effort. Wire paths are disabled for the optional base vault and experimental full hollowing.</p>
 <p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p><div class="divider"></div><label class="checks"><input data-state="glowPreview" type="checkbox"> Preview the whole cluster glowing one colour</label>
 <div class="control"><label>Simulated LED colour</label><select data-state="glowColour"><option value="0x77c4ff">Ice blue</option><option value="0xffa3df">Pink</option><option value="0xa58bff">Purple</option><option value="0xffdb8b">Warm white</option><option value="0x9affbc">Green</option><option value="0xffffff">Cool white</option></select></div>
 <p class="note">Illustrative glow only — real brightness depends on filament translucency, wall thickness, cavity connectivity and LED placement.</p>
@@ -214,6 +223,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="stat"><span>Hollow shell applied</span><strong id="reportHollow">—</strong></div>
 <div class="stat"><span>Open base vault</span><strong id="reportVault">—</strong></div>
 <div class="stat"><span>Estimated roof gap</span><strong id="reportVaultGap">—</strong></div>
+<div class="stat"><span>Wiring grooves cut</span><strong id="reportWireChannels">—</strong></div><div class="stat"><span>Estimated routed wire</span><strong id="reportWireLength">—</strong></div><div class="stat"><span>LEDs without route</span><strong id="reportUnrouted">—</strong></div>
 <div class="stat"><span>LED side vent sets</span><strong id="reportLEDVents">—</strong></div><div class="stat"><span>Crystal light passages</span><strong id="reportPorts">—</strong></div><div class="stat"><span>Shared light path</span><strong id="reportLightPath">—</strong></div><div class="stat"><span>Base depth vs pixel</span><strong id="reportBaseDepth">—</strong></div>
 <div class="stat"><span>Overhang risk faces</span><strong id="reportOverhang">—</strong></div>
 <div class="stat"><span>Suggested orientation</span><strong id="reportOrientation">—</strong></div>
@@ -222,7 +232,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="buttonrow"><button id="stlBtn" disabled>↓ STL</button><button id="threeMfBtn" disabled>↓ 3MF</button></div>
 <div class="note">Exports use only the prepared manufacturing mesh. Changing geometry or Build options requires preparing again.</div>
 <div class="divider"></div>
-<div class="buttonrow"><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div><div class="divider"></div><button id="calibrationBtn" style="width:100%">⌖ Generate 12 mm pixel-fit test strip (STL)</button><p class="note">Five mounting-hole diameters, left to right: 11.8 · 11.9 · 12.0 · 12.1 · 12.2 mm. Print in the intended material and measure the best fit.</p>
+<div class="buttonrow"><button id="wiringCsvBtn">↓ Wiring plan CSV</button><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div><div class="divider"></div><button id="calibrationBtn" style="width:100%">⌖ Generate 12 mm pixel-fit test strip (STL)</button><p class="note">Five mounting-hole diameters, left to right: 11.8 · 11.9 · 12.0 · 12.1 · 12.2 mm. Print in the intended material and measure the best fit.</p>
 <div class="advanced-only"><div class="divider"></div>
 <div class="control"><label>Modular cut plane X <output data-out="splitX"></output></label><input data-state="splitX" type="range" min="-100" max="100" step="1"></div>
 <label class="checks"><input data-state="splitParts" type="checkbox"> Enable split exports (two parts)</label>
