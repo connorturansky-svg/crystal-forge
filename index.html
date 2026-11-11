@@ -115,6 +115,11 @@ body.theme-light .control-tooltip span{color:#334c6b}
 .hardware-context-menu{position:absolute;z-index:11;display:flex;flex-direction:column;gap:7px;width:208px;padding:11px;border-radius:11px;background:#192b45;color:#f4f8ff;border:1px solid #8bbcff;box-shadow:0 8px 30px #0008}
 .hardware-context-menu[hidden],.hardware-marker-layer[hidden]{display:none!important}
 .hardware-context-menu button{text-align:left;padding:7px 9px}
+/* Drag or keyboard-resize left/right panels; 3D viewport gets remaining space. */
+.layout{position:relative}
+.workspace-resizer{position:absolute;top:0;bottom:0;width:9px;z-index:7;cursor:col-resize;background:transparent;touch-action:none}
+.workspace-resizer:hover,.workspace-resizer:focus-visible{background:#45b9e6aa;outline:1px solid #8ee8ff}
+.workspace-resizer[hidden]{display:none!important}
 </style></head>
 <body class="simple">
 <header class="topbar">
