@@ -70,7 +70,7 @@ export function planHardware(crystals,s){
     const p={x:Number(entry.x),z:Number(entry.z)};
     const specific=resolveSocketProfile(s,entry),radius=specific.maxDiameter/2;
     if(Number.isFinite(p.x)&&Number.isFinite(p.z)&&validHole(p,radius,sockets))
-      sockets.push({...p,radius,diameter:specific.boreDiameter,profileId:specific.id,kind:'LED',manual:true,index:i,wireAngle:Number(entry.wireAngle??0),wireEndX:entry.wireEndX,wireEndZ:entry.wireEndZ});
+      sockets.push({...p,radius,diameter:specific.boreDiameter,profileId:specific.id,kind:'LED',manual:true,index:i,id:String(entry.id||'manual-pixel-'+(i+1)),wireAngle:Number(entry.wireAngle??0),wireEndX:entry.wireEndX,wireEndZ:entry.wireEndZ});
     else invalidManualPixels.push({...p,radius,kind:'LED',index:i});
   });
   const ranked=pixelManual?[]:all.slice().sort((a,b)=>b.r*b.h-a.r*a.h);
@@ -90,7 +90,7 @@ export function planHardware(crystals,s){
       const a=c.rotation,p={x:c.x+o.x*Math.cos(a)-o.z*Math.sin(a),z:c.z+o.x*Math.sin(a)+o.z*Math.cos(a)};
       if(Math.hypot(o.x,o.z)+socketRadius+clearance > r-1.0)continue;
       if(!validHole(p,socketRadius,sockets))continue;
-      sockets.push({...p,radius:socketRadius,diameter:socketDiameter,profileId:profile.id,crystalId:c.id,kind:'LED'});
+      sockets.push({...p,radius:socketRadius,diameter:socketDiameter,profileId:profile.id,crystalId:c.id,kind:'LED',id:'auto-pixel-'+String(c.id)+'-'+sockets.length});
     }
   }
   // A usable LED need not be entirely within a single crystal root.
@@ -113,14 +113,14 @@ export function planHardware(crystals,s){
     for(const p of candidates){
       if(sockets.length>=pixelRequested)break;
       if(!validHole(p,socketRadius,sockets))continue;
-      sockets.push({...p,radius:socketRadius,diameter:socketDiameter,profileId:profile.id,crystalId:null,kind:'LED',autoFallback:true});
+      sockets.push({...p,radius:socketRadius,diameter:socketDiameter,profileId:profile.id,crystalId:null,kind:'LED',id:'auto-pixel-fallback-'+sockets.length,autoFallback:true});
     }
   }
   const mp=mountingProfile(s);
   if(mp.enabled&&mountManual)manualMounts.slice(0,20).forEach((entry,i)=>{
     const p={x:Number(entry.x),z:Number(entry.z)},radius=mp.diameter/2;
     if(Number.isFinite(p.x)&&Number.isFinite(p.z)&&validHole(p,radius,[...sockets,...mounts]))
-      mounts.push({...p,radius,kind:'mount',diameter:mp.diameter,depth:mp.depth,label:mp.preset+' '+(i+1),manual:true,index:i});
+      mounts.push({...p,radius,kind:'mount',diameter:mp.diameter,depth:mp.depth,label:mp.preset+' '+(i+1),id:String(entry.id||'manual-mount-'+(i+1)),manual:true,index:i});
     else invalidManualMounts.push({...p,radius,kind:'mount',index:i});
   });
   if(mp.enabled&&!mountManual){
@@ -141,7 +141,7 @@ export function planHardware(crystals,s){
         }
       }
     }
-    if(pair)pair.forEach((p,i)=>mounts.push({...p,kind:'mount',radius:mp.diameter/2,diameter:mp.diameter,depth:mp.depth,label:mp.preset+' '+(i+1)}));
+    if(pair)pair.forEach((p,i)=>mounts.push({...p,kind:'mount',radius:mp.diameter/2,diameter:mp.diameter,depth:mp.depth,label:mp.preset+' '+(i+1),id:'auto-mount-'+i}));
     else messages.push('Two '+mp.preset+' mounting holes could not be placed without intersecting LED sockets or the base edge. No mounting holes were cut. Reduce LED quantity, clearance, or mounting-hole size and prepare again.');
   }
   if(invalidManualPixels.length)messages.push(invalidManualPixels.length+' manual pixel hole(s) are outside the base or collide with another hole. These are NOT exported.');
@@ -161,7 +161,7 @@ export function planHardware(crystals,s){
   const requestedMounts=mp.preset==='Edge fixing tabs'?
    edgePlan.requested*edgePlan.holesEach:
    mp.enabled&&mountManual?min(20,manualMounts.length):mp.requested;
-  const wirePlan=planWireRoutes(crystals,s,{sockets,mounts,tabs:edgePlan.tabs,tabHoles:edgePlan.tabHoles,polygon});
+  const wirePlan=planWireRoutes(crystals,s,{sockets,mounts,tabs:edgePlan.tabs,tabHoles:edgePlan.tabHoles,polygon,skippedPixels,invalidManualPixels});
   messages.push(...wirePlan.messages);
   return {sockets,mounts,polygon,collisions,messages,clearance,wirePlan,
     invalidManualPixels,invalidManualMounts,
