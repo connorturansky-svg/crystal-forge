@@ -630,7 +630,9 @@ document.querySelectorAll('[data-state]').forEach(e=>{
    // One explicit manufacturing strategy at a time; avoid silently ignoring a vault.
    if(key==='baseVault'&&value)s.hollowCrystals=false;
    if(key==='hollowCrystals'&&value){s.baseVault=false;s.targetedLightPaths=false;}
-   if(key==='targetedLightPaths'&&value){s.hollowCrystals=false;s.baseVault=false;}
+   if(key==='targetedLightPaths'&&value){s.hollowCrystals=false;s.baseVault=false;s.lightPorts=false;}
+   if(key==='lightPorts'&&value){s.baseVault=true;s.targetedLightPaths=false;s.hollowCrystals=false;}
+   if(key==='baseVault'&&!value)s.lightPorts=false;
    if(key==='baseVault'&&value)s.targetedLightPaths=false;
   if(!previewKeys.has(key))disposeManufacturing();
   for(const o of document.querySelectorAll('[data-out="'+key+'"]'))o.textContent=format(key,value);
