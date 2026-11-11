@@ -371,11 +371,32 @@ try{
  await page.locator('#applyFitResultBtn').click();
  const fitAfter=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.pixelFit);
  assert(fitAfter>fitBefore,'Choosing larger physical hole applies increased clearance');
- assert(await page.locator('#fitOverrideToolBtn').isVisible(),'Gear marks a measured override');
+ assert(await page.locator('#productionPackBtn').isDisabled(),
+  'Changing a physical socket fit invalidates the previously prepared model');
+ // The calibrated-fit indicator and Reset button intentionally live in Build,
+ // not inside the Print workspace where the specimen result was selected.
+ await page.locator('[data-tab="build"]').click();
+ assert(await page.locator('#fitOverrideToolBtn').isVisible(),
+  'Gear visibly identifies the measured override in the Build workspace');
  await page.locator('#resetFitOverrideBtn').click();
  const fitReset=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.pixelFit);
  assert.equal(fitReset,fitBefore,'Override reset restores previous fit');
- assert(await page.locator('#detachablePlateBtn').isDisabled(),'Plate export hidden until matching mount selected');
+ await page.locator('[data-tab="print"]').click();
+ // Applying/resetting calibration changes real Manifold bores, so old STL/ZIP
+ // exports must remain disabled until a fresh mesh is prepared.
+ assert(await page.locator('#productionPackBtn').isDisabled(),
+  'Resetting socket fit keeps stale manufacturing downloads disabled');
+ await page.locator('#prepareBtn').click();
+ await page.waitForFunction(()=>{
+  const status=document.querySelector('#prepareStatus')?.textContent||'';
+  return status.toLowerCase().includes('prepared')||status.toLowerCase().includes('failed');
+ },null,{timeout:120000});
+ assert(!/failed/i.test(await page.locator('#prepareStatus').innerText()),
+  'Rebuild after fit calibration reset produces a valid final mesh');
+ assert(await page.locator('#productionPackBtn').isEnabled(),
+  'Freshly prepared model re-enables the correct production bundle');
+ assert(await page.locator('#detachablePlateBtn').isDisabled(),
+  'Plate export remains unavailable without a matching plate mount');
  await page.locator('#printHeatmap').check();
  await page.screenshot({path:'qa/browser-smoke.png'});
  assert((await page.locator('#printAssuranceSummary').innerText()).includes('review note'),'Model-aware print check summary');
