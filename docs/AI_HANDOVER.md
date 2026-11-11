@@ -1,5 +1,14 @@
 # AI handover — read immediately after AGENTS.md
 
+## PR8 new highest-priority requirements (11 November 2026)
+
+**Planning only in draft PR8; not yet shipped.** Start with [PR8 P0 spec](PR8_CRITICAL_WIRING_AND_HARDWARE.md) and [#7](https://github.com/connorturansky-svg/crystal-forge/issues/7)/[#9](https://github.com/connorturansky-svg/crystal-forge/issues/9). The user inspected the underside Build screenshot and rejected the existing *Two parallel wires* system: it produces adjacent twin lanes, whereas a WS2811 pixel **string** has an incoming and outgoing cable on opposite physical sides of every pixel. P0 is to route **edge IN → P1.IN / P1.OUT → P2.IN / ... / Pn.OUT → edge OUT**, including **two separately open opposite-sided cable tails for one pixel**. The outgoing final cable should *not* automatically be wired back to input electrically. String order must be controlled by list reordering rather than nearest-neighbour topology; preserve identifiers and validate actual geometry, edges, roots, mounts and thickness. Legacy `wireMode='parallel'` must not be silently reinterpreted.
+
+Add readable numbered 3D **P1/P2** pixel and **M1/M2** mount markers (distinguish tabs), synced click selection and focused Build editing; reordering items must update routing/CSV/export but not X/Z; a **double-click empty model** context menu should allow validated Add Pixel Hole / Add Mount Hole and double-click on an existing marker should edit it. P0 browser/Manifold regressions and JSON persistence required. P1 returns to inspectable light paths, Cura/roof checks and measured clip/strain relief.
+
+PR7/v0.12.0 is already **merged** at main commit `e60c64b000e53ce6e1805fd52bebfc0eabf9119e` and deployed. Leave production `main` alone until PR8 implementation passes exact-head static/Manifold/Playwright CI. PR8 draft currently contains *documentation only*, so do not describe these features as implemented.
+
+
 ## PR7 reconciliation and per-LED optical fix (11 November 2026)
 
 - PR #12 was merged into `main` at `c6abc6809f84302fd6ba0daa8b2d42ca7bf973bd` while PR #13 remained based on PR6. PR #13 was reconciled with an ordinary two-parent merge commit `6aa9f38b07ff9281314e99ad6ba0d01b79389280`, preserving the newer PR #13 source tree rather than force-pushing or changing live `main`. GitHub subsequently reported PR #13 mergeable.
