@@ -625,7 +625,8 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  // Read-only test/debug telemetry, not a second representation of holes.
  window.__crystalForgePlacementMetrics=()=>({tool:placing,active:!!placing,
   cursorVisible:preview.visible,valid:!!lastCursor?.valid,
-  worldPosition:lastCursor?.pos??null,orbitEnabled:orbit.enabled});
+  worldPosition:lastCursor?.pos??null,orbitEnabled:orbit.enabled,
+  routeGuidesVisible:guides.visible,manufacturingVisible:!!getManufacturingVisible()});
 
  return {refresh,cancel};
 }
