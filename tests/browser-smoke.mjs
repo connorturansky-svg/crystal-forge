@@ -132,6 +132,11 @@ try{
  assert(await page.locator('#pixelProfileOverlay:not([hidden])').count(),'Pixel editor opens');
  await page.locator('#pixelName').fill('Measured gumdrop');
  await page.locator('#pixelBodyDiameter').fill('13.5');
+ assert(await page.locator('#pixelProfileDiagram svg').count(),'Dimensioned LED diagram is visible');
+ assert((await page.locator('#pixelProfileDiagram [data-profile-field="pixelBodyDiameter"]').innerText()).includes('A 13.5 mm'),
+  'Body width A changes live with input');
+ await page.locator('#pixelProfileDiagram [data-profile-field="pixelCapHeight"]').click();
+ assert.equal(await page.evaluate(()=>document.activeElement?.id),'pixelCapHeight','Clicking E focuses the cap dimension input');
  await page.locator('#pixelFlangeDiameter').fill('15.5');
  await page.locator('#pixelBodyHeight').fill('19');
  await page.locator('#savePixelProfileBtn').click();
@@ -148,8 +153,14 @@ try{
  await page.locator('[data-state="wireExit"]').check();
  await page.locator('[data-state="wireWidth"]').evaluate(el=>{el.value='3.5';el.dispatchEvent(new Event('input',{bubbles:true}))});
  await page.waitForTimeout(250);
+ assert(await page.locator('#singleWireExitBtn').count(),'Single-pixel push-in groove shortcut exists');
+ await page.locator('#singleWireExitBtn').click();
+ await page.waitForTimeout(420);
+ assert((await page.locator('#wireRouteStatus').innerText()).length>30,'Groove route status explains what is cut');
+ const underView=await page.evaluate(()=>window.__crystalForgeViewMetrics());
+ assert(underView.camera[1]<underView.target[1],'Shortcut looks at actual underside');
  const wireSettings=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings);
- assert(wireSettings.wireChannels&&wireSettings.wireExit,'Wire settings saved');
+ assert(wireSettings.wireChannels&&wireSettings.wireExit,'Wire settings saved after one-click groove shortcut');
  assert.equal(wireSettings.wireWidth,3.5,'Wire width saved');
  assert((await page.locator('#hardwareGuideSummary').innerText()).includes('wire segments'),'Live wire guide summary present');
  const wireDownload=page.waitForEvent('download');
