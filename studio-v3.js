@@ -24,7 +24,7 @@ const $=id=>document.getElementById(id);
 installResizablePanels();
 const defaults={
   title:'Untitled cluster',count:16,height:155,width:130,crystalSize:1,widthRandomness:0,studioBrightness:.85,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
-  familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
+  familyMix:'Quartz',familyWeights:{Quartz:1,Shard:1,Blade:1,Cubic:1,'Double terminated':1,Fantasy:1},bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
   showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',wirePairSpacing:7,wireWidth:3,wireDepth:2,wireSlack:0,manualEdgeTabs:null,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
@@ -164,6 +164,12 @@ function syncForm(){
   else e.value=s[k]??'';
  }
  for(const e of document.querySelectorAll('[data-out]'))e.textContent=format(e.dataset.out,s[e.dataset.out]);
+ const weights=s.familyWeights||{};
+ for(const e of document.querySelectorAll('[data-family-weight]')){
+  const n=Number(weights[e.dataset.familyWeight]??1);e.value=n;
+  const label=e.closest('.control')?.querySelector('output');if(label)label.textContent=n+'×';
+ }
+ $('familyWeightsControls').hidden=s.familyMix!=='Mixed';
  $('actualHole').textContent=resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm';
  syncFitCalibration();
  $('pixelBaseDepthHint').textContent=s.baseHeight>=resolvePixelProfile(s).bodyHeight+1?'Base accommodates selected nominal LED depth.':'Base is shallower than selected LED housing. Check fit.';
@@ -190,7 +196,7 @@ function setStatus(t){$('status').textContent=t}
 
 let manufacturingMesh=null,manufacturingReport=null,preparedSource=null;
 const relevantManufacturingKeys=[
- 'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
+ 'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','familyWeights','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
  'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightPorts','lightPortDiameter','lightPortReach','lightingMode','pixelCount','pixelDiameter',
  'pixelFit','pixelRetentionLip','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireMode','wirePairSpacing','wireWidth','wireDepth','wireSlack','cutSockets','hollowCrystals','targetedLightPaths','lightBoreDiameter','lightReach','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','printerX','printerY','printerZ','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','manualEdgeTabs','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
@@ -632,6 +638,12 @@ function schedule(full=true){
   snapshot();
  },85);
 }
+document.querySelectorAll('[data-family-weight]').forEach(input=>input.addEventListener('input',()=>{
+ const name=input.dataset.familyWeight;
+ s.familyWeights={...s.familyWeights,[name]:Number(input.value)};
+ input.closest('.control')?.querySelector('output')?.replaceChildren(document.createTextNode(input.value+'×'));
+ generate();snapshot();
+}));
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix']);
 const previewKeys=new Set(['fitCouponStyle','hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
@@ -645,6 +657,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
     rebuild();snapshot();return;
   }
   s[key]=value;
+  if(key==='familyMix')$('familyWeightsControls').hidden=value!=='Mixed';
   if(key==='pixelFit'&&s.fitCalibration){s.fitCalibration=null;syncFitCalibration()}
    if(key==='pixelProfileId'){
     const profile=allPixelProfiles(s).find(p=>p.id===value);
