@@ -8,6 +8,7 @@ import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
+import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
 
 const $=id=>document.getElementById(id);
 const defaults={
@@ -16,7 +17,7 @@ const defaults={
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,
   showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
-  printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,overhang:45,preserveLocked:true,snap:true,
+  printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
 let s={...defaults},crystals=[],selectedId=null,activeTool='select',cameraTween=null;
@@ -74,7 +75,7 @@ function format(k,v){
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
  if(['mountHoleDiameter','mountHoleDepth','mountSpacing','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
- if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
+ if(k==='curaQuality')return v+'%';if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
 }
 const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
 function selectedCrystal(){return crystals.find(c=>c.id===selectedId)||null}
@@ -133,6 +134,7 @@ function syncForm(){
  syncShapeControls();
  $('edgeTabSettings').hidden=s.mount!=='Edge fixing tabs';
  $('customPrinterSettings').hidden=s.printer!=='Custom / other';
+ updateCuraProfileSummary();
  $('floatBtn').classList.toggle('active',!!s.floatView);
  $('hardwareColoursBtn').classList.toggle('active',!!s.hardwareColourMode);
  refreshStudioLighting();
@@ -585,7 +587,7 @@ function schedule(full=true){
  },85);
 }
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix']);
-const previewKeys=new Set(['showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
+const previewKeys=new Set(['curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
@@ -604,6 +606,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
    }
   if(key==='mount')$('edgeTabSettings').hidden=value!=='Edge fixing tabs';
    if(key==='printer')$('customPrinterSettings').hidden=value!=='Custom / other';
+   if(key==='printer'||key.startsWith('cura'))updateCuraProfileSummary();
   if(key==='lightingMode'&&value==='single')s.pixelCount=1;
   if(key==='lightingMode'&&value==='none')s.pixelCount=0;
   if(key==='lightingMode'&&value==='multi'&&s.pixelCount<1)s.pixelCount=2;
@@ -913,6 +916,30 @@ $('splitExportBtn').onclick=async()=>{
  }catch(err){console.error(err);alert('Split failed: '+err.message)}
  finally{button.disabled=false}
 };
+
+function updateCuraProfileSummary(){
+ const target=$('curaProfileSummary'),warn=$('curaProfileWarning'),button=$('curaProfileBtn');
+ if(!target||!warn||!button)return;
+ try{
+  const p=calculateCuraSettings({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
+  target.textContent='Layer '+p.layerHeight.toFixed(3)+' mm · First layer '+p.initialHeight.toFixed(2)+' mm · '+p.wallCount+
+   ' walls · '+p.topLayers+' top / '+p.bottomLayers+' bottom layers · '+p.density+'% infill · '+p.speed+
+   ' mm/s · '+p.adhesion+' adhesion';
+  warn.textContent=p.warnings.filter(x=>x.includes('0% infill')||x.includes('support')||x.includes('nozzle')).join(' ');
+  button.disabled=false;button.title='Export Cura quality changes for '+p.machine;
+ }catch(err){
+  target.textContent='No supported profile for this combination.';
+  warn.textContent=err.message;button.disabled=true;button.title=err.message;
+ }
+}
+$('curaProfileBtn').onclick=()=>{
+ try{
+  const p=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
+  download(new Blob([p.bytes],{type:'application/zip'}),p.filename);
+  setStatus('Downloaded Cura profile '+p.title+' · select matching hardware and material in Cura before importing');
+ }catch(err){console.error('Cura profile download',err);alert(err.message)}
+};
+
 $('wiringCsvBtn').onclick=()=>{
  const plan=planHardware(crystals,s),routes=plan.wirePlan?.routes||[];
  const rows=[['Segment','From pixel','To pixel','Start X (mm)','Start Z (mm)','End X (mm)','End Z (mm)','Width (mm)','Depth (mm)','Length (mm)']];

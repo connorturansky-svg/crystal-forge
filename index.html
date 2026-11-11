@@ -246,6 +246,18 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <button id="splitExportBtn" disabled style="width:100%">↓ Export split parts</button>
 </div>
 </div></div>
+<div class="card teal"><div class="cardtitle"><span class="symbol">◈</span> Crystal Forge → Cura profile</div><div class="cardbody">
+<p class="note">Generate a custom .curaprofile file for <strong>the printer selected above</strong>. Install the matching physical nozzle / AA print core and select PLA or PETG in Cura first.</p>
+<div class="grid2">
+<div class="control"><label>Nozzle / print core</label><select data-state="curaNozzle" id="curaNozzleSelect"><option value="0.25">0.25 mm</option><option value="0.4">0.4 mm</option><option value="0.6">0.6 mm</option><option value="0.8">0.8 mm</option></select></div>
+<div class="control"><label>Filament material</label><select data-state="curaMaterial"><option value="PLA">PLA</option><option value="PETG">PETG</option></select></div></div>
+<div class="control"><label>Quality (faster → finer) <output data-out="curaQuality"></output></label><input data-state="curaQuality" type="range" min="0" max="100" step="5"></div>
+<div class="control"><label>Printing intention</label><select data-state="curaIntent"><option value="light">Translucent / light transmission (0% infill)</option><option value="balanced">Balanced durability (10–15% infill)</option><option value="durable">Stronger / robust (25–30% infill)</option></select></div>
+<div id="curaProfileSummary" class="softnotice" aria-live="polite">Profile settings will appear here.</div>
+<p class="note warning" id="curaProfileWarning">Import to Cura after selecting the correct printer, nozzle and material. Confirm actual walls, support and light access in the slicer.</p>
+<button id="curaProfileBtn" class="primary" type="button" style="width:100%">↓ Download Cura profile (.curaprofile)</button>
+<p class="note">This creates importable Cura 5-style quality overrides—not printer firmware or G-code. 0% infill does not guarantee an open light path; print cores and nozzles must match the physical machine.</p>
+</div></div>
 <div class="card amber"><div class="cardtitle"><span class="symbol">⚠</span> Fabrication status</div><div class="cardbody">
 <div class="alert"><strong>Not yet production-ready.</strong> Use Prepare Print to build a single Manifold mesh, with optional hollow cuts and pixel holes. Geometric integrity is checked, but minimum wall thickness, print orientation and physical hardware fit are not certified. Check in Cura before printing.</div>
 <div class="note">Print checks are now available, although automatic support removal, reliable constant-wall hollowing, retaining lips and modular connectors remain under development.</div>
