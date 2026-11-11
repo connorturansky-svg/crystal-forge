@@ -157,6 +157,9 @@ body.theme-light .control-tooltip span{color:#334c6b}
 </div></div>
 <div class="card blue"><div class="cardtitle"><span class="symbol">◈</span> Shared hollow / balloon construction</div><div class="cardbody">
 <label class="checks"><input data-state="hollowCrystals" type="checkbox"> Experimental: explicit hollow light channels (much slower)</label>
+<div class="divider"></div><label class="checks"><input data-state="targetedLightPaths" type="checkbox"> Targeted LED-to-crystal bores (alternative to full hollowing)</label>
+<div class="advanced-only"><div class="control"><label>Light passage diameter <output data-out="lightBoreDiameter"></output></label><input data-state="lightBoreDiameter" type="range" min="1.6" max="8" step=".2"></div><div class="control"><label>Maximum LED reach <output data-out="lightReach"></output></label><input data-state="lightReach" type="range" min="15" max="180" step="5"></div></div>
+<p class="note">Cuts physical bores from the LED sockets toward eligible crystal roots, without expensive whole-cluster erosion. Too-narrow or shallow-roof paths are skipped and reported. Inspect in Cura and with a real LED.</p>
 <div class="control"><label>Target wall thickness <output data-out="wallThickness"></output></label><input data-state="wallThickness" type="range" min=".8" max="4" step=".2"></div>
 <p class="note">Default: leave this OFF. Crystal Forge exports a joined solid model with LED and mounting cuts; set infill (0–100%) and wall count in Cura. At 0% infill, Cura can still close spike roots with horizontal skins, so inspect the sliced light path. Turn ON only if you need explicit internal channels.</p>
 <div class="success"><strong>Supportless-first:</strong> after preparing the solid, inspect downward-facing surfaces and recommended orientation. A 45° reference alone cannot guarantee support-free printing.</div>
@@ -235,7 +238,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="stat"><span>Open base vault</span><strong id="reportVault">—</strong></div>
 <div class="stat"><span>Estimated roof gap</span><strong id="reportVaultGap">—</strong></div>
 <div class="stat"><span>Wiring grooves cut</span><strong id="reportWireChannels">—</strong></div><div class="stat"><span>Estimated routed wire</span><strong id="reportWireLength">—</strong></div><div class="stat"><span>LEDs without route</span><strong id="reportUnrouted">—</strong></div>
-<div class="stat"><span>LED side vent sets</span><strong id="reportLEDVents">—</strong></div><div class="stat"><span>Crystal light passages</span><strong id="reportPorts">—</strong></div><div class="stat"><span>Shared light path</span><strong id="reportLightPath">—</strong></div><div class="stat"><span>Base depth vs pixel</span><strong id="reportBaseDepth">—</strong></div>
+<div class="stat"><span>LED side vent sets</span><strong id="reportLEDVents">—</strong></div><div class="stat"><span>Crystal light passages</span><strong id="reportPorts">—</strong></div><div class="stat"><span>Targeted bores cut</span><strong id="reportTargeted">—</strong></div><div class="stat"><span>Light routes skipped</span><strong id="reportSkippedLight">—</strong></div><div class="stat"><span>Shared light path</span><strong id="reportLightPath">—</strong></div><div class="stat"><span>Base depth vs pixel</span><strong id="reportBaseDepth">—</strong></div>
 <div class="stat"><span>Overhang risk faces</span><strong id="reportOverhang">—</strong></div>
 <div class="stat"><span>Suggested orientation</span><strong id="reportOrientation">—</strong></div>
 <div id="reportWarnings" class="note"></div>

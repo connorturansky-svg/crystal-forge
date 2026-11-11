@@ -156,6 +156,9 @@ const SETTINGS={
  "applyShapePresetBtn": ["Apply crystal preset","Apply the selected shape only to the selected unlocked crystal, or to global shape parameters when none is selected."],
  "hardwareSnap": ["Snap hardware coordinates","Applies grid snapping when adding/moving LED or mounting holes and when editing numeric coordinates."],
  "hardwareSnapStep": ["Hardware snap spacing","Grid increment in millimetres for hardware hole placement; can be disabled without changing existing holes."],
+ "targetedLightPaths": ["Targeted LED-to-crystal openings","Cuts real narrow bores from accepted LED socket roofs, through the base and into sufficiently wide crystal roots. Alternative to slow balloon hollowing; Cura and real light tests still required."],
+ "lightBoreDiameter": ["Targeted light passage diameter","Nominal through-hole width; skip roots too narrow for minimum surrounding wall margin."],
+ "lightReach": ["Maximum LED reach","Limit the distance from an LED socket to a crystal to avoid long weak tunnels."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."

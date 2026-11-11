@@ -10,6 +10,7 @@ import {crystalGeometry,crystalRootOffset,baseGeometry,baseSurfaceHeight} from '
 import {planHardware} from './hardware-layout.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
 import {estimateRoofReview} from './print-advisor.js';
+import {planTargetedLightPaths} from './targeted-light-paths.js';
 
 let modulePromise=null;
 export async function loadManifold(){
@@ -415,6 +416,39 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     }
    }
   }
+  // Targeted channels physically connect accepted LED socket ceilings to
+  // crystal spines without expensive whole-union erosion. Default OFF.
+  const targetedPlan=planTargetedLightPaths(crystals,s,hardware);
+  warnings.push(...targetedPlan.warnings);
+  let targetedLightCount=0;
+  if(targetedPlan.paths.length){
+   const channels=[];
+   for(const path of targetedPlan.paths){
+    const crystalMesh=live.find(m=>m.userData?.crystalId===path.id);
+    if(!crystalMesh)continue;
+    crystalMesh.updateMatrixWorld(true);
+    for(const [a,b] of path.baseSegments){
+     const cylinder=lightTunnel(wasm,new THREE.Vector3(a.x,a.y,a.z),new THREE.Vector3(b.x,b.y,b.z),path.boreRadius,path.boreRadius);
+     if(cylinder)channels.push(hold(cylinder));
+    }
+    const bottom=new THREE.Vector3(0,0,0).applyMatrix4(crystalMesh.matrixWorld);
+    const top=new THREE.Vector3(0,path.crystalHeightMm,0).applyMatrix4(crystalMesh.matrixWorld);
+    const root=path.baseSegments[2][1];
+    const rootPoint=new THREE.Vector3(root.x,root.y,root.z);
+    const step=new THREE.Vector3(bottom.x,Math.max(root.y+2.5,bottom.y+3),bottom.z);
+    const lower=lightTunnel(wasm,rootPoint,step,path.boreRadius,path.boreRadius);
+    if(lower)channels.push(hold(lower));
+    const shaft=lightTunnel(wasm,step,top,path.boreRadius,Math.max(.7,path.boreRadius*.65));
+    if(shaft)channels.push(hold(shaft));
+    targetedLightCount++;
+   }
+   if(channels.length){
+    const opened=hold(combined.subtract(hold(wasm.Manifold.union(channels))));
+    assertSolid(opened,'Targeted LED-to-crystal light passages');
+    combined=opened;
+   }
+   warnings.push('Targeted light bores cut from LED roofs into eligible crystal roots. Inspect Cura cross-sections and physical light transmission before treating them as working optical passages.');
+  }
   // Single shared plan for preview, manufacturing and wiring CSV.
   if(hardware.wirePlan?.routes.length){
    const grooves=hardware.wirePlan.routes.map(route=>{
@@ -527,7 +561,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,roofReview,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
+    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,targetedLightCount,targetedLightSkipped:targetedPlan.skipped,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
      plannedSockets:hardware.sockets,plannedMounts:[...hardware.mounts,...hardware.tabHoles],hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
