@@ -90,7 +90,8 @@ export function snapPixelsToWireLength(crystals,settings,{maxMoveMm=5,accuracyMm
    return {p,plan:current,len:link.lengthMm,offset:distance(start,p),
     score:Math.abs(link.lengthMm-desired)};
   };
-  let best=evaluate(start.x,start.z);
+  const initialCandidate=evaluate(start.x,start.z);
+  let best=initialCandidate;
   if(!best){
    links.push({label,status:'skipped',beforeMm,afterMm:beforeMm,moveMm:0,
     reason:'Current route cannot be validated without changing other hardware.'});
@@ -113,7 +114,7 @@ export function snapPixelsToWireLength(crystals,settings,{maxMoveMm=5,accuracyMm
    const sample=[];
    for(let n=-5;n<=5;n++){
     const t=n*radius/5;
-    const result=n===0?best:evaluate(start.x+axis.x*t,start.z+axis.z*t);
+    const result=n===0?initialCandidate:evaluate(start.x+axis.x*t,start.z+axis.z*t);
     sample.push({t,result});
     if(result&&(result.score<best.score-1e-7||
        (Math.abs(result.score-best.score)<1e-7&&result.offset<best.offset)))best=result;
