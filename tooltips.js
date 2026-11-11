@@ -202,6 +202,9 @@ const SETTINGS={
   "Mount-hole spacing",
   "Desired separation between automatic fixing holes, subject to the base footprint."
  ],
+ "printerX": ["Custom printer width","Usable horizontal X build volume (mm), not including clips or nozzle clearance."],
+ "printerY": ["Custom printer depth","Usable horizontal Y build volume (mm). Confirm with the printer's Cura profile."],
+ "printerZ": ["Custom printer height","Maximum vertical printable height (mm). Check gantry and head clearance."],
  "printer": [
   "Printer profile",
   "Used for print-volume warnings. It does not automatically change Cura machine settings."

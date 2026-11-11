@@ -209,6 +209,11 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <section data-workspace="print">
 <div class="card blue"><div class="cardtitle"><span class="symbol">▣</span> Prepare for 3D printing</div><div class="cardbody">
 <div class="control"><label>Printer</label><select data-state="printer"><option>Ultimaker 3 Extended</option><option>Ultimaker 2+</option><option>Custom / other</option></select></div>
+<div id="customPrinterSettings" hidden><div class="grid2">
+<div class="control"><label>Printer X (mm)</label><input type="number" data-state="printerX" min="30" max="1500" step="1"></div>
+<div class="control"><label>Printer Y (mm)</label><input type="number" data-state="printerY" min="30" max="1500" step="1"></div>
+<div class="control"><label>Printer Z (mm)</label><input type="number" data-state="printerZ" min="30" max="1500" step="1"></div>
+</div><p class="note">User-entered machine build volume. Confirm actual usable area and head clearance in Cura.</p></div>
 <div class="control"><label>Overhang reference <output data-out="overhang"></output></label><input data-state="overhang" type="range" min="30" max="65" step="5"></div>
 <div class="note">Optimised supportless-first is the goal. Automated orientation and thorough overhang analysis are not yet implemented.</div>
 <div class="divider"></div><button id="prepareBtn" class="primary" style="width:100%;font-weight:700">▣ Prepare print mesh (Boolean union)</button><button id="cancelPrepareBtn" hidden style="width:100%;margin-top:7px">✕ Cancel preparation</button>
@@ -217,6 +222,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div id="prepareReport" class="card teal" hidden><div class="cardtitle">✓ Manufacturing geometry</div><div class="cardbody">
 <div class="stat"><span>Mesh integrity</span><strong id="reportIntegrity">—</strong></div>
 <div class="stat"><span>Connected bodies</span><strong id="reportPieces">—</strong></div><div class="stat"><span>Enclosed void shells</span><strong id="reportCavities">—</strong></div><div class="stat"><span>Fits printer</span><strong id="reportPrinterFit">—</strong></div>
+<div class="stat"><span>Zero-infill roof span proxy</span><strong id="reportRoofSpan">—</strong></div>
 <div class="stat"><span>Triangles</span><strong id="reportTriangles">—</strong></div>
 <div class="stat"><span>Approx. PLA</span><strong id="reportMass">—</strong></div>
 <div class="stat"><span>Socket holes cut</span><strong id="reportSockets">—</strong></div><div class="stat"><span>Mounting holes cut</span><strong id="reportMounting">—</strong></div><div class="stat"><span>Edge fixing tabs</span><strong id="reportTabs">—</strong></div>

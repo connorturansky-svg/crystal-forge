@@ -16,7 +16,7 @@ const defaults={
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,
   showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
-  printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
+  printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
 let s={...defaults},crystals=[],selectedId=null,activeTool='select',cameraTween=null;
@@ -132,6 +132,7 @@ function syncForm(){
  $('projectName').textContent=s.title;
  syncShapeControls();
  $('edgeTabSettings').hidden=s.mount!=='Edge fixing tabs';
+ $('customPrinterSettings').hidden=s.printer!=='Custom / other';
  $('floatBtn').classList.toggle('active',!!s.floatView);
  $('hardwareColoursBtn').classList.toggle('active',!!s.hardwareColourMode);
  refreshStudioLighting();
@@ -152,7 +153,7 @@ const relevantManufacturingKeys=[
  'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
  'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightingMode','pixelCount','pixelDiameter',
- 'pixelFit','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireWidth','wireDepth','wireSlack','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
+ 'pixelFit','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireWidth','wireDepth','wireSlack','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','printerX','printerY','printerZ','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
@@ -272,6 +273,7 @@ function renderManufactureReport(report){
  f('reportPieces',report.disconnected);
  f('reportCavities',report.internalCavities||0);
  f('reportPrinterFit',report.printerFits?'Yes':'Exceeds bed');
+ f('reportRoofSpan',report.roofReview?report.roofReview.estimateMm.toFixed(1)+' mm (proxy)':'—');
  f('reportTriangles',report.triangleCount.toLocaleString());
  f('reportMass',report.materialPLAgrams.toFixed(1)+' g');
  f('reportSockets',report.socketsCut);
@@ -601,6 +603,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
     syncForm();
    }
   if(key==='mount')$('edgeTabSettings').hidden=value!=='Edge fixing tabs';
+   if(key==='printer')$('customPrinterSettings').hidden=value!=='Custom / other';
   if(key==='lightingMode'&&value==='single')s.pixelCount=1;
   if(key==='lightingMode'&&value==='none')s.pixelCount=0;
   if(key==='lightingMode'&&value==='multi'&&s.pixelCount<1)s.pixelCount=2;
