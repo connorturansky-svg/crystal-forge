@@ -239,8 +239,27 @@ try{
  console.log('Manual LED X/Z editor and invalid position screening verified');
  // The tab preset must be accessible, visible, hover-explained and reflected
  // in the live hardware plan before preparing a manufacturing mesh.
+ await page.locator('[data-state="wireMode"]').selectOption('parallel');
+ assert.equal(await page.locator('[data-state="wireMode"]').inputValue(),'parallel');
+ await page.locator('[data-state="wirePairSpacing"]').evaluate(el=>{el.value='8';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(120);
+ const pairedStored=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings);
+ assert.equal(pairedStored.wirePairSpacing,8,'Paired wire spacing persists');
+ await page.locator('[data-state="wireMode"]').selectOption('single');
  await page.locator('[data-state="mount"]').selectOption('Edge fixing tabs');
  assert(await page.locator('#edgeTabSettings').isVisible(),'Edge tab controls are visible');
+ await page.locator('#placeTabBtn').click();
+ assert((await page.locator('#manualHardwareList').innerText()).includes('Editable edge tabs'),'Tabs become individually editable');
+ const existingTabs=await page.locator('[data-remove-tab]').count();
+ if(existingTabs>0){
+  await page.locator('[data-remove-tab]').first().click();
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings);
+  assert.equal(saved.tabCount,existingTabs-1,'Deleting an edge tab persists');
+ }
+ await page.locator('#stopHolePlacementBtn').click();
+ await page.locator('#resetTabsBtn').click();
+ const resetTabs=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualEdgeTabs);
+ assert.equal(resetTabs,null,'Evenly spaced tab reset removes manual overrides');
  await page.locator('[data-state="tabCount"]').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}))});
  await page.locator('[data-state="tabHolesPerTab"]').evaluate(el=>{el.value='2';el.dispatchEvent(new Event('input',{bubbles:true}))});
  await page.waitForTimeout(300);
