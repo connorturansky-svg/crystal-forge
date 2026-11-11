@@ -140,6 +140,11 @@ const SETTINGS={
   "Choose one shared LED, multiple LEDs or no lighting. Actual channels need inspecting in Cura."
  ],
  "pixelProfileId": ["Pixel profile","Choose a seed, bullet, gumdrop or saved custom profile. Dimensions change the actual manufacturing cut."],
+ "wireMode": ["One or two wire grooves","Parallel mode cuts two separate real grooves with a shared direction. Each selected pixel has a rotation angle controlling the paired outlets."],
+ "wirePairSpacing": ["Parallel wire separation","Centre-to-centre distance of the two grooves. It must exceed groove width with extra printed material between tracks."],
+ "pickWireExitBtn": ["Pick paired cable exit","Click near the base perimeter to choose the exit centre for both wires. Their relative spacing and heading remain coupled to the pixel rotation."],
+ "placeTabBtn": ["Directly edit edge tabs","Click to add a tab; Shift-drag an existing tab to move it, or delete it in the hardware list."],
+ "resetTabsBtn": ["Reset edge tab placement","Switch back to the automatic equally spaced tab layout."],
  "wireChannels": ["Carve underside wire grooves","When enabled, cut actual shallow channels joining multiple accepted LED sockets. Not continuous optical channels or guaranteed strain relief."],
  "wireExit": ["Cable exit","Attempt to route one groove to the nearest safe perimeter edge; may be skipped if the wall is too thin."],
  "wireWidth": ["Wire channel width","Width of each open-bottom cable groove. Measure actual cable insulation and keep material around nearby holes."],

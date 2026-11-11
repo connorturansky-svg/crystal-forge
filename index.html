@@ -176,13 +176,16 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
 <div class="divider"></div><div class="cardtitle" style="padding:6px 0">⤳ Optional underside wiring channels</div>
 <label class="checks"><input type="checkbox" data-state="wireChannels"> Carve underside wire channels between accepted LEDs</label>
-<label class="checks"><input type="checkbox" data-state="wireExit"> Route first pixel to the nearest feasible base edge</label>
+<label class="checks"><input type="checkbox" data-state="wireExit"> Route first pixel to a safe base edge</label>
+<div class="control"><label>Wire arrangement</label><select data-state="wireMode"><option value="single">Single channel</option><option value="parallel">Two parallel wires</option></select></div>
+<div class="control"><label>Parallel wire centres <output data-out="wirePairSpacing"></output></label><input data-state="wirePairSpacing" type="range" min="3" max="22" step=".5"></div>
+<div class="buttonrow"><button type="button" id="pickWireExitBtn">⌖ Pick paired wire exit on model</button></div>
 <div class="advanced-only">
 <div class="control"><label>Channel width <output data-out="wireWidth"></output></label><input data-state="wireWidth" type="range" min="1.5" max="9" step=".25"></div>
 <div class="control"><label>Channel depth <output data-out="wireDepth"></output></label><input data-state="wireDepth" type="range" min=".8" max="5" step=".2"></div>
 <div class="control"><label>Extra cable slack <output data-out="wireSlack"></output></label><input data-state="wireSlack" type="range" min="0" max="30" step="5"></div>
 </div>
-<p class="note">Cyan guides show the accepted paths. These are open-bottom grooves, not protected wire conduits. Connections that cross screws, thin walls or the edge are skipped; slack is best-effort. Wire paths are disabled for the optional base vault and experimental full hollowing.</p>
+<p class="note">Single and two-parallel-wire modes cut real grooves. The two exits are computed together from the LED rotation and gap. Pick a common end centre on the edge or enter X/Z on the LED card. Cyan guides show accepted routes; full fixing tabs are obstacles, so unsafe paths are skipped. These are not insulated electrical conduits. Routes require a solid base.</p>
 <p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p><div class="divider"></div><label class="checks"><input data-state="glowPreview" type="checkbox"> Preview the whole cluster glowing one colour</label>
 <div class="control"><label>Simulated LED colour</label><select data-state="glowColour"><option value="0x77c4ff">Ice blue</option><option value="0xffa3df">Pink</option><option value="0xa58bff">Purple</option><option value="0xffdb8b">Warm white</option><option value="0x9affbc">Green</option><option value="0xffffff">Cool white</option></select></div>
 <p class="note">Illustrative glow only — real brightness depends on filament translucency, wall thickness, cavity connectivity and LED placement.</p>
@@ -199,7 +202,9 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Hole diameter <output data-out="tabHoleDiameter"></output></label><input data-state="tabHoleDiameter" type="range" min="1.8" max="16" step=".2"></div>
 <div class="control"><label>Tab thickness <output data-out="tabThickness"></output></label><input data-state="tabThickness" type="range" min="2.5" max="15" step=".5"></div>
 <div class="control"><label>Material around holes <output data-out="tabWall"></output></label><input data-state="tabWall" type="range" min="2" max="8" step=".5"></div>
-<p class="note">Equally spaced perimeter ears with through-holes for zip ties or bolts. These are printed with the base; crowded tabs are skipped and reported. Verify actual strength, fit and layer adhesion.</p></div>
+<div class="buttonrow"><button type="button" id="placeTabBtn">＋ Add / move edge tab on model</button><button type="button" id="resetTabsBtn">↺ Reset evenly spaced</button></div>
+<p class="note">Click to add; Shift-drag existing tabs to move, or delete them from the hardware list. The planner rejects tabs that overlap mounting features. Wire routes keep clear of the entire tab body, not merely its holes.</p>
+<p class="note">Printed fixing tabs must be physically checked for mechanical strength, hole tolerances and layer adhesion before use.</p></div>
 <div class="control"><label>Detachable plate thickness <output data-out="plateThickness"></output></label><input data-state="plateThickness" type="range" min="3" max="8" step=".5"></div>
 <p class="note">Detachable plate now produces two registered nominal M3 insert pockets in the base; after preparing the mesh, download a separate mating plate with matching bolt holes. Fit and strength must be checked in a physical build.</p>
 <p class="note warning">Overhead installations need independently verified load-bearing fixings and secondary retention.</p>
@@ -211,7 +216,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Hardware snap grid <output data-out="hardwareSnapStep"></output></label><input data-state="hardwareSnapStep" type="range" min=".5" max="20" step=".5"></div>
 <div class="buttonrow"><button id="placePixelBtn">＋ Place / move LED</button><button id="placeMountBtn">＋ Place mounting hole</button></div>
 <div class="buttonrow" style="margin-top:6px"><button id="stopHolePlacementBtn">✕ Stop placing</button></div>
-<p id="placementHint" class="note">Select Place and click the model to add a hole, or Shift-drag an existing manually placed hole to move it. Adjust X/Z for precision below.</p>
+<p id="placementHint" class="note">Click to add hardware, or Shift-drag an existing LED, mounting hole or edge tab. Use Pick paired wire exit to set the two aligned wire endpoints at a chosen perimeter position.</p>
 <div id="manualHardwareList"></div>
 </div></div>
 </section>
