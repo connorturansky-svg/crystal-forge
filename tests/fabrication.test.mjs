@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
 import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,baseProfileHeight,baseEdgeHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
-import {setThreeInstance,prepareFabrication,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
+import {setThreeInstance,prepareFabrication,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,splitPreparedMeshGrid,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
+import {planBedAwareSplit} from '../bed-split.js';
 import {planWireRoutes} from '../wire-routing.js';
 import {planTargetedLightPaths} from '../targeted-light-paths.js';
 import {planDetachablePlate} from '../detachable-plate.js';
@@ -490,7 +491,22 @@ const keyed=splitPreparedMesh(wasm,result.report.mesh,0,{points:[{x:0,z:10,y:7,d
 assert.equal(keyed.joints,1,'Optional split-part dowel planning applied');
 assert(keyed.some(Boolean),'Keyed split export produced real geometry');
 keyed.forEach(v=>v?.geometry.dispose());
-const pins=makeSplitPinCoupon(wasm,[{diameter:4,depth:5}]);
+// Printer-bed-aware split: verify actual Manifold solids, volume conservation,
+ // closed shells, and printable XY footprint, not just a plan.
+ const bb=result.report.bounds,gridPlan=planBedAwareSplit({...result.report,
+  printerLimit:[Math.max(35,Math.round(bb[0]*.65)),bb[2]+20,bb[1]+20]});
+ assert(gridPlan.ready&&gridPlan.needed,'Large model receives an auto bed plan');
+ const gridPieces=splitPreparedMeshGrid(wasm,result.report.mesh,gridPlan);
+ assert(gridPieces.length>=2&&gridPieces.length<=gridPlan.pieceCount);
+ for(const piece of gridPieces){
+  assert.equal(geometryEdges(piece.geometry).open,0,'Actual bed tile stays watertight');
+  assert(piece.bounds[0]<=gridPlan.usableX+.1&&piece.bounds[2]<=gridPlan.usableZ+.1,
+   'Actual bed tile fits its allocated XY area');
+ }
+ assert(Math.abs(gridPieces.reduce((sum,p)=>sum+p.volume,0)-result.report.volumeMm3)<
+  Math.max(1,result.report.volumeMm3*.002),'Split preserves total volume');
+ gridPieces.forEach(piece=>piece.geometry.dispose());
+ const pins=makeSplitPinCoupon(wasm,[{diameter:4,depth:5}]);
 assert(pins.geometry.getAttribute('position').count>30,'Separate printable alignment pin geometry exists');
 pins.geometry.dispose();
 result.geometry.dispose();
