@@ -3,7 +3,7 @@
  * claims of watertight lumens or certified minimum wall thickness.
  */
 import {baseSurfaceHeight} from './geometry-v3.js';
-import {resolvePixelProfile} from './pixel-profiles.js';
+import {resolveSocketProfile} from './pixel-profiles.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const nearest=(p,items)=>{
