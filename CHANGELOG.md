@@ -1,5 +1,16 @@
 # Crystal Forge — Changelog
 
+## v0.15.0 — Final consolidated software-production candidate (PR13/#19, DRAFT)
+
+- **Wiring correctness:** every externally routed socket now omits the old isolated fixed-axis local reliefs, including projects saved with legacy single/parallel routing. An unconnected stand-alone socket retains its old relief only when physical wiring is disabled. PR12's new-string fix is retained.
+- **Preview parity:** when showing the prepared Manifold mesh, the translucent Build wire overlays are hidden so ghost lines cannot appear over true physical routes; numbered hardware markers remain.
+- **Unsafe export prevention:** physical serial strings that are incomplete, over-length or invalid now block manufacturing instead of yielding an unlabeled partly routed STL.
+- **Printer-aware modular exports:** optional upright X/Z grid splitting to selected machine bed dimensions (8 mm margin) for prepared models; output individual watertight Manifold STLs within the production ZIP. Explicit piece-count, height, volume and clearance guards; no untested connectors invented.
+- **Editing:** selected P/M hardware gains collision-aware 1 mm arrow nudge and 5 mm Shift+Arrow nudge in Build.
+- **Production QA:** machine-readable release-gates JSON, extended optional optical/hollow/multi LED benchmarks, actual Manifold split volume and routing tests, and browser route overlay checks.
+- **Validation still needed:** exact latest-head CI, real Cura quality-profile import, sliced roofs/bores, measured LED/wire insertion and strain relief, actual illumination and mechanical/overhead load testing. [Final acceptance guide](docs/FINAL_PHASE_ACCEPTANCE.md).
+
+
 ## v0.14.2 — PR12 unified socket wiring (draft)
 
 - **Corrected duplicate cable grooves:** string mode no longer adds two independent, fixed-axis short socket relief cuts in addition to the correct continuous IN → P1 → Pn → OUT cable route. These old cuts caused the user's disconnected pink lines across pixel holes.
