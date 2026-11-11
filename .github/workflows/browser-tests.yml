@@ -62,28 +62,57 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install JS dependencies and headless Chromium
+      # Cache the npm package tarballs between branches; no lockfile needed
+      # for a best-effort cache. The runner's system Chrome avoids the 200 MB+
+      # Playwright Chromium download that can time out before tests start.
+      - name: Cache browser dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-cf-browser-node22-${{ hashFiles('package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cf-browser-node22-
+      - name: Install browser test dependencies
         id: install
+        timeout-minutes: 6
         continue-on-error: true
         run: |
           set +e
-          npm install --no-audit --no-fund > /tmp/npm-install.log 2>&1
+          npm_config_fetch_retries=1 npm_config_fetch_timeout=40000 \
+            npm install --prefer-offline --no-audit --no-fund --no-progress > /tmp/npm-install.log 2>&1
           npm_status=$?
           if [ "$npm_status" -ne 0 ]; then
-            echo "NPM dependency installation failed:"
+            echo "NPM dependency installation failed (last 90 lines):"
             tail -n 90 /tmp/npm-install.log
             exit "$npm_status"
           fi
-          # Ubuntu runner already has Chromium runtime libraries; avoid an
-          # apt-get --with-deps network hang before the browser test starts.
-          npx playwright install chromium > /tmp/playwright-install.log 2>&1
-          browser_status=$?
-          if [ "$browser_status" -ne 0 ]; then
-            echo "Playwright Chromium download failed:"
-            tail -n 90 /tmp/playwright-install.log
-            exit "$browser_status"
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+            google-chrome --version
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v chromium)" >> "$GITHUB_ENV"
+            chromium --version
+          else
+            # Only download Playwright's bundled browser if the runner has
+            # no preinstalled Chrome/Chromium. Avoid apt-get --with-deps.
+            timeout 180s npx playwright install chromium > /tmp/playwright-install.log 2>&1
+            browser_status=$?
+            if [ "$browser_status" -ne 0 ]; then
+              echo "Chromium fallback installation failed:"
+              tail -n 90 /tmp/playwright-install.log
+              exit "$browser_status"
+            fi
           fi
-          echo "Playwright Chromium installed successfully."
+          echo "Browser test dependencies and Chromium are ready."
+      - name: Print dependency logs on installation failure
+        if: steps.install.outcome != 'success'
+        run: |
+          echo '== npm install tail =='
+          tail -n 100 /tmp/npm-install.log || true
+          echo '== browser install tail =='
+          tail -n 100 /tmp/playwright-install.log || true
       - name: Start local static host
         if: steps.install.outcome == 'success'
         run: |
