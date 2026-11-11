@@ -247,7 +247,13 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="advanced-only"><div class="divider"></div>
 <div class="control"><label>Modular cut plane X <output data-out="splitX"></output></label><input data-state="splitX" type="range" min="-100" max="100" step="1"></div>
 <label class="checks"><input data-state="splitParts" type="checkbox"> Enable split exports (two parts)</label>
-<p class="note">Cut-plane parts are separately closed. Alignment keys and printable connectors have not yet been added.</p>
+<label class="checks"><input data-state="splitAlignment" type="checkbox"> Experimental alignment dowels in both halves</label>
+<div class="advanced-only">
+<div class="control"><label>Pin diameter <output data-out="splitPinDiameter"></output></label><input data-state="splitPinDiameter" type="range" min="3" max="8" step=".5"></div>
+<div class="control"><label>Pin insertion depth <output data-out="splitPinDepth"></output></label><input data-state="splitPinDepth" type="range" min="3" max="12" step="1"></div>
+<div class="control"><label>Dowel clearance <output data-out="splitPinClearance"></output></label><input data-state="splitPinClearance" type="range" min=".1" max=".6" step=".05"></div>
+</div>
+<p class="note">Optional, off by default. Adds test-fit bores and a separate dowel STL to solid bases, skipping collisions and experimental hollow/vault modes. Not a load-rated joint.</p>
 <button id="splitExportBtn" disabled style="width:100%">↓ Export split parts</button>
 </div>
 </div></div>

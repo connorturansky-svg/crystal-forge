@@ -148,6 +148,10 @@ const SETTINGS={
  "pixelRetentionLip": ["Experimental pixel retaining ridge","Adds an internal narrow compression band. Not a validated snap fit. Test real LED insertion and print strength."],
  "printChecklistBtn": ["Cura review checklist","Download model-aware checks for thin features, printer configuration, roof and wiring. Not proof of printable geometry."],
  "opticalCsvBtn": ["Crystal optical audit","Download per-crystal source distance and light-channel uncertainty. Not an optical simulation or verified shared lumen."],
+ "splitAlignment": ["Experimental alignment dowels","Cut mating pockets in solid split halves and export separate pegs. Real assembly fit and joint strength require testing."],
+ "splitPinDiameter": ["Dowel diameter","Nominal printable peg diameter."],
+ "splitPinDepth": ["Dowel depth","Length of the socket in each split half."],
+ "splitPinClearance": ["Dowel clearance","Extra diameter around the peg in the socket. Test for your machine/filament."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."

@@ -609,7 +609,7 @@ export function makeCalibrationStrip(wasm,nominal=12){
   return {geometry:fromResultMesh(strip.getMesh()),diameters:Array.from({length:5},(_,i)=>Math.round((diameter+(i-2)*.1)*100)/100),triangles:strip.numTri()};
  }finally{cleanupAll(keep)}
 }
-export function splitPreparedMesh(wasm,mesh,cutX=0){
+export function splitPreparedMesh(wasm,mesh,cutX=0,jointPlan=null){
  const keep=[];const hold=o=>{keep.push(o);return o};
  try{
   const m=new wasm.Mesh({numProp:3,vertProperties:new Float32Array(mesh.points),triVerts:new Uint32Array(mesh.triangles)});
@@ -617,10 +617,34 @@ export function splitPreparedMesh(wasm,mesh,cutX=0){
   const body=hold(new wasm.Manifold(m));assertSolid(body,'Prepared assembly for splitting');
   const parts=body.splitByPlane([1,0,0],Number(cutX));
   parts.forEach(hold);
-  return parts.map((p,i)=>{
+  const bores=jointPlan?.points||[];
+  const result=parts.map((p,i)=>{
    if(p.isEmpty())return null;
-   assertSolid(p,'Split '+(i+1));
-   return{geometry:fromResultMesh(p.getMesh()),triangles:p.numTri(),volume:p.volume()}
+   let piece=p;
+   if(bores.length){
+    const cutters=bores.map(pt=>{
+     const length=pt.depth+.45,r=(pt.diameter+pt.clearance)/2;
+     const startX=i===0?Number(cutX)-pt.depth-.15:Number(cutX)-.30;
+     return hold(wasm.Manifold.cylinder(length,r,r,40).rotate([0,90,0]).translate([startX,pt.y,pt.z]));
+    });
+    const opened=hold(piece.subtract(hold(wasm.Manifold.union(cutters))));
+    assertSolid(opened,'Split alignment holes '+(i+1));piece=opened;
+   }
+   assertSolid(piece,'Split '+(i+1));
+   return{geometry:fromResultMesh(piece.getMesh()),triangles:piece.numTri(),volume:piece.volume()}
   });
+  result.joints=bores.length;
+  return result;
+ }finally{cleanupAll(keep)}
+}
+
+export function makeSplitPinCoupon(wasm,points=[]){
+ if(!points.length)return null;
+ const keep=[];const hold=x=>{keep.push(x);return x};
+ try{
+  const rods=points.map((pt,i)=>hold(wasm.Manifold.cylinder(pt.depth*2-.5,pt.diameter/2,pt.diameter/2,40)
+   .rotate([-90,0,0]).translate([i*(pt.diameter+6),0,0])));
+  const body=hold(wasm.Manifold.union(rods));assertSolid(body,'Alignment pin coupon');
+  return {geometry:fromResultMesh(body.getMesh()),count:points.length};
  }finally{cleanupAll(keep)}
 }
