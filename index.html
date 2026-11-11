@@ -53,6 +53,17 @@ button.utility-button{white-space:nowrap}
 .dialog-backdrop{position:fixed;inset:0;z-index:999;background:#081527b3;display:flex;align-items:center;justify-content:center;padding:18px}
 [hidden]{display:none!important}
 .dialog{background:#152238;border:1px solid #536d8e;border-radius:18px;width:min(680px,100%);max-height:min(85vh,850px);display:flex;flex-direction:column;box-shadow:0 30px 90px #0009;overflow:hidden}
+#pixelProfileOverlay .dialog{width:min(1020px,100%);max-height:92vh}
+.pixel-profile-layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(310px,.85fr);gap:18px;align-items:start;margin:13px 0}
+.pixel-profile-diagram{border:1px solid #426c85;border-radius:13px;overflow:hidden;background:#10263c}
+.pixel-profile-diagram svg{display:block;width:100%;height:auto}
+.pixel-profile-field-note{line-height:1.6;font-size:11px;color:#a6cadf}
+.pixel-measure-key{font-size:11px;min-width:21px;display:inline-flex;justify-content:center;align-items:center;border:1px solid #43ccce;color:#b9fcf5;border-radius:5px;margin-right:7px;padding:2px 4px;font-weight:800}
+.pixel-dimension{stroke:#4ddad7;stroke-width:1.8}
+.pixel-dimension-label{font-size:12px;font-weight:800;fill:#a9fff7;text-anchor:middle;cursor:pointer}
+.pixel-dimension-label:hover{fill:#fff}
+@media(max-width:760px){.pixel-profile-layout{grid-template-columns:1fr}#pixelProfileOverlay .dialog{max-height:94vh}}
+body.theme-light .pixel-profile-field-note{color:#456d87}
 .dialog-header{display:flex;justify-content:space-between;align-items:center;padding:16px 19px;border-bottom:1px solid #344969}
 .dialog-header h2{font-size:19px;margin:0}
 .dialog-tabs{display:flex;gap:8px;padding:14px 18px 0}
@@ -311,18 +322,22 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div id="pixelProfileOverlay" class="dialog-backdrop" hidden>
 <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="pixelEditorTitle">
 <div class="dialog-header"><h2 id="pixelEditorTitle">Reusable pixel profiles</h2><button id="closePixelProfileBtn">✕ Close</button></div>
-<div class="dialog-body"><p>Measure the real LED. Generic defaults are not verified manufacturer specifications.</p>
-<div class="grid2">
+<div class="dialog-body"><p>Measure the real LED in millimetres. The drawing updates as you type. Click any letter in the illustration to focus its matching field.</p>
+<div class="pixel-profile-layout"><div>
+<div id="pixelProfileDiagram" class="pixel-profile-diagram" aria-live="polite"></div>
+<p id="pixelProfileDimensionsNotice" class="pixel-profile-field-note">A–G describe the LED body, cap, flange and two opposing cable-exit slots. These are nominal LED dimensions, not extra printer clearance.</p>
+</div><div><div class="grid2">
 <div class="control"><label>Name</label><input id="pixelName" type="text" maxlength="70"></div>
 <div class="control"><label>Shape</label><select id="pixelKind"><option value="gumdrop">Gumdrop</option><option value="bullet">Bullet</option><option value="seed">Seed</option></select></div>
-<div class="control"><label>Body diameter (mm)</label><input id="pixelBodyDiameter" type="number" min="2" max="30" step=".1"></div>
-<div class="control"><label>Body length (mm)</label><input id="pixelBodyHeight" type="number" min="3" max="50" step=".1"></div>
-<div class="control"><label>Flange diameter (mm)</label><input id="pixelFlangeDiameter" type="number" min="2" max="38" step=".1"></div>
-<div class="control"><label>Flange height (mm)</label><input id="pixelFlangeHeight" type="number" min="0" max="10" step=".1"></div>
-<div class="control"><label>Upper dome height (mm)</label><input id="pixelCapHeight" type="number" min="0" max="12" step=".1"></div>
-<div class="control"><label>Wire relief width (mm)</label><input id="pixelWireWidth" type="number" min="0" max="12" step=".1"></div>
-<div class="control"><label>Wire relief depth (mm)</label><input id="pixelWireDepth" type="number" min="0" max="8" step=".1"></div>
-</div><p class="note warning">Profile cutters are blind, with an optional flange and two shallow underside wire slots. Retaining clips and complete cable routes are not generated.</p>
+<div class="control"><label><span><b class="pixel-measure-key">A</b> Body diameter (mm)</span></label><input id="pixelBodyDiameter" type="number" min="2" max="30" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">B</b> Body length (mm)</span></label><input id="pixelBodyHeight" type="number" min="3" max="50" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">C</b> Flange diameter (mm)</span></label><input id="pixelFlangeDiameter" type="number" min="2" max="38" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">D</b> Flange height (mm)</span></label><input id="pixelFlangeHeight" type="number" min="0" max="10" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">E</b> Upper dome height (mm)</span></label><input id="pixelCapHeight" type="number" min="0" max="12" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">F</b> Wire relief width (mm)</span></label><input id="pixelWireWidth" type="number" min="0" max="12" step=".1"></div>
+<div class="control"><label><span><b class="pixel-measure-key">G</b> Wire relief depth (mm)</span></label><input id="pixelWireDepth" type="number" min="0" max="8" step=".1"></div>
+</div></div></div>
+<p class="note warning">B is the full body length including E (curved cap). C/D describe the collar at the wire end. F/G describe each of two opposite wire outlets. The overall drilled hole adds the Build → Fit adjustment separately; these are not guaranteed manufacturer dimensions.</p>
 <div class="buttonrow"><button class="primary" id="savePixelProfileBtn">Save to profile library</button><button id="deletePixelProfileBtn">Delete selected custom profile</button></div>
 </div></section></div>
 <div id="infoOverlay" class="dialog-backdrop" hidden>

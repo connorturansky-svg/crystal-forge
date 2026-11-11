@@ -159,6 +159,13 @@ const SETTINGS={
  "fitCouponStyle": ["Pixel-fit calibration method","Stepped includes the current measured body, flange and wire relief; simple uses diameter-only holes. Use five size variations to choose a real fit."],
  "mountPlateThickness": ["Mating plate thickness","Print a separate flat plate with holes aligned to the main base's blind M3-style pockets. Physically verify fasteners and material strength."],
  "exportMountPlateBtn": ["Export detachable plate STL","After Prepare Print, download the separate plate with matching holes and LED cable openings. Structural and overhead attachment are unverified."],
+ "pixelBodyDiameter": ["A · Body diameter","Outside width of the straight LED housing; excludes the larger flange. Final bore adds the fit adjustment."],
+ "pixelBodyHeight": ["B · Total body length","From underside flange to rounded cap top, including E. Compare against the available base depth."],
+ "pixelFlangeDiameter": ["C · Flange diameter","Maximum outer diameter of the bottom collar that needs to seat in the base."],
+ "pixelFlangeHeight": ["D · Flange thickness","How thick the flange is along the body axis, not the flange's radial overhang."],
+ "pixelCapHeight": ["E · Rounded cap height","The curved upper end is included within overall body length B, not added on top."],
+ "pixelWireWidth": ["F · Wire exit width","Total across the cable bundle so each opposite underside channel can accommodate the wires."],
+ "pixelWireDepth": ["G · Wire exit depth","How deeply the two short cable recesses cut into the underside to clear the wire bundle."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."

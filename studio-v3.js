@@ -11,6 +11,7 @@ import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
+import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
 import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
 import {assessPrintQuality,printChecklistText} from './print-quality.js';
 import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
@@ -747,10 +748,29 @@ document.addEventListener('keydown',e=>{
 const pixelFields={name:'pixelName',kind:'pixelKind',bodyDiameter:'pixelBodyDiameter',
  bodyHeight:'pixelBodyHeight',flangeDiameter:'pixelFlangeDiameter',flangeHeight:'pixelFlangeHeight',
  capHeight:'pixelCapHeight',wireWidth:'pixelWireWidth',wireDepth:'pixelWireDepth'};
+function updatePixelProfileDiagram(){
+ const values={};
+ for(const [k,id] of Object.entries(pixelFields))
+  values[k]=k==='kind'||k==='name'?$(id).value:Number($(id).value);
+ $('pixelProfileDiagram').innerHTML=renderPixelProfileDiagram(values);
+ const profile=normalisePixelProfile(values);
+ const adjusted=profile.bodyDiameter+Number(s.pixelFit||0);
+ $('pixelProfileDimensionsNotice').textContent='Nominal body Ø '+profile.bodyDiameter.toFixed(1)+
+  ' mm · full length '+profile.bodyHeight.toFixed(1)+' mm (includes curved cap) · current socket fit adjustment '+
+  (Number(s.pixelFit||0)>=0?'+':'')+Number(s.pixelFit||0).toFixed(2)+' mm · resulting body bore Ø '+
+  adjusted.toFixed(2)+' mm. Tap a letter to edit its field.';
+}
+for(const field of Object.values(pixelFields))
+ $(field).addEventListener('input',updatePixelProfileDiagram);
+$('pixelProfileDiagram').addEventListener('click',e=>{
+ const field=e.target.closest?.('[data-profile-field]')?.dataset.profileField;
+ if(field&&PIXEL_DIMENSIONS.some(dim=>dim.field===field))$(field).focus();
+});
 function closePixelEditor(){$('pixelProfileOverlay').hidden=true;$('editPixelProfileBtn').focus()}
 $('editPixelProfileBtn').onclick=()=>{
  const p=resolvePixelProfile(s);
  for(const [k,id] of Object.entries(pixelFields))$(id).value=p[k];
+ updatePixelProfileDiagram();
  $('pixelProfileOverlay').hidden=false;$('pixelName').focus();
 };
 $('closePixelProfileBtn').onclick=closePixelEditor;
