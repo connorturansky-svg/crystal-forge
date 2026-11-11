@@ -8,6 +8,7 @@ let THREE;
 export function setThreeInstance(three){THREE=three;}
 import {crystalGeometry,crystalRootOffset,baseGeometry,baseSurfaceHeight} from './geometry-v3.js';
 import {planHardware} from './hardware-layout.js';
+import {planCrystalLightPorts} from './light-port-plan.js';
 import {resolvePixelProfile,resolveSocketProfile} from './pixel-profiles.js';
 import {estimateRoofReview} from './print-advisor.js';
 import {planTargetedLightPaths} from './targeted-light-paths.js';
@@ -621,7 +622,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,roofReview,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,targetedLightCount,targetedLightSkipped:targetedPlan.skipped,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
+    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,directLightPorts,skippedDirectLightPorts,lightPortDetails,targetedLightCount,targetedLightSkipped:targetedPlan.skipped,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
      plannedSockets:hardware.sockets,plannedMounts:[...hardware.mounts,...hardware.tabHoles],hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}

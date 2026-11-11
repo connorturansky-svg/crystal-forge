@@ -5,8 +5,10 @@ import {planHardware} from './hardware-layout.js';
 import {planCrystalLightPorts} from './light-port-plan.js';
 export function assessOpticalAccess(crystals,s,report=null){
  const plan=planHardware(crystals,s),sockets=plan.sockets;
- const hasOpenInterior=!!(s.baseVault||s.hollowCrystals||s.targetedLightPaths);
- const skipped=Number(report?.skippedHollowPorts||0)+Number(report?.targetedLightSkipped?.length||0);
+ const hasOpenInterior=!!(s.baseVault||s.hollowCrystals||s.targetedLightPaths||s.lightPorts);
+ const skipped=Number(report?.skippedHollowPorts||0)+Number(report?.skippedDirectLightPorts||0)+Number(report?.targetedLightSkipped?.length||0);
+ const planned=planCrystalLightPorts(crystals,s);
+ const cutIds=new Set((report?.lightPortDetails||[]).map(p=>p.id));
  const results=crystals.filter(c=>!c.hidden).map(c=>{
   let nearest=null,distanceMm=Infinity;
   for(let i=0;i<sockets.length;i++){
