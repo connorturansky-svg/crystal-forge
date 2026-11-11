@@ -375,7 +375,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   // Single authoritative feature plan shared with the colour-coded viewport.
   // Pixel sockets are placed first; mount holes are searched for a safe
   // alternative location. Features that cannot fit are SKIPPED and warned.
-  let socketsCut=0,mountingHolesCut=0,ventCuts=0,socketCeilings=[];
+  let socketsCut=0,mountingHolesCut=0,ventCuts=0,socketCeilings=[],wireChannelsCut=0;
   if(hardware.sockets.length){
    const cutters=[];
    for(const pos of hardware.sockets){
@@ -406,6 +406,21 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
      combined=opened;ventCuts=hardware.sockets.length;
     }
    }
+  }
+  // Single shared plan for preview, manufacturing and wiring CSV.
+  if(hardware.wirePlan?.routes.length){
+   const grooves=hardware.wirePlan.routes.map(route=>{
+    const dx=route.b.x-route.a.x,dz=route.b.z-route.a.z;
+    const length=Math.hypot(dx,dz)+.5,angle=-Math.atan2(dz,dx)*180/Math.PI;
+    const mx=(route.a.x+route.b.x)/2,mz=(route.a.z+route.b.z)/2;
+    return hold(wasm.Manifold.cube([length,route.depth+.6,route.width])
+     .translate([-length/2,-.5,-route.width/2])
+     .rotate([0,angle,0]).translate([mx,0,mz]));
+   });
+   const cut=hold(combined.subtract(hold(wasm.Manifold.union(grooves))));
+   assertSolid(cut,'Underside wiring grooves');combined=cut;
+   wireChannelsCut=grooves.length;
+   warnings.push('Shallow underside wiring grooves are not complete enclosed conduits. Check physical wire bend radius, exit and strain relief.');
   }
   if(hardware.sockets.length&&Number(s.baseHeight||0)<resolvePixelProfile(s).bodyHeight)
    warnings.push('Selected LED body exceeds base depth; verify fit and protrusion in Cura.');
@@ -490,7 +505,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,
+    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
      plannedSockets:hardware.sockets,plannedMounts:[...hardware.mounts,...hardware.tabHoles],hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
