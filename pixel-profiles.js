@@ -25,6 +25,6 @@ export function resolvePixelProfile(s){
  const p=allPixelProfiles(s).find(p=>p.id===s?.pixelProfileId)||PIXEL_PRESETS[0];
  const diameter=Number(s?.pixelDiameter)>0?Number(s.pixelDiameter):p.bodyDiameter;
  const fit=clamp(Number(s?.pixelFit)||0,-.5,.8);
- return {...p,bodyDiameter:diameter,clearance:fit,boreDiameter:diameter+fit,
+ return {...p,bodyDiameter:diameter,clearance:fit,retentionLip:clamp(Number(s?.pixelRetentionLip)||0,0,.7),boreDiameter:diameter+fit,
   maxDiameter:Math.max(diameter,p.flangeDiameter)+fit};
 }

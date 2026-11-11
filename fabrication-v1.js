@@ -142,7 +142,14 @@ function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
  const shaftEnd=tipY-capRise,depth=Math.max(.5,shaftEnd-start);
  const bodyRadius=Math.max(.8,p.boreDiameter/2),cutters=[];
  const cylinder=(r,y,h)=>hold(wasm.Manifold.cylinder(h,r,r,32).rotate([-90,0,0]).translate([pos.x,y,pos.z]));
- cutters.push(cylinder(bodyRadius,start,depth));
+ const lip=Math.min(.7,Math.max(0,Number(p.retentionLip)||0));
+ const lipFrom=Math.max(1.9,Number(p.flangeHeight||0)+.8),lipWidth=1.4;
+ if(lip>0&&depth>lipFrom-start+lipWidth+2&&bodyRadius-lip>1.4){
+  // Narrow bore section above the flange. Physical snap-fit is unverified.
+  cutters.push(cylinder(bodyRadius,start,lipFrom-start));
+  cutters.push(cylinder(bodyRadius-lip,lipFrom,lipWidth));
+  cutters.push(cylinder(bodyRadius,lipFrom+lipWidth,depth-(lipFrom+lipWidth-start)));
+ }else cutters.push(cylinder(bodyRadius,start,depth));
  if(p.kind!=='seed'&&p.flangeHeight>.1&&p.maxDiameter>p.boreDiameter+.1)
   cutters.push(cylinder(p.maxDiameter/2,-.5,Math.min(depth,p.flangeHeight+.5)));
  cutters.push(hold(wasm.Manifold.sphere(bodyRadius,32).scale([1,capRise/bodyRadius,1]).translate([pos.x,shaftEnd,pos.z])));
@@ -155,7 +162,7 @@ function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
   }
  }
  return {solid:hold(wasm.Manifold.union(cutters)),roofY,tipY,shaftEnd,
-  capRise,remainingWall:roofY-tipY,profileId:p.id};
+  capRise,remainingWall:roofY-tipY,profileId:p.id,retentionLip:lip};
 }
 function cleanupAll(list){
  for(const m of list){try{m.delete()}catch(e){}}
@@ -384,7 +391,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolvePixelProfile(s));
     cutters.push(bore.solid);
     socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
-      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId});
+      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId,retentionLip:bore.retentionLip});
     if(bore.shaftEnd<20)warnings.push('LED bore at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+Math.max(0,bore.shaftEnd).toFixed(1)+' mm of full-width clearance. Confirm the actual LED housing fits.');
    }
    const holes=hold(wasm.Manifold.union(cutters));
@@ -425,6 +432,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   }
   if(hardware.sockets.length&&Number(s.baseHeight||0)<resolvePixelProfile(s).bodyHeight)
    warnings.push('Selected LED body exceeds base depth; verify fit and protrusion in Cura.');
+  if(Number(s.pixelRetentionLip||0)>0)warnings.push('Experimental socket retaining ridge '+s.pixelRetentionLip+' mm: fit-test a real pixel before relying on this unverified compression feature.');
   if(s.cutSockets)warnings.push('Pixel fits are nominal. Test print tolerances and retention before installing any electronics.');
   if(hardware.mounts.length){
    const cutters=[];

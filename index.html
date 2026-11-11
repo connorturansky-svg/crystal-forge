@@ -166,6 +166,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Pixel type / saved profile</label><select data-state="pixelProfileId" id="pixelProfileSelect"><option value="gumdrop">Generic 12 mm gumdrop</option><option value="bullet">Generic 12 mm bullet</option><option value="seed">Generic 5 mm seed</option></select></div>
 <div class="buttonrow"><button type="button" id="editPixelProfileBtn">⚙ Edit / save pixel profile</button></div>
 <p id="pixelProfileDetails" class="note">Preset dimensions are approximate. Measure the real LED before printing.</p>
+<div class="advanced-only"><div class="control"><label>Experimental LED retention ridge <output data-out="pixelRetentionLip"></output></label><input data-state="pixelRetentionLip" type="range" min="0" max=".7" step=".05"><p class="note">0 = smooth opening. Creates a short narrowing band above the flange. Can prevent insertion or crack the print: test the real LED first.</p></div></div>
 <div class="control"><label>Nominal socket diameter <output data-out="pixelDiameter"></output></label><input data-state="pixelDiameter" type="range" min="2" max="30" step=".1"></div>
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
 <div class="divider"></div><div class="cardtitle" style="padding:6px 0">⤳ Optional underside wiring channels</div>
@@ -234,6 +235,10 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="stat"><span>Overhang risk faces</span><strong id="reportOverhang">—</strong></div>
 <div class="stat"><span>Suggested orientation</span><strong id="reportOrientation">—</strong></div>
 <div id="reportWarnings" class="note"></div>
+<div class="divider"></div><div class="cardtitle">Fabrication assurance · advisory</div>
+<p id="printAssuranceSummary" class="note">Generate an inspection checklist for walls, roofs, wiring and Cura settings.</p>
+<div class="buttonrow"><button id="printChecklistBtn" type="button">↓ Cura inspection checklist</button><button id="opticalCsvBtn" type="button">↓ Crystal optical audit CSV</button></div>
+<p id="opticalAuditSummary" class="note">Optical paths remain unverified until slicing and physical light tests.</p>
 </div></div>
 <div class="buttonrow"><button id="stlBtn" disabled>↓ STL</button><button id="threeMfBtn" disabled>↓ 3MF</button></div>
 <div class="note">Exports use only the prepared manufacturing mesh. Changing geometry or Build options requires preparing again.</div>

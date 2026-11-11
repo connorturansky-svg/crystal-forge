@@ -9,6 +9,8 @@ import {createHardwareEditor} from './hardware-editor.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
 import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
+import {assessPrintQuality,printChecklistText} from './print-quality.js';
+import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
 
 const $=id=>document.getElementById(id);
 const defaults={
@@ -16,7 +18,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,
-  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -70,7 +72,7 @@ function restore(str){
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
- if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','wireWidth','wireDepth'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
+ if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','wireDepth'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
  if(k==='crystalSize'||k==='studioBrightness')return Math.round(Number(v)*100)+'%';
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
@@ -155,7 +157,7 @@ const relevantManufacturingKeys=[
  'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
  'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightingMode','pixelCount','pixelDiameter',
- 'pixelFit','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireWidth','wireDepth','wireSlack','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','printerX','printerY','printerZ','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
+ 'pixelFit','pixelRetentionLip','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireWidth','wireDepth','wireSlack','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','printerX','printerY','printerZ','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
@@ -293,6 +295,9 @@ function renderManufactureReport(report){
  f('reportBaseDepth',report.baseFitsPixel?'Fits nominal pixel':'Too shallow');
  f('reportOverhang',report.quality.unsafeTriangles.toLocaleString());
  f('reportOrientation',report.orientation?.name||'Base down');
+ const inspection=assessPrintQuality(crystals,s,report),optics=assessOpticalAccess(crystals,s,report);
+ $('printAssuranceSummary').textContent=inspection.status+' · '+inspection.findings.length+' review note(s) · roof proxy '+inspection.roof.estimateMm.toFixed(1)+' mm. Download full checklist.';
+ $('opticalAuditSummary').textContent=optics.results.length+' crystal(s), '+optics.acceptedPixels+' LED(s). Individual passage verification requires Cura and a physical test.';
  const list=report.warnings;
  $('reportWarnings').innerHTML=list.length?'<div class="alert">'+list.map(x=>'<p>'+escapeHTML(x)+'</p>').join('')+'</div>':
   '<div class="success">No flagged conditions in this limited screening. Confirm in your slicer.</div>';
@@ -940,6 +945,16 @@ $('curaProfileBtn').onclick=()=>{
  }catch(err){console.error('Cura profile download',err);alert(err.message)}
 };
 
+$('printChecklistBtn').onclick=()=>{
+ const result=assessPrintQuality(crystals,s,manufacturingReport);
+ download(new Blob([printChecklistText(result,s)],{type:'text/plain'}),'crystal-forge-print-checklist.txt');
+ setStatus('Downloaded model-aware Cura review checklist');
+};
+$('opticalCsvBtn').onclick=()=>{
+ const result=assessOpticalAccess(crystals,s,manufacturingReport);
+ download(new Blob([opticalAuditCSV(result)],{type:'text/csv'}),'crystal-forge-optical-audit.csv');
+ setStatus('Downloaded optical proximity audit · actual light paths unverified');
+};
 $('wiringCsvBtn').onclick=()=>{
  const plan=planHardware(crystals,s),routes=plan.wirePlan?.routes||[];
  const rows=[['Segment','From pixel','To pixel','Start X (mm)','Start Z (mm)','End X (mm)','End Z (mm)','Width (mm)','Depth (mm)','Length (mm)']];

@@ -145,6 +145,9 @@ const SETTINGS={
  "wireWidth": ["Wire channel width","Width of each open-bottom cable groove. Measure actual cable insulation and keep material around nearby holes."],
  "wireDepth": ["Wire channel depth","Depth of the underside cable groove. Increasing it leaves less plastic above the cable."],
  "wireSlack": ["Extra routing slack","Try a bend in the routing groove for additional cable slack. Fallback to a direct path when a bent route would cross an obstacle."],
+ "pixelRetentionLip": ["Experimental pixel retaining ridge","Adds an internal narrow compression band. Not a validated snap fit. Test real LED insertion and print strength."],
+ "printChecklistBtn": ["Cura review checklist","Download model-aware checks for thin features, printer configuration, roof and wiring. Not proof of printable geometry."],
+ "opticalCsvBtn": ["Crystal optical audit","Download per-crystal source distance and light-channel uncertainty. Not an optical simulation or verified shared lumen."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."
