@@ -13,6 +13,7 @@ import {buildPixelStringMap} from './pixel-string-export.js';
 import {createHardwareEditor} from './hardware-editor.js';
 import {installResizablePanels} from './workspace-panels.js';
 import {saveTemplate,readTemplates,findTemplate,deleteTemplate} from './project-templates.js';
+import {GitHubVault,captureVault} from './github-vault.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
@@ -34,7 +35,7 @@ const defaults={
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
 let s={...defaults},crystals=[],selectedId=null,activeTool='select',cameraTween=null;
-let hardwareUI=null;
+let hardwareUI=null,cloudVault=null;
 try{
   const saved=JSON.parse(localStorage.getItem('crystal-forge-v3')||'null');
   if(saved?.settings){s={...defaults,...saved.settings};crystals=safeArray(saved.crystals);selectedId=saved.selectedId||null}
@@ -77,6 +78,7 @@ function snapshot(){
 }
 function persist(){
  try{localStorage.setItem('crystal-forge-v3',JSON.stringify({settings:s,crystals,selectedId}))}catch(e){console.warn(e)}
+ cloudVault?.schedule();
 }
 function restore(str){
  try{const v=JSON.parse(str);s={...defaults,...v.settings};mergePixelLibrary();crystals=safeArray(v.crystals);selectedId=v.selectedId||null;syncForm();rebuild();persist()}catch(e){console.error(e)}
@@ -765,12 +767,63 @@ function refreshSavedTemplates(selected=''){
  list.value=selected;
 }
 refreshSavedTemplates();
+cloudVault=new GitHubVault({storage:localStorage,onStatus:message=>{
+ const el=$('cloudStatus');if(el)el.textContent=message;
+}});
+$('cloudRepo').value=localStorage.getItem('crystal-forge-private-repo-name')||'';
+const cloudAction=async(action)=>{
+ const buttons=['cloudConnect','cloudPull','cloudPush','cloudDisconnect'].map($);
+ buttons.forEach(b=>{b.disabled=true});
+ try{await action()}catch(error){
+  console.error('Cloud vault operation',error);
+  $('cloudStatus').textContent=error.name==='CloudConflictError'?'Cloud conflict — '+error.message:error.message;
+ }finally{buttons.forEach(b=>{b.disabled=false})}
+};
+$('cloudConnect').onclick=()=>cloudAction(async()=>{
+ const repo=$('cloudRepo').value.trim(),token=$('cloudToken').value;
+ const result=await cloudVault.connect(repo,token);
+ $('cloudToken').value='';
+ localStorage.setItem('crystal-forge-private-repo-name',repo);
+ $('cloudAuto').checked=false;
+ $('cloudStatus').textContent=result.exists?'Connected to private '+repo+'. Pull + merge before uploading.':'Connected to private '+repo+'. Click Sync Now to create your backup.';
+});
+$('cloudDisconnect').onclick=()=>{
+ cloudVault.disconnect();$('cloudToken').value='';$('cloudAuto').checked=false;
+};
+$('cloudPull').onclick=()=>cloudAction(async()=>{
+ if(!cloudVault.connected)throw Error('Connect to your private GitHub repository first.');
+ if(!confirm('Pull cloud data? Your current local data will be backed up. The cloud project becomes active; custom profiles and templates are merged.'))return;
+ const result=await cloudVault.pull();
+ restore(localStorage.getItem('crystal-forge-v3'));
+ refreshSavedTemplates();
+ $('cloudStatus').textContent='Pulled and merged. Local backup key: '+result.backupKey+'. Cloud auto-sync is available.';
+});
+$('cloudPush').onclick=()=>cloudAction(async()=>{
+ if(!cloudVault.connected)throw Error('Connect to your private GitHub repository first.');
+ await cloudVault.push();
+});
+$('cloudAuto').onchange=()=>{
+ const enabled=cloudVault.setAuto($('cloudAuto').checked);
+ $('cloudAuto').checked=enabled;
+ if(!enabled)$('cloudStatus').textContent='Auto-sync unavailable until connected and first pull is reconciled.';
+ else {$('cloudStatus').textContent='Auto-sync enabled for this browser session.';cloudVault.schedule()}
+};
+$('cloudBackup').onclick=()=>{
+ const data=captureVault(localStorage);
+ download(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),
+  'crystal-forge-complete-backup-'+new Date().toISOString().slice(0,10)+'.json');
+ setStatus('Downloaded complete local project, custom profiles and templates');
+};
+window.addEventListener('storage',e=>{
+ if(['crystal-forge-pixel-library','crystal-forge-project-templates-v1'].includes(e.key))
+  cloudVault?.schedule();
+});
 $('saveTemplateBtn').onclick=()=>{
  const name=prompt('Name this reusable Crystal Forge design',s.title||'Untitled cluster');
  if(!name?.trim())return;
  try{
   const saved=saveTemplate(localStorage,name.trim(),s,crystals);
-  refreshSavedTemplates(saved.id);setStatus('Saved reusable design '+saved.name);
+  refreshSavedTemplates(saved.id);cloudVault?.schedule();setStatus('Saved reusable design '+saved.name);
  }catch(err){alert('Could not save template: '+err.message)}
 };
 $('loadTemplateBtn').onclick=()=>{
@@ -784,7 +837,7 @@ $('loadTemplateBtn').onclick=()=>{
 $('deleteTemplateBtn').onclick=()=>{
  const id=$('templateSelect').value;
  if(!id||!confirm('Delete this locally saved template?'))return;
- deleteTemplate(localStorage,id);refreshSavedTemplates();setStatus('Deleted saved template');
+ deleteTemplate(localStorage,id);refreshSavedTemplates();cloudVault?.schedule();setStatus('Deleted saved template');
 };
 $('applyShapePresetBtn').onclick=()=>{
  const preset=$('shapePresetSelect').value;
