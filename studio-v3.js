@@ -38,6 +38,19 @@ try{
 // Migrate older multi-pixel drafts to the new single-source default.
 if(s.lightingMode==='single')s.pixelCount=1;
 if(s.lightingMode==='none')s.pixelCount=0;
+const pixelLibraryKey='crystal-forge-pixel-library';
+function mergePixelLibrary(){
+ try{
+  const saved=JSON.parse(localStorage.getItem(pixelLibraryKey)||'[]');
+  const map=new Map();
+  for(const p of [...(Array.isArray(saved)?saved:[]),...(Array.isArray(s.pixelProfiles)?s.pixelProfiles:[])]){
+   const value=normalisePixelProfile(p);
+   if(value.id.startsWith('custom-'))map.set(value.id,value);
+  }
+  s.pixelProfiles=[...map.values()].slice(0,30);
+ }catch(e){s.pixelProfiles=Array.isArray(s.pixelProfiles)?s.pixelProfiles:[]}
+}
+mergePixelLibrary();
 if(!crystals.length)crystals=generateFormation(s);
 const history=[];let historyIndex=-1;
 const clone=x=>JSON.parse(JSON.stringify(x));
@@ -52,7 +65,7 @@ function persist(){
  try{localStorage.setItem('crystal-forge-v3',JSON.stringify({settings:s,crystals,selectedId}))}catch(e){console.warn(e)}
 }
 function restore(str){
- try{const v=JSON.parse(str);s={...defaults,...v.settings};crystals=safeArray(v.crystals);selectedId=v.selectedId||null;syncForm();rebuild();persist()}catch(e){console.error(e)}
+ try{const v=JSON.parse(str);s={...defaults,...v.settings};mergePixelLibrary();crystals=safeArray(v.crystals);selectedId=v.selectedId||null;syncForm();rebuild();persist()}catch(e){console.error(e)}
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
@@ -88,7 +101,20 @@ function syncShapeControls(){
  $('multiplePixelsRow').classList.toggle('show',multi);
  for(const e of document.querySelectorAll('[data-state="pixelCount"]'))e.disabled=!multi;
 }
+function refreshPixelProfileOptions(){
+ const select=$('pixelProfileSelect');if(!select)return;
+ const profiles=allPixelProfiles(s);
+ select.replaceChildren(...profiles.map(p=>{
+  const option=document.createElement('option');option.value=p.id;option.textContent=p.name;return option;
+ }));
+ if(!profiles.some(p=>p.id===s.pixelProfileId))s.pixelProfileId='gumdrop';
+ select.value=s.pixelProfileId;
+ const p=resolvePixelProfile(s);
+ $('pixelProfileDetails').textContent=p.kind+' · '+p.bodyDiameter+' mm diameter × '+p.bodyHeight+
+  ' mm body · '+p.flangeDiameter+' mm flange · '+p.wireWidth+' mm wire relief. Verify actual LED dimensions.';
+}
 function syncForm(){
+ refreshPixelProfileOptions();
  if(s.lightingMode==='single')s.pixelCount=1;
  if(s.lightingMode==='none')s.pixelCount=0;
  document.body.classList.toggle('advanced',s.mode==='advanced');
@@ -690,6 +716,47 @@ document.addEventListener('keydown',e=>{
  if(e.key==='?'&&!(e.target instanceof HTMLInputElement)){e.preventDefault();showInfo('help')}
 });
 
+// Reusable pixel profiles are stored in both browser library and editable projects.
+const pixelFields={name:'pixelName',kind:'pixelKind',bodyDiameter:'pixelBodyDiameter',
+ bodyHeight:'pixelBodyHeight',flangeDiameter:'pixelFlangeDiameter',flangeHeight:'pixelFlangeHeight',
+ capHeight:'pixelCapHeight',wireWidth:'pixelWireWidth',wireDepth:'pixelWireDepth'};
+function closePixelEditor(){$('pixelProfileOverlay').hidden=true;$('editPixelProfileBtn').focus()}
+$('editPixelProfileBtn').onclick=()=>{
+ const p=resolvePixelProfile(s);
+ for(const [k,id] of Object.entries(pixelFields))$(id).value=p[k];
+ $('pixelProfileOverlay').hidden=false;$('pixelName').focus();
+};
+$('closePixelProfileBtn').onclick=closePixelEditor;
+$('pixelProfileOverlay').addEventListener('pointerdown',e=>{
+ if(e.target===$('pixelProfileOverlay'))closePixelEditor()
+});
+$('savePixelProfileBtn').onclick=()=>{
+ const data={};
+ for(const [k,id] of Object.entries(pixelFields))
+  data[k]=['name','kind'].includes(k)?$(id).value:Number($(id).value);
+ if(!String(data.name||'').trim()){alert('Enter a profile name.');return}
+ data.id=s.pixelProfileId.startsWith('custom-')?s.pixelProfileId:'custom-'+Date.now().toString(36);
+ const p=normalisePixelProfile(data);
+ s.pixelProfiles=[...(s.pixelProfiles||[]).filter(x=>x.id!==p.id),p].slice(-30);
+ s.pixelProfileId=p.id;s.pixelDiameter=p.bodyDiameter;
+ try{localStorage.setItem(pixelLibraryKey,JSON.stringify(s.pixelProfiles))}
+ catch(e){console.warn('Pixel library not writable',e)}
+ closePixelEditor();syncForm();rebuild();snapshot();
+ setStatus('Custom pixel profile saved: '+p.name+'. Prepare print mesh again.');
+};
+$('deletePixelProfileBtn').onclick=()=>{
+ const id=s.pixelProfileId;
+ if(!id.startsWith('custom-')){alert('Built-in presets cannot be deleted.');return}
+ s.pixelProfiles=(s.pixelProfiles||[]).filter(p=>p.id!==id);
+ s.pixelProfileId='gumdrop';s.pixelDiameter=PIXEL_PRESETS[0].bodyDiameter;
+ try{localStorage.setItem(pixelLibraryKey,JSON.stringify(s.pixelProfiles))}catch(e){}
+ closePixelEditor();syncForm();rebuild();snapshot();
+};
+document.addEventListener('keydown',e=>{
+ if(!$('pixelProfileOverlay').hidden&&e.key==='Escape'){
+  e.preventDefault();e.stopImmediatePropagation();closePixelEditor();
+ }
+},true);
 $('saveBtn').onclick=saveProject;$('projectExportBtn').onclick=saveProject;
 $('loadBtn').onclick=()=>$('loadFile').click();
 $('loadFile').onchange=async e=>{
@@ -697,7 +764,7 @@ $('loadFile').onchange=async e=>{
  try{
   const json=JSON.parse(await file.text());
   if(!json.settings||!Array.isArray(json.crystals))throw Error('Invalid project structure');
-  s={...defaults,...json.settings};if(s.lightingMode==='single')s.pixelCount=1;crystals=safeArray(json.crystals);selectedId=null;
+  s={...defaults,...json.settings};mergePixelLibrary();if(s.lightingMode==='single')s.pixelCount=1;crystals=safeArray(json.crystals);selectedId=null;
   syncForm();rebuild();snapshot();setStatus('Project loaded: '+file.name);
  }catch(err){alert('Could not load project: '+err.message)}
  e.target.value='';
@@ -856,3 +923,27 @@ document.addEventListener('keydown',e=>{
 });
 syncForm();rebuild();snapshot();
 installTooltips();
+const descriptionsKey='crystal-forge-descriptions';
+let descriptionsEnabled=false;
+try{descriptionsEnabled=localStorage.getItem(descriptionsKey)==='on'}catch(e){}
+function showDescription(el){
+ if(!descriptionsEnabled)return;
+ const info=describeControl(el);if(!info)return;
+ $('contextHelpTitle').textContent=info[0];
+ $('contextHelpBody').textContent=info[1];
+}
+function toggleDescriptionsUI(){
+ $('contextHelp').hidden=!descriptionsEnabled;
+ document.body.classList.toggle('descriptions-active',descriptionsEnabled);
+ $('descriptionsBtn').setAttribute('aria-pressed',String(descriptionsEnabled));
+ $('descriptionsBtn').textContent=descriptionsEnabled?'ⓘ Descriptions: On':'ⓘ Descriptions';
+ if(descriptionsEnabled)showDescription(document.querySelector('[data-state="mount"]'));
+ try{localStorage.setItem(descriptionsKey,descriptionsEnabled?'on':'off')}catch(e){}
+}
+$('descriptionsBtn').onclick=()=>{descriptionsEnabled=!descriptionsEnabled;toggleDescriptionsUI()};
+for(const kind of ['pointerover','focusin','change'])
+ document.addEventListener(kind,e=>{
+  const el=e.target.closest?.('button,input,select');if(el)showDescription(el);
+ });
+toggleDescriptionsUI();
+

@@ -85,13 +85,15 @@ body.theme-light .control-tooltip{background:#fff;color:#1d3553;border-color:#aa
 body.theme-light .control-tooltip strong{color:#1a5384}
 body.theme-light .control-tooltip span{color:#334c6b}
 @media(prefers-reduced-motion:reduce){.control-tooltip{transition:none}}
+#contextHelp .cardbody{line-height:1.55}#contextHelpTitle{font-size:13px}
+@media(max-width:850px){body.descriptions-active .right{display:block}body.descriptions-active #contextHelp{position:fixed;bottom:14px;right:14px;z-index:40;width:min(300px,calc(100vw - 28px));max-height:42vh;overflow:auto}}
 #shapeScope{margin:2px 0 8px}body .shape-selected{border-left:3px solid #49ef9b;background:#1b453a;color:#cbffe5;padding:10px;border-radius:6px}body.theme-light .shape-selected{background:#daf7e8;color:#136039}#multiplePixelsRow:not(.show){display:none!important}.viewbuttons button.active{background:#315d96!important;color:white!important}
 </style></head>
 <body class="simple">
 <header class="topbar">
 <div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.8.0 · Cluster Studio</span><span class="filename" id="projectName">Untitled cluster</span></div>
 <nav class="workspace-tabs"><button class="active" data-tab="design">◇ Design</button><button data-tab="build">⚙ Build</button><button data-tab="print">▣ Print</button></nav>
-<div class="topcluster utility"><div class="modebar"><button id="simpleBtn" class="active">Simple</button><button id="advancedBtn">Advanced</button></div><button id="themeBtn" class="utility-button" title="Switch to light theme" aria-label="Switch theme">☀ Light</button><button id="helpBtn" class="utility-button" title="Help and keyboard shortcuts">? Help</button><button id="changelogBtn" class="utility-button" title="Version history and changes">✦ What’s new</button><button id="saveBtn" title="Download editable project">↓ Save</button><button id="loadBtn" title="Open project">↑ Open</button><input type="file" id="loadFile" accept=".json,application/json"></div>
+<div class="topcluster utility"><div class="modebar"><button id="simpleBtn" class="active">Simple</button><button id="advancedBtn">Advanced</button></div><button id="themeBtn" class="utility-button" title="Switch to light theme" aria-label="Switch theme">☀ Light</button><button id="helpBtn" class="utility-button" title="Help and keyboard shortcuts">? Help</button><button id="descriptionsBtn" class="utility-button" aria-pressed="false" title="Show a panel explaining controls and mounting types">ⓘ Descriptions</button><button id="changelogBtn" class="utility-button" title="Version history and changes">✦ What’s new</button><button id="saveBtn" title="Download editable project">↓ Save</button><button id="loadBtn" title="Open project">↑ Open</button><input type="file" id="loadFile" accept=".json,application/json"></div>
 </header>
 <div class="layout">
 <aside class="left">
@@ -243,7 +245,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
  <div class="axiskey"><b class="x">X • Red</b><b class="y">Y • Green</b><b class="z">Z • Blue</b></div></div></div>
  <div class="footbar"><div id="status">Loading 3D editor…</div><div><span id="footerStats">—</span> · mm · mouse orbit / scroll zoom</div></div>
 </main>
-<aside class="right"><div class="panelhead"><h2>Project explorer</h2><span>LIVE OBJECTS</span></div>
+<aside class="right"><div id="contextHelp" class="card teal" hidden><div class="cardtitle">ⓘ Control descriptions</div><div class="cardbody"><strong id="contextHelpTitle">Select a control</strong><p id="contextHelpBody" class="note">Hover or focus any setting for an explanation.</p><p class="note">Printed hardware still needs measurement and physical testing.</p></div></div><div class="panelhead"><h2>Project explorer</h2><span>LIVE OBJECTS</span></div>
 <div class="card purple"><div class="cardtitle"><span class="symbol">☷</span> Object tree <span class="pill" id="treeCount">0</span></div><div class="cardbody tree" id="objectTree"></div></div>
 <div class="card blue"><div class="cardtitle"><span class="symbol">✥</span> Selected object</div><div class="cardbody" id="selectionPane"><p class="note">Select a crystal to edit its position and dimensions.</p></div></div>
 <div class="card teal"><div class="cardtitle"><span class="symbol">▧</span> Model information</div><div class="cardbody">
