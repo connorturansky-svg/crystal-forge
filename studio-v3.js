@@ -917,11 +917,38 @@ $('detachablePlateBtn').onclick=()=>{
   }).catch(err=>alert(err.message)).finally(()=>{button.disabled=false});
  }catch(e){button.disabled=false;alert(e.message)}
 };
-$('productionPackBtn').onclick=()=>{
+$('productionPackBtn').onclick=async()=>{
  if(!verifyPrepared())return;
  const button=$('productionPackBtn');button.disabled=true;
  try{
-  const release=buildProductionPack({settings:s,crystals,report:manufacturingReport,stlBytes:encodeSTL(manufacturingMesh.geometry)});
+  const assemblyFiles=[],assemblyWarnings=[],wasm=await loadManifold();
+  if(s.mount==='Detachable plate'){
+   const plan=planDetachablePlate(s,planHardware(crystals,s));
+   if(plan.valid){
+    const plate=makeDetachablePlate(wasm,plan);
+    assemblyFiles.push({path:'05_Assembly/m3-detachable-plate.stl',bytes:encodeSTL(plate.geometry)});
+    plate.geometry.dispose();
+   }else assemblyWarnings.push('Mounting plate omitted: '+plan.reasons.join(' '));
+  }
+  if(s.splitParts){
+   const layout=planSplitJoints(s,planHardware(crystals,s),s.splitX);
+   const halves=splitPreparedMesh(wasm,manufacturingReport.mesh,s.splitX,layout);
+   halves.forEach((piece,i)=>{
+    if(!piece)return;
+    assemblyFiles.push({path:'05_Assembly/split-piece-'+(i+1)+'.stl',bytes:encodeSTL(piece.geometry)});
+    piece.geometry.dispose();
+   });
+   if(layout.points.length){
+    const pegs=makeSplitPinCoupon(wasm,layout.points);
+    if(pegs){
+     assemblyFiles.push({path:'05_Assembly/alignment-pegs.stl',bytes:encodeSTL(pegs.geometry)});
+     pegs.geometry.dispose();
+    }
+   }
+   assemblyWarnings.push(...layout.messages);
+  }
+  const release=buildProductionPack({settings:s,crystals,report:manufacturingReport,
+   stlBytes:encodeSTL(manufacturingMesh.geometry),extraFiles:assemblyFiles,assemblyWarnings});
   download(new Blob([release.bytes],{type:'application/zip'}),release.filename);
   setStatus('Downloaded production pack · '+release.files.length+' files'+(release.curaIncluded?' including Cura profile':' (no compatible Cura profile)'));
  }catch(error){console.error(error);alert('Production pack failed: '+error.message)}
