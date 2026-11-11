@@ -2,6 +2,15 @@
 
 **Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.11.0 (PR6 merged). **Active:** draft PR #13 v0.12.0 on `feat/pr7-complete-fabrication`.
 
+## PR7 fit calibration and access notes (11 November 2026)
+
+- Added `fit-calibration.js`: 5-position diameter mapping, 3-position full-body mapping, exact measured clearance selection, calibration snapshot and reversible global fit adjustment.
+- Both coupons use printable engraved 7-segment numerals, not just a CSV of values. Full-body coupon wire cuts now extend beyond opposite side edges; production socket cable relief is unchanged.
+- Build shows `⚙ Calibrated Ø …` after applying a measured fit; selection and original fit persist in the project and can be reset.
+- `LICENSE` reserves rights in original source without claiming public source is hidden. GitHub public viewing/forking remains permitted; see README.
+- Fixed fabrication worker undeclared manufacturing timing variables. CI install strategy now tries preinstalled browser before downloading Chromium.
+- Exact-head static + Manifold + browser CI and real printed coupons must still be checked before PR7 merge.
+
 ## PR7 handover — complete fabrication phases (11 November 2026)
 
 - PR13: https://github.com/connorturansky-svg/crystal-forge/pull/13. Based on merged PR6/main SHA `d71f7e781b247e4caf422ac600e010b2720614be`.
