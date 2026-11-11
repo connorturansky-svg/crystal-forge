@@ -62,10 +62,10 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    const midX=(route.a.x+route.b.x)/2,midZ=(route.a.z+route.b.z)/2;
    // This translucent volume matches the Manifold subtractor's width/depth.
    // It is only a GUIDE in Build; after Prepare Print, BOT shows the REAL cut.
-   const geom=new THREE.BoxGeometry(length,route.depth+.55,route.width);
+   const geom=new THREE.BoxGeometry(length,route.depth+.6,route.width);
    const ghost=new THREE.Mesh(geom,new THREE.MeshBasicMaterial({
     color:0x06bed2,transparent:true,opacity:.3,depthTest:false,depthWrite:false,side:THREE.DoubleSide}));
-   ghost.position.set(midX,(route.depth+.05)/2,midZ);ghost.rotation.y=angle;ghost.renderOrder=92;guides.add(ghost);
+   ghost.position.set(midX,(route.depth-.4)/2,midZ);ghost.rotation.y=angle;ghost.renderOrder=92;guides.add(ghost);
    const outline=new THREE.LineSegments(new THREE.EdgesGeometry(geom),
     new THREE.LineBasicMaterial({color:0x49faff,depthTest:false,transparent:true,opacity:.95}));
    outline.position.copy(ghost.position);outline.rotation.copy(ghost.rotation);outline.renderOrder=93;guides.add(outline);
