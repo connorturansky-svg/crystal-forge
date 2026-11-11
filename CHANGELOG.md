@@ -1,5 +1,14 @@
 # Crystal Forge — Changelog
 
+## v0.13.0 — PR9 combined prototype (experimental, unmerged)
+
+- **Serial pixel routing:** every pixel has opposed physical cable-bundle IN/OUT ports; first and final tails have distinct base-perimeter openings, even for one pixel. Ordered P1→Pn grooving replaces side-by-side wires for new designs. Invalid paths prevent partial manufacturing; old single/paired grooves remain labelled legacy.
+- **Numbered hardware:** P1/P2, M1/M2 and tab markers in 3D, linked Build cards, accessible ↑/↓ or drag reorder, double-click blank base Add Pixel/Mount menu and independent input/output edge pickers.
+- **Creative studio:** six adjustable family weights for reproducible Mixed clusters, persistent resizable settings panels, browser-local named templates, Ctrl-click/tree multi-select, group move/scale/lock/show-hide.
+- **Fabrication inspection and export:** non-destructive visual cutaway, crystal-ID-indexed targeted light bore report, wall and blocked-route warnings, cable segment and WS2811 RGB index CSV included in production ZIP. Added Manifold, static and browser regression tests.
+- See [PR9 test guide](docs/PR9_TEST_GUIDE.md). **Still unverified:** actual Cura slices, measured LEDs/strain relief, minimum walls, overhead loads, automated bed nesting and physically simulated translucency.
+
+
 ## v0.12.0 — 11 November 2026 (PR7 draft)
 
 - **Physical calibration rework:** both the 5-hole and 3-hole fitting coupons engrave exact Ø sizes on the printable top face, in left-to-right order. Full-profile coupons now cut opposing wire slots fully through their two outer walls, not just near the edge.
