@@ -1,6 +1,17 @@
 # AI handover — read immediately after AGENTS.md
 
-**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.8.0 (PR3 merged). **Unmerged:** v0.9.0 on `feat/pr4-help-base-pixels` (draft PR #4).
+**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.9.0 (PR4 merged). **Active:** draft PR #5 v0.10.0 on `feat/pr5-wiring-diagnostics-roadmap`.
+
+## PR5 handover (11 November 2026)
+
+- PR: https://github.com/connorturansky-svg/crystal-forge/pull/5 · base production SHA `6d43803ff22f4f1c812a498a83196457a38f1690`. PR4 was already merged at start.
+- Cura generator added: `cura-profiles.js` and Print controls export a machine-aware .curaprofile ZIP with UM3 Extended AA 0.25/0.4/0.8, UM2+ 0.25/0.4/0.6/0.8, PLA/PETG, quality and print intent. Generated archives are unit-tested but real Cura import is still a manual gate. See `docs/CURA_PROFILE_GENERATOR.md`.
+- Master backlog now groups all unfinished items into **five large delivery packages A–E**; the original detailed technical phases remain below. Do not call later packages done.
+- Implemented on branch: `wire-routing.js` optional underside route planner shared by hardware/build and Manifold cuts, cyan routing preview, CSV, route metrics and warnings; pixel-specific print-fit coupon; `print-advisor.js` roof-span proxy; custom machine X/Y/Z fit.
+- Reduced GitHub Actions noise: browser test output is now an artifact, with no automated main-branch log commit.
+- **All known pending phases:** `docs/PR5_MASTER_IMPLEMENTATION_PLAN.md` is the authoritative cross-phase queue. Only features with code and tests are implemented; all mechanical and optical guarantees remain pending real prints.
+- Latest CI must be checked at exact PR SHA. New UI/Manifold tests were added. Do not claim physical fit, actual light access or safe roof bridging based on a code test.
+- Next action: run/review static + fabrication + browser CI, correct regressions and inspect in Cura; leave PR5 draft until signoff.
 
 ## PR4 handover (11 November 2026)
 

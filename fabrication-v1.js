@@ -9,6 +9,7 @@ export function setThreeInstance(three){THREE=three;}
 import {crystalGeometry,crystalRootOffset,baseGeometry,baseSurfaceHeight} from './geometry-v3.js';
 import {planHardware} from './hardware-layout.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
+import {estimateRoofReview} from './print-advisor.js';
 
 let modulePromise=null;
 export async function loadManifold(){
@@ -375,7 +376,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   // Single authoritative feature plan shared with the colour-coded viewport.
   // Pixel sockets are placed first; mount holes are searched for a safe
   // alternative location. Features that cannot fit are SKIPPED and warned.
-  let socketsCut=0,mountingHolesCut=0,ventCuts=0,socketCeilings=[];
+  let socketsCut=0,mountingHolesCut=0,ventCuts=0,socketCeilings=[],wireChannelsCut=0;
   if(hardware.sockets.length){
    const cutters=[];
    for(const pos of hardware.sockets){
@@ -406,6 +407,21 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
      combined=opened;ventCuts=hardware.sockets.length;
     }
    }
+  }
+  // Single shared plan for preview, manufacturing and wiring CSV.
+  if(hardware.wirePlan?.routes.length){
+   const grooves=hardware.wirePlan.routes.map(route=>{
+    const dx=route.b.x-route.a.x,dz=route.b.z-route.a.z;
+    const length=Math.hypot(dx,dz)+.5,angle=-Math.atan2(dz,dx)*180/Math.PI;
+    const mx=(route.a.x+route.b.x)/2,mz=(route.a.z+route.b.z)/2;
+    return hold(wasm.Manifold.cube([length,route.depth+.6,route.width])
+     .translate([-length/2,-.5,-route.width/2])
+     .rotate([0,angle,0]).translate([mx,0,mz]));
+   });
+   const cut=hold(combined.subtract(hold(wasm.Manifold.union(grooves))));
+   assertSolid(cut,'Underside wiring grooves');combined=cut;
+   wireChannelsCut=grooves.length;
+   warnings.push('Shallow underside wiring grooves are not complete enclosed conduits. Check physical wire bend radius, exit and strain relief.');
   }
   if(hardware.sockets.length&&Number(s.baseHeight||0)<resolvePixelProfile(s).bodyHeight)
    warnings.push('Selected LED body exceeds base depth; verify fit and protrusion in Cura.');
@@ -480,17 +496,30 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
    'Ultimaker 3 Extended':[215,215,300],
    'Ultimaker 2+':[223,223,205]
   };
+  if(s.printer==='Custom / other'){
+   buildVolumes['Custom / other']=[
+    Math.min(1500,Math.max(30,Number(s.printerX)||220)),
+    Math.min(1500,Math.max(30,Number(s.printerY)||220)),
+    Math.min(1500,Math.max(30,Number(s.printerZ)||220))
+   ];
+   warnings.push('Custom printer dimensions entered manually; verify in your slicer.');
+  }
   const volumeLimit=buildVolumes[s.printer];
   const printerFits=!volumeLimit||(
    size[1]<=volumeLimit[2]+.001&&(
     (size[0]<=volumeLimit[0]+.001&&size[2]<=volumeLimit[1]+.001)||
     (size[2]<=volumeLimit[0]+.001&&size[0]<=volumeLimit[1]+.001)
    ));
+  const roofReview=estimateRoofReview(hardware.polygon,s,vault);
+  if(roofReview.estimateMm>30)
+   warnings.push('Worst-case 0%-infill roof span proxy: '+roofReview.estimateMm.toFixed(1)+' mm. This is a 2D indicator, NOT calculated Cura bridge geometry; check layer preview.');
+  if(s.baseProfile==='Full dome / hill'&&Number(s.sideWall||0)<20)
+   warnings.push('Full hill has very shallow edges: verify real edge thickness, adhesion and channel clearances.');
   if(!printerFits)warnings.push('Model exceeds the '+s.printer+' build volume ('+volumeLimit.join(' × ')+' mm) in an upright orientation. Split the model or choose another machine.');
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
-  const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,
+  const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,roofReview,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
+    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
      plannedSockets:hardware.sockets,plannedMounts:[...hardware.mounts,...hardware.tabHoles],hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
@@ -551,23 +580,25 @@ export function save3MF(geom,filename='crystal-forge.3mf'){
 }
 
 
-export function makeCalibrationStrip(wasm){
+export function makeCalibrationStrip(wasm,nominal=12){
  const keep=[];const hold=o=>{keep.push(o);return o};
  try{
   // X long, Y upward, Z across: flat-bottom 5mm thick FDM calibration.
-  const bar=hold(wasm.Manifold.cube([112,5,22]));
+  const diameter=Math.max(2,Math.min(30,Number(nominal)||12));
+  const pitch=Math.max(12,diameter+9),depth=diameter+10;
+  const bar=hold(wasm.Manifold.cube([pitch*5,5,depth]));
   const holes=[];
   for(let i=0;i<5;i++){
-   const dia=11.8+i*.1;
+   const dia=diameter+(i-2)*.1;
    const core=hold(wasm.Manifold.cylinder(9,dia/2,dia/2,40));
    const turned=hold(core.rotate([-90,0,0]));
-   const moved=hold(turned.translate([12+i*22,-2,11]));
+   const moved=hold(turned.translate([pitch*(i+.5),-2,depth/2]));
    holes.push(moved);
   }
   const allHoles=hold(wasm.Manifold.union(holes));
   const strip=hold(bar.subtract(allHoles));
   assertSolid(strip,'Socket calibration strip');
-  return {geometry:fromResultMesh(strip.getMesh()),diameters:[11.8,11.9,12,12.1,12.2],triangles:strip.numTri()};
+  return {geometry:fromResultMesh(strip.getMesh()),diameters:Array.from({length:5},(_,i)=>Math.round((diameter+(i-2)*.1)*100)/100),triangles:strip.numTri()};
  }finally{cleanupAll(keep)}
 }
 export function splitPreparedMesh(wasm,mesh,cutX=0){

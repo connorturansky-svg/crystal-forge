@@ -183,3 +183,20 @@ Create a 16-crystal clustered design with a 25 mm integrated base and dome; test
 - **Requirements:** visible explanations without hovering, including specific mounting types.
 - **Implementation:** optional persistent Descriptions panel alongside original hover help; content changes on hover, focus and select changes, with mobile/narrow view support.
 - **Acceptance:** no model regeneration, semantic/keyboard interaction, explanatory text for every mounting preset.
+
+## F22 — PR5 physical underside wire routing (v0.10 draft)
+
+- **Controls:** Build → wire channels, nearest-edge cable exit, width, depth, slack (advanced), wiring CSV.
+- **Implementation:** `wire-routing.js` creates a deterministic shortest-available connection tree of accepted LED sockets, rejects mount intersections and thin roofs, and creates open-bottom segment plans. `hardware-editor.js` shows cyan lines; `fabrication-v1.js` subtracts Manifold grooves from the same plan.
+- **Acceptance:** plan/print/CSV agree, one physically connected material body, no roof breakouts in representative cases, clear skip warnings. **Not implemented:** enclosed electrical conduit, physical strain-relief clip or complete optical channels.
+
+## F23 — PR5 printer dimensions and roof review (v0.10 draft)
+
+- **Controls:** Custom / other printer's X/Y/Z build limits; Print roof-span report.
+- **Implementation:** `print-advisor.js` samples a 2D largest-inscribed-circle proxy (or vault buttress-gap estimate), intended to identify possible 0%-infill roof spans. Actual G-code bridge/support geometry is not calculated.
+- **Acceptance:** conservative, explicitly advisory wording; custom build volumes enforce bounds and are restored from project JSON. Human Cura layer and physical tests still required.
+
+## F24 — PR5 selected-profile fit coupon (v0.10 draft)
+
+- **Behaviour:** existing five-hole test strip uses selected nominal bore with ±0.2 mm increments, including small seed pixels. Check body, flange and wire relief physically; stepped calibration coupons remain future work.
+- **Acceptance:** expected diameters and printable Manifold coupon; browser download.

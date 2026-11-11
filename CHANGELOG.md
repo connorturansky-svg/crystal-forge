@@ -1,6 +1,22 @@
 # Crystal Forge — Changelog
 
-## v0.9.0 — 11 November 2026 (PR4 draft — not merged)
+## v0.10.0 — 11 November 2026 (PR5 draft; not merged)
+
+- **Cura profile generator:** in Print, choose UM3 Extended/UM2+, actual nozzle/print core (0.25 / 0.4 / 0.6 / 0.8 mm where compatible), PLA/PETG, Fast-to-Fine quality and translucent/balanced/durable intent. Download a .curaprofile ZIP with machine/material-specific overrides for layers, shells, speed, cooling and infill. Unsupported UM3 AA 0.6 is blocked with an explanation.
+- Added a real-time Cura settings summary, generated ZIP metadata tests and browser download coverage. Preset temperatures remain inherited from Cura's selected material; actual imports and physical prints must be verified.
+- Reorganised all unfinished features into **five large delivery packages** (A–E) covering Cura/printability, LED light paths/hardware, modular mounting, creative editor and production hardening; see the master plan and Cura import guide.
+
+- Added optional physical underside cable grooves between accepted pixels, with a deterministic planner, collision/roof checks, cyan Build previews, optional nearest edge exit and best-effort extra slack.
+- Manifold prints now cut planned wiring grooves, report the groove count, unconnected pixels and estimated wire length. Added CSV output with segment-by-segment X/Z coordinates and lengths.
+- Fit test coupon now follows the selected built-in or custom LED bore diameter rather than always using a 12 mm test. The diameter slider now supports small seed pixels.
+- Added a zero-infill roof-span **2D proxy** to draw attention to potentially long unsupported roof areas, with explicit Cura caveats.
+- Added user-entered custom printer X/Y/Z dimensions to the existing printer-fit report.
+- Improved CI: no browser QA workflow commits to main; logs stay as downloadable run artifacts. New module paths trigger regression runs.
+- Added `docs/PR5_MASTER_IMPLEMENTATION_PLAN.md` for remaining phases, dependencies, acceptance and physical test gates.
+
+**Not verified by a passing test alone:** real wire bend radius and strain relief, LED retention, shared optical access, Cura bridging, full-hill floor edges, child-safe surfaces and overhead mount rating. PR5 stays draft until validation.
+
+## v0.9.0 — 11 November 2026 (PR4 merged)
 
 - Base profiles: Flat plinth, smoothly integrated Plinth + dome, and Full dome / hill; independent dome falloff and side-wall amount. Geometry and crystal seating share a radial profile.
 - Pixel profiles: generic nominal 5 mm seed, 12 mm bullet and 12 mm gumdrop forms, plus custom measured profiles saved to a reusable library and portable project JSON.

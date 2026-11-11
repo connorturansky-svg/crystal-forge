@@ -1,5 +1,6 @@
 /* Build-stage placement/inspection: same authoritative plan as fabrication. */
 import {planHardware} from './hardware-layout.js';
+import {resolvePixelProfile} from './pixel-profiles.js';
 
 export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,onEdit,onStatus}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
@@ -53,6 +54,13 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
     tube.position.set(p.x,height/2,p.z);tube.renderOrder=85;guides.add(tube);
    }
   }
+  for(const route of plan.wirePlan?.routes||[]){
+   const geometry=new THREE.BufferGeometry();
+   geometry.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
+    route.a.x,.85,route.a.z,route.b.x,.85,route.b.z]),3));
+   const line=new THREE.Line(geometry,new THREE.LineBasicMaterial({color:0x12c9dc,depthTest:false,transparent:true,opacity:.95}));
+   line.renderOrder=100;guides.add(line);
+  }
   guides.visible=isBuild();
  }
  function refresh(){
@@ -60,7 +68,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   draw(plan);
   if($('hardwareGuideSummary'))$('hardwareGuideSummary').textContent=
    plan.sockets.length+' LED hole(s) · '+(plan.mounts.length+plan.tabHoles.length)+' mounting hole(s) · '+plan.tabs.length+' edge tab(s) · '+
-   (plan.invalidManualPixels.length+plan.invalidManualMounts.length)+' invalid (red)';
+   (plan.invalidManualPixels.length+plan.invalidManualMounts.length)+' invalid (red) · '+(plan.wirePlan?.routes.length||0)+' cyan wire segments · '+(plan.wirePlan?.unrouted||0)+' unconnected';
   const list=$('manualHardwareList');if(!list)return;
   const html=[];
   for(const [kind,enabled,items] of [['pixel',s.pixelPlacement==='manual',s.manualPixelHoles||[]],
@@ -125,7 +133,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const valid=data.insideBase&&placementValid(kind,data.pos);
   lastCursor={...data,valid,kind};
   const s=getSettings();
-  const diameter=kind==='pixel'?Number(s.pixelDiameter)+Number(s.pixelFit):
+  const diameter=kind==='pixel'?resolvePixelProfile(s).maxDiameter:
    s.mount==='Magnet inserts'?10.2:s.mount==='Threaded insert M3'?4.2:Number(s.mountHoleDiameter||4.5);
   const radius=Math.max(1,diameter/2);
   preview.scale.setScalar(radius);

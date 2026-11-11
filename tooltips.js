@@ -140,6 +140,11 @@ const SETTINGS={
   "Choose one shared LED, multiple LEDs or no lighting. Actual channels need inspecting in Cura."
  ],
  "pixelProfileId": ["Pixel profile","Choose a seed, bullet, gumdrop or saved custom profile. Dimensions change the actual manufacturing cut."],
+ "wireChannels": ["Carve underside wire grooves","When enabled, cut actual shallow channels joining multiple accepted LED sockets. Not continuous optical channels or guaranteed strain relief."],
+ "wireExit": ["Cable exit","Attempt to route one groove to the nearest safe perimeter edge; may be skipped if the wall is too thin."],
+ "wireWidth": ["Wire channel width","Width of each open-bottom cable groove. Measure actual cable insulation and keep material around nearby holes."],
+ "wireDepth": ["Wire channel depth","Depth of the underside cable groove. Increasing it leaves less plastic above the cable."],
+ "wireSlack": ["Extra routing slack","Try a bend in the routing groove for additional cable slack. Fallback to a direct path when a bent route would cross an obstacle."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."
@@ -197,6 +202,14 @@ const SETTINGS={
   "Mount-hole spacing",
   "Desired separation between automatic fixing holes, subject to the base footprint."
  ],
+ "printerX": ["Custom printer width","Usable horizontal X build volume (mm), not including clips or nozzle clearance."],
+ "printerY": ["Custom printer depth","Usable horizontal Y build volume (mm). Confirm with the printer's Cura profile."],
+ "printerZ": ["Custom printer height","Maximum vertical printable height (mm). Check gantry and head clearance."],
+ "curaNozzle": ["Cura nozzle / AA print core","Select the physically installed nozzle. The Ultimaker 3 Extended has AA 0.25, 0.4 or 0.8 mm print cores; 0.6 is unsupported in standard AA format."],
+ "curaMaterial": ["Cura filament material","Choose PLA or PETG and configure the matching filament profile in Cura. Temperatures remain inherited from Cura's selected material."],
+ "curaQuality": ["Quality vs time","Moving toward Fine reduces layer height and speed, and increases shells/top skins. It does not automatically improve optical transparency or guarantee a safe print."],
+ "curaIntent": ["Print strategy","Light transmission sets 0% infill, Balanced 10–15%, Durable 25–30%; these settings do not guarantee open cavities or sufficient structural strength."],
+ "curaProfileBtn": ["Download Cura print profile","Export a ZIP-based .curaprofile containing compatible custom quality overrides for the selected printer, nozzle and material."],
  "printer": [
   "Printer profile",
   "Used for print-volume warnings. It does not automatically change Cura machine settings."
@@ -305,6 +318,7 @@ const BUTTONS={
   "Download 3MF",
   "Exports the prepared print geometry as a 3MF project model for slicing."
  ],
+ "wiringCsvBtn": ["Export wiring plan CSV","Download accepted underside channel segments and lengths, including skipped-route counts. These are estimates; check your wiring physically."],
  "bomBtn": [
   "Parts list",
   "Downloads a CSV estimate of LEDs, crystals and mounting features."

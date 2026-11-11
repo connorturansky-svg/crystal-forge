@@ -8,6 +8,10 @@ on:
       - 'studio-v3.js'
       - 'hardware-editor.js'
       - 'hardware-layout.js'
+      - 'wire-routing.js'
+      - 'print-advisor.js'
+      - 'pixel-profiles.js'
+      - 'cura-profiles.js'
       - 'fabrication-v1.js'
       - 'tests/browser-smoke.mjs'
       - 'package.json'
@@ -20,6 +24,10 @@ on:
       - 'studio-v3.js'
       - 'hardware-editor.js'
       - 'hardware-layout.js'
+      - 'wire-routing.js'
+      - 'print-advisor.js'
+      - 'pixel-profiles.js'
+      - 'cura-profiles.js'
       - 'fabrication-v1.js'
       - 'fabrication-worker.js'
       - 'tests/**'
@@ -27,7 +35,7 @@ on:
       - '.github/workflows/browser-tests.yml'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
   browser:
     runs-on: ubuntu-24.04
@@ -73,29 +81,6 @@ jobs:
           name: crystal-forge-browser-screenshot
           path: qa/browser-smoke.png
           if-no-files-found: ignore
-      - name: Store browser smoke test result
-        # A PR must never write a test-log commit back onto main.
-        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          OUTCOME: ${{ steps.browser.outcome }}
-          REF: ${{ github.sha }}
-        run: |
-          mkdir -p qa
-          {
-            echo "Browser smoke tests: $OUTCOME"
-            echo "Commit: $REF"
-            echo
-            echo "Installation outcome: ${{ steps.install.outcome }}"
-            if [ -f /tmp/browser-install.log ]; then tail -n 60 /tmp/browser-install.log; fi
-            echo
-            if [ -f browser-run.log ]; then cat browser-run.log; else echo "Browser test did not reach execution"; fi
-          } > qa/latest-browser-test.log
-          git config user.name "Crystal Forge CI"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add qa/latest-browser-test.log
-          git commit -m "ci: publish browser test results [skip ci]" || true
-          git pull --rebase origin main || true
-          git push || true
       - name: Fail on browser errors
         if: steps.install.outcome != 'success' || steps.browser.outcome != 'success'
         run: exit 1

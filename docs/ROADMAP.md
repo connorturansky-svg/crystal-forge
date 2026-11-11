@@ -1,4 +1,6 @@
-# Roadmap — verified issues, unfinished work and proposals
+# Crystal Forge roadmap
+
+**Current master backlog:** [PR5 master implementation plan](PR5_MASTER_IMPLEMENTATION_PLAN.md). It separates completed work, active PR5 wiring/print diagnostics, queued mechanics and exploratory phases, with individual acceptance gates.
 
 Status notation: **BUG** = reproducible or directly evidenced; **RISK / VERIFY** = potential problem not yet proven by a test print; **REQUIRED** = explicit request; **AGREED** = adopted approach; **PROPOSAL** = suggested but not yet accepted; **LONG-TERM** = exploratory. Priority rankings are guidance for the next development session, not user-approved delivery dates.
 
