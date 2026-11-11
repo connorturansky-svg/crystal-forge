@@ -1,6 +1,16 @@
 # Crystal Forge — Changelog
 
-## v0.11.0 — 11 November 2026 (PR6 draft, all five phases)
+## v0.12.0 — 11 November 2026 (PR7 draft)
+
+- Opt-in targeted actual LED-to-crystal Manifold conduits, with cautious root/roof/reach validation and accepted/skipped counts.
+- Different manually placed LEDs can select individual saved seed/bullet/gumdrop/custom profiles for exact planning and cutting.
+- Three-position stepped LED-fit coupon samples flange, housing cap, experimental retention and wire relief.
+- Detachable M3 mounting preset cuts two registered blind base pockets and exports a separate matching printable plate.
+- Full production ZIP can include requested valid split STLs, assembly dowels and M3 plate.
+- Cura approximate layer/flow guidance, more precise Web Worker progress and optional extended 10/16/40/60 benchmarks.
+- Regression tests and [PR7 acceptance document](docs/PR7_COMPLETE_FABRICATION.md); physical light, hardware and Cura acceptance remain required.
+
+## v0.11.0 — 11 November 2026 (PR6 merged, all five phases)
 
 - **A / Cura:** Model-aware thin-feature, roof and nozzle checklists downloadable as text.
 - **B / LEDs:** Per-crystal optical uncertainty CSV and optional experimental bore compression ridge, default off.
