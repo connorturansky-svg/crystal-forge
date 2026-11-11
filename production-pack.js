@@ -8,7 +8,7 @@ import {planHardware} from './hardware-layout.js';
 import {buildPixelStringMap} from './pixel-string-export.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
 const csv=rows=>rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n')+'\r\n';
-export function buildProductionPack({settings,crystals,report,stlBytes,extraFiles=[],assemblyWarnings=[]}){
+export function buildProductionPack({settings,crystals,report,stlBytes,extraFiles=[],assemblyWarnings=[],splitManifest=null}){
  if(!report?.ready||!(stlBytes instanceof Uint8Array)||stlBytes.length<84)
   throw Error('Prepare and validate a manufacturing STL before exporting a production pack.');
  const s=settings,hardware=planHardware(crystals,s);
@@ -60,6 +60,11 @@ export function buildProductionPack({settings,crystals,report,stlBytes,extraFile
   if(!/^05_Assembly\/[a-zA-Z0-9_.-]+\.stl$/.test(item.path))
    throw Error('Unsafe assembly export path');
   assets.push([item.path,item.bytes]);
+ }
+ if(splitManifest){
+  if(!Array.isArray(splitManifest.parts)||!splitManifest.parts.length)
+   throw Error('Automatic bed split manifest requires numbered physical parts');
+  assets.push(['05_Assembly/bed-split-layout.json',JSON.stringify(splitManifest,null,2)]);
  }
  const condensed={status:report.status,bounds:report.bounds,printerFits:report.printerFits,
   triangleCount:report.triangleCount,volumeMm3:report.volumeMm3,
