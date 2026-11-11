@@ -1,5 +1,13 @@
 # Crystal Forge — Changelog
 
+## v0.14.1 — PR11 hardening candidate (draft, not deployed)
+- Prevent silent eviction at 40 named projects; existing over-limit project data remains readable.
+- Prevalidate private GitHub vault merges, retain unique backups and roll back interrupted local writes.
+- Include pixel pitch, minimum bend radius and input/output tail-length budgets in the prepared-mesh fingerprint.
+- Trigger browser/Manifold CI for every root-level JavaScript change and add regression tests.
+- No new physical Cura/filament, optical, wire-strain or structural certification is claimed.
+
+
 ## v0.14.0 — PR10 development candidate (experimental)
 
 - **Physical LED cabling:** strict 180° opposed input/output ports, straight tangent socket exits, sampled smooth curves shared between 3D preview and Manifold cuts, minimum bend-radius screening and red over-length diagnostics for selectable 25/50/100/custom cable spacings. Choose P1 or reverse the string, toggle arrowheads and run-length labels.
