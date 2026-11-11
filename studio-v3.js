@@ -365,6 +365,7 @@ const camera=new THREE.PerspectiveCamera(46,1,.1,5000);camera.position.set(240,1
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,preserveDrawingBuffer:false});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.localClippingEnabled=true;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 // WebGL drawing-buffer pixels are DPR-scaled. CSS pixels MUST NOT be:
  // without explicit CSS sizing, a 2x-DPR display gives a canvas twice the
@@ -577,13 +578,30 @@ function renderInfo(){
  $('pixelStats').textContent=s.pixelCount;
  $('footerStats').textContent=crystals.length+' crystals · '+Math.round(total).toLocaleString()+' triangles';
 }
+let cutawayEnabled=false;
+const sectionPlane=new THREE.Plane(new THREE.Vector3(1,0,0),0);
+$('sectionCutBtn').onclick=()=>{
+ cutawayEnabled=!cutawayEnabled;
+ $('sectionCutBtn').classList.toggle('active',cutawayEnabled);
+ $('sectionCutBtn').setAttribute('aria-pressed',String(cutawayEnabled));
+ updateAppearance();
+ setStatus(cutawayEnabled?'Visual half-cut enabled: geometry unchanged. Inspect the real prepared mesh and Cura layers.':'Visual half-cut disabled.');
+};
 function updateAppearance(){
+ if(cutawayEnabled){
+  const bounds=new THREE.Box3();
+  const shown=manufacturingMesh?.visible?[manufacturingMesh]:[...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents];
+  for(const m of shown)if(m?.visible)bounds.expandByObject(m);
+  if(!bounds.isEmpty())sectionPlane.constant=-bounds.getCenter(new THREE.Vector3()).x;
+ }
  const look=document.querySelector('[data-look].active')?.dataset.look||'solid';
  for(const m of [...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents,...(manufacturingMesh?[manufacturingMesh]:[])]){
   m.material.wireframe=look==='wire';
   m.material.transparent=look==='xray';
   m.material.opacity=look==='xray'?.38:1;
   m.material.depthWrite=look!=='xray';
+  m.material.clippingPlanes=cutawayEnabled?[sectionPlane]:null;
+  m.material.needsUpdate=true;
   const selected=m===selectedMesh,c=selected?selectedCrystal():null;
   const batch=!!m.userData.crystalId&&s.batchSelectionIds?.includes(m.userData.crystalId);
   const glow=!!s.glowPreview&&s.lightingMode!=='none'&&!(m===manufacturingMesh&&$('printHeatmap')?.checked);
