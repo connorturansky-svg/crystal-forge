@@ -194,7 +194,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <label class="checks"><input type="checkbox" data-state="wireExit"> Route first pixel to a safe base edge</label>
 <div class="control"><label>Wire arrangement</label><select data-state="wireMode"><option value="single">Single channel</option><option value="parallel">Two parallel wires</option></select></div>
 <div class="control"><label>Parallel wire centres <output data-out="wirePairSpacing"></output></label><input data-state="wirePairSpacing" type="range" min="3" max="22" step=".5"></div>
-<div class="buttonrow"><button type="button" id="pickWireExitBtn">⌖ Pick paired wire exit on model</button></div>
+<div class="buttonrow"><button id="singleWireExitBtn" type="button">⌁ Enable a groove to the outside edge</button><button type="button" id="pickWireExitBtn">⌖ Pick paired wire exit on model</button></div>
+<p id="wireRouteStatus" class="note" aria-live="polite">Enable underside wiring to inspect calculated channels.</p>
 <div class="advanced-only">
 <div class="control"><label>Channel width <output data-out="wireWidth"></output></label><input data-state="wireWidth" type="range" min="1.5" max="9" step=".25"></div>
 <div class="control"><label>Channel depth <output data-out="wireDepth"></output></label><input data-state="wireDepth" type="range" min=".8" max="5" step=".2"></div>
@@ -261,7 +262,9 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="stat"><span>Open base vault</span><strong id="reportVault">—</strong></div>
 <div class="stat"><span>Estimated roof gap</span><strong id="reportVaultGap">—</strong></div>
 <div class="stat"><span>Wiring grooves cut</span><strong id="reportWireChannels">—</strong></div><div class="stat"><span>Estimated routed wire</span><strong id="reportWireLength">—</strong></div><div class="stat"><span>LEDs without route</span><strong id="reportUnrouted">—</strong></div>
-<div class="stat"><span>LED side vent sets</span><strong id="reportLEDVents">—</strong></div><div class="stat"><span>Crystal light passages</span><strong id="reportPorts">—</strong></div><div class="stat"><span>Targeted bores cut</span><strong id="reportTargeted">—</strong></div><div class="stat"><span>Light routes skipped</span><strong id="reportSkippedLight">—</strong></div><div class="stat"><span>Shared light path</span><strong id="reportLightPath">—</strong></div><div class="stat"><span>Base depth vs pixel</span><strong id="reportBaseDepth">—</strong></div>
+<div class="stat"><span>LED side vent sets</span><strong id="reportLEDVents">—</strong></div>
+<div class="stat"><span>Vault-to-spike bores cut</span><strong id="reportDirectPorts">—</strong></div>
+<div class="stat"><span>Vault bores skipped</span><strong id="reportSkippedPorts">—</strong></div><div class="stat"><span>Crystal light passages</span><strong id="reportPorts">—</strong></div><div class="stat"><span>Targeted bores cut</span><strong id="reportTargeted">—</strong></div><div class="stat"><span>Light routes skipped</span><strong id="reportSkippedLight">—</strong></div><div class="stat"><span>Shared light path</span><strong id="reportLightPath">—</strong></div><div class="stat"><span>Base depth vs pixel</span><strong id="reportBaseDepth">—</strong></div>
 <div class="stat"><span>Overhang risk faces</span><strong id="reportOverhang">—</strong></div>
 <div class="stat"><span>Suggested orientation</span><strong id="reportOrientation">—</strong></div>
 <div id="reportWarnings" class="note"></div>
@@ -271,13 +274,16 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <p id="opticalAuditSummary" class="note">Optical paths remain unverified until slicing and physical light tests.</p>
 </div></div>
 <div class="buttonrow"><button id="stlBtn" disabled>↓ STL</button><button id="threeMfBtn" disabled>↓ 3MF</button></div><button id="detachablePlateBtn" disabled type="button">↓ Separate M3 mounting plate STL</button>
+<button id="exportMountPlateBtn" type="button">↓ Registered mounting plate STL (alternative)</button>
 <button id="productionPackBtn" class="primary" type="button" disabled style="width:100%;margin-top:8px">↓ Download complete production pack (ZIP)</button>
 <p class="note">Packages the validated prepared STL, editable project, compatible Cura profile, optical audit, cable plan and checklist. Requested valid split parts, dowels and M3 mounting plate are also bundled; larger assemblies can take longer. Requires Prepare print first.</p>
 <div class="note">Exports use only the prepared manufacturing mesh. Changing geometry or Build options requires preparing again.</div>
 <div class="divider"></div>
 <button id="steppedPixelCouponBtn" type="button" style="width:100%">⌖ Generate stepped pixel + wire-relief fit coupon</button>
 <p class="note">Three actual profile-shaped underside sockets, spaced at −0.15 / nominal / +0.15 mm. Test the LED flange, dome, existing retention band and cable exits before using these cuts on a full cluster.</p>
-<div class="buttonrow"><button id="wiringCsvBtn">↓ Wiring plan CSV</button><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div><div class="divider"></div><button id="calibrationBtn" style="width:100%">⌖ Generate selected pixel-fit test strip (STL)</button><p class="note">Five diameters around your selected pixel's current bore (+/− 0.2 mm in 0.1 mm steps). Print in the intended material and check real fit, flange and wire routing.</p>
+<div class="buttonrow"><button id="wiringCsvBtn">↓ Wiring plan CSV</button><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div><div class="divider"></div>
+<div class="control"><label>Calibration strip type</label><select data-state="fitCouponStyle"><option value="stepped">Stepped body, cap, flange and wire relief</option><option value="plain">Simple diameter-only holes</option></select></div>
+<button id="calibrationBtn" style="width:100%">⌖ Generate selected pixel-fit test strip (STL)</button><p class="note">Five diameters around your selected pixel's current bore (+/− 0.2 mm in 0.1 mm steps). Print in the intended material and check real fit, flange and wire routing.</p>
 <div class="advanced-only"><div class="divider"></div>
 <div class="control"><label>Modular cut plane X <output data-out="splitX"></output></label><input data-state="splitX" type="range" min="-100" max="100" step="1"></div>
 <label class="checks"><input data-state="splitParts" type="checkbox"> Enable split exports (two parts)</label>
