@@ -28,7 +28,6 @@ export function planTargetedLightPaths(crystals,s,hardware){
  const maxLength=clamp(Number(s.lightReach)||85,15,180);
  const diameter=clamp(Number(s.lightBoreDiameter)||4,1.6,8);
  const boreRadius=diameter/2;
- const profile=resolvePixelProfile(s);
  const mountHoles=[...(hardware.mounts||[]),...(hardware.tabHoles||[])];
  for(const c of crystals){
   if(c.hidden)continue;
