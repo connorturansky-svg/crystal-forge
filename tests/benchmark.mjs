@@ -63,6 +63,14 @@ const extended=process.env.CRYSTAL_FORGE_BENCH_EXTENDED==='1'||process.env.CRYST
 const extendedResults=[];
 if(extended){
  for(const count of [10,16,40,60])extendedResults.push(measure('crystal-count-'+count,{count,cutSockets:true}));
+ // Opt-in extended production workloads: not substitutes for print tests.
+ for(const [name,overrides] of [
+  ['targeted-optical-bores',{count:16,cutSockets:true,targetedLightPaths:true,lightBoreDiameter:4}],
+  ['multiple-LED-sockets',{count:16,lightingMode:'multi',pixelCount:4,cutSockets:true,
+   pixelProfileId:'gumdrop',mount:'None',wireChannels:false}],
+  ['multiple-mounts',{count:16,lightingMode:'multi',pixelCount:3,cutSockets:true,mount:'Magnet inserts'}],
+  ['experimental-balloon-hollow',{count:10,hollowCrystals:true,cutSockets:true,baseVault:false}],
+ ])extendedResults.push(measure(name,overrides));
 }
 const normal=measure('cura-first-solid');
 const vaulted=measure('zero-infill-vault',{baseVault:true});
