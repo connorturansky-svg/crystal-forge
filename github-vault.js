@@ -87,6 +87,7 @@ export class GitHubVault{
     ...options.headers}
   });
   if(res.status===404)return null;
+  if(res.status===409)throw new CloudConflictError('GitHub rejected the write because the vault changed. Pull and reconcile before trying again.');
   if(!res.ok){
    const message=await res.text().catch(()=>res.statusText);
    throw Error('GitHub returned '+res.status+': '+message.slice(0,250));
