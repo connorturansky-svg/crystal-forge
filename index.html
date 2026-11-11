@@ -122,6 +122,22 @@ body.theme-light .control-tooltip span{color:#334c6b}
 .workspace-resizer[hidden]{display:none!important}
 .treeentry.child.batch-selected{border-color:#2cc6fa;background:#214665}
 .treeentry.child input[data-batch-id]{width:15px;height:15px;accent-color:#4ce9ff;margin-right:3px;cursor:pointer}
+/* PR10 hardware accessibility: selected/hover/focus and danger states use
+   explicit high-contrast foregrounds, not the old dim inherited note colour. */
+.hardware-edit-item{color:#eef5ff!important;background:#1a314b!important;border:2px solid #6a8cae!important}
+.hardware-edit-item label,.hardware-edit-item .note{color:#dceafa!important}
+.hardware-edit-item input,.hardware-edit-item select{background:#fafdff!important;color:#152a3f!important;border:2px solid #9db6d3!important}
+.hardware-edit-item button{color:#12243c!important;background:#e8f4ff!important;border:2px solid #a3bad2!important;font-weight:700}
+.hardware-edit-item.selected{background:#15475a!important;border-color:#33e6c7!important;box-shadow:inset 4px 0 #3ceaca}
+.hardware-edit-item:focus-within{outline:2px solid #56eac8;outline-offset:2px}
+.hardware-marker.selected{outline:4px solid #19e4d0}
+.hardware-route-length{position:absolute;pointer-events:none;transform:translate(-50%,-50%);padding:3px 5px;border:1px solid #d4eaff;border-radius:6px;color:#101d30;background:#e7f6ff;font:700 11px/1.2 system-ui;white-space:nowrap}
+.hardware-route-length.exceeded{color:white;background:#b61736;border-color:#ffe0e5}
+#wireRouteDetails.warning{color:#b11431;background:#ffe6eb;border:2px solid #e6425b;padding:7px}
+body.light .hardware-edit-item{background:#e2f2ff!important;color:#10273b!important;border-color:#53748e!important}
+body.light .hardware-edit-item label,body.light .hardware-edit-item .note{color:#122a40!important}
+body.light .hardware-edit-item.selected{background:#c1f8ed!important;border-color:#087e6c!important}
+
 </style></head>
 <body class="simple">
 <header class="topbar">
