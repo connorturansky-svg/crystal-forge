@@ -2,6 +2,7 @@
 import {planHardware} from './hardware-layout.js';
 import {resolvePixelProfile,allPixelProfiles} from './pixel-profiles.js';
 import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
+import {nearestEdgePosition} from './edge-tabs.js';
 
 export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,onEdit,onStatus}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
@@ -80,12 +81,24 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    for(let i=0;i<items.length;i++){
     const p=items[i],bad=(kind==='pixel'?plan.invalidManualPixels:plan.invalidManualMounts).some(x=>x.index===i);
     const options=kind==='pixel'?'<div class="control" style="grid-column:1 / -1"><label>Individual LED profile</label><select data-hole-profile="'+i+'">'+
-     allPixelProfiles(s).map(profile=>'<option value="'+esc(profile.id)+'"'+((p.profileId||s.pixelProfileId)===profile.id?' selected':'')+'>'+esc(profile.name)+'</option>').join('')+'</select></div>':'';
+     allPixelProfiles(s).map(profile=>'<option value="'+esc(profile.id)+'"'+((p.profileId||s.pixelProfileId)===profile.id?' selected':'')+'>'+esc(profile.name)+'</option>').join('')+'</select>'+
+ '<div class="control"><label>Pixel rotation (degrees)</label><input type="number" min="-180" max="180" step="5" data-wire-angle="'+i+'" value="'+Number(p.wireAngle??0)+'"></div>'+
+ '<div class="grid2"><div class="control"><label>Exit centre X (mm)</label><input data-wire-end-x="'+i+'" type="number" step=".5" value="'+(p.wireEndX??'')+'" placeholder="Automatic"></div>'+
+ '<div class="control"><label>Exit centre Z (mm)</label><input data-wire-end-z="'+i+'" type="number" step=".5" value="'+(p.wireEndZ??'')+'" placeholder="Automatic"></div></div>'+
+ '<p class="note">Rotation turns both wire lanes together. Both end points stay aligned around this shared exit centre.</p></div>':'';
     html.push('<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:end;margin:8px 0">'+
      '<div class="control"><label>X (mm)</label><input type="number" step=".5" data-hole-kind="'+kind+'" data-hole-index="'+i+'" data-hole-axis="x" value="'+numeric(p.x)+'"></div>'+
      '<div class="control"><label>Z (mm)</label><input type="number" step=".5" data-hole-kind="'+kind+'" data-hole-index="'+i+'" data-hole-axis="z" value="'+numeric(p.z)+'"></div>'+
      '<button data-remove-hole="'+kind+'" data-hole-index="'+i+'" title="Remove hole">✕</button>'+options+'</div>'+
      (bad?'<p class="note warning">Invalid position. This hole will not be cut until corrected.</p>':''));
+   }
+  }
+  if(s.mount==='Edge fixing tabs'){
+   html.push('<div class="divider"></div><b>Editable edge tabs</b><p class="note">Add, Shift-drag or delete tabs along the perimeter.</p>');
+   for(let i=0;i<(s.manualEdgeTabs||[]).length;i++){
+    const u=Number(s.manualEdgeTabs[i].u||0),bad=!plan.tabs.some(t=>t.index===i);
+    html.push('<div class="buttonrow"><label>Tab '+(i+1)+' · perimeter <input type="number" min="0" max="99.9" step=".5" data-tab-u="'+i+'" value="'+(u*100).toFixed(1)+'"> %</label><button data-remove-tab="'+i+'">✕ Delete</button></div>'+
+      (bad?'<p class="note warning">Tab conflicts with another feature and will not be cut.</p>':''));
    }
   }
   list.innerHTML=html.join('')||'<p class="note">Use Place / move to make existing automatic holes editable, or add new holes by clicking the model.</p>';
@@ -99,6 +112,25 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    const item=s.manualPixelHoles?.[Number(select.dataset.holeProfile)];
    if(!item)return;
    item.profileId=select.value;onEdit();
+  });
+  list.querySelectorAll('[data-wire-angle]').forEach(input=>input.onchange=()=>{
+   const p=s.manualPixelHoles?.[Number(input.dataset.wireAngle)];if(!p)return;
+   p.wireAngle=Math.max(-180,Math.min(180,Number(input.value)||0));onEdit();
+  });
+  for(const axis of ['x','z'])list.querySelectorAll('[data-wire-end-'+axis+']').forEach(input=>input.onchange=()=>{
+   const p=s.manualPixelHoles?.[Number(axis==='x'?input.dataset.wireEndX:input.dataset.wireEndZ)];if(!p)return;
+   const key=axis==='x'?'wireEndX':'wireEndZ';
+   if(input.value.trim()==='')delete p[key];
+   else if(Number.isFinite(Number(input.value)))p[key]=Number(input.value);
+   onEdit();
+  });
+  list.querySelectorAll('[data-tab-u]').forEach(input=>input.onchange=()=>{
+   const p=s.manualEdgeTabs?.[Number(input.dataset.tabU)];if(!p)return;
+   p.u=Math.max(0,Math.min(.999,Number(input.value)/100||0));onEdit();
+  });
+  list.querySelectorAll('[data-remove-tab]').forEach(button=>button.onclick=()=>{
+   s.manualEdgeTabs?.splice(Number(button.dataset.removeTab),1);
+   s.tabCount=s.manualEdgeTabs.length;onEdit();
   });
   list.querySelectorAll('[data-remove-hole]').forEach(button=>button.onclick=()=>{
    const key=button.dataset.removeHole==='pixel'?'manualPixelHoles':'manualMountHoles';
