@@ -165,6 +165,35 @@ try{
  assert.equal(chosenX,125,'Custom machine size persists');
  await page.locator('[data-state="printer"]').selectOption('Ultimaker 3 Extended');
  assert(await page.locator('#customPrinterSettings[hidden]').count(),'Custom fields hidden for default printer');
+
+ // PR5 — Cura profile selector, incompatibility warning and downloadable ZIP.
+ await page.locator('[data-tab="print"]').click();
+ await page.locator('[data-state="printer"]').selectOption('Ultimaker 3 Extended');
+ await page.locator('[data-state="curaNozzle"]').selectOption('0.6');
+ assert(await page.locator('#curaProfileBtn').isDisabled(),'UM3 Extended AA 0.6 mm is unsupported');
+ assert((await page.locator('#curaProfileWarning').innerText()).includes('0.6'),'UM3 hardware warning');
+ await page.locator('[data-state="printer"]').selectOption('Ultimaker 2+');
+ assert(!(await page.locator('#curaProfileBtn').isDisabled()),'UM2+ supports 0.6 mm');
+ await page.locator('[data-state="curaMaterial"]').selectOption('PETG');
+ await page.locator('[data-state="curaIntent"]').selectOption('durable');
+ await page.locator('[data-state="curaQuality"]').evaluate(el=>{el.value='90';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForTimeout(220);
+ assert((await page.locator('#curaProfileSummary').innerText()).includes('walls'),'Cura settings preview');
+ const savedCura=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings);
+ assert.equal(savedCura.curaMaterial,'PETG');
+ assert.equal(savedCura.curaQuality,90);
+ const curaPromise=page.waitForEvent('download');
+ await page.locator('#curaProfileBtn').click();
+ const curaDownload=await curaPromise;
+ assert(curaDownload.suggestedFilename().endsWith('.curaprofile'),'Cura import file extension');
+ const zipBytes=await (await import('node:fs/promises')).readFile(await curaDownload.path());
+ assert.equal(zipBytes.readUInt32LE(0),0x04034b50,'Cura profile is ZIP archive');
+ await page.locator('[data-state="curaNozzle"]').selectOption('0.4');
+ await page.locator('[data-state="curaMaterial"]').selectOption('PLA');
+ await page.locator('[data-state="curaIntent"]').selectOption('light');
+ await page.locator('[data-state="curaQuality"]').evaluate(el=>{el.value='60';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.locator('[data-state="printer"]').selectOption('Ultimaker 3 Extended');
+ console.log('PR5 Cura profile selection, warning, storage and ZIP download verified');
  console.log('PR5 wiring, CSV and custom printer verification passed');
  console.log('PR4 help, base profiles, pixel editor and persistence verified');
  console.log('Advanced editor and view controls verified');
