@@ -1,3 +1,17 @@
+# PR10 — v0.14 software candidate: curved cabling, Cura and private sync
+
+[Draft PR #16](https://github.com/connorturansky-svg/crystal-forge/pull/16) implements the user's latest priorities on a new branch after merged PR9. [Manual acceptance guide](PR10_TEST_GUIDE.md) includes cross-device recovery and physical print tests.
+
+- **P0:** physically opposed 180° LED IN/OUT ports, smooth tangent-led cable routes, 25/50/100/custom interpixel length limits, red warning and fail-closed manufacturing, arrows, Set P1/reverse and selected marker click-hold dragging.
+- **P1:** optional GitHub PRIVATE repository vault with memory-only scoped token, local backup before pull/merge, auto-sync while connected, SHA conflict prevention, custom LED profile/template portability. An old machine's local profiles still require export or upload from that machine.
+- **P1:** Cura quality type selection/automatic candidates, and a manual plain-text settings fallback when Cura reports an import is hidden.
+- **Validation:** exact-head static, browser and Manifold CI still required; real Cura profile visibility, PLA/PETG slices, measured cable and LED fittings, serviceability and mount loads cannot be certified here.
+- **Still open:** robust OAuth account linking, unattended permanent cross-device login, automated bed nesting, measured clips/strain relief, true optical output and installation safety.
+
+All prior PR5–PR9 milestones remain in the history below, but earlier "active" labels refer to their historical release branches.
+
+---
+
 # PR9 — Combined outstanding development (v0.13 experimental)
 
 **Active executable implementation:** [Draft PR #15](https://github.com/connorturansky-svg/crystal-forge/pull/15) combines major software work across [issues #1, #6–#10](https://github.com/connorturansky-svg/crystal-forge/issues). [Hands-on test guide](PR9_TEST_GUIDE.md) provides test cases and physical acceptance boundaries. The live GitHub Pages site remains v0.12 until reviewed merge.
