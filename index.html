@@ -232,6 +232,17 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <option value="single">Legacy single-groove route (old projects)</option>
 <option value="parallel">Legacy paired side-by-side grooves (old projects)</option>
 </select></div>
+<div class="control"><label>Available pixel-to-pixel cable length</label>
+<select id="wireSpacingPreset" aria-label="Common physical pixel spacing">
+<option value="25">25 mm</option><option value="50">50 mm</option><option value="100">100 mm</option><option value="custom">Custom…</option>
+</select><input data-state="pixelStringSpacing" type="number" min="5" max="1000" step="1" aria-label="Custom physical pixel spacing (mm)">
+<p class="note">Real cable length follows the smooth route and includes the run from the centres of each pixel. A red track exceeds the selected spacing; Prepare Print will refuse over-length wiring.</p></div>
+<div class="control"><label>Minimum cable bend radius (mm)</label><input data-state="wireMinBendRadius" type="number" min="1" max="60" step="1"></div>
+<div class="grid2"><div class="control"><label>First IN tail available (mm, 0 = no limit)</label><input data-state="wireInputTailLength" type="number" min="0" step="5"></div><div class="control"><label>Last OUT tail available (mm, 0 = no limit)</label><input data-state="wireOutputTailLength" type="number" min="0" step="5"></div></div>
+<label class="checks"><input data-state="wireDirectionArrows" type="checkbox"> Show cable travel arrows</label>
+<label class="checks"><input data-state="wireShowLengths" type="checkbox"> Show cable lengths on the model</label>
+<div class="buttonrow"><button type="button" id="reversePixelStringBtn">⇄ Reverse pixel order</button></div>
+<div id="wireRouteDetails" class="note" aria-live="polite"></div>
 <label class="checks"><input type="checkbox" data-state="wireExit"> Legacy modes: add external route from first pixel</label>
 <div class="control"><label>Legacy paired channel spacing <output data-out="wirePairSpacing"></output></label><input data-state="wirePairSpacing" type="range" min="3" max="22" step=".5"></div>
 <div class="buttonrow"><button id="singleWireExitBtn" type="button">⌁ Enable ordered pixel-string grooves</button><button type="button" id="pickWireEntryBtn">⌖ Pick IN edge</button><button type="button" id="pickWireExitBtn">⌖ Pick OUT edge</button></div>
@@ -241,7 +252,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Channel depth <output data-out="wireDepth"></output></label><input data-state="wireDepth" type="range" min=".8" max="5" step=".2"></div>
 <div class="control"><label>Extra cable slack <output data-out="wireSlack"></output></label><input data-state="wireSlack" type="range" min="0" max="30" step="5"></div>
 </div>
-<p class="note"><strong>Pixel string:</strong> every LED has two cable-bundle tails on opposite sides. The first IN and final OUT each reach the exterior, including with only one pixel. The order of P1, P2… in the hardware list sets the groove route; ↑↓ and drag change the order without moving pixels. Pick each perimeter opening independently. Legacy single/parallel modes remain only for imported projects. Cyan outlines show <em>physical cable channels</em>, not separate conductors or an electrical loop. Unsafe routes are rejected; test real wire/strain relief before printing.</p>
+<p class="note"><strong>Pixel string:</strong> each LED IN and OUT is permanently collinear (180° apart). Smooth tangent paths curve only between pixels; arrows show flow, red runs exceed the measured cable spacing. Set any manual pixel as P1, or reverse the chain. Every LED has two cable-bundle tails on opposite sides. The first IN and final OUT each reach the exterior, including with only one pixel. The order of P1, P2… in the hardware list sets the groove route; ↑↓ and drag change the order without moving pixels. Pick each perimeter opening independently. Legacy single/parallel modes remain only for imported projects. Cyan outlines show <em>physical cable channels</em>, not separate conductors or an electrical loop. Unsafe routes are rejected; test real wire/strain relief before printing.</p>
 <p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p><div class="divider"></div><label class="checks"><input data-state="glowPreview" type="checkbox"> Preview the whole cluster glowing one colour</label>
 <div class="control"><label>Simulated LED colour</label><select data-state="glowColour"><option value="0x77c4ff">Ice blue</option><option value="0xffa3df">Pink</option><option value="0xa58bff">Purple</option><option value="0xffdb8b">Warm white</option><option value="0x9affbc">Green</option><option value="0xffffff">Cool white</option></select></div>
 <p class="note">Illustrative glow only — real brightness depends on filament translucency, wall thickness, cavity connectivity and LED placement.</p>
