@@ -308,6 +308,11 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
   const initialVolume=combined.volume();
   const hardware=planHardware(crystals,s);
   if(hardware.collisions.length)throw new Error('Hardware holes overlap.');
+  // A requested physical string must never export a disconnected, over-length
+  // or partly cut groove. Stop BEFORE drilling even the first LED socket.
+  if(s.wireChannels&&s.wireMode==='string'&&!hardware.wirePlan?.ready)
+   throw new Error('Pixel string route invalid: '+(hardware.wirePlan?.messages?.join(' ')||
+    'Fix IN, linked pixels and OUT before preparing a printable mesh.'));
   warnings.push(...hardware.messages);
   // Permanent semicircular fixing ears are fused to the base before drilling.
   if(hardware.tabs.length){
