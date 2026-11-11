@@ -1,5 +1,11 @@
 # AI handover — read immediately after AGENTS.md
 
+## PR14 / v0.15.1 current: exact curved cable pitch snap
+
+Build includes a new `pixel-spacing-snap.js` pure bounded solver, button `#snapPixelSpacingBtn`, `pixelSnapMaxMove` persisted as a separate UI setting (default 5 mm) and `#wireSnapStatus`. It snaps only *internal* ordered links P1→P2, P2→P3 etc to within .18 mm **below** the chosen 25/50/100/custom mm physical cable pitch using `planHardware`/Bezier route lengths. P1 remains anchored; IN/OUT edge leads are not forced to this length. It safeguards existing mounts, sockets, previously accepted links and tail connectivity; it leaves links too far away untouched and commits via one `onEdit`. See [PR14 acceptance](PR14_PIXEL_SPACING_ACCEPTANCE.md). Confirm latest-head static, browser, Manifold tests; physical cable/LED/Cura checks remain open.
+
+---
+
 ## Current PR13/#19: final v0.15.0 software consolidation
 
 Merge candidate combines: legacy routed orphan socket cuts removed; true Manifold preview excludes duplicate Build overlays; unsafe serial strings block export; optional planar printer-bed-aware XY split in production ZIP with watertight Manifold parts (no tested connectors); 1/5 mm hardware keyboard nudges; production-release-gates JSON; expanded tests, benchmark, release instructions. [Complete acceptance](FINAL_PHASE_ACCEPTANCE.md).
