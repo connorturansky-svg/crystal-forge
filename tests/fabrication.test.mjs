@@ -332,7 +332,11 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  const coupon=makeSteppedPixelCoupon(wasm,{...settings,pixelProfileId:'gumdrop',pixelDiameter:12});
  assert.equal(coupon.diameters.length,3,'Three shaped measured socket sizes');
  assert(coupon.triangles>100,'Stepped socket coupon has printable geometry');
- coupon.geometry.dispose();
+ assert.equal(coupon.labelsEngraved,3,'Three sample sizes engraved directly on the model');
+ assert.equal(coupon.wireExitCount,6,'Both side walls open on all three full-body samples');
+ const unvented=makeSteppedPixelCoupon(wasm,{...settings,pixelProfileId:'gumdrop',pixelDiameter:12},{openWireExits:false});
+ assert(coupon.volumeMm3<unvented.volumeMm3-5,'Real wire exit channels remove volume all the way through sample sides');
+ unvented.geometry.dispose();coupon.geometry.dispose();
 
  const plateConfig={...settings,mount:'Detachable plate',baseType:'integrated',baseHeight:25,
   baseStyle:'Square',baseWidth:28,mountSpacing:20,plateThickness:4};
@@ -402,6 +406,9 @@ verifyClearance('full-assembly',assembly({...settings,hollowCrystals:true,cutSoc
 const cal=makeCalibrationStrip(wasm);
 assert(cal.triangles>50,'Calibration strip created');
 const stepped=makePixelSeatCoupon(wasm,{...settings,pixelProfileId:'gumdrop',pixelDiameter:12,pixelFit:.15});
+assert.equal(stepped.labelsEngraved,5,'Five full-shape hole sizes engraved');
+assert.deepEqual(stepped.diameters,[11.95,12.05,12.15,12.25,12.35]);
+assert.equal(stepped.wireExitCount,10,'Five shapes have their wires open on both sides');
 assert.equal(stepped.diameters.length,5,'Stepped pixel housing and flange coupon has five holes');
 assert(stepped.geometry.getAttribute('position').count>200,'Stepped coupon has real printable geometry');
 assert.equal(geometryEdges(stepped.geometry).open,0,'Stepped coupon remains watertight');
