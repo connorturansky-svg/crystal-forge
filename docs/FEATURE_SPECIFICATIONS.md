@@ -241,3 +241,12 @@ A binary ZIP bundles the *current validated prepared STL*, editable JSON, Cura c
 
 - Approximate material flow and layer count in Print; no replacement for G-code analysis.
 - Progress stages reported by Worker; opt-in 10/16/40/60-crystal benchmarks through CRYSTAL_FORGE_BENCH_EXTENDED.
+
+## F30 — Printed LED fit calibration (PR7)
+
+- Five engraved full-fit or plain diameter samples, marked in mm left-to-right on the specimen's top printable face; three-position full-body coupon is also engraved.
+- Full-body sample wires must physically exit both side walls, independently of production wiring channels.
+- Print → choose physically tested hole → apply exact diameter-derived global tolerance; the adjustment affects every pixel type via `pixelFit`, preserves the former value and shows a ⚙ override until reset.
+- Persist last printed coupon and applied fit in editable project JSON; do not silently alter individual nominal pixel dimensions.
+- Preserve source privacy choices: original source is rights-reserved, but public repositories and browser JS remain inspectable.
+
