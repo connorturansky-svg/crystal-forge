@@ -77,3 +77,8 @@ On discovering a reproducible failure, add exact steps, input settings, actual/e
 - **Implemented on branch:** integrated full-hill/plinth modes, dome falloff and side wall controls; generic/custom LED profile selector, library editor, flange-aware socket cutting and shallow underside wire relief; persistent descriptions panel.
 - **Verification pending:** review GitHub checks against latest PR4 HEAD, test contour/fillet matching and base roof slicing in Cura, print a measured LED fitting sample and inspect cable exits.
 - **Follow-on milestones:** retaining clips, strain relief, full automatic wire routing, actual measured manufacturer's LED models, optical path cross sections and physical safety testing.
+
+## PR7 coupon calibration and source protection update
+
+Implemented on the draft PR7 branch: engraved five/three-size physical fit samples, side-open wire slots in full-body specimens, chosen-hole calibration applied globally to LED sockets with a visible reversible override, and an all-rights-reserved original-source notice. Physical tolerance, actual cable strain relief and real Cura/print tests remain acceptance requirements. Public source visibility remains unchanged.
+
