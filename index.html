@@ -138,6 +138,14 @@ body.light .hardware-edit-item{background:#e2f2ff!important;color:#10273b!import
 body.light .hardware-edit-item label,body.light .hardware-edit-item .note{color:#122a40!important}
 body.light .hardware-edit-item.selected{background:#c1f8ed!important;border-color:#087e6c!important}
 
+
+.cloud-sync-panel{border:1px solid #6684a4;border-radius:9px;padding:9px;margin-top:13px;background:#193348}
+.cloud-sync-panel summary{cursor:pointer;font-weight:700;color:#dcfaff}
+.cloud-sync-panel input{color:#15243d;background:#f9fcff;border:2px solid #789dbd}
+.cloud-sync-panel .buttonrow{margin:7px 0}
+.cloud-sync-panel #cloudStatus{background:#e9f8ff;color:#15314b;padding:8px;border-radius:6px}
+body.light .cloud-sync-panel{background:#e4f4ff}
+body.light .cloud-sync-panel summary{color:#142d44}
 </style></head>
 <body class="simple">
 <header class="topbar">
@@ -170,6 +178,17 @@ body.light .hardware-edit-item.selected{background:#c1f8ed!important;border-colo
 <select id="templateSelect" class="full" aria-label="Saved design template"><option value="">Choose a saved design…</option></select>
 <div class="buttonrow"><button type="button" id="saveTemplateBtn">＋ Save design</button><button type="button" id="loadTemplateBtn">↩ Load</button><button type="button" id="deleteTemplateBtn">✕ Delete</button></div>
 <p class="note">Keeps named editable models and settings on this device. Use Export Project JSON for portable backups.</p>
+<details class="cloud-sync-panel"><summary>☁ Private GitHub sync — projects, custom LED profiles and templates</summary>
+<p class="note">Create your own <strong>private</strong> GitHub repository (separate from this public website). Enter an owner/repo and a fine-grained token with repository Contents read/write permission. Your token remains in browser memory only, is never saved to project data or this public site, and must be re-entered after a reload. Disconnect clears it. No OAuth/server credentials are installed.</p>
+<div class="control"><label>Private repository (owner/repository)</label><input id="cloudRepo" type="text" autocomplete="off" placeholder="your-account/private-crystal-data"></div>
+<div class="control"><label>Fine-grained token (Contents read/write)</label><input id="cloudToken" type="password" autocomplete="off" spellcheck="false" placeholder="Enter only on your trusted computer"></div>
+<div class="buttonrow"><button id="cloudConnect" type="button">Connect</button><button id="cloudDisconnect" type="button">Disconnect</button></div>
+<p id="cloudStatus" class="note" role="status" aria-live="polite">Not connected · local data is still saved in this browser.</p>
+<div class="buttonrow"><button id="cloudPull" type="button">↓ Pull + merge from GitHub</button><button id="cloudPush" type="button">↑ Sync now to GitHub</button></div>
+<label class="checks"><input id="cloudAuto" type="checkbox"> Auto-sync changes when connected (3.5 s debounce)</label>
+<button id="cloudBackup" type="button">↓ Download all local projects/profiles/templates backup</button>
+<p class="note warning">Before pulling a different computer's project, your local version is backed up. Existing IDs are merged; unresolved conflicts require manual review. GitHub history provides remote recovery. Never use a public repo or a token with broad access.</p>
+</details>
 <p class="note">Applies to the selected unlocked crystal or globally when none is selected. Presets can be refined with the sliders and undone.</p>
 <div class="control"><label>Crystal family</label><select data-state="familyMix"><option>Quartz</option><option>Shard</option><option>Blade</option><option>Cubic</option><option>Double terminated</option><option>Fantasy</option><option>Mixed</option></select></div>
 <div id="familyWeightsControls" hidden><p class="note">Mixed family weights. 0× excludes a family; higher numbers make it more likely. Reproducible for the same seed.</p>
