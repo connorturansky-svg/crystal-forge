@@ -1,6 +1,7 @@
 /* Build-stage placement/inspection: same authoritative plan as fabrication. */
 import {planHardware} from './hardware-layout.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
+import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
 
 export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,onEdit,onStatus}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
@@ -89,7 +90,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    const key=input.dataset.holeKind==='pixel'?'manualPixelHoles':'manualMountHoles';
    const item=s[key]?.[Number(input.dataset.holeIndex)],value=Number(input.value);
    if(!item||!Number.isFinite(value))return;
-   item[input.dataset.holeAxis]=value;onEdit();
+   item[input.dataset.holeAxis]=snapHardwareCoordinate(value,s.hardwareSnap,s.hardwareSnapStep);onEdit();
   });
   list.querySelectorAll('[data-remove-hole]').forEach(button=>button.onclick=()=>{
    const key=button.dataset.removeHole==='pixel'?'manualPixelHoles':'manualMountHoles';
@@ -121,7 +122,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const hits=base?.visible?ray.intersectObject(base,false):[];
   const hit=hits[0]?.point||ray.ray.intersectPlane(ground,new THREE.Vector3());
   if(!hit)return null;
-  const pos={x:Math.round(hit.x*10)/10,z:Math.round(hit.z*10)/10};
+  const pos=snapHardwarePoint({x:Math.round(hit.x*10)/10,z:Math.round(hit.z*10)/10},getSettings());
   const visibleY=hits.length?hit.y:0;
   return {pos,y:visibleY,insideBase:hits.length>0};
  }

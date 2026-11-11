@@ -152,6 +152,10 @@ const SETTINGS={
  "splitPinDiameter": ["Dowel diameter","Nominal printable peg diameter."],
  "splitPinDepth": ["Dowel depth","Length of the socket in each split half."],
  "splitPinClearance": ["Dowel clearance","Extra diameter around the peg in the socket. Test for your machine/filament."],
+ "shapePresetSelect": ["Crystal shaping preset","Pick a reusable parameter set and apply globally or to an unlocked selected crystal."],
+ "applyShapePresetBtn": ["Apply crystal preset","Apply the selected shape only to the selected unlocked crystal, or to global shape parameters when none is selected."],
+ "hardwareSnap": ["Snap hardware coordinates","Applies grid snapping when adding/moving LED or mounting holes and when editing numeric coordinates."],
+ "hardwareSnapStep": ["Hardware snap spacing","Grid increment in millimetres for hardware hole placement; can be disabled without changing existing holes."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."

@@ -4,6 +4,7 @@ import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
 import {loadManifold,setThreeInstance,saveSTL,save3MF,makeCalibrationStrip,splitPreparedMesh,makeSplitPinCoupon} from './fabrication-v1.js';
 import {planSplitJoints} from './split-joints.js';
+import {applyShapePreset} from './design-workflows.js';
 setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
@@ -20,7 +21,7 @@ const defaults={
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,
   showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
-  printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,
+  printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
 let s={...defaults},crystals=[],selectedId=null,activeTool='select',cameraTween=null;
@@ -78,7 +79,7 @@ function format(k,v){
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
  if(['mountHoleDiameter','mountHoleDepth','mountSpacing','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
- if(k==='curaQuality')return v+'%';if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
+ if(k==='curaQuality')return v+'%';if(k==='hardwareSnapStep')return Number(v).toFixed(1)+' mm';if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
 }
 const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
 function selectedCrystal(){return crystals.find(c=>c.id===selectedId)||null}
@@ -593,7 +594,7 @@ function schedule(full=true){
  },85);
 }
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix']);
-const previewKeys=new Set(['splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
+const previewKeys=new Set(['hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
@@ -632,6 +633,13 @@ document.querySelectorAll('[data-state]').forEach(e=>{
  });
  e.addEventListener('change',snapshot);
 });
+$('applyShapePresetBtn').onclick=()=>{
+ const preset=$('shapePresetSelect').value;
+ const result=applyShapePreset(crystals,s,selectedId,preset);
+ if(!result.applied){setStatus(result.reason);return}
+ syncForm();rebuild();snapshot();
+ setStatus('Applied '+preset+' to '+(result.scope==='global'?'all crystals':result.name));
+};
 $('clearCrystalSelection').onclick=()=>selectCrystal(null);
 $('resetCrystalShape').onclick=()=>{
  const c=selectedCrystal();if(!c||c.locked)return;

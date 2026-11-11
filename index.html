@@ -115,6 +115,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="card blue"><div class="cardtitle"><span class="symbol">⬡</span> <span id="shapeScopeTitle">All crystal shapes</span></div><div class="cardbody">
 <div id="shapeScope" class="success">Global controls — all crystals. Select a crystal to edit only that crystal.</div>
 <div class="buttonrow" style="margin:8px 0 12px"><button id="clearCrystalSelection" hidden>↩ Edit all crystals</button><button id="resetCrystalShape" hidden>Reset individual overrides</button></div>
+<div class="buttonrow"><select id="shapePresetSelect" aria-label="Crystal shaping preset"><option>Classic Quartz</option><option>Tall Needles</option><option>Broad Geode</option><option>Soft Rounded</option><option>Blade Shards</option></select><button type="button" id="applyShapePresetBtn">Apply preset</button></div>
+<p class="note">Applies to the selected unlocked crystal or globally when none is selected. Presets can be refined with the sliders and undone.</p>
 <div class="control"><label>Crystal family</label><select data-state="familyMix"><option>Quartz</option><option>Shard</option><option>Blade</option><option>Cubic</option><option>Double terminated</option><option>Fantasy</option><option>Mixed</option></select></div>
 <div class="control"><label>Bottom width adjustment <output data-out="bottomScale"></output></label><input data-state="bottomScale" type="range" min=".15" max="5" step=".05"></div>
 <div class="control"><label>Top / shoulder width adjustment <output data-out="topScale"></output></label><input data-state="topScale" type="range" min=".15" max="5" step=".05"></div>
@@ -201,6 +203,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="card amber"><div class="cardtitle">◎ Hardware hole editor</div><div class="cardbody">
 <p class="note">LED holes appear yellow, mounting holes purple and edge tabs violet in Build. Red manual holes are invalid and will not be cut.</p>
 <p id="hardwareGuideSummary" class="softnotice">Hole layout pending…</p>
+<label class="checks"><input data-state="hardwareSnap" type="checkbox"> Snap new/manual hardware positions to a grid</label>
+<div class="control"><label>Hardware snap grid <output data-out="hardwareSnapStep"></output></label><input data-state="hardwareSnapStep" type="range" min=".5" max="20" step=".5"></div>
 <div class="buttonrow"><button id="placePixelBtn">＋ Place / move LED</button><button id="placeMountBtn">＋ Place mounting hole</button></div>
 <div class="buttonrow" style="margin-top:6px"><button id="stopHolePlacementBtn">✕ Stop placing</button></div>
 <p id="placementHint" class="note">Select Place, then click the model. Adjust X/Z for precision below.</p>
