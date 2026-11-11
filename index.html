@@ -194,6 +194,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Custom hole diameter <output data-out="mountHoleDiameter"></output></label><input data-state="mountHoleDiameter" type="range" min="2.5" max="12" step=".1"></div>
 <div class="control"><label>Hole spacing <output data-out="mountSpacing"></output></label><input data-state="mountSpacing" type="range" min="10" max="150" step="1"></div>
 <div class="control"><label>Custom hole depth <output data-out="mountHoleDepth"></output></label><input data-state="mountHoleDepth" type="range" min="2" max="30" step=".5"></div>
+<div id="detachablePlateSettings" hidden><div class="control"><label>Mating plate thickness <output data-out="mountPlateThickness"></output></label><input data-state="mountPlateThickness" type="range" min="3" max="8" step=".5"></div>
+<p class="note">Two blind M3-style fixing pockets are cut underneath the cluster. Prepare Print, then export the separately printable matching plate. Verify real screw dimensions, wiring and strength.</p></div>
 <div id="edgeTabSettings" hidden><div class="divider"></div><strong>Semicircular perimeter fixing tabs</strong>
 <div class="control"><label>Number of tabs <output data-out="tabCount"></output></label><input data-state="tabCount" type="range" min="1" max="24" step="1"></div>
 <div class="control"><label>Holes per tab <output data-out="tabHolesPerTab"></output></label><input data-state="tabHolesPerTab" type="range" min="1" max="6" step="1"></div>
@@ -201,7 +203,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Tab thickness <output data-out="tabThickness"></output></label><input data-state="tabThickness" type="range" min="2.5" max="15" step=".5"></div>
 <div class="control"><label>Material around holes <output data-out="tabWall"></output></label><input data-state="tabWall" type="range" min="2" max="8" step=".5"></div>
 <p class="note">Equally spaced perimeter ears with through-holes for zip ties or bolts. These are printed with the base; crowded tabs are skipped and reported. Verify actual strength, fit and layer adhesion.</p></div>
-<p class="note">Wall/ceiling screw through-holes, blind magnet pockets and M3 insert holes can now be cut in Prepare Print. Detachable plates, keyholes and alignment connectors are not yet generated.</p>
+<p class="note">Wall/ceiling screw through-holes, blind magnet pockets and M3 insert holes can now be cut in Prepare Print. The detachable plate uses separate matching M3-style fixing geometry. Keyholes and load-rated attachment have not been validated.</p>
 <p class="note warning">Overhead installations need independently verified load-bearing fixings and secondary retention.</p>
 </div></div>
 <div class="card amber"><div class="cardtitle">◎ Hardware hole editor</div><div class="cardbody">
@@ -249,6 +251,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <p id="opticalAuditSummary" class="note">Optical paths remain unverified until slicing and physical light tests.</p>
 </div></div>
 <div class="buttonrow"><button id="stlBtn" disabled>↓ STL</button><button id="threeMfBtn" disabled>↓ 3MF</button></div>
+<button id="exportMountPlateBtn" type="button" style="width:100%;margin-top:6px">↓ Export matching detachable mounting plate STL</button>
 <button id="productionPackBtn" class="primary" type="button" disabled style="width:100%;margin-top:8px">↓ Download complete production pack (ZIP)</button>
 <p class="note">Packages the validated prepared STL, editable project, optional Cura profile, pixel audit, cable plan, print checklist, material list and assembly guidance. Requires Prepare print first.</p>
 <div class="note">Exports use only the prepared manufacturing mesh. Changing geometry or Build options requires preparing again.</div>

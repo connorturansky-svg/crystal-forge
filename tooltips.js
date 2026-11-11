@@ -157,6 +157,8 @@ const SETTINGS={
  "hardwareSnap": ["Snap hardware coordinates","Applies grid snapping when adding/moving LED or mounting holes and when editing numeric coordinates."],
  "hardwareSnapStep": ["Hardware snap spacing","Grid increment in millimetres for hardware hole placement; can be disabled without changing existing holes."],
  "fitCouponStyle": ["Pixel-fit calibration method","Stepped includes the current measured body, flange and wire relief; simple uses diameter-only holes. Use five size variations to choose a real fit."],
+ "mountPlateThickness": ["Mating plate thickness","Print a separate flat plate with holes aligned to the main base's blind M3-style pockets. Physically verify fasteners and material strength."],
+ "exportMountPlateBtn": ["Export detachable plate STL","After Prepare Print, download the separate plate with matching holes and LED cable openings. Structural and overhead attachment are unverified."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."

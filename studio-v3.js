@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
-import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,makeSplitPinCoupon} from './fabrication-v1.js';
+import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,makePixelSeatCoupon,makeDetachableMountPlate,splitPreparedMesh,makeSplitPinCoupon} from './fabrication-v1.js';
 import {buildProductionPack} from './production-pack.js';
 import {planSplitJoints} from './split-joints.js';
 import {applyShapePreset} from './design-workflows.js';
@@ -21,7 +21,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
-  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountPlateThickness:4.5,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -79,7 +79,7 @@ function format(k,v){
  if(k==='crystalSize'||k==='studioBrightness')return Math.round(Number(v)*100)+'%';
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
- if(['mountHoleDiameter','mountHoleDepth','mountSpacing','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
+ if(['mountHoleDiameter','mountHoleDepth','mountSpacing','mountPlateThickness','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
  if(k==='curaQuality')return v+'%';if(k==='lightPortReach')return v+'%';if(k==='hardwareSnapStep')return Number(v).toFixed(1)+' mm';if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
 }
 const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
@@ -138,6 +138,7 @@ function syncForm(){
  $('projectName').textContent=s.title;
  syncShapeControls();
  $('edgeTabSettings').hidden=s.mount!=='Edge fixing tabs';
+ $('detachablePlateSettings').hidden=s.mount!=='Detachable plate';
  $('customPrinterSettings').hidden=s.printer!=='Custom / other';
  updateCuraProfileSummary();
  $('floatBtn').classList.toggle('active',!!s.floatView);
@@ -614,7 +615,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
     if(profile)s.pixelDiameter=profile.bodyDiameter;
     syncForm();
    }
-  if(key==='mount')$('edgeTabSettings').hidden=value!=='Edge fixing tabs';
+  if(key==='mount'){$('edgeTabSettings').hidden=value!=='Edge fixing tabs';$('detachablePlateSettings').hidden=value!=='Detachable plate'}
    if(key==='printer')$('customPrinterSettings').hidden=value!=='Custom / other';
    if(key==='printer'||key.startsWith('cura'))updateCuraProfileSummary();
   if(key==='lightingMode'&&value==='single')s.pixelCount=1;
@@ -981,6 +982,16 @@ $('opticalCsvBtn').onclick=()=>{
  const result=assessOpticalAccess(crystals,s,manufacturingReport);
  download(new Blob([opticalAuditCSV(result)],{type:'text/csv'}),'crystal-forge-optical-audit.csv');
  setStatus('Downloaded optical proximity audit · actual light paths unverified');
+};
+$('exportMountPlateBtn').onclick=async()=>{
+ if(!verifyPrepared()||s.mount!=='Detachable plate')return;
+ const button=$('exportMountPlateBtn');button.disabled=true;
+ try{
+  const wasm=await loadManifold(),plate=makeDetachableMountPlate(wasm,s,manufacturingReport.hardware);
+  saveSTL(plate.geometry,'crystal-forge-detachable-mount-plate.stl');plate.geometry.dispose();
+  setStatus('Matching plate exported: '+plate.holes+' M3-style fixing bores and '+plate.windows+' pixel windows. Test actual bolts and strength.');
+ }catch(err){console.error(err);alert('Detachable plate failed: '+err.message)}
+ finally{button.disabled=false}
 };
 $('wiringCsvBtn').onclick=()=>{
  const plan=planHardware(crystals,s),routes=plan.wirePlan?.routes||[];

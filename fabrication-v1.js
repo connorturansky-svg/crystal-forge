@@ -497,7 +497,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     warnings.push('Ceiling mounting demands properly rated fixings and secondary retention. A printed bracket alone is not a certified overhead support.');
   if(s.mount==='Magnet inserts')warnings.push('Magnet pockets are nominal 10.2 mm diameter; verify magnet dimensions and required retention.');
   if(s.mount==='Threaded insert M3')warnings.push('M3 insert holes are nominal 4.2 mm; verify insert type and installation tolerances.');
-  if(s.mount==='Detachable plate')warnings.push('Detachable mounting plate remains a planned feature, not yet fabricated.');
+  if(s.mount==='Detachable plate')warnings.push('Two matching blind M3-style fixing pockets were planned for a separately downloadable mating plate. Check actual fastener, cable and load fit.');
   // A manifold STL can still contain *sealed, unlit void shells*.
   // Retain only outward-connected material shells, filling inaccessible
   // enclosed voids. Open lumens connected to the pixel inlet are part of
@@ -700,6 +700,37 @@ export function splitPreparedMesh(wasm,mesh,cutX=0,jointPlan=null){
   result.joints=bores.length;
   return result;
  }finally{cleanupAll(keep)}
+}
+
+// Export a separate mating plate with holes matching the two BLIND
+// M3-style pockets in the base. Requires actual mechanical hardware and
+// independent strength testing; no printed structural rating is implied.
+export function makeDetachableMountPlate(wasm,s,hardware){
+ if(s.mount!=='Detachable plate')throw new Error('Select Detachable plate first.');
+ if(!hardware?.mounts||hardware.mounts.length!==2)
+  throw new Error('Two accepted matching mount holes are required. Reposition LED sockets or adjust the mount spacing.');
+ const holes=hardware.mounts,owned=[],hold=m=>{owned.push(m);return m};
+ const pad=10,thickness=Math.max(3,Math.min(8,Number(s.mountPlateThickness)||4.5));
+ const minX=Math.min(...holes.map(p=>p.x))-pad,maxX=Math.max(...holes.map(p=>p.x))+pad;
+ const minZ=Math.min(...holes.map(p=>p.z))-pad,maxZ=Math.max(...holes.map(p=>p.z))+pad;
+ const w=Math.max(24,maxX-minX),d=Math.max(24,maxZ-minZ);
+ const originX=(minX+maxX)/2-w/2,originZ=(minZ+maxZ)/2-d/2;
+ try{
+  const solid=hold(wasm.Manifold.cube([w,thickness,d]).translate([originX,0,originZ]));
+  const cutters=holes.map(p=>hold(wasm.Manifold.cylinder(thickness+2,p.radius+.45,p.radius+.45,40)
+   .rotate([-90,0,0]).translate([p.x,-1,p.z])));
+  let windows=0;
+  for(const p of hardware.sockets||[]){
+   if(p.x<originX-1||p.x>originX+w+1||p.z<originZ-1||p.z>originZ+d+1)continue;
+   cutters.push(hold(wasm.Manifold.cylinder(thickness+2,p.radius+1.4,p.radius+1.4,40)
+    .rotate([-90,0,0]).translate([p.x,-1,p.z])));
+   windows++;
+  }
+  const part=hold(solid.subtract(hold(wasm.Manifold.union(cutters))));
+  assertSolid(part,'Mating detachable plate');
+  return {geometry:fromResultMesh(part.getMesh()),holes:holes.length,windows,
+   thickness,width:w,depth:d,warnings:['Verify M3 insert, bolt head, cable access and loading. Printed plates are not safety-rated hardware.']};
+ }finally{cleanupAll(owned)}
 }
 
 export function makeSplitPinCoupon(wasm,points=[]){
