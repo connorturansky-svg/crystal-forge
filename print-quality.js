@@ -35,6 +35,7 @@ export function assessPrintQuality(crystals,settings,preparedReport=null){
  if(preparedReport?.disconnected>1)
   add('warning','Disconnected model','The prepared model contains '+preparedReport.disconnected+' material bodies. Check the intended assembly.');
  if(preparedReport?.printerFits===false)add('warning','Printer build volume','The prepared mesh exceeds the selected printer limits.');
+ if(s.lightPorts)add('review','Vault-to-spike openings','Check tapered direct openings in Cura and with a working LED. '+(preparedReport?.skippedDirectLightPorts||0)+' candidates were skipped.');
  if(s.hollowCrystals||s.baseVault||s.targetedLightPaths)add('review','Internal light chamber','Hollowing and 0% infill do not guarantee that every spike is optically connected; review cross sections.');
  if(!preparedReport)add('review','Manufacturing mesh not prepared','Run Prepare print mesh before exporting the final model and physical part pack.');
  if(!findings.length)add('review','Slicer check needed','No obvious heuristic conflicts found. Cura layer-by-layer and real test prints are still mandatory.');
