@@ -239,14 +239,28 @@ export function baseOutline(cs,s){
    return[p[0]+x/d*margin,p[1]+z/d*margin]});
 }
 
+// One radial, tangent-continuous profile drives the visible mesh and root seats.
+export function baseEdgeHeight(s){
+ const h=Math.max(3,Number(s.baseHeight)||3);
+ return (s.baseProfile||'Plinth + dome')==='Full dome / hill'?
+  Math.max(.8,h*Math.max(0,Math.min(1,Number(s.sideWall??100)/100))):h;
+}
+export function baseProfileHeight(s,fraction){
+ const mode=s.baseProfile||'Plinth + dome',edge=baseEdgeHeight(s);
+ const h=Math.max(3,Number(s.baseHeight)||3),dome=Math.max(0,Number(s.baseDome)||0);
+ const rise=mode==='Flat plinth'?0:(h-edge+dome);
+ const t=Math.max(0,Math.min(1,fraction));
+ const power=Math.max(1.2,Math.min(3.5,Number(s.domeFalloff??1.8)));
+ return edge+rise*Math.pow(1-Math.pow(t,power),2);
+}
 export function baseSurfaceHeight(cs,s,x,z){
  if(s.baseType==='none')return 0;
- const outline=baseOutline(cs,s),base=Math.max(3,Number(s.baseHeight)||3),dome=Math.max(0,Number(s.baseDome)||0);
- if(outline.length<3)return base;
+ const outline=baseOutline(cs,s),base=baseEdgeHeight(s);
+ if(outline.length<3)return baseProfileHeight(s,0);
  const edge=Math.min(Math.max(0,Number(s.baseEdgeRadius||0)),base*.55,Math.max(.1,Number(s.baseWidth||3)*.85));
- if(dome===0&&edge===0)return base;
+ if(Math.abs(baseProfileHeight(s,0)-base)<1e-8&&edge===0)return base;
  const n=outline.length,cx=outline.reduce((sum,p)=>sum+p[0]/n,0),cz=outline.reduce((sum,p)=>sum+p[1]/n,0);
- const vx=x-cx,vz=z-cz,dist=Math.hypot(vx,vz);if(dist<1e-8)return base+dome;
+ const vx=x-cx,vz=z-cz,dist=Math.hypot(vx,vz);if(dist<1e-8)return baseProfileHeight(s,0);
  let best=Infinity;
  // Ray/edge intersection gives the actual polyline radius in any direction.
  for(let k=0;k<n;k++){
@@ -256,15 +270,13 @@ export function baseSurfaceHeight(cs,s,x,z){
   const at=(rx*ez-rz*ex)/det,along=(rx*vz-rz*vx)/det;
   if(at>0&&along>=-1e-6&&along<=1+1e-6)best=Math.min(best,at);
  }
- if(!Number.isFinite(best))return base;
+ if(!Number.isFinite(best))return baseProfileHeight(s,0);
  const boundary=dist*best,topRadius=Math.max(.1,boundary-edge);
  if(edge>0&&dist>topRadius){
   const inset=Math.max(0,Math.min(edge,boundary-dist));
   return base-edge+Math.sqrt(Math.max(0,2*edge*inset-inset*inset));
  }
- const fraction=Math.min(1,Math.max(0,dist/topRadius));
- const v=fraction*6,k=Math.min(5,Math.floor(v)),f0=k/6,f1=(k+1)/6;
- return base+dome*(1-f0*f0)+(v-k)*dome*(f0*f0-f1*f1);
+ return baseProfileHeight(s,Math.min(1,Math.max(0,dist/topRadius)));
 }
 export function crystalRootOffset(cs,s,c,THREE){
  if(s.baseType==='none')return 0;
@@ -310,13 +322,13 @@ export function baseGeometry(THREE,cs,s){
  if(length<3)return new THREE.BufferGeometry();
  const c=outline.reduce((sum,p)=>[sum[0]+p[0]/length,sum[1]+p[1]/length],[0,0]),a=[];
  const emit=(x,y,z)=>a.push(...x,...y,...z),quad=(p,q,r,t)=>{emit(p,q,r);emit(p,r,t)};
- const style=s.baseStyle||'Fitted',b=Math.max(3,s.baseHeight);
+ const style=s.baseStyle||'Fitted',b=baseEdgeHeight(s);
  // Crystal-crust top is a triangulated low-poly surface. Every second
  // perimeter vertex rises into a small rocky shard while retaining closure.
  const heights=outline.map((_,i)=>style==='Crystal crust'&&i%3===1?Math.min(3,(s.baseWidth||3)*.3+1):0);
  const top=outline.map((p,i)=>[p[0],b+heights[i],p[1]]);
  const bottom=outline.map(p=>[p[0],0,p[1]]);
- const dome=Math.max(0,Number(s.baseDome??0));
+ // The outer fillet merges tangentially into the mound profile.
  // Real upper-edge fillet: lower wall, circular quarter-arc rings,
  // then domed top surface. No shader-only corner smoothing.
  const edge=Math.min(Math.max(0,Number(s.baseEdgeRadius||0)),b*.55,Math.max(.1,Number(s.baseWidth||3)*.85));
@@ -336,12 +348,12 @@ export function baseGeometry(THREE,cs,s){
   }
  }
  const topOutline=prev.map(p=>[p[0],p[2]]);
- const centerTop=[c[0],b+dome,c[1]];
+ const centerTop=[c[0],baseProfileHeight(s,0),c[1]];
  for(let band=1;band<=5;band++){
   const fraction=1-band/6;
-  const ring=topOutline.map(p=>[
+  const ring=topOutline.map((p,k)=>[
    c[0]+(p[0]-c[0])*fraction,
-   b+dome*(1-fraction*fraction),
+   baseProfileHeight(s,fraction)+heights[k]*fraction,
    c[1]+(p[1]-c[1])*fraction
   ]);
   for(let k=0;k<length;k++){const next=(k+1)%length;quad(prev[k],ring[k],ring[next],prev[next]);}

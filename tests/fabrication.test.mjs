@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
-import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
+import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,baseProfileHeight,baseEdgeHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
 import {setThreeInstance,prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
@@ -17,6 +17,22 @@ function geometryEdges(g){
  }
  return {open:[...edges.values()].filter(x=>x!==2).length,triangles:p.length/9};
 }
+// PR4: geometry stays closed through all hill/plinth modes.
+for(const baseProfile of ['Flat plinth','Plinth + dome','Full dome / hill']){
+ for(const sideWall of [0,50,100]){
+  const config={seed:42,count:8,width:95,height:130,pattern:'Central Spire',
+   familyMix:'Quartz',baseType:'integrated',baseStyle:'Fitted',baseWidth:10,
+   baseProfile,sideWall,baseHeight:25,baseDome:20,baseEdgeRadius:2,domeFalloff:1.8};
+  const cs=generateFormation(config),geometry=baseGeometry(THREE,cs,config);
+  assert.equal(geometryEdges(geometry).open,0,'PR4 base closure '+baseProfile);
+  assert(baseProfileHeight(config,0)>=baseProfileHeight(config,.8));
+  assert(Math.abs(baseProfileHeight(config,1)-baseEdgeHeight(config))<.001);
+  assert(cs.every(c=>Number.isFinite(baseSurfaceHeight(cs,config,c.x,c.z))));
+  geometry.dispose();
+ }
+}
+console.log('PR4 base profile mesh tests passed');
+
 function safetyGeometryCheck(){
  // Geometry alone cannot certify a child-safe product, but it must form a
  // smooth profile with many intermediate rings, no flat polygon at the apex

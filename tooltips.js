@@ -104,6 +104,9 @@ const SETTINGS={
   "Base depth",
   "Sets the main base thickness, which must accommodate any LED housing and mounting hardware."
  ],
+ "baseProfile": ["Base profile","Flat plinth is level; Plinth + dome merges a mound into the rounded rim; Full dome / hill rises gradually from near the floor."],
+ "domeFalloff": ["Hill spread","Adjusts how broadly the surface rises. The top joins the rim without a separate lip."],
+ "sideWall": ["Side wall amount","Full hill: 0% nearly reaches the floor, 100% preserves the plinth depth. Check thin outer edges in Cura."],
  "baseDome": [
   "Mound height",
   "Adds a rising mound under the crystals. Keep crystal roots embedded in this curved surface."
