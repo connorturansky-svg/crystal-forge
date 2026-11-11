@@ -229,6 +229,7 @@ try{
  assert(await page.locator('#templateSelect').count(),'Saved reusable design picker exists');
  assert(await page.locator('#batchSelectedCount').count(),'Batch crystal editing panel exists');
  assert.equal(await page.locator('[data-state="wireMode"]').inputValue(),'string','New projects start with physical IN / OUT string mode');
+ await page.locator('[data-tab="design"]').click();
  await page.locator('[data-state="familyMix"]').selectOption('Mixed');
  assert(await page.locator('#familyWeightsControls').isVisible(),'Mixed families expose six weighted sliders');
  await page.locator('[data-family-weight="Fantasy"]').evaluate(el=>{el.value='9';el.dispatchEvent(new Event('input',{bubbles:true}))});
@@ -245,6 +246,7 @@ try{
  await page.locator('#batchClear').click();
  assert.equal(await page.locator('#batchSelectedCount').innerText(),'0','Batch clear leaves no group selection');
  console.log('PR9 mixed family weights and real batch crystal transforms verified');
+ await page.locator('[data-tab="build"]').click();
  assert(await page.locator('[data-state="cutSockets"]').isChecked(),'Socket cuts default on');
  assert.equal(await page.locator('[data-state="lightingMode"]').inputValue(),'single','Single shared LED mode default');
  await page.locator('#fitPixelBaseBtn').click();
