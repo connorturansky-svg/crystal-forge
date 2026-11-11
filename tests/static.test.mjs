@@ -43,6 +43,12 @@ assert(first>=0&&last>first,'Cannot locate active default settings object');
 const keys=new Set([...defaults.slice(first,last).matchAll(/(?:^|[,\s])([A-Za-z]\w*):/g)].map(m=>m[1]));
 const controls=new Set([...index.matchAll(/\bdata-state="([^"]+)"/g)].map(m=>m[1]));
 for(const key of controls)assert(keys.has(key),'Missing default value for Build/Design control '+key);
+// Regression: an earlier fabrication worker referenced undeclared timing
+// variables, so Manifold could finish but the UI would still report failure.
+const worker=read('fabrication-worker.js');
+assert.match(worker,/const manufacturingStart\s*=\s*performance\.now\(\)/,'Worker captures its manufacturing start timestamp');
+assert.match(worker,/const manufacturingEnd\s*=\s*performance\.now\(\)/,'Worker captures its manufacturing end timestamp');
+assert(worker.indexOf('const manufacturingStart')<worker.indexOf('const manufacturingEnd'),'Worker measures elapsed time in order');
 const packageJSON=JSON.parse(read('package.json'));
 for(const script of ['test','test:browser','test:static','test:benchmark'])
  assert(typeof packageJSON.scripts?.[script]==='string','Missing npm script '+script);
