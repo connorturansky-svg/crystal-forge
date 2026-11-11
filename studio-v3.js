@@ -13,7 +13,8 @@ import {buildPixelStringMap} from './pixel-string-export.js';
 import {createHardwareEditor} from './hardware-editor.js';
 import {installResizablePanels} from './workspace-panels.js';
 import {saveTemplate,readTemplates,findTemplate,deleteTemplate} from './project-templates.js';
-import {GitHubVault,captureVault} from './github-vault.js';
+import {GitHubVault,captureVault,mergeVault} from './github-vault.js';
+import {saveNamedProject,listSavedProjects,loadNamedProject,deleteNamedProject} from './project-library.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
@@ -767,6 +768,39 @@ function refreshSavedTemplates(selected=''){
  list.value=selected;
 }
 refreshSavedTemplates();
+function refreshSavedProjects(selected=''){
+ const select=$('savedProjectSelect');if(!select)return;
+ select.replaceChildren(new Option('Choose a saved project…',''));
+ for(const project of listSavedProjects(localStorage))select.add(new Option(project.name,project.id));
+ select.value=selected;
+}
+refreshSavedProjects();
+$('saveNamedProjectBtn').onclick=()=>{
+ const name=prompt('Save this complete project as',s.title||'Untitled crystal');
+ if(!name?.trim())return;
+ try{
+  const saved=saveNamedProject(localStorage,name,s,crystals);
+  refreshSavedProjects(saved.id);cloudVault?.schedule();
+  setStatus('Saved '+saved.name+' into your complete project library');
+ }catch(err){alert('Could not save project: '+err.message)}
+};
+$('openNamedProjectBtn').onclick=()=>{
+ const project=loadNamedProject(localStorage,$('savedProjectSelect').value);
+ if(!project){setStatus('Choose a saved project first');return}
+ if(!confirm('Open '+project.name+'? Your current unsaved working model will be saved into the named project library first.'))return;
+ try{
+  saveNamedProject(localStorage,s.title||'Previous active project',s,crystals);
+  restore(JSON.stringify({settings:project.settings,crystals:project.crystals,selectedId:null}));
+  snapshot();refreshSavedProjects(project.id);cloudVault?.schedule();
+  setStatus('Opened editable saved project '+project.name+'; previous active model backed up in your project library.');
+ }catch(err){alert('Could not open project: '+err.message)}
+};
+$('deleteNamedProjectBtn').onclick=()=>{
+ const id=$('savedProjectSelect').value;
+ if(!id||!confirm('Delete this project from the synced project library? The active design will not be deleted.'))return;
+ deleteNamedProject(localStorage,id);refreshSavedProjects();cloudVault?.schedule();
+ setStatus('Deleted named project from the library; earlier private GitHub commits may still contain it.');
+};
 cloudVault=new GitHubVault({storage:localStorage,onStatus:message=>{
  const el=$('cloudStatus');if(el)el.textContent=message;
 }});
@@ -796,6 +830,7 @@ $('cloudPull').onclick=()=>cloudAction(async()=>{
  const result=await cloudVault.pull();
  restore(localStorage.getItem('crystal-forge-v3'));
  refreshSavedTemplates();
+ refreshSavedProjects();
  $('cloudStatus').textContent='Pulled and merged. Local backup key: '+result.backupKey+'. Cloud auto-sync is available.';
 });
 $('cloudPush').onclick=()=>cloudAction(async()=>{
@@ -812,10 +847,26 @@ $('cloudBackup').onclick=()=>{
  const data=captureVault(localStorage);
  download(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),
   'crystal-forge-complete-backup-'+new Date().toISOString().slice(0,10)+'.json');
- setStatus('Downloaded complete local project, custom profiles and templates');
+ setStatus('Downloaded complete local project, saved projects, custom profiles and templates');
+};
+$('cloudBackupImport').onchange=async event=>{
+ const file=event.target.files?.[0];if(!file)return;
+ if(!confirm('Import this full Crystal Forge backup? The active model may be replaced; local data will be backed up first and named projects/profiles/templates merged.')){
+  event.target.value='';return;
+ }
+ try{
+  const json=JSON.parse(await file.text());
+  const result=mergeVault(localStorage,json,{restoreProject:true});
+  if(result.projectRestored)restore(localStorage.getItem('crystal-forge-v3'));
+  else mergePixelLibrary();
+  refreshSavedTemplates();refreshSavedProjects();snapshot();cloudVault?.schedule();
+  setStatus('Imported backup: '+result.projects+' named projects, '+result.profiles+' custom pixels, '+
+   result.templates+' templates. Previous local data backed up under '+result.backupKey);
+ }catch(err){alert('Could not import Crystal Forge backup: '+err.message)}
+ finally{event.target.value=''}
 };
 window.addEventListener('storage',e=>{
- if(['crystal-forge-pixel-library','crystal-forge-project-templates-v1'].includes(e.key))
+ if(['crystal-forge-pixel-library','crystal-forge-project-templates-v1','crystal-forge-project-library-v1'].includes(e.key))
   cloudVault?.schedule();
 });
 $('saveTemplateBtn').onclick=()=>{
