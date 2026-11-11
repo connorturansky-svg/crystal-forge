@@ -118,7 +118,7 @@ export function zipProfileEntries(entries){
  const encoder=new TextEncoder(),parts=[],central=[];
  let offset=0;
  for(const [name,body] of entries){
-  const filename=encoder.encode(name),bytes=encoder.encode(body),crc=crc32(bytes);
+  const filename=encoder.encode(name),bytes=body instanceof Uint8Array?body:body instanceof ArrayBuffer?new Uint8Array(body):encoder.encode(String(body)),crc=crc32(bytes);
   const local=new Uint8Array(30+filename.length),v=new DataView(local.buffer);
   write32(v,0x04034b50,0);write16(v,20,4);write16(v,0,6);write16(v,0,8);
   write32(v,crc,14);write32(v,bytes.length,18);write32(v,bytes.length,22);
