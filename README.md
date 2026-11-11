@@ -1,8 +1,14 @@
-# Crystal Forge — Browser Studio v0.9.0
+# Crystal Forge — Browser Studio v0.10.0
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, child-safe crystal sculptures. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/
 
 Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three.js and the Manifold WebAssembly geometry library load from the internet. Project files and theme preference are stored locally in your browser; export JSON for backups or moving to another computer.
+
+## PR5 development and what remains
+
+Draft [PR5](https://github.com/connorturansky-svg/crystal-forge/pull/5) adds an opt-in underside wiring plan and manufacturing grooves, wire CSV, LED-specific calibration strips, conservative roof-span review and user-entered printer dimensions. The live app only updates after a reviewed merge to main.
+
+The **[PR5 master implementation plan](docs/PR5_MASTER_IMPLEMENTATION_PLAN.md)** tracks every known outstanding stage, from physical pixel retention through real optical passages, bridge/support checks, modular split connectors, hardware editing, performance and material previews. Items listed there are not automatically implemented.
 
 ## Workspaces
 
