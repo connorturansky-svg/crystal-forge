@@ -159,6 +159,8 @@ const SETTINGS={
  "targetedLightPaths": ["Targeted LED-to-crystal openings","Cuts real narrow bores from accepted LED socket roofs, through the base and into sufficiently wide crystal roots. Alternative to slow balloon hollowing; Cura and real light tests still required."],
  "lightBoreDiameter": ["Targeted light passage diameter","Nominal through-hole width; skip roots too narrow for minimum surrounding wall margin."],
  "lightReach": ["Maximum LED reach","Limit the distance from an LED socket to a crystal to avoid long weak tunnels."],
+ "plateThickness": ["Mount plate thickness","Thickness of independently printed detachable plate, secured by actual bolts and installed M3 inserts."],
+ "detachablePlateBtn": ["Export detachable mounting plate","Generate a separate registered plate with M3 through-holes after preparing a solid base with a matching insert pattern."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."

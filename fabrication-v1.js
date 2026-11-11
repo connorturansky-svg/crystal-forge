@@ -11,6 +11,7 @@ import {planHardware} from './hardware-layout.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
 import {estimateRoofReview} from './print-advisor.js';
 import {planTargetedLightPaths} from './targeted-light-paths.js';
+import {planDetachablePlate} from './detachable-plate.js';
 
 let modulePromise=null;
 export async function loadManifold(){
@@ -493,7 +494,11 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     warnings.push('Ceiling mounting demands properly rated fixings and secondary retention. A printed bracket alone is not a certified overhead support.');
   if(s.mount==='Magnet inserts')warnings.push('Magnet pockets are nominal 10.2 mm diameter; verify magnet dimensions and required retention.');
   if(s.mount==='Threaded insert M3')warnings.push('M3 insert holes are nominal 4.2 mm; verify insert type and installation tolerances.');
-  if(s.mount==='Detachable plate')warnings.push('Detachable mounting plate remains a planned feature, not yet fabricated.');
+  if(s.mount==='Detachable plate'){
+   const plannedPlate=planDetachablePlate(s,hardware);
+   if(!plannedPlate.valid)warnings.push(...plannedPlate.reasons);
+   else warnings.push('Detachable mounting plate has matching M3 insert holes and a separately downloadable plate STL. The bolts and inserts must be purchased and fit-tested.');
+  }
   // A manifold STL can still contain *sealed, unlit void shells*.
   // Retain only outward-connected material shells, filling inaccessible
   // enclosed voids. Open lumens connected to the pixel inlet are part of
@@ -683,5 +688,20 @@ export function makeSplitPinCoupon(wasm,points=[]){
    .rotate([-90,0,0]).translate([i*(pt.diameter+6),0,0])));
   const body=hold(wasm.Manifold.union(rods));assertSolid(body,'Alignment pin coupon');
   return {geometry:fromResultMesh(body.getMesh()),count:points.length};
+ }finally{cleanupAll(keep)}
+}
+
+export function makeDetachablePlate(wasm,plan){
+ if(!plan?.valid||!plan.bounds||!Array.isArray(plan.holes)||plan.holes.length!==2)
+  throw new Error('Cannot generate plate without two valid registered mounting holes.');
+ const keep=[],hold=x=>{keep.push(x);return x};
+ try{
+  const {width,depth,thickness}=plan.bounds;
+  const slab=hold(wasm.Manifold.cube([width,thickness,depth]).translate([-width/2,0,-depth/2]));
+  const cutters=plan.holes.map(h=>hold(wasm.Manifold.cylinder(thickness+2,2.3,2.3,48)
+   .rotate([-90,0,0]).translate([h.x,-1,h.z])));
+  const plate=hold(slab.subtract(hold(wasm.Manifold.union(cutters))));
+  assertSolid(plate,'Detachable plate with M3 clearance holes');
+  return {geometry:fromResultMesh(plate.getMesh()),holes:plan.holes,thickness};
  }finally{cleanupAll(keep)}
 }

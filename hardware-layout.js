@@ -41,11 +41,11 @@ export function mountingProfile(s){
   const preset=s.mount || 'None';
   const custom=preset==='Custom dual holes';
   const diameter=custom? Number(s.mountHoleDiameter||4.5) :
-    preset==='Magnet inserts'?10.2 : preset==='Threaded insert M3'?4.2 : 4.5;
+    preset==='Magnet inserts'?10.2 : (preset==='Threaded insert M3'||preset==='Detachable plate')?4.2 : 4.5;
   const depth=preset==='Magnet inserts'?Math.min(3.2,s.baseHeight-1.6):
-    preset==='Threaded insert M3'?Math.min(5.5,s.baseHeight-1.6):
+    (preset==='Threaded insert M3'||preset==='Detachable plate')?Math.min(6,s.baseHeight-1.6):
     custom?Math.max(1.2,Number(s.mountHoleDepth||s.baseHeight+2)):s.baseHeight+4;
-  const enabled=!['None','Detachable plate','Edge fixing tabs'].includes(preset)&&s.baseType!=='none';
+  const enabled=!['None','Edge fixing tabs'].includes(preset)&&s.baseType!=='none';
   return {preset,enabled,diameter,depth,requested:enabled?2:0};
 }
 export function planHardware(crystals,s){

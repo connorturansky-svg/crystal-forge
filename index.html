@@ -200,7 +200,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Tab thickness <output data-out="tabThickness"></output></label><input data-state="tabThickness" type="range" min="2.5" max="15" step=".5"></div>
 <div class="control"><label>Material around holes <output data-out="tabWall"></output></label><input data-state="tabWall" type="range" min="2" max="8" step=".5"></div>
 <p class="note">Equally spaced perimeter ears with through-holes for zip ties or bolts. These are printed with the base; crowded tabs are skipped and reported. Verify actual strength, fit and layer adhesion.</p></div>
-<p class="note">Wall/ceiling screw through-holes, blind magnet pockets and M3 insert holes can now be cut in Prepare Print. Detachable plates, keyholes and alignment connectors are not yet generated.</p>
+<div class="control"><label>Detachable plate thickness <output data-out="plateThickness"></output></label><input data-state="plateThickness" type="range" min="3" max="8" step=".5"></div>
+<p class="note">Detachable plate now produces two registered nominal M3 insert pockets in the base; after preparing the mesh, download a separate mating plate with matching bolt holes. Fit and strength must be checked in a physical build.</p>
 <p class="note warning">Overhead installations need independently verified load-bearing fixings and secondary retention.</p>
 </div></div>
 <div class="card amber"><div class="cardtitle">◎ Hardware hole editor</div><div class="cardbody">
@@ -247,7 +248,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="buttonrow"><button id="printChecklistBtn" type="button">↓ Cura inspection checklist</button><button id="opticalCsvBtn" type="button">↓ Crystal optical audit CSV</button></div>
 <p id="opticalAuditSummary" class="note">Optical paths remain unverified until slicing and physical light tests.</p>
 </div></div>
-<div class="buttonrow"><button id="stlBtn" disabled>↓ STL</button><button id="threeMfBtn" disabled>↓ 3MF</button></div>
+<div class="buttonrow"><button id="stlBtn" disabled>↓ STL</button><button id="threeMfBtn" disabled>↓ 3MF</button></div><button id="detachablePlateBtn" disabled type="button">↓ Separate M3 mounting plate STL</button>
 <button id="productionPackBtn" class="primary" type="button" disabled style="width:100%;margin-top:8px">↓ Download complete production pack (ZIP)</button>
 <p class="note">Packages the validated prepared STL, editable project, optional Cura profile, pixel audit, cable plan, print checklist, material list and assembly guidance. Requires Prepare print first.</p>
 <div class="note">Exports use only the prepared manufacturing mesh. Changing geometry or Build options requires preparing again.</div>
