@@ -136,14 +136,14 @@ function positionedInnerCrystal(c,s,openingY,wall){
 }
 function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
  const p=profile||resolvePixelProfile({pixelDiameter:12,pixelFit:0});
- const tipY=Math.max(start+1.4,roofY-2.8),available=tipY-start;
+ const tipY=Math.max(start+1.4,Math.min(roofY-2.8,start+p.bodyHeight)),available=tipY-start;
  const capRise=Math.min(Math.max(.35,p.capHeight),2.5,available*.24);
  const shaftEnd=tipY-capRise,depth=Math.max(.5,shaftEnd-start);
  const bodyRadius=Math.max(.8,p.boreDiameter/2),cutters=[];
  const cylinder=(r,y,h)=>hold(wasm.Manifold.cylinder(h,r,r,32).rotate([-90,0,0]).translate([pos.x,y,pos.z]));
  cutters.push(cylinder(bodyRadius,start,depth));
  if(p.kind!=='seed'&&p.flangeHeight>.1&&p.maxDiameter>p.boreDiameter+.1)
-  cutters.push(cylinder(p.maxDiameter/2,start,Math.min(depth,p.flangeHeight)));
+  cutters.push(cylinder(p.maxDiameter/2,-.5,Math.min(depth,p.flangeHeight+.5)));
  cutters.push(hold(wasm.Manifold.sphere(bodyRadius,32).scale([1,capRise/bodyRadius,1]).translate([pos.x,shaftEnd,pos.z])));
  if(p.wireWidth>.1&&p.wireDepth>.1){
   // Two shallow underside cable reliefs; not full wiring channels.
@@ -383,7 +383,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolvePixelProfile(s));
     cutters.push(bore.solid);
     socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
-      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall});
+      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId});
     if(bore.shaftEnd<20)warnings.push('LED bore at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+Math.max(0,bore.shaftEnd).toFixed(1)+' mm of full-width clearance. Confirm the actual LED housing fits.');
    }
    const holes=hold(wasm.Manifold.union(cutters));

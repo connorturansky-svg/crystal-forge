@@ -252,6 +252,7 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  const report=validate('custom-profile-bore',cfg);
  assert(report.socketsCut>0,'Custom pixel profile creates a cut');
  assert(report.socketCeilings.every(c=>c.remainingWall>=2.79),'Profile socket has blind roof');
+ assert(report.socketCeilings.every(c=>c.profileId===custom.id),'Selected profile is used in actual cutter');
  console.log('PR4 pixel clearance and cut tests passed');
 }
 // Tabs must be physical fused geometry with THROUGH holes, not markers.
