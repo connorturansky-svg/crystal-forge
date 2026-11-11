@@ -99,6 +99,22 @@ body.theme-light .control-tooltip span{color:#334c6b}
 #contextHelp .cardbody{line-height:1.55}#contextHelpTitle{font-size:13px}
 @media(max-width:850px){body.descriptions-active .right{display:block}body.descriptions-active #contextHelp{position:fixed;bottom:14px;right:14px;z-index:40;width:min(300px,calc(100vw - 28px));max-height:42vh;overflow:auto}}
 #shapeScope{margin:2px 0 8px}body .shape-selected{border-left:3px solid #49ef9b;background:#1b453a;color:#cbffe5;padding:10px;border-radius:6px}body.theme-light .shape-selected{background:#daf7e8;color:#136039}#multiplePixelsRow:not(.show){display:none!important}.viewbuttons button.active{background:#315d96!important;color:white!important}
+
+/* Numbered interactive hardware markers overlay the live 3D model; not STL geometry. */
+.hardware-marker-layer{position:absolute;inset:0;z-index:4;pointer-events:none}
+.hardware-marker{position:absolute;transform:translate(-50%,-50%);z-index:1;min-width:27px;height:27px;padding:2px 5px;border:2px solid #fff8d4;border-radius:999px;pointer-events:auto;color:#081525;background:#ffdc58;font-size:11px;line-height:1;box-shadow:0 2px 8px #071525bb;cursor:pointer;font-weight:800}
+.hardware-marker[data-hw-kind="mount"],.hardware-marker[data-hw-kind="tab"]{background:#b985ff;border-color:#eee2ff}
+.hardware-marker.invalid{background:#ff536b;border-color:#fff}
+.hardware-marker.selected{outline:4px solid #15e7d2;outline-offset:2px;z-index:3;transform:translate(-50%,-50%) scale(1.16)}
+.hardware-marker:focus-visible{outline:4px solid #15e7d2}
+.hardware-edit-item{border:1px solid #344b6e;border-radius:10px;padding:8px 7px;margin:8px 0;background:#14253a}
+.hardware-edit-item.selected{border:2px solid #35e5cd;background:#214553}
+.hardware-edit-heading{display:flex;gap:6px;align-items:center;justify-content:space-between;margin-bottom:5px}
+.hardware-edit-heading button{padding:4px 8px}
+.hardware-edit-item[draggable="true"]{cursor:grab}
+.hardware-context-menu{position:absolute;z-index:11;display:flex;flex-direction:column;gap:7px;width:208px;padding:11px;border-radius:11px;background:#192b45;color:#f4f8ff;border:1px solid #8bbcff;box-shadow:0 8px 30px #0008}
+.hardware-context-menu[hidden],.hardware-marker-layer[hidden]{display:none!important}
+.hardware-context-menu button{text-align:left;padding:7px 9px}
 </style></head>
 <body class="simple">
 <header class="topbar">
@@ -192,17 +208,21 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="buttonrow"><button id="fitOverrideToolBtn" type="button" hidden title="Review the calibrated hole">⚙ Calibrated fit</button><button id="resetFitOverrideBtn" type="button" hidden>↺ Reset calibration</button></div>
 <div class="divider"></div><div class="cardtitle" style="padding:6px 0">⤳ Optional underside wiring channels</div>
 <label class="checks"><input type="checkbox" data-state="wireChannels"> Carve underside wire channels between accepted LEDs</label>
-<label class="checks"><input type="checkbox" data-state="wireExit"> Route first pixel to a safe base edge</label>
-<div class="control"><label>Wire arrangement</label><select data-state="wireMode"><option value="single">Single channel</option><option value="parallel">Two parallel wires</option></select></div>
-<div class="control"><label>Parallel wire centres <output data-out="wirePairSpacing"></output></label><input data-state="wirePairSpacing" type="range" min="3" max="22" step=".5"></div>
-<div class="buttonrow"><button id="singleWireExitBtn" type="button">⌁ Enable a groove to the outside edge</button><button type="button" id="pickWireExitBtn">⌖ Pick paired wire exit on model</button></div>
+<div class="control"><label>Physical cable layout</label><select data-state="wireMode">
+<option value="string">Pixel string — IN / OUT, ordered P1 → P2</option>
+<option value="single">Legacy single-groove route (old projects)</option>
+<option value="parallel">Legacy paired side-by-side grooves (old projects)</option>
+</select></div>
+<label class="checks"><input type="checkbox" data-state="wireExit"> Legacy modes: add external route from first pixel</label>
+<div class="control"><label>Legacy paired channel spacing <output data-out="wirePairSpacing"></output></label><input data-state="wirePairSpacing" type="range" min="3" max="22" step=".5"></div>
+<div class="buttonrow"><button id="singleWireExitBtn" type="button">⌁ Enable ordered pixel-string grooves</button><button type="button" id="pickWireEntryBtn">⌖ Pick IN edge</button><button type="button" id="pickWireExitBtn">⌖ Pick OUT edge</button></div>
 <p id="wireRouteStatus" class="note" aria-live="polite">Enable underside wiring to inspect calculated channels.</p>
 <div class="advanced-only">
 <div class="control"><label>Channel width <output data-out="wireWidth"></output></label><input data-state="wireWidth" type="range" min="1.5" max="9" step=".25"></div>
 <div class="control"><label>Channel depth <output data-out="wireDepth"></output></label><input data-state="wireDepth" type="range" min=".8" max="5" step=".2"></div>
 <div class="control"><label>Extra cable slack <output data-out="wireSlack"></output></label><input data-state="wireSlack" type="range" min="0" max="30" step="5"></div>
 </div>
-<p class="note">Single and two-parallel-wire modes cut real grooves. The two exits are computed together from the LED rotation and gap. Pick a common end centre on the edge or enter X/Z on the LED card. Cyan guides show accepted routes; full fixing tabs are obstacles, so unsafe paths are skipped. These are not insulated electrical conduits. Routes require a solid base.</p>
+<p class="note"><strong>Pixel string:</strong> every LED has two cable-bundle tails on opposite sides. The first IN and final OUT each reach the exterior, including with only one pixel. The order of P1, P2… in the hardware list sets the groove route; ↑↓ and drag change the order without moving pixels. Pick each perimeter opening independently. Legacy single/parallel modes remain only for imported projects. Cyan outlines show <em>physical cable channels</em>, not separate conductors or an electrical loop. Unsafe routes are rejected; test real wire/strain relief before printing.</p>
 <p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p><div class="divider"></div><label class="checks"><input data-state="glowPreview" type="checkbox"> Preview the whole cluster glowing one colour</label>
 <div class="control"><label>Simulated LED colour</label><select data-state="glowColour"><option value="0x77c4ff">Ice blue</option><option value="0xffa3df">Pink</option><option value="0xa58bff">Purple</option><option value="0xffdb8b">Warm white</option><option value="0x9affbc">Green</option><option value="0xffffff">Cool white</option></select></div>
 <p class="note">Illustrative glow only — real brightness depends on filament translucency, wall thickness, cavity connectivity and LED placement.</p>
@@ -229,13 +249,13 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <p class="note warning">Overhead installations need independently verified load-bearing fixings and secondary retention.</p>
 </div></div>
 <div class="card amber"><div class="cardtitle">◎ Hardware hole editor</div><div class="cardbody">
-<p class="note">LED holes appear yellow, mounting holes purple and edge tabs violet in Build. Red manual holes are invalid and will not be cut.</p>
+<p class="note">Numbered 3D hardware labels match this list: P1… = string pixels, M1… = mounting holes, T1… = tabs. Click a marker to highlight its card; select a card to highlight the marker. Drag or ↑↓ to change the pixel-string order. Double-click an empty part of the model to choose a new pixel or mounting hole. Red markers are invalid and not cut.</p>
 <p id="hardwareGuideSummary" class="softnotice">Hole layout pending…</p>
 <label class="checks"><input data-state="hardwareSnap" type="checkbox"> Snap new/manual hardware positions to a grid</label>
 <div class="control"><label>Hardware snap grid <output data-out="hardwareSnapStep"></output></label><input data-state="hardwareSnapStep" type="range" min=".5" max="20" step=".5"></div>
 <div class="buttonrow"><button id="placePixelBtn">＋ Place / move LED</button><button id="placeMountBtn">＋ Place mounting hole</button></div>
 <div class="buttonrow" style="margin-top:6px"><button id="stopHolePlacementBtn">✕ Stop placing</button></div>
-<p id="placementHint" class="note">Click to add hardware, or Shift-drag an existing LED, mounting hole or edge tab. Use Pick paired wire exit to set the two aligned wire endpoints at a chosen perimeter position.</p>
+<p id="placementHint" class="note">Click to add hardware, or Shift-drag an existing LED, mounting hole or edge tab. Use Pick IN / OUT edge to place separate pixel string tails at a chosen perimeter position.</p>
 <div id="manualHardwareList"></div>
 </div></div>
 </section>
