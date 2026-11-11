@@ -27,9 +27,13 @@ export function planWireRoutes(crystals,s,hardware){
  const width=limit(Number(s.wireWidth)||3,1.5,9),depth=limit(Number(s.wireDepth)||2,.8,5),
   slack=limit(Number(s.wireSlack)||0,0,30);
  const obstacles=[...(hardware.mounts||[]),...(hardware.tabHoles||[])];
+ const otherLEDs=sockets;
  const valid=(a,b,toEdge=false)=>{
   const length=dist(a,b);if(length<.1)return false;
-  for(const h of obstacles){
+  for(const h of [...obstacles,...otherLEDs]){
+   // A route may begin/end at its own socket centre, but must avoid the
+   // flange of any OTHER LED on its way through the base.
+   if(dist(h,a)<.001||dist(h,b)<.001)continue;
    const q=nearest(h,a,b);
    if(dist(h,q)<(h.radius||0)+width/2+1.5)return false;
   }
@@ -76,12 +80,20 @@ export function planWireRoutes(crystals,s,hardware){
   add(match.points,'link',match.i,match.j);pending.delete(match.i);joined.add(match.i);
  }
  plan.unrouted=pending.size;
+ if(sockets.length===1&&!s.wireExit)
+  plan.messages.push('No physical groove was planned: one LED has no other LED to connect to. Enable Route first pixel to base edge to make a real cable exit.');
  if(plan.unrouted)plan.messages.push(plan.unrouted+' LED socket(s) could not connect without crossing mounting hardware, thin walls or the edge.');
  if(s.wireExit){
   const p=sockets[0],choices=poly.map((a,i)=>nearest(p,a,poly[(i+1)%poly.length]))
    .sort((a,b)=>dist(p,a)-dist(p,b));
-  for(const edge of choices)if(valid(p,edge,true)){add([p,edge],'exit',0,null);plan.exitAdded=true;break}
-  if(!plan.exitAdded)plan.messages.push('No safe perimeter exit; allow a separate cable exit in the physical assembly.');
+  for(const edge of choices)if(valid(p,edge,true)){
+   // Cross the whole outer perimeter with the cutter, not just its centreline.
+   // This creates a physically open side exit through which a cable can pass.
+   const d=dist(p,edge)||1,extra=Math.max(width+1.5,2);
+   const out={x:edge.x+(edge.x-p.x)/d*extra,z:edge.z+(edge.z-p.z)/d*extra};
+   add([p,out],'exit',0,null);plan.exitAdded=true;break
+  }
+  if(!plan.exitAdded)plan.messages.push('No safe perimeter exit was found. Widen the base, reduce mounting conflicts or try a different LED position.');
  }
  return plan;
 }
