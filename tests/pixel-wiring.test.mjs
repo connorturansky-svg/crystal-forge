@@ -3,6 +3,7 @@ import {PIXEL_DIMENSIONS,renderPixelProfileDiagram} from '../pixel-profile-diagr
 import {planWireRoutes} from '../wire-routing.js';
 import {generateFormation} from '../geometry-v3.js';
 import {planHardware} from '../hardware-layout.js';
+import {adviseCuraForModel} from '../cura-model-advisor.js';
 
 assert.equal(PIXEL_DIMENSIONS.length,7,'Seven measurable fields A-G');
 assert.deepEqual(PIXEL_DIMENSIONS.map(d=>d.letter),['A','B','C','D','E','F','G']);
@@ -43,4 +44,11 @@ assert(Math.hypot(end.x,end.z)>maxRadius*.985,'Exit cutter reaches to or beyond 
 assert(withExit.wirePlan.lengthMm>5,'Actual exit cable length measured');
 const disabled=planWireRoutes(crystals,{...yes,wireChannels:false},withExit);
 assert.equal(disabled.routes.length,0);
+const recommended=adviseCuraForModel(crystals,{...base,printer:'Ultimaker 2+',curaNozzle:.4,curaQuality:55,curaMaterial:'PLA',curaIntent:'light'});
+assert(recommended.supported,'Cura model advisor handles UM2+');
+assert([.25,.4,.6,.8].includes(recommended.nozzle));
+assert(recommended.estimatedLayers>0&&recommended.featureWidthMm>0);
+const um3=adviseCuraForModel(crystals,{...base,printer:'Ultimaker 3 Extended',curaNozzle:.8,curaQuality:60,curaMaterial:'PLA'});
+assert([.25,.4,.8].includes(um3.nozzle),'No unsupported AA 0.6 recommendation');
+assert.equal(adviseCuraForModel(crystals,{...base,printer:'Custom / other'}).supported,false,'Unknown printers require real slicer profiles');
 console.log('PR7 pixel profile A-G diagram and physically planned single-LED edge groove contracts passed');
