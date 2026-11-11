@@ -1,14 +1,21 @@
 import assert from 'node:assert/strict';
 import {captureVault,validateVault,mergeVault,GitHubVault,CloudConflictError,VAULT_PATH} from '../github-vault.js';
+import {saveNamedProject,listSavedProjects,loadNamedProject,deleteNamedProject} from '../project-library.js';
 const mem=()=>{const m=new Map();return {getItem:k=>m.get(k)??null,setItem:(k,v)=>m.set(k,v),has:k=>m.has(k),dump:()=>[...m.entries()]};};
 const a=mem(),b=mem();
 a.setItem('crystal-forge-v3',JSON.stringify({settings:{pixelProfileId:'custom-my-gumdrop'},crystals:[{id:'x',x:12}]}));
 a.setItem('crystal-forge-pixel-library',JSON.stringify([{id:'custom-my-gumdrop',name:'Measured gumdrop',bodyHeight:24.5}]));
 a.setItem('crystal-forge-project-templates-v1',JSON.stringify([{id:'t1',name:'Test design',settings:{seed:3},crystals:[]}]));
+const savedProject=saveNamedProject(a,'First full project',{title:'Gumdrop Lantern',count:8},[{id:'root-1',x:1,z:2}]);
+assert.equal(listSavedProjects(a).length,1);
+assert.equal(loadNamedProject(a,savedProject.id).crystals[0].id,'root-1');
+const second=saveNamedProject(a,'Second design',{title:'Laser Cave'},[{id:'cr-2'}]);
+assert.equal(listSavedProjects(a).length,2,'Multiple projects stay saved independently of active design');
 const doc=captureVault(a,'2026-11-11T00:00:00Z');
 assert.equal(doc.schema,1);
 assert.equal(doc.pixelProfiles[0].bodyHeight,24.5);
 assert.equal(doc.templates[0].name,'Test design');
+assert.equal(doc.projects.length,2,'Full backup includes ALL named user projects');
 assert.throws(()=>validateVault({schema:2,pixelProfiles:[],templates:[]}),/supported/);
 let remote=null,sha=null,n=0,authCalls=0;
 const response=(status,data)=>({ok:status>=200&&status<300,status,statusText:'Mock',json:async()=>data,text:async()=>JSON.stringify(data)});
@@ -37,6 +44,7 @@ assert.equal(first.exists,false);
 assert.equal(x.connected,true);
 await x.push();
 assert.equal(remote.pixelProfiles[0].bodyHeight,24.5);
+assert.equal(remote.projects.length,2,'Private Github vault includes every named project');
 assert(!JSON.stringify(remote).includes('sample-secret-token'),'Credentials never enter cloud vault');
 assert(!a.dump().some(([,v])=>v.includes('sample-secret-token')),'Credentials never enter localStorage');
 const y=new GitHubVault({storage:b,fetchFn:fakeFetch});
@@ -46,6 +54,7 @@ const pulled=await y.pull();
 assert(pulled.projectRestored);
 assert.equal(JSON.parse(b.getItem('crystal-forge-pixel-library'))[0].bodyHeight,24.5);
 assert.equal(JSON.parse(b.getItem('crystal-forge-v3')).crystals[0].id,'x');
+assert.equal(listSavedProjects(b).length,2,'Other computer receives ALL user models');
 assert(b.getItem(pulled.backupKey),'Local backup created before merge');
 await x.push();
 await assert.rejects(()=>y.push(),CloudConflictError,'Remote SHA change requires another pull');
@@ -53,4 +62,15 @@ y.disconnect();assert.equal(y.token,'');
 const publicFetch=async()=>response(200,{private:false,permissions:{push:true}});
 await assert.rejects(()=>new GitHubVault({storage:b,fetchFn:publicFetch}).connect('example/public-designs','secret'),/PRIVATE/);
 assert(authCalls>5);
-console.log('PR10 private GitHub cloud backup, cross-machine profile restore, remote SHA conflicts and token isolation passed');
+const overlapping={
+ schema:1,updatedAt:new Date().toISOString(),project:null,
+ pixelProfiles:[{id:'custom-my-gumdrop',name:'New measured profile',bodyHeight:29}],
+ templates:[],projects:[{...savedProject,settings:{title:'Remote update'},crystals:[{id:'remote'}]}]
+};
+const conflict=mergeVault(b,overlapping,{restoreProject:false});
+assert(conflict.profiles>=2,'Custom-profile ID conflicts preserve both local and remote measurements');
+assert(conflict.projects>=3,'Project ID conflicts preserve both models rather than silently overwrite');
+assert(listSavedProjects(b).some(p=>p.name.includes('cloud import')),'Conflicting project receives recoverable name');
+assert(deleteNamedProject(b,second.id),'Can explicitly delete named project');
+assert(!loadNamedProject(b,second.id),'Deleted project no longer opens');
+console.log('PR10 private GitHub cloud backup, cross-machine multiple projects, collisions and token isolation passed');
