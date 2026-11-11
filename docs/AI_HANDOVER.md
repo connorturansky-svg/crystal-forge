@@ -1,5 +1,11 @@
 # AI handover — read immediately after AGENTS.md
 
+## Current PR12: remove duplicate short LED socket wire reliefs
+
+PR11/#17 is merged into main. User screenshot showed three underside pixels with correct main wire but a stray short straight line through each socket. The source is `fabrication-v1.js` `putSocket()`: it also cut local fixed-axis reliefs, unlike the new rotated serial route. In full serial `wireMode='string'` fabrication, disable these stand-alone cuts and use the actual shared `hardware.wirePlan.routes` geometry alone. Preserve all legacy routing modes and separate printable fitting coupon exits. [PR12 test guide](PR12_CABLE_GEOMETRY_TEST_GUIDE.md). Pass exact latest-head static, browser and Manifold CI. Physical Cura, LED retention and optical tests remain open.
+
+---
+
 ## PR11 is current: software hardening
 PR10/#16 is merged. PR11 draft adds a standalone manufacturing fingerprint, named-project preservation at capacity, validated and rollback-protected cloud imports, unique recovery backups and full root-JS CI triggers. [PR11 acceptance](PR11_HARDENING_TEST_GUIDE.md) governs testing. Do not merge until all three exact-head checks pass; do not confuse software checks with actual Cura/LED/print/optical/safety validation.
 
