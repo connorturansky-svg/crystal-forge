@@ -1,6 +1,6 @@
 /* Build-stage placement/inspection: same authoritative plan as fabrication. */
 import {planHardware} from './hardware-layout.js';
-import {resolvePixelProfile} from './pixel-profiles.js';
+import {resolvePixelProfile,allPixelProfiles} from './pixel-profiles.js';
 import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
 
 export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,onEdit,onStatus}){
@@ -72,16 +72,19 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    (plan.invalidManualPixels.length+plan.invalidManualMounts.length)+' invalid (red) · '+(plan.wirePlan?.routes.length||0)+' cyan wire segments · '+(plan.wirePlan?.unrouted||0)+' unconnected';
   const list=$('manualHardwareList');if(!list)return;
   const html=[];
+  const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   for(const [kind,enabled,items] of [['pixel',s.pixelPlacement==='manual',s.manualPixelHoles||[]],
      ['mount',s.mountPlacement==='manual',s.manualMountHoles||[]]]){
    if(!enabled)continue;
    html.push('<div class="divider"></div><p class="note"><b>'+(kind==='pixel'?'LED sockets':'Mounting holes')+' · manual</b></p>');
    for(let i=0;i<items.length;i++){
     const p=items[i],bad=(kind==='pixel'?plan.invalidManualPixels:plan.invalidManualMounts).some(x=>x.index===i);
+    const options=kind==='pixel'?'<div class="control" style="grid-column:1 / -1"><label>Individual LED profile</label><select data-hole-profile="'+i+'">'+
+     allPixelProfiles(s).map(profile=>'<option value="'+esc(profile.id)+'"'+((p.profileId||s.pixelProfileId)===profile.id?' selected':'')+'>'+esc(profile.name)+'</option>').join('')+'</select></div>':'';
     html.push('<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:end;margin:8px 0">'+
      '<div class="control"><label>X (mm)</label><input type="number" step=".5" data-hole-kind="'+kind+'" data-hole-index="'+i+'" data-hole-axis="x" value="'+numeric(p.x)+'"></div>'+
      '<div class="control"><label>Z (mm)</label><input type="number" step=".5" data-hole-kind="'+kind+'" data-hole-index="'+i+'" data-hole-axis="z" value="'+numeric(p.z)+'"></div>'+
-     '<button data-remove-hole="'+kind+'" data-hole-index="'+i+'" title="Remove hole">✕</button></div>'+
+     '<button data-remove-hole="'+kind+'" data-hole-index="'+i+'" title="Remove hole">✕</button>'+options+'</div>'+
      (bad?'<p class="note warning">Invalid position. This hole will not be cut until corrected.</p>':''));
    }
   }
@@ -91,6 +94,11 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    const item=s[key]?.[Number(input.dataset.holeIndex)],value=Number(input.value);
    if(!item||!Number.isFinite(value))return;
    item[input.dataset.holeAxis]=snapHardwareCoordinate(value,s.hardwareSnap,s.hardwareSnapStep);onEdit();
+  });
+  list.querySelectorAll('[data-hole-profile]').forEach(select=>select.onchange=()=>{
+   const item=s.manualPixelHoles?.[Number(select.dataset.holeProfile)];
+   if(!item)return;
+   item.profileId=select.value;onEdit();
   });
   list.querySelectorAll('[data-remove-hole]').forEach(button=>button.onclick=()=>{
    const key=button.dataset.removeHole==='pixel'?'manualPixelHoles':'manualMountHoles';

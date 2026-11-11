@@ -1,6 +1,6 @@
 import {baseOutline,crystalEndRatios} from './geometry-v3.js';
 import {planEdgeTabs} from './edge-tabs.js';
-import {resolvePixelProfile} from './pixel-profiles.js';
+import {resolvePixelProfile,resolveSocketProfile} from './pixel-profiles.js';
 import {planWireRoutes} from './wire-routing.js';
 /* Hardware placement planner shared by printable geometry and viewport annotations.
  * All positions are x/z on the underside of the cluster, distances in mm.
@@ -67,9 +67,10 @@ export function planHardware(crystals,s){
    s.lightingMode==='single'?1:max(0,Math.round(s.pixelCount));
   if(s.cutSockets&&(!Number.isFinite(socketDiameter)||socketDiameter<=0))throw new Error('Pixel socket diameter must be positive.');
   if(pixelManual&&pixelRequested)manualPixels.slice(0,pixelRequested).forEach((entry,i)=>{
-    const p={x:Number(entry.x),z:Number(entry.z)},radius=socketRadius;
+    const p={x:Number(entry.x),z:Number(entry.z)};
+    const specific=resolveSocketProfile(s,entry),radius=specific.maxDiameter/2;
     if(Number.isFinite(p.x)&&Number.isFinite(p.z)&&validHole(p,radius,sockets))
-      sockets.push({...p,radius,diameter:socketDiameter,profileId:profile.id,kind:'LED',manual:true,index:i});
+      sockets.push({...p,radius,diameter:specific.boreDiameter,profileId:specific.id,kind:'LED',manual:true,index:i});
     else invalidManualPixels.push({...p,radius,kind:'LED',index:i});
   });
   const ranked=pixelManual?[]:all.slice().sort((a,b)=>b.r*b.h-a.r*a.h);

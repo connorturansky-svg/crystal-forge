@@ -8,7 +8,7 @@ let THREE;
 export function setThreeInstance(three){THREE=three;}
 import {crystalGeometry,crystalRootOffset,baseGeometry,baseSurfaceHeight} from './geometry-v3.js';
 import {planHardware} from './hardware-layout.js';
-import {resolvePixelProfile} from './pixel-profiles.js';
+import {resolvePixelProfile,resolveSocketProfile} from './pixel-profiles.js';
 import {estimateRoofReview} from './print-advisor.js';
 import {planTargetedLightPaths} from './targeted-light-paths.js';
 import {planDetachablePlate} from './detachable-plate.js';
@@ -390,7 +390,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
    const cutters=[];
    for(const pos of hardware.sockets){
     const roof=baseSurfaceHeight(crystals,s,pos.x,pos.z);
-    const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolvePixelProfile(s));
+    const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolveSocketProfile(s,pos));
     cutters.push(bore.solid);
     socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
       straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId,retentionLip:bore.retentionLip});
