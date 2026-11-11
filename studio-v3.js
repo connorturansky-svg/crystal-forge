@@ -279,6 +279,7 @@ function manufacturingView(enabled){
  if(enabled)gizmo.detach();
  else selectCrystal(selectedId,false);
  updateHardwareAnnotationVisibility();
+ hardwareUI?.refresh(); // disable Build guide overlays when prepared mesh is visible
 }
 function applyPrintHeatmap(){
  if(!manufacturingMesh)return;
@@ -928,6 +929,7 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{
  for(const e of document.querySelectorAll('[data-workspace]'))e.classList.toggle('active',e.dataset.workspace===b.dataset.tab);
  const titles={design:['Design workspace','Shape and composition'],build:['Build workspace','Lighting and assembly'],print:['Print workspace','Check and export']};
  $('leftHeading').textContent=titles[b.dataset.tab][0];$('leftCaption').textContent=titles[b.dataset.tab][1];
+ hardwareUI?.refresh();
 });
 $('randomBtn').onclick=()=>{s.seed=Math.floor(Math.random()*999999)+1;syncForm();generate()};
 $('regenBtn').onclick=()=>generate();
@@ -1190,7 +1192,7 @@ $('showManufacturing').onchange=e=>manufacturingView(e.target.checked);
 $('printHeatmap').onchange=applyPrintHeatmap;
 if(s.floatView){grid.visible=false;axes.visible=false}
 hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh:()=>baseMesh,
- getSettings:()=>s,getCrystals:()=>crystals,onStatus:setStatus,
+ getSettings:()=>s,getCrystals:()=>crystals,getManufacturingVisible:()=>!!manufacturingMesh?.visible,onStatus:setStatus,
  onEdit:()=>{disposeManufacturing();syncForm();updateLEDs();hardwareUI.refresh();renderInfo();snapshot()}
 });
 
