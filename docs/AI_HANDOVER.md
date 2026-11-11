@@ -1,5 +1,16 @@
 # AI handover — read immediately after AGENTS.md
 
+## Active PR9 implementation — 11 November 2026
+
+**Draft PR #15:** https://github.com/connorturansky-svg/crystal-forge/pull/15 · branch `feat/pr9-combined-roadmap-implementation`. Read [PR9 test guide](PR9_TEST_GUIDE.md) before QA. **Do not merge until all three GitHub Actions suites succeed on the exact latest head.**
+
+Code added: `pixel-string-routing.js` models opposed physical cable IN/OUT and ordered interpixel grooves, with distinct first/last perimeter exits even for one LED. Failed routes suppress all serial cutter geometry. `hardware-identity.js` preserves stable IDs and reorder; `hardware-editor.js` adds numbered P/M/T markers, selection, manual order and a double-click add menu. `pixel-string-export.js` emits a one-based WS2811 RGB channel index (not a controller configuration). Legacy `wireMode='single'/'parallel'` still explicitly available.
+
+New editor/fabrication capabilities: `workspace-panels.js` resizable keyboard/pointer panels; `project-templates.js` browser-local named templates; six-family weighted generation, batch selection/move/scale/lock/visibility, half-cutaway preview, per-crystal modeled conduit reporting and conservative root-wall/blocked-wire warnings. `tests/pixel-string.test.mjs`, `tests/pr9-creative.test.mjs`, updated Manifold and Playwright check behavior.
+
+Remaining open #6–#10: actual Cura slicer imports and layer review, real LED/light/strain-relief service fit, safe mechanical mount/loads, multi-plane automatic printer-bed splits, comprehensive versioned migration fixtures, advanced material shaders and full mobile UX. Green CI does NOT certify physical strength, electrical wiring or optical performance.
+
+
 ## PR8 new highest-priority requirements (11 November 2026)
 
 **Planning only in draft PR8; not yet shipped.** Start with [PR8 P0 spec](PR8_CRITICAL_WIRING_AND_HARDWARE.md) and [#7](https://github.com/connorturansky-svg/crystal-forge/issues/7)/[#9](https://github.com/connorturansky-svg/crystal-forge/issues/9). The user inspected the underside Build screenshot and rejected the existing *Two parallel wires* system: it produces adjacent twin lanes, whereas a WS2811 pixel **string** has an incoming and outgoing cable on opposite physical sides of every pixel. P0 is to route **edge IN → P1.IN / P1.OUT → P2.IN / ... / Pn.OUT → edge OUT**, including **two separately open opposite-sided cable tails for one pixel**. The outgoing final cable should *not* automatically be wired back to input electrically. String order must be controlled by list reordering rather than nearest-neighbour topology; preserve identifiers and validate actual geometry, edges, roots, mounts and thickness. Legacy `wireMode='parallel'` must not be silently reinterpreted.
