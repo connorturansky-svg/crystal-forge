@@ -1,0 +1,29 @@
+CRYSTAL FORGE — SOURCE CODE NOTICE
+
+Copyright © 2026 Crystal Forge project owner.
+All rights reserved, to the extent permitted by applicable law.
+
+The original Crystal Forge application code, artwork, interface designs and
+project-specific documentation in this repository are not offered under an
+open-source licence. No additional permission is granted to reproduce,
+redistribute, repackage, sublicense, sell or build derivative commercial
+products from the original material without the copyright holder's
+permission.
+
+Public availability of a GitHub repository does not make it public domain.
+Viewing and forking on GitHub remain subject to the permissions granted
+under GitHub's Terms of Service, and normal use of the published web
+application is permitted.
+
+This notice does not supersede copyright notices or licences of external
+dependencies, libraries, tools or third-party contributions; those retain
+their respective terms.
+
+For redistribution or commercial licence requests, contact the project
+owner through the repository.
+
+Protection limits: a public repository can still be viewed, forked and
+downloaded. Making it private prevents ongoing public repository access
+but cannot recall existing clones or public forks. Any client-side
+JavaScript deployed on a public website is necessarily accessible to the
+website's visitors.
