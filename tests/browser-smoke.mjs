@@ -286,7 +286,8 @@ try{
  await page.locator('[data-state="targetedLightPaths"]').check();
  assert(await page.locator('[data-state="targetedLightPaths"]').isChecked(),'Targeted real light bore control enables');
  await page.locator('[data-state="lightBoreDiameter"]').evaluate(el=>{el.value='3.2';el.dispatchEvent(new Event('input',{bubbles:true}))});
- assert.equal((await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.lightBoreDiameter)),3.2);
+ await page.waitForFunction(()=>Number(JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.lightBoreDiameter)===3.2,null,{timeout:8000});
+ assert.equal(Number(await page.locator('[data-state="lightBoreDiameter"]').inputValue()),3.2,'Light bore slider retains selection');
  await page.locator('[data-state="targetedLightPaths"]').uncheck();
  await page.locator('[data-state="mount"]').selectOption('Detachable plate');
  assert((await page.locator('[data-state="mount"]').inputValue())==='Detachable plate','M3 detachable mount selectable');
