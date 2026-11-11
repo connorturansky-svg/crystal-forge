@@ -1,4 +1,14 @@
-# v0.15.0 — Final consolidated software phase (PR13/#19; current draft)
+# PR14 / v0.15.1 — physical pixel-spacing snap (draft)
+
+**User request:** once LEDs are positioned within a few millimetres of the installed pixel-wire pitch, snap the *real curved centre-to-centre route* to 25, 50, 100 or custom mm rather than letting the wire hang short/overlong. P1 is anchored; only P1→P2→...→Pn internal links are length-matched. The first IN and final OUT tails have independent lengths.
+
+**Implementation:** Build adds a one-click Snap button with an adjustable 5 mm default maximum displacement per pixel; tests candidate positions against the authoritative hardware planner (Bezier geometry, boundaries, holes, mounting positions, prior accepted runs and existing valid entry/exit paths). Links too distant or unsafe are skipped and explained. The result is a single undoable/savable edit, not automatic repositioning on every mouse drag. [Acceptance guide](PR14_PIXEL_SPACING_ACCEPTANCE.md).
+
+**Required to finish:** latest-head CI green, real saved-project visual inspection and physical cable/print fit; exact route length does not guarantee safe strain relief.
+
+---
+
+# v0.15.0 — Final consolidated software phase (PR13/#19; merged baseline)
 
 **Source:** [PR #19](https://github.com/connorturansky-svg/crystal-forge/pull/19), based on merged PR12. **Goal:** one consolidated software milestone, not another chain of minor phases. [Full software + physical acceptance guide](FINAL_PHASE_ACCEPTANCE.md).
 
