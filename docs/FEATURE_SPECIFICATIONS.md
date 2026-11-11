@@ -220,3 +220,15 @@ Five reusable global/individual crystal shaping presets with locked-object prote
 ## F29 — PR6 phase E: reproducible production pack
 
 A binary ZIP bundles the *current validated prepared STL*, editable JSON, Cura candidate when compatible, hardware/wiring CSVs, per-crystal audit, fabrication checklist and handoff note.
+
+## F30 — PR7 illustrated pixel profile / physical socket correction
+
+A–G show the body diameter A, full length B (including cap E), flange diameter C, flange axial height D, cap E, wire relief width F and depth G. Double-ended arrows and letters focus matching fields. Actual cut depth B starts at real Y=0 rather than the -3 mm cutter overshoot. Measured cap and cable dimensions are used where roof permits. Five-hole stepped fit sample uses the production cutter.
+
+## F31 — PR7 actual underside wire routing
+
+A single LED needs the outside-edge exit to create a groove; one-click routing enables both controls. The perimeter groove cuts beyond the boundary; routes avoid other LED flanges and mount obstacles. 3D cyan volumes preview the real groove width/depth. Prepare Print and BOT show actual carved mesh. Press-fit requires physical wire/strain-relief testing.
+
+## F32 — PR7 wider manufacturing integration
+
+Opt-in vault-to-spike light channels (unverified physical optical paths), separate matching M3-style plate STL, supported Cura nozzle advice with manual adoption, measured worker stages and opt-in extended 10/16/40/60 tests. Real slices and strength tests remain gates.
