@@ -265,7 +265,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    if(data){
     const key=placing==='pixel'?'manualPixelHoles':placing==='tab'?'manualEdgeTabs':'manualMountHoles';
     const list=placing==='tab'?getPlan().tabs:(getSettings()[key]||[]);
-    const nearest=list.map((p,index)=>({index,d:Math.hypot(p.x-data.pos.x,p.z-data.pos.z)}))
+    const nearest=list.map((p,index)=>({index:placing==='tab'?p.index:index,d:Math.hypot(p.x-data.pos.x,p.z-data.pos.z)}))
      .sort((a,b)=>a.d-b.d)[0];
     if(nearest&&nearest.d<=Math.max(8,Number(getSettings().pixelDiameter||5)+3))
      draggingHole={kind:placing,index:nearest.index};
