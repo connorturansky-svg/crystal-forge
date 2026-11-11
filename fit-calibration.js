@@ -23,7 +23,7 @@ export function selectedFitResult(s,index){
  if(sample.profileId!==s.pixelProfileId)throw Error('Select the same LED profile used for the printed sample.');
  const i=Number(index);
  if(!Number.isInteger(i)||i<0||i>=sample.fits.length)throw Error('Select a valid printed hole position.');
- const previous=Number(s.pixelFit??.15),fitted=Number(sample.fits[i]);
+ const previous=Number(s.fitCalibration?.originalFit??s.pixelFit??.15),fitted=Number(sample.fits[i]);
  return {newFit:fitted,record:{originalFit:previous,selected:i,
   diameter:Number(sample.diameters[i]),profileId:sample.profileId,
   sampleKind:sample.kind,delta:round(fitted-previous)}};
