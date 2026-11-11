@@ -50,16 +50,18 @@ export function couponLegendCuts(wasm,hold,caption,cx,frontZ,topY){
  const v=(x,z,length)=>hold(wasm.Manifold.cube([stroke,depth+.3,length]).translate([x,topY-depth,z]));
  for(let i=0;i<glyphs.length;i++){
   const c=glyphs[i],x=xOrigin+i*step,active=segments[c]??'';
+  // The STL exporter maps Three.js Z to slicer -Y: smaller local Z is
+  // visually UP when viewed from above. The numerals must not flip after export.
   // A five-millimetre tall, three-millimetre wide seven-segment glyph.
   for(const segment of active){
-   if(segment==='a')bars.push(h(x,zOrigin+5,3.4));
+   if(segment==='a')bars.push(h(x,zOrigin,3.4));
    if(segment==='g')bars.push(h(x,zOrigin+2.5,3.4));
-   if(segment==='d')bars.push(h(x,zOrigin,3.4));
-   if(segment==='f')bars.push(v(x,zOrigin+2.5,2.5));
-   if(segment==='b')bars.push(v(x+2.5,zOrigin+2.5,2.5));
-   if(segment==='e')bars.push(v(x,zOrigin,2.5));
-   if(segment==='c')bars.push(v(x+2.5,zOrigin,2.5));
-   if(segment==='h')bars.push(h(x+1.5,zOrigin,1.05));
+   if(segment==='d')bars.push(h(x,zOrigin+5,3.4));
+   if(segment==='f')bars.push(v(x,zOrigin,2.5));
+   if(segment==='b')bars.push(v(x+2.5,zOrigin,2.5));
+   if(segment==='e')bars.push(v(x,zOrigin+2.5,2.5));
+   if(segment==='c')bars.push(v(x+2.5,zOrigin+2.5,2.5));
+   if(segment==='h')bars.push(h(x+1.5,zOrigin+5,1.05));
   }
  }
  return bars;
