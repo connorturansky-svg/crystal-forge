@@ -1,5 +1,13 @@
 # AI handover — read immediately after AGENTS.md
 
+## Current PR13/#19: final v0.15.0 software consolidation
+
+Merge candidate combines: legacy routed orphan socket cuts removed; true Manifold preview excludes duplicate Build overlays; unsafe serial strings block export; optional planar printer-bed-aware XY split in production ZIP with watertight Manifold parts (no tested connectors); 1/5 mm hardware keyboard nudges; production-release-gates JSON; expanded tests, benchmark, release instructions. [Complete acceptance](FINAL_PHASE_ACCEPTANCE.md).
+
+**Do not claim production safety, physical LED cable fit, printed optical passage connectivity, true slicer-aware support, structural joints or installed Cura profile validation from green CI.** PR12/#18 is merged, PR13/#19 remains draft until latest-head checks and manual acceptance. Keep user project data and measured pixel profiles intact.
+
+---
+
 ## Current PR12: remove duplicate short LED socket wire reliefs
 
 PR11/#17 is merged into main. User screenshot showed three underside pixels with correct main wire but a stray short straight line through each socket. The source is `fabrication-v1.js` `putSocket()`: it also cut local fixed-axis reliefs, unlike the new rotated serial route. In full serial `wireMode='string'` fabrication, disable these stand-alone cuts and use the actual shared `hardware.wirePlan.routes` geometry alone. Preserve all legacy routing modes and separate printable fitting coupon exits. [PR12 test guide](PR12_CABLE_GEOMETRY_TEST_GUIDE.md). Pass exact latest-head static, browser and Manifold CI. Physical Cura, LED retention and optical tests remain open.
