@@ -11,6 +11,9 @@ on:
       - 'wire-routing.js'
       - 'print-advisor.js'
       - 'pixel-profiles.js'
+      - 'pixel-profile-diagram.js'
+      - 'light-port-plan.js'
+      - 'cura-model-advisor.js'
       - 'cura-profiles.js'
       - 'print-quality.js'
       - 'optical-audit.js'
@@ -63,9 +66,24 @@ jobs:
         id: install
         continue-on-error: true
         run: |
-          set -o pipefail
-          (npm install --no-audit --no-fund && npx playwright install --with-deps chromium) > /tmp/browser-install.log 2>&1
-          cat /tmp/browser-install.log | tail -n 25
+          set +e
+          npm install --no-audit --no-fund > /tmp/npm-install.log 2>&1
+          npm_status=$?
+          if [ "$npm_status" -ne 0 ]; then
+            echo "NPM dependency installation failed:"
+            tail -n 90 /tmp/npm-install.log
+            exit "$npm_status"
+          fi
+          # Ubuntu runner already has Chromium runtime libraries; avoid an
+          # apt-get --with-deps network hang before the browser test starts.
+          npx playwright install chromium > /tmp/playwright-install.log 2>&1
+          browser_status=$?
+          if [ "$browser_status" -ne 0 ]; then
+            echo "Playwright Chromium download failed:"
+            tail -n 90 /tmp/playwright-install.log
+            exit "$browser_status"
+          fi
+          echo "Playwright Chromium installed successfully."
       - name: Start local static host
         if: steps.install.outcome == 'success'
         run: |
