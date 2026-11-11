@@ -34,6 +34,12 @@ export function planWireRoutes(crystals,s,hardware){
   slack=limit(Number(s.wireSlack)||0,0,30);
  const lanes=plan.lanes,pitch=Math.max(width+1.5,limit(Number(s.wirePairSpacing)||7,3,22));
  const obstacles=[...(hardware.mounts||[]),...(hardware.tabHoles||[]),...(hardware.tabs||[])];
+ const tracksSeparate=(a,b,kind)=>{
+  if(lanes!==2)return true;
+  const tilt=v=>Number(v?.wireAngle??0)*Math.PI/180;
+  const first=Math.cos(tilt(a)),last=Math.cos(tilt(kind==='exit'?a:b));
+  return pitch*Math.min(Math.abs(first),Math.abs(last))>=width+1.2&&first*last>0;
+ };
  const clearSegment=(a,b,edge=false,source=null,dest=null)=>{
   const d=dist(a,b);if(d<.15)return false;
   for(const o of obstacles){
@@ -67,6 +73,10 @@ export function planWireRoutes(crystals,s,hardware){
   return null;
  };
  const route=(from,to,kind,fromIndex,toIndex,edge=false)=>{
+  if(!tracksSeparate(from,to,kind)){
+   if(!plan.messages.some(m=>m.includes('wire rotation')))plan.messages.push('Paired wire rotation brings lanes too close or crosses them. Choose a rotation nearer 0° or 180°, or increase wire spacing.');
+   return false;
+  }
   const heading=Math.atan2(to.z-from.z,to.x-from.x);
   const segments=[];
   for(let lane=0;lane<lanes;lane++){
@@ -119,6 +129,17 @@ export function planWireRoutes(crystals,s,hardware){
    // Plan against the boundary, then let fabrication extend segment outward.
    const countBefore=plan.routes.length;
    if(route(source,point,'exit',0,null,true)){
+    const candidateExit=plan.routes.slice(countBefore);
+    const lastSegments=candidateExit.filter(piece=>candidateExit.filter(q=>q.lane===piece.lane).at(-1)===piece);
+    const blockedExtension=lastSegments.some(piece=>{
+     const endPoint={x:end.x+(piece.b.x-point.x),z:end.z+(piece.b.z-point.z)};
+     return obstacles.some(o=>dist(closest(o,piece.b,endPoint),o)<(Number(o.radius)||0)+width/2+1.2);
+    });
+    if(blockedExtension){
+     for(const piece of candidateExit)plan.lengthMm-=piece.lengthMm;
+     plan.routes.length=countBefore;
+     continue;
+    }
     for(const piece of plan.routes.slice(countBefore))if(piece.kind==='exit'){
      // The last segment of each lane reaches beyond the edge.
      const next=plan.routes.slice(countBefore).filter(p=>p.lane===piece.lane);
