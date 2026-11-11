@@ -5,6 +5,7 @@ import {zipProfileEntries,createCuraProfile} from './cura-profiles.js';
 import {assessPrintQuality,printChecklistText} from './print-quality.js';
 import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
 import {planHardware} from './hardware-layout.js';
+import {buildPixelStringMap} from './pixel-string-export.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
 const csv=rows=>rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n')+'\r\n';
 export function buildProductionPack({settings,crystals,report,stlBytes,extraFiles=[],assemblyWarnings=[]}){
@@ -17,9 +18,10 @@ export function buildProductionPack({settings,crystals,report,stlBytes,extraFile
   ['02_Editable/crystal-forge-project.json',JSON.stringify({version:3,settings:s,crystals},null,2)],
   ['03_Reports/print-checklist.txt',printChecklistText(assurance,s)],
   ['03_Reports/optical-audit.csv',opticalAuditCSV(optical)],
+  ['03_Reports/pixel-string-order-and-rgb-channels.csv',buildPixelStringMap(hardware)],
   ['03_Reports/wiring-plan.csv',csv([
-   ['Segment','Wire lane','From pixel','To pixel','X1','Z1','X2','Z2','Width mm','Depth mm','Length mm'],
-   ...(hardware.wirePlan?.routes||[]).map((r,i)=>[i+1,r.lane??1,r.from+1,r.to==null?'Edge':r.to+1,r.a.x,r.a.z,r.b.x,r.b.z,r.width,r.depth,r.lengthMm.toFixed(1)])
+   ['Segment','Kind','From','To','X1','Z1','X2','Z2','Width mm','Depth mm','Length mm'],
+   ...(hardware.wirePlan?.routes||[]).map((r,i)=>[i+1,r.kind,r.from==null?'EDGE IN':'P'+(r.from+1),r.to==null?'EDGE OUT':'P'+(r.to+1),r.a.x,r.a.z,r.b.x,r.b.z,r.width,r.depth,r.lengthMm.toFixed(1)])
   ])],
   ['03_Reports/parts-list.csv',csv([
    ['Component','Count','Notes'],
@@ -54,7 +56,8 @@ export function buildProductionPack({settings,crystals,report,stlBytes,extraFile
   'Generated from the validated prepared mesh. No Cura/G-code/physical safety certification.',
   '', '01_Model — prepared STL (Z-up)',
   '02_Editable — original editable Crystal Forge project JSON',
-  '03_Reports — model assumptions, wiring, pixel audit, print checklist and BOM',
+  '03_Reports — model assumptions, ordered cable IN/OUT routing, pixel audit, print checklist and BOM',
+  'Cable routes show physical cable bundles, NOT separate electrical conductors or a closed power loop.',
   '04_Cura — optional quality override profile (not firmware or machine definition)',
   '', 'STEPS:',
   '1. Open the matching printer and physically installed nozzle/core in Cura.',

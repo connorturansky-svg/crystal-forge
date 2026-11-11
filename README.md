@@ -1,4 +1,7 @@
-# Crystal Forge — Browser Studio v0.12.0
+# Crystal Forge — Browser Studio v0.13.0 candidate
+
+**Development candidate v0.13.0 / [PR #15](https://github.com/connorturansky-svg/crystal-forge/pull/15).** The public GitHub Pages app remains v0.12 until this draft PR merges. This version includes physical pixel-string IN/OUT grooves, numbered/ordered hardware, batch crystal edits, six-family weights, adjustable panels, saved templates, RGB index exports and cutaway preview. Follow the [PR9 hands-on test guide](docs/PR9_TEST_GUIDE.md). Physical Cura, filament, optical and mounting validation remains outstanding.
+
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, touch-considerate crystal sculptures. Physical safety and print strength must still be verified. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/
 
@@ -129,3 +132,4 @@ Lightweight syntax/wiring checks: `npm run test:static`. Existing representative
 **Edge fixing tabs:** Advanced Build → Mounting → Edge fixing tabs. Set number of equally spaced semicircular ears, holes per ear, diameter, thickness and plastic web. Build shows planned ears/holes; valid ones are fused into the prepared mesh, and crowded ears are skipped with a warning. Neither geometry tests nor tooltips certify load strength or suitable overhead fastening.
 
 **Help:** Hover buttons, tabs and sliders (or keyboard-focus them) for a short contextual explanation. See the in-app What's new panel and [testing instructions](docs/TESTING.md).
+

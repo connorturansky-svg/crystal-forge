@@ -9,6 +9,7 @@ export function assessOpticalAccess(crystals,s,report=null){
  const skipped=Number(report?.skippedHollowPorts||0)+Number(report?.skippedDirectLightPorts||0)+Number(report?.targetedLightSkipped?.length||0);
  const planned=planCrystalLightPorts(crystals,s);
  const cutIds=new Set((report?.lightPortDetails||[]).map(p=>p.id));
+ const targetedIds=new Set(report?.targetedLightAcceptedIds||[]);
  const results=crystals.filter(c=>!c.hidden).map(c=>{
   let nearest=null,distanceMm=Infinity;
   for(let i=0;i<sockets.length;i++){
@@ -23,6 +24,7 @@ export function assessOpticalAccess(crystals,s,report=null){
   else if(s.targetedLightPaths&&report?.targetedLightSkipped?.some(v=>v.id===c.id)){status='Conduit skipped';reason='Targeted planner rejected the geometry.'}
   else if(!hasOpenInterior){status='No modeled shared passage';reason='Solid roots can block light even if sparse infill is 0%.'}
   else if(narrow){status='Restricted root (review)';reason='Small root may not accommodate a safe light passage.'}
+  else if(targetedIds.has(c.id)){status='Targeted conduit cut — inspect Cura';reason='A base-to-spine tube was subtracted for this crystal. Manifold geometry does not prove the route survives slicing or produces light.';}
   else if(cutIds.has(c.id)){status='Modeled passage — inspect Cura';reason='A tapered direct bore was subtracted from the prepared mesh, but continuous open access and lighting are not yet verified.';}
   else if(planned.requested&&planned.enabled){status='Direct bore skipped / unverified';reason='No manufactured vault-to-spike opening was reported for this crystal.';}
   else{
@@ -33,7 +35,7 @@ export function assessOpticalAccess(crystals,s,report=null){
   return {id:c.id,name:c.name,nearestPixel:nearest===null?null:nearest+1,distanceMm:Number.isFinite(distanceMm)?Math.round(distanceMm*10)/10:null,
    rootRadiusMm:Math.round(rootRadius*10)/10,status,reason};
  });
- return {status:'Unverified optical connectivity',results,acceptedPixels:sockets.length,plannedDirectPorts:planned.ports.length,cutDirectPorts:cutIds.size,skippedPassages:skipped,
+ return {status:'Unverified optical connectivity',results,acceptedPixels:sockets.length,plannedDirectPorts:planned.ports.length,cutDirectPorts:cutIds.size,targetedConduits:targetedIds.size,skippedPassages:skipped,
   missingSources:results.filter(r=>r.nearestPixel===null).length,
   note:'This is a geometric proximity/feature audit, not a ray tracer or proof of LED-to-spike openness. Inspect real Cura slices and physical illumination.'};
 }

@@ -288,6 +288,25 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  assert(cutOne.wireChannelsCut>0,'Single pixel groove reaches real Manifold cutter');
  assert.equal(noExit.wireChannelsCut,0,'Without edge exit there is no single-pixel groove');
  assert(cutOne.volumeMm3<noExit.volumeMm3-1,'Actual underside groove removes measurable material');
+ // PR9: real cutter must subtract opposed entry + exit for ONE serial pixel,
+ // and route the same ordered connections as the Build/CSV planner.
+ const serialOne={...one,wireMode:'string',wireWidth:2,wireDepth:1.4};
+ const serialPlan=planHardware(generateFormation(serialOne),serialOne);
+ assert(serialPlan.wirePlan.ready,'Single string LED gets two complete physical edge routes');
+ assert.deepEqual(serialPlan.wirePlan.connections.map(x=>x.kind),['input','output']);
+ const serialMesh=validate('PR9 single-pixel IN and OUT grooves',serialOne);
+ assert.equal(serialMesh.wireChannelsCut,serialPlan.wirePlan.routes.length,
+  'Manifold removes every approved IN/OUT groove in the string plan');
+ const uncutSerial=validate('PR9 single-pixel wiring OFF',{...serialOne,wireChannels:false});
+ assert(serialMesh.volumeMm3<uncutSerial.volumeMm3-1,
+  'Opposed cable channels remove real material from Manifold geometry');
+ const serialTwo={...cfg,wireMode:'string',wireExit:true,wireWidth:2,wireDepth:1.4};
+ const serialTwoPlan=planHardware(generateFormation(serialTwo),serialTwo);
+ assert(serialTwoPlan.wirePlan.ready,'Two physical pixels have IN, ordered link and OUT paths');
+ assert.deepEqual(serialTwoPlan.wirePlan.connections.map(x=>x.kind),['input','link','output']);
+ const serialTwoMesh=validate('PR9 two-pixel serial cable grooves',serialTwo);
+ assert.equal(serialTwoMesh.wireChannelsCut,serialTwoPlan.wirePlan.routes.length);
+
  assert(prepared.roofReview?.needsCura,'Prepared model reports roof proxy and Cura caveat');
  const smallPrinter=validate('custom-printer',{...settings,printer:'Custom / other',printerX:30,printerY:30,printerZ:50});
  assert.equal(smallPrinter.printerFits,false,'Small custom machine is flagged as too small');

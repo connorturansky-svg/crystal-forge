@@ -99,10 +99,33 @@ body.theme-light .control-tooltip span{color:#334c6b}
 #contextHelp .cardbody{line-height:1.55}#contextHelpTitle{font-size:13px}
 @media(max-width:850px){body.descriptions-active .right{display:block}body.descriptions-active #contextHelp{position:fixed;bottom:14px;right:14px;z-index:40;width:min(300px,calc(100vw - 28px));max-height:42vh;overflow:auto}}
 #shapeScope{margin:2px 0 8px}body .shape-selected{border-left:3px solid #49ef9b;background:#1b453a;color:#cbffe5;padding:10px;border-radius:6px}body.theme-light .shape-selected{background:#daf7e8;color:#136039}#multiplePixelsRow:not(.show){display:none!important}.viewbuttons button.active{background:#315d96!important;color:white!important}
+
+/* Numbered interactive hardware markers overlay the live 3D model; not STL geometry. */
+.hardware-marker-layer{position:absolute;inset:0;z-index:4;pointer-events:none}
+.hardware-marker{position:absolute;transform:translate(-50%,-50%);z-index:1;min-width:27px;height:27px;padding:2px 5px;border:2px solid #fff8d4;border-radius:999px;pointer-events:auto;color:#081525;background:#ffdc58;font-size:11px;line-height:1;box-shadow:0 2px 8px #071525bb;cursor:pointer;font-weight:800}
+.hardware-marker[data-hw-kind="mount"],.hardware-marker[data-hw-kind="tab"]{background:#b985ff;border-color:#eee2ff}
+.hardware-marker.invalid{background:#ff536b;border-color:#fff}
+.hardware-marker.selected{outline:4px solid #15e7d2;outline-offset:2px;z-index:3;transform:translate(-50%,-50%) scale(1.16)}
+.hardware-marker:focus-visible{outline:4px solid #15e7d2}
+.hardware-edit-item{border:1px solid #344b6e;border-radius:10px;padding:8px 7px;margin:8px 0;background:#14253a}
+.hardware-edit-item.selected{border:2px solid #35e5cd;background:#214553}
+.hardware-edit-heading{display:flex;gap:6px;align-items:center;justify-content:space-between;margin-bottom:5px}
+.hardware-edit-heading button{padding:4px 8px}
+.hardware-edit-item[draggable="true"]{cursor:grab}
+.hardware-context-menu{position:absolute;z-index:11;display:flex;flex-direction:column;gap:7px;width:208px;padding:11px;border-radius:11px;background:#192b45;color:#f4f8ff;border:1px solid #8bbcff;box-shadow:0 8px 30px #0008}
+.hardware-context-menu[hidden],.hardware-marker-layer[hidden]{display:none!important}
+.hardware-context-menu button{text-align:left;padding:7px 9px}
+/* Drag or keyboard-resize left/right panels; 3D viewport gets remaining space. */
+.layout{position:relative}
+.workspace-resizer{position:absolute;top:0;bottom:0;width:9px;z-index:7;cursor:col-resize;background:transparent;touch-action:none}
+.workspace-resizer:hover,.workspace-resizer:focus-visible{background:#45b9e6aa;outline:1px solid #8ee8ff}
+.workspace-resizer[hidden]{display:none!important}
+.treeentry.child.batch-selected{border-color:#2cc6fa;background:#214665}
+.treeentry.child input[data-batch-id]{width:15px;height:15px;accent-color:#4ce9ff;margin-right:3px;cursor:pointer}
 </style></head>
 <body class="simple">
 <header class="topbar">
-<div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.12.0 · Cluster Studio</span><span class="filename" id="projectName">Untitled cluster</span></div>
+<div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.13.0 · Combined Studio</span><span class="filename" id="projectName">Untitled cluster</span></div>
 <nav class="workspace-tabs"><button class="active" data-tab="design">◇ Design</button><button data-tab="build">⚙ Build</button><button data-tab="print">▣ Print</button></nav>
 <div class="topcluster utility"><div class="modebar"><button id="simpleBtn" class="active">Simple</button><button id="advancedBtn">Advanced</button></div><button id="themeBtn" class="utility-button" title="Switch to light theme" aria-label="Switch theme">☀ Light</button><button id="helpBtn" class="utility-button" title="Help and keyboard shortcuts">? Help</button><button id="descriptionsBtn" class="utility-button" aria-pressed="false" title="Show a panel explaining controls and mounting types">ⓘ Descriptions</button><button id="changelogBtn" class="utility-button" title="Version history and changes">✦ What’s new</button><button id="saveBtn" title="Download editable project">↓ Save</button><button id="loadBtn" title="Open project">↑ Open</button><input type="file" id="loadFile" accept=".json,application/json"></div>
 </header>
@@ -127,8 +150,20 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div id="shapeScope" class="success">Global controls — all crystals. Select a crystal to edit only that crystal.</div>
 <div class="buttonrow" style="margin:8px 0 12px"><button id="clearCrystalSelection" hidden>↩ Edit all crystals</button><button id="resetCrystalShape" hidden>Reset individual overrides</button></div>
 <div class="buttonrow"><select id="shapePresetSelect" aria-label="Crystal shaping preset"><option>Classic Quartz</option><option>Tall Needles</option><option>Broad Geode</option><option>Soft Rounded</option><option>Blade Shards</option></select><button type="button" id="applyShapePresetBtn">Apply preset</button></div>
+<div class="divider"></div><label class="note">Saved design templates (stored in this browser)</label>
+<select id="templateSelect" class="full" aria-label="Saved design template"><option value="">Choose a saved design…</option></select>
+<div class="buttonrow"><button type="button" id="saveTemplateBtn">＋ Save design</button><button type="button" id="loadTemplateBtn">↩ Load</button><button type="button" id="deleteTemplateBtn">✕ Delete</button></div>
+<p class="note">Keeps named editable models and settings on this device. Use Export Project JSON for portable backups.</p>
 <p class="note">Applies to the selected unlocked crystal or globally when none is selected. Presets can be refined with the sliders and undone.</p>
 <div class="control"><label>Crystal family</label><select data-state="familyMix"><option>Quartz</option><option>Shard</option><option>Blade</option><option>Cubic</option><option>Double terminated</option><option>Fantasy</option><option>Mixed</option></select></div>
+<div id="familyWeightsControls" hidden><p class="note">Mixed family weights. 0× excludes a family; higher numbers make it more likely. Reproducible for the same seed.</p>
+<div class="control"><label>Quartz<output>1×</output></label><input type="range" data-family-weight="Quartz" min="0" max="10" step="1" value="1"></div>
+<div class="control"><label>Shard<output>1×</output></label><input type="range" data-family-weight="Shard" min="0" max="10" step="1" value="1"></div>
+<div class="control"><label>Blade<output>1×</output></label><input type="range" data-family-weight="Blade" min="0" max="10" step="1" value="1"></div>
+<div class="control"><label>Cubic<output>1×</output></label><input type="range" data-family-weight="Cubic" min="0" max="10" step="1" value="1"></div>
+<div class="control"><label>Double terminated<output>1×</output></label><input type="range" data-family-weight="Double terminated" min="0" max="10" step="1" value="1"></div>
+<div class="control"><label>Fantasy<output>1×</output></label><input type="range" data-family-weight="Fantasy" min="0" max="10" step="1" value="1"></div>
+</div>
 <div class="control"><label>Bottom width adjustment <output data-out="bottomScale"></output></label><input data-state="bottomScale" type="range" min=".15" max="5" step=".05"></div>
 <div class="control"><label>Top / shoulder width adjustment <output data-out="topScale"></output></label><input data-state="topScale" type="range" min=".15" max="5" step=".05"></div>
 <p class="note">Top and bottom are separate adjustments relative to Crystal starting size: 0% = unchanged, negative = narrower, positive = wider (up to +400%).</p>
@@ -192,17 +227,21 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="buttonrow"><button id="fitOverrideToolBtn" type="button" hidden title="Review the calibrated hole">⚙ Calibrated fit</button><button id="resetFitOverrideBtn" type="button" hidden>↺ Reset calibration</button></div>
 <div class="divider"></div><div class="cardtitle" style="padding:6px 0">⤳ Optional underside wiring channels</div>
 <label class="checks"><input type="checkbox" data-state="wireChannels"> Carve underside wire channels between accepted LEDs</label>
-<label class="checks"><input type="checkbox" data-state="wireExit"> Route first pixel to a safe base edge</label>
-<div class="control"><label>Wire arrangement</label><select data-state="wireMode"><option value="single">Single channel</option><option value="parallel">Two parallel wires</option></select></div>
-<div class="control"><label>Parallel wire centres <output data-out="wirePairSpacing"></output></label><input data-state="wirePairSpacing" type="range" min="3" max="22" step=".5"></div>
-<div class="buttonrow"><button id="singleWireExitBtn" type="button">⌁ Enable a groove to the outside edge</button><button type="button" id="pickWireExitBtn">⌖ Pick paired wire exit on model</button></div>
+<div class="control"><label>Physical cable layout</label><select data-state="wireMode">
+<option value="string">Pixel string — IN / OUT, ordered P1 → P2</option>
+<option value="single">Legacy single-groove route (old projects)</option>
+<option value="parallel">Legacy paired side-by-side grooves (old projects)</option>
+</select></div>
+<label class="checks"><input type="checkbox" data-state="wireExit"> Legacy modes: add external route from first pixel</label>
+<div class="control"><label>Legacy paired channel spacing <output data-out="wirePairSpacing"></output></label><input data-state="wirePairSpacing" type="range" min="3" max="22" step=".5"></div>
+<div class="buttonrow"><button id="singleWireExitBtn" type="button">⌁ Enable ordered pixel-string grooves</button><button type="button" id="pickWireEntryBtn">⌖ Pick IN edge</button><button type="button" id="pickWireExitBtn">⌖ Pick OUT edge</button></div>
 <p id="wireRouteStatus" class="note" aria-live="polite">Enable underside wiring to inspect calculated channels.</p>
 <div class="advanced-only">
 <div class="control"><label>Channel width <output data-out="wireWidth"></output></label><input data-state="wireWidth" type="range" min="1.5" max="9" step=".25"></div>
 <div class="control"><label>Channel depth <output data-out="wireDepth"></output></label><input data-state="wireDepth" type="range" min=".8" max="5" step=".2"></div>
 <div class="control"><label>Extra cable slack <output data-out="wireSlack"></output></label><input data-state="wireSlack" type="range" min="0" max="30" step="5"></div>
 </div>
-<p class="note">Single and two-parallel-wire modes cut real grooves. The two exits are computed together from the LED rotation and gap. Pick a common end centre on the edge or enter X/Z on the LED card. Cyan guides show accepted routes; full fixing tabs are obstacles, so unsafe paths are skipped. These are not insulated electrical conduits. Routes require a solid base.</p>
+<p class="note"><strong>Pixel string:</strong> every LED has two cable-bundle tails on opposite sides. The first IN and final OUT each reach the exterior, including with only one pixel. The order of P1, P2… in the hardware list sets the groove route; ↑↓ and drag change the order without moving pixels. Pick each perimeter opening independently. Legacy single/parallel modes remain only for imported projects. Cyan outlines show <em>physical cable channels</em>, not separate conductors or an electrical loop. Unsafe routes are rejected; test real wire/strain relief before printing.</p>
 <p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p><div class="divider"></div><label class="checks"><input data-state="glowPreview" type="checkbox"> Preview the whole cluster glowing one colour</label>
 <div class="control"><label>Simulated LED colour</label><select data-state="glowColour"><option value="0x77c4ff">Ice blue</option><option value="0xffa3df">Pink</option><option value="0xa58bff">Purple</option><option value="0xffdb8b">Warm white</option><option value="0x9affbc">Green</option><option value="0xffffff">Cool white</option></select></div>
 <p class="note">Illustrative glow only — real brightness depends on filament translucency, wall thickness, cavity connectivity and LED placement.</p>
@@ -229,13 +268,13 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <p class="note warning">Overhead installations need independently verified load-bearing fixings and secondary retention.</p>
 </div></div>
 <div class="card amber"><div class="cardtitle">◎ Hardware hole editor</div><div class="cardbody">
-<p class="note">LED holes appear yellow, mounting holes purple and edge tabs violet in Build. Red manual holes are invalid and will not be cut.</p>
+<p class="note">Numbered 3D hardware labels match this list: P1… = string pixels, M1… = mounting holes, T1… = tabs. Click a marker to highlight its card; select a card to highlight the marker. Drag or ↑↓ to change the pixel-string order. Double-click an empty part of the model to choose a new pixel or mounting hole. Red markers are invalid and not cut.</p>
 <p id="hardwareGuideSummary" class="softnotice">Hole layout pending…</p>
 <label class="checks"><input data-state="hardwareSnap" type="checkbox"> Snap new/manual hardware positions to a grid</label>
 <div class="control"><label>Hardware snap grid <output data-out="hardwareSnapStep"></output></label><input data-state="hardwareSnapStep" type="range" min=".5" max="20" step=".5"></div>
 <div class="buttonrow"><button id="placePixelBtn">＋ Place / move LED</button><button id="placeMountBtn">＋ Place mounting hole</button></div>
 <div class="buttonrow" style="margin-top:6px"><button id="stopHolePlacementBtn">✕ Stop placing</button></div>
-<p id="placementHint" class="note">Click to add hardware, or Shift-drag an existing LED, mounting hole or edge tab. Use Pick paired wire exit to set the two aligned wire endpoints at a chosen perimeter position.</p>
+<p id="placementHint" class="note">Click to add hardware, or Shift-drag an existing LED, mounting hole or edge tab. Use Pick IN / OUT edge to place separate pixel string tails at a chosen perimeter position.</p>
 <div id="manualHardwareList"></div>
 </div></div>
 </section>
@@ -282,7 +321,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="divider"></div>
 <button id="steppedPixelCouponBtn" type="button" style="width:100%">⌖ Generate stepped pixel + wire-relief fit coupon</button>
 <p class="note">Three physically engraved socket diameters (left → right). Their two cable grooves now cut completely through the coupon’s external side walls. Test flange fit, wire relief and extraction.</p>
-<div class="buttonrow"><button id="wiringCsvBtn">↓ Wiring plan CSV</button><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div><div class="divider"></div>
+<div class="buttonrow"><button id="wiringCsvBtn">↓ Wiring plan CSV</button><button id="pixelStringMapBtn">↓ P1… RGB index CSV</button><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div>
+<p class="note">RGB index map uses 3 consecutive channels per WS2811 pixel in your chosen physical string order; it does not program xLights/FPP or assign controller universe/output settings.</p><div class="divider"></div>
 <div class="control"><label>Calibration strip type</label><select data-state="fitCouponStyle"><option value="stepped">Stepped body, cap, flange and wire relief</option><option value="plain">Simple diameter-only holes</option></select></div>
 <button id="calibrationBtn" style="width:100%">⌖ Generate selected pixel-fit test strip (STL)</button>
 <p class="note">Five sizes from left to right, each labelled in millimetres by engraved numerals on the coupon's top face. Full-body samples have wire channels opening through both side walls.</p>
@@ -328,12 +368,19 @@ body.theme-light .control-tooltip span{color:#334c6b}
  <div class="viewtools"><div class="toolgroup" id="gizmoTools" title="Select an individual crystal first">
  <button data-tool="select" class="active" title="Select (V)">↖</button><button data-tool="translate" title="Move (G)">✥</button><button data-tool="rotate" title="Rotate (R)">⟳</button><button data-tool="scale" title="Scale (S)">⤢</button></div>
  <div class="vcolumn"><div class="viewbuttons"><button data-view="iso" title="Isometric view">ISO</button><button data-view="front" title="Front view">FR</button><button data-view="back" title="Back view">BK</button><button data-view="left" title="Left view">LT</button><button data-view="right" title="Right view">RT</button><button data-view="top" title="Top view">TOP</button><button data-view="bottom" title="Underside view / LED sockets">BOT</button></div>
- <div class="viewbuttons"><button data-look="solid" class="active">Solid</button><button data-look="wire">Wire</button><button data-look="xray">X-ray</button><button id="centreViewBtn" title="Centre camera and orbit pivot on the complete model">⌖ Centre model</button><button id="floatBtn" title="Hide grid and inspect floating object">◇ Floating</button><button id="studioLightBtn" title="Toggle even all-round studio lighting for the floating model">☼ Even light: On</button><button id="gridBtn">Grid</button><button id="hardwareColoursBtn" title="Highlight LED sockets yellow and mounting inserts purple">◎ Hardware IDs</button></div>
+ <div class="viewbuttons"><button data-look="solid" class="active">Solid</button><button data-look="wire">Wire</button><button data-look="xray">X-ray</button><button id="sectionCutBtn" type="button" aria-pressed="false" title="Preview a half-model cutaway to inspect interior features; this does not change STL geometry">½ Cutaway</button><button id="centreViewBtn" title="Centre camera and orbit pivot on the complete model">⌖ Centre model</button><button id="floatBtn" title="Hide grid and inspect floating object">◇ Floating</button><button id="studioLightBtn" title="Toggle even all-round studio lighting for the floating model">☼ Even light: On</button><button id="gridBtn">Grid</button><button id="hardwareColoursBtn" title="Highlight LED sockets yellow and mounting inserts purple">◎ Hardware IDs</button></div>
  <div class="axiskey"><b class="x">X • Red</b><b class="y">Y • Green</b><b class="z">Z • Blue</b></div></div></div>
  <div class="footbar"><div id="status">Loading 3D editor…</div><div><span id="footerStats">—</span> · mm · mouse orbit / scroll zoom</div></div>
 </main>
 <aside class="right"><div id="contextHelp" class="card teal" hidden><div class="cardtitle">ⓘ Control descriptions</div><div class="cardbody"><strong id="contextHelpTitle">Select a control</strong><p id="contextHelpBody" class="note">Hover or focus any setting for an explanation.</p><p class="note">Printed hardware still needs measurement and physical testing.</p></div></div><div class="panelhead"><h2>Project explorer</h2><span>LIVE OBJECTS</span></div>
 <div class="card purple"><div class="cardtitle"><span class="symbol">☷</span> Object tree <span class="pill" id="treeCount">0</span></div><div class="cardbody tree" id="objectTree"></div></div>
+<div class="card teal"><div class="cardtitle">◈ Batch crystal selection <span id="batchSelectedCount" class="pill">0</span></div><div class="cardbody">
+<p class="note">Tick crystals in the tree or Ctrl-click a crystal in the 3D view. Group actions skip locked crystals; individual gizmo editing remains available.</p>
+<div class="buttonrow"><button type="button" id="batchSelectAll">Select all</button><button type="button" id="batchClear">Clear selection</button></div>
+<div class="grid2"><div class="control"><label>Move X (mm)</label><input id="batchMoveX" type="number" value="0" step="1"></div><div class="control"><label>Move Z (mm)</label><input id="batchMoveZ" type="number" value="0" step="1"></div></div>
+<div class="buttonrow"><button id="batchApplyMove" type="button">Move group</button><button id="batchScaleDown" type="button">−10% size</button><button id="batchScaleUp" type="button">+10% size</button></div>
+<div class="buttonrow"><button id="batchLock" type="button">Lock group</button><button id="batchHide" type="button">Hide group</button></div>
+</div></div>
 <div class="card blue"><div class="cardtitle"><span class="symbol">✥</span> Selected object</div><div class="cardbody" id="selectionPane"><p class="note">Select a crystal to edit its position and dimensions.</p></div></div>
 <div class="card teal"><div class="cardtitle"><span class="symbol">▧</span> Model information</div><div class="cardbody">
 <div class="stat"><span>Triangles</span><strong id="triangleCount">—</strong></div><div class="stat"><span>Footprint</span><strong id="footprint">—</strong></div><div class="stat"><span>Height</span><strong id="modelHeight">—</strong></div><div class="stat"><span>Pixels planned</span><strong id="pixelStats">—</strong></div>
@@ -388,7 +435,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
    <div class="safety"><strong>Fabrication warning:</strong> Use Print → Prepare Print for a Boolean-unioned, topologically validated manufacturing mesh. Hollowing is an approximate inset; LED sockets require fit calibration; unsupported regions need review in Cura before physical printing.</div>
   </div>
   <div class="dialog-body" data-info-pane="changelog" hidden>
-   <p>Changes are committed to GitHub. Development branches are not deployed until merged.</p><div class="release"><strong>v0.12.0 — PR7: Physical light routes and fabrication</strong><div><time>11 November 2026</time></div><ul><li>Targeted LED-to-crystal physical bores with skipped-port diagnostics.</li><li>Manual per-LED measured profiles and three-position stepped fit coupons.</li><li>Detachable M3 inserts, matching plate STL and packaged modular parts.</li><li>Expanded Cura flow guidance, worker progress and opt-in 10/16/40/60 benchmarks.</li><li>Optical and mounting safety still require real physical tests.</li></ul></div><div class="release"><strong>v0.11.0 — PR6: Five-phase integration</strong><div><time>11 November 2026</time></div><ul><li>Model-aware Cura checks and per-crystal optical candidate audit.</li><li>Optional experimental LED retaining ridge and matching dowels in split part exports.</li><li>Reusable crystal presets, hardware grid snapping and one-click complete production ZIP.</li><li>All five phases are represented by code; full physical and advanced feature acceptance remains outstanding.</li></ul></div><div class="release"><strong>v0.10.0 — PR5: physical wiring and print diagnostics</strong><div><time>11 November 2026</time></div><ul><li>Optional open-bottom cable tracks, cyan route previews, edge exit, slack, actual manufacturing cuts and route CSV.</li><li>Selected-pixel fit coupon for gumdrops, bullets, small seeds or custom profiles.</li><li>Custom printer build dimensions and conservative zero-infill roof-span screening.</li><li>Print → Cura profile: select machine, supported nozzle, PLA/PETG, quality and intention; download a ZIP-based .curaprofile for import and review in Cura.</li><li>Full outstanding roadmap consolidated into five large delivery packages; later mechanical, optical and reliability phases remain queued.</li></ul></div><div class="release"><strong>v0.9.0 — PR4: base, pixels and descriptions</strong><div><time>11 November 2026</time></div><ul><li>Full hill, flat plinth and blended dome with editable falloff and side-wall amount.</li><li>Generic seed, bullet and gumdrop profiles and measured custom pixel library.</li><li>Profile-specific real socket cuts, blind rounded ceiling, flange and shallow wire reliefs.</li><li>Optional descriptions panel with specific mounting guidance, alongside existing hover help.</li><li>Physical fit, print supports and lighting connectivity remain to be checked in Cura.</li></ul></div><div class="release"><strong>v0.8.0 — Extreme shaping, rigid lean and softer studio light</strong><div><time>10 November 2026</time></div><ul>
+   <p>Changes are committed to GitHub. Development branches are not deployed until merged.</p><div class="release"><strong>v0.13.0 — PR9: Combined hardware and creative studio</strong><div><time>11 November 2026</time></div><ul><li>Ordered pixel string IN/OUT grooves with separate edge tails, numbered hardware overlays and reorderable Build cards.</li><li>Weighted crystal families, batch selection/editing, saved design templates, resizable panels, half-model cutaway.</li><li>RGB channel mapping CSV, manufacturing ZIP and conservative Cura/optical warnings. Physical print and LED checks remain essential.</li></ul></div><div class="release"><strong>v0.12.0 — PR7: Physical light routes and fabrication</strong><div><time>11 November 2026</time></div><ul><li>Targeted LED-to-crystal physical bores with skipped-port diagnostics.</li><li>Manual per-LED measured profiles and three-position stepped fit coupons.</li><li>Detachable M3 inserts, matching plate STL and packaged modular parts.</li><li>Expanded Cura flow guidance, worker progress and opt-in 10/16/40/60 benchmarks.</li><li>Optical and mounting safety still require real physical tests.</li></ul></div><div class="release"><strong>v0.11.0 — PR6: Five-phase integration</strong><div><time>11 November 2026</time></div><ul><li>Model-aware Cura checks and per-crystal optical candidate audit.</li><li>Optional experimental LED retaining ridge and matching dowels in split part exports.</li><li>Reusable crystal presets, hardware grid snapping and one-click complete production ZIP.</li><li>All five phases are represented by code; full physical and advanced feature acceptance remains outstanding.</li></ul></div><div class="release"><strong>v0.10.0 — PR5: physical wiring and print diagnostics</strong><div><time>11 November 2026</time></div><ul><li>Optional open-bottom cable tracks, cyan route previews, edge exit, slack, actual manufacturing cuts and route CSV.</li><li>Selected-pixel fit coupon for gumdrops, bullets, small seeds or custom profiles.</li><li>Custom printer build dimensions and conservative zero-infill roof-span screening.</li><li>Print → Cura profile: select machine, supported nozzle, PLA/PETG, quality and intention; download a ZIP-based .curaprofile for import and review in Cura.</li><li>Full outstanding roadmap consolidated into five large delivery packages; later mechanical, optical and reliability phases remain queued.</li></ul></div><div class="release"><strong>v0.9.0 — PR4: base, pixels and descriptions</strong><div><time>11 November 2026</time></div><ul><li>Full hill, flat plinth and blended dome with editable falloff and side-wall amount.</li><li>Generic seed, bullet and gumdrop profiles and measured custom pixel library.</li><li>Profile-specific real socket cuts, blind rounded ceiling, flange and shallow wire reliefs.</li><li>Optional descriptions panel with specific mounting guidance, alongside existing hover help.</li><li>Physical fit, print supports and lighting connectivity remain to be checked in Cura.</li></ul></div><div class="release"><strong>v0.8.0 — Extreme shaping, rigid lean and softer studio light</strong><div><time>10 November 2026</time></div><ul>
 <li>Global Crystal starting size scales all crystal diameters from 50% to 400% without altering heights or individual edits.</li>
 <li>Independent top/bottom width offsets now range from -85% to +400%, with repeatable width randomness per crystal.</li>
 <li>Leaning physically rotates each crystal instead of stretching it, and full root perimeters remain embedded in the mound.</li>

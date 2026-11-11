@@ -1,3 +1,23 @@
+# PR9 — Combined outstanding development (v0.13 experimental)
+
+**Active executable implementation:** [Draft PR #15](https://github.com/connorturansky-svg/crystal-forge/pull/15) combines major software work across [issues #1, #6–#10](https://github.com/connorturansky-svg/crystal-forge/issues). [Hands-on test guide](PR9_TEST_GUIDE.md) provides test cases and physical acceptance boundaries. The live GitHub Pages site remains v0.12 until reviewed merge.
+
+| Track | Implemented in PR9 | Still needs development or physical testing |
+| --- | --- | --- |
+| B · Serial LED wiring | P1 IN → Pn OUT physical cable-bundle grooves, separate edge entry/output even for one pixel, safe fail-closed routing, stable IDs and RGB index CSV | Actual cable fitting, strain relief, physical light output and LED service clips |
+| D · Editor | Numbered P/M/T 3D markers, linked Build cards, reordering, contextual double-click add, adjustable panel sizes, six-family weighted mixing, named local templates and batch selection/edits | Full multi-object gizmo, advanced material simulation, mobile/teacher UI and shared component library |
+| A · Print/Cura | Wall/roof and blocked serial-route warnings, cutaway preview, existing profile generator and STL/3MF retained | Actual Cura slice validation, true slicer-aware bridge detection and reliable print tolerances |
+| C · Modular | Retained PR7 registered M3 plate, split parts and dowels | Automatic multi-plane bed nesting, tested connectors and load ratings |
+| E · QA | Added serial Manifold, identity, template, weighted and browser test fixtures; wiring CSV/production ZIP updates | Thorough memory/cancel stress tests, old project migration fixtures and actual hardware samples |
+
+**Unverified:** browser/manufacturing checks must pass on the latest PR commit. This software cannot certify mechanical/overhead safety, structural strength, optical transmission or physical printing. Open issues remain open for unmet requirements.
+
+## PR8 — merged planning phase
+
+[PR8 #14](https://github.com/connorturansky-svg/crystal-forge/pull/14) merged the design requirements into main; it intentionally did not implement serial wiring or the hardware UI. PR9 implements the first working code.
+
+---
+
 # Next phase — PR8: physical pixel-string routing and identifiable hardware
 
 **Status: planning draft; no implementation in PR8 yet.** [PR8 P0 specification](PR8_CRITICAL_WIRING_AND_HARDWARE.md) supersedes the old side-by-side paired-wire assumption as the **highest-priority** software task. **P0-A:** each pixel has opposed IN/OUT cable tails, the first and last tails reach safe base edges even for one pixel, and explicit pixel ordering defines every physical route (not greedy/side-by-side tracks). **P0-B:** numbered P1/P2/… and M1/M2/… 3D markers linked to Build cards, sortable pixel order, and a double-click contextual Add Pixel / Add Mount menu. **P0-C:** shared planner, true Manifold cuts, regression fixtures, export/persistence consistency. **P1:** targeted real light paths, Cura thin-wall/bridging and measured service/strain relief. Track [#7](https://github.com/connorturansky-svg/crystal-forge/issues/7) and [#9](https://github.com/connorturansky-svg/crystal-forge/issues/9) first, then [#6](https://github.com/connorturansky-svg/crystal-forge/issues/6).

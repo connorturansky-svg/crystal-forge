@@ -4,6 +4,7 @@
  */
 import {baseSurfaceHeight} from './geometry-v3.js';
 import {nearestEdgePosition} from './edge-tabs.js';
+import {planPixelStringRoutes} from './pixel-string-routing.js';
 const limit=(n,a,b)=>Math.max(a,Math.min(b,n));
 const dist=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
 const closest=(p,a,b)=>{
@@ -23,6 +24,8 @@ const rotatedOffset=(pixel,side,pitch,heading)=>{
  return {x:-Math.sin(rad)*side*pitch/2,z:Math.cos(rad)*side*pitch/2};
 };
 export function planWireRoutes(crystals,s,hardware){
+ if(s.wireMode==='string')return planPixelStringRoutes(crystals,s,hardware);
+ // Legacy modes deliberately remain readable for old saved projects.
  const plan={enabled:!!s.wireChannels,routes:[],lengthMm:0,unrouted:0,exitAdded:false,messages:[],lanes:s.wireMode==='parallel'?2:1};
  if(!plan.enabled)return plan;
  const sockets=hardware.sockets||[],poly=hardware.polygon||[];

@@ -3,6 +3,7 @@ import {planHardware} from './hardware-layout.js';
 import {resolvePixelProfile,allPixelProfiles} from './pixel-profiles.js';
 import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
 import {nearestEdgePosition} from './edge-tabs.js';
+import {ensureHardwareIds,movePixelInString,hardwareName} from './hardware-identity.js';
 
 export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,onEdit,onStatus}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
@@ -19,15 +20,68 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  preview.visible=false;
  const ray=new THREE.Raycaster(),cursorNDC=new THREE.Vector2();
  const ground=new THREE.Plane(new THREE.Vector3(0,1,0),0);
- let placing=null,pointerStart=null,lastCursor=null,draggingHole=null;
+ let placing=null,pointerStart=null,lastCursor=null,draggingHole=null,selectedHardware=null;
+ const markerLayer=document.createElement('div');
+ markerLayer.className='hardware-marker-layer';
+ renderer.domElement.parentElement.appendChild(markerLayer);
+ const markerObjects=[];
+ const contextMenu=document.createElement('div');
+ contextMenu.className='hardware-context-menu';
+ contextMenu.hidden=true;
+ contextMenu.innerHTML='<strong>Add to this position</strong><button type="button" data-context-add="pixel">＋ Pixel hole</button><button type="button" data-context-add="mount">＋ Mounting hole</button><button type="button" data-context-cancel="1">Cancel</button>';
+ renderer.domElement.parentElement.appendChild(contextMenu);
+ let contextPoint=null;
+ const clearContext=()=>{contextMenu.hidden=true;contextPoint=null};
  const numeric=v=>Number(v).toFixed(1);
  const isBuild=()=>!!document.querySelector('[data-tab="build"].active');
  const getPlan=()=>planHardware(getCrystals(),getSettings());
  function clear(){
   for(const m of [...guides.children]){guides.remove(m);m.geometry.dispose();m.material.dispose()}
+  markerLayer.replaceChildren();markerObjects.length=0;
  }
+ function showSelection(kind,id,index,scroll=true){
+  selectedHardware={kind,id,index};
+  refresh();
+  if(scroll){
+   const card=[...document.querySelectorAll('[data-hw-card-kind]')].find(el=>el.dataset.hwCardKind===kind&&el.dataset.hwCardId===id);
+   card?.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  onStatus('Selected '+hardwareName(kind,index)+' · edit it in the Build panel');
+ }
+ function addMarker(kind,p,index,invalid=false){
+  if(!Number.isFinite(p.x)||!Number.isFinite(p.z))return;
+  const id=String(p.id||kind+'-'+index),label=hardwareName(kind,index);
+  const button=document.createElement('button');
+  button.type='button';button.className='hardware-marker'+(invalid?' invalid':'')+(selectedHardware?.kind===kind&&selectedHardware.id===id?' selected':'');
+  button.textContent=label;button.title=label+' · click to edit '+kind;
+  button.dataset.hwKind=kind;button.dataset.hwId=id;button.dataset.hwIndex=String(index);
+  button.setAttribute('aria-label','Select '+label+' '+kind);
+  button.onclick=e=>{e.stopPropagation();showSelection(kind,id,index)};
+  button.ondblclick=e=>{e.preventDefault();e.stopPropagation();showSelection(kind,id,index)};
+  markerLayer.appendChild(button);markerObjects.push({button,p});
+ }
+ function positionMarkers(){
+  const build=isBuild(),rect=renderer.domElement.getBoundingClientRect();
+  markerLayer.hidden=!build||!!placing;
+  if(build&&!placing&&rect.width&&rect.height)for(const {button,p} of markerObjects){
+   const pt=new THREE.Vector3(p.x,.8,p.z).project(camera);
+   const visible=pt.z>-1&&pt.z<1&&Math.abs(pt.x)<1.2&&Math.abs(pt.y)<1.2;
+   button.hidden=!visible;
+   if(visible){
+    button.style.left=((pt.x+1)*.5*rect.width)+'px';
+    button.style.top=((1-pt.y)*.5*rect.height)+'px';
+   }
+  }
+  requestAnimationFrame(positionMarkers);
+ }
+ requestAnimationFrame(positionMarkers);
  function draw(plan){
   clear();
+  plan.sockets.forEach((p,i)=>addMarker('pixel',p,i));
+  plan.mounts.forEach((p,i)=>addMarker('mount',p,i));
+  plan.tabHoles.forEach((p,i)=>addMarker('tab',p,i));
+  for(const p of plan.invalidManualPixels||[])addMarker('pixel',{...p,id:'invalid-pixel-'+p.index},p.index,true);
+  for(const p of plan.invalidManualMounts||[])addMarker('mount',{...p,id:'invalid-mount-'+p.index},p.index,true);
   // Preview the exact planned semicircular-tab footprint and through holes
   // before performing any expensive Manifold union.
   for(const tab of plan.tabs||[]){
@@ -74,15 +128,19 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   guides.visible=isBuild();
  }
  function refresh(){
-  const s=getSettings(),plan=getPlan();
+  const s=getSettings();
+  ensureHardwareIds(s);
+  const plan=getPlan();
   draw(plan);
   const routing=plan.wirePlan;
   if($('wireRouteStatus')){
-   $('wireRouteStatus').textContent=!routing?.enabled?'Wiring grooves are off. Enable them to plan a push-fit underside channel.':
-     routing.routes.length
-       ?routing.routes.length+' actual groove segment(s) planned · '+routing.lengthMm.toFixed(1)+' mm of route, '+(routing.exitAdded?'including a perimeter exit':'no perimeter exit')+'. Click BOT to inspect the underside, then Prepare Print for the cut model.'
-       :routing.messages.join(' ')||'No groove was planned. Add another LED or enable the perimeter exit.';
-   $('wireRouteStatus').classList.toggle('warning',!!routing?.enabled&&!routing.routes.length);
+   $('wireRouteStatus').textContent=!routing?.enabled?'Wiring grooves are off. Enable to plan a physical cable-bundle string.':
+    routing.mode==='string'?
+     (routing.ready?'✓ Pixel string IN → '+plan.sockets.map((_,i)=>'P'+(i+1)).join(' → ')+' → OUT · '+routing.lengthMm.toFixed(1)+' mm · '+routing.routes.length+' cut groove segments.':
+      'String blocked: '+routing.messages.join(' ')):
+      routing.routes.length?routing.routes.length+' legacy groove segment(s) · '+routing.lengthMm.toFixed(1)+' mm. Switch to Pixel string to route opposed IN/OUT tails.':
+       routing.messages.join(' ')||'No safe cable groove planned.';
+   $('wireRouteStatus').classList.toggle('warning',!!routing?.enabled&&!routing.ready&&routing.mode==='string');
   }
   if($('hardwareGuideSummary'))$('hardwareGuideSummary').textContent=
    plan.sockets.length+' LED hole(s) · '+(plan.mounts.length+plan.tabHoles.length)+' mounting hole(s) · '+plan.tabs.length+' edge tab(s) · '+
@@ -92,21 +150,40 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   for(const [kind,enabled,items] of [['pixel',s.pixelPlacement==='manual',s.manualPixelHoles||[]],
      ['mount',s.mountPlacement==='manual',s.manualMountHoles||[]]]){
-   if(!enabled)continue;
-   html.push('<div class="divider"></div><p class="note"><b>'+(kind==='pixel'?'LED sockets':'Mounting holes')+' · manual</b></p>');
+   if(!enabled){
+    const actual=kind==='pixel'?plan.sockets:plan.mounts;
+    if(actual.length){
+     html.push('<div class="divider"></div><p class="note"><b>'+(kind==='pixel'?'Pixel string · automatic':'Mounting holes · automatic')+'</b></p>'+
+      '<button type="button" data-convert-kind="'+kind+'">✎ Make '+kind+' positions editable</button>');
+     actual.forEach((p,i)=>{
+      const id=esc(p.id||kind+'-'+i),name=hardwareName(kind,i);
+      html.push('<div class="hardware-edit-item'+(selectedHardware?.id===id&&selectedHardware.kind===kind?' selected':'')+
+       '" data-hw-card-kind="'+kind+'" data-hw-card-id="'+id+'">'+
+       '<button type="button" data-select-kind="'+kind+'" data-select-id="'+id+'" data-select-index="'+i+'">'+name+' · X '+numeric(p.x)+' / Z '+numeric(p.z)+' mm</button>'+
+       '<p class="note">Automatic location · convert to manual to change position'+(kind==='pixel'?' and string order':'')+'</p></div>');
+     });
+    }
+    continue;
+   }
+   html.push('<div class="divider"></div><p class="note"><b>'+(kind==='pixel'?'Pixel string order · drag or ↑↓ to reorder':'Mounting holes')+' · manual</b></p>');
    for(let i=0;i<items.length;i++){
     const p=items[i],bad=(kind==='pixel'?plan.invalidManualPixels:plan.invalidManualMounts).some(x=>x.index===i);
+    const itemId=esc(p.id),itemName=hardwareName(kind,i);
+    const actions=kind==='pixel'?'<button type="button" data-pixel-up="'+i+'" aria-label="Move '+itemName+' earlier" '+(i===0?'disabled':'')+'>↑</button>'+
+     '<button type="button" data-pixel-down="'+i+'" aria-label="Move '+itemName+' later" '+(i===items.length-1?'disabled':'')+'>↓</button>':'';
     const options=kind==='pixel'?'<div class="control" style="grid-column:1 / -1"><label>Individual LED profile</label><select data-hole-profile="'+i+'">'+
      allPixelProfiles(s).map(profile=>'<option value="'+esc(profile.id)+'"'+((p.profileId||s.pixelProfileId)===profile.id?' selected':'')+'>'+esc(profile.name)+'</option>').join('')+'</select>'+
  '<div class="control"><label>Pixel rotation (degrees)</label><input type="number" min="-180" max="180" step="5" data-wire-angle="'+i+'" value="'+Number(p.wireAngle??0)+'"></div>'+
  '<div class="grid2"><div class="control"><label>Exit centre X (mm)</label><input data-wire-end-x="'+i+'" type="number" step=".5" value="'+(p.wireEndX??'')+'" placeholder="Automatic"></div>'+
  '<div class="control"><label>Exit centre Z (mm)</label><input data-wire-end-z="'+i+'" type="number" step=".5" value="'+(p.wireEndZ??'')+'" placeholder="Automatic"></div></div>'+
- '<p class="note">Rotation turns both wire lanes together. Both end points stay aligned around this shared exit centre.</p></div>':'';
-    html.push('<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:end;margin:8px 0">'+
+ '<p class="note">This angle rotates the opposed cable IN/OUT ports. For string mode, perimeter entry/exit is controlled above; legacy paired mode uses old per-pixel exit fields.</p></div>':'';
+    html.push('<div class="hardware-edit-item'+(selectedHardware?.id===p.id&&selectedHardware.kind===kind?' selected':'')+'" data-hw-card-kind="'+kind+'" data-hw-card-id="'+itemId+'" '+(kind==='pixel'?'draggable="true"':'')+'>'+
+     '<div class="hardware-edit-heading"><button type="button" data-select-kind="'+kind+'" data-select-id="'+itemId+'" data-select-index="'+i+'">'+itemName+(bad?' · INVALID':'')+'</button>'+actions+'</div>'+
+     '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:end;margin:8px 0">'+
      '<div class="control"><label>X (mm)</label><input type="number" step=".5" data-hole-kind="'+kind+'" data-hole-index="'+i+'" data-hole-axis="x" value="'+numeric(p.x)+'"></div>'+
      '<div class="control"><label>Z (mm)</label><input type="number" step=".5" data-hole-kind="'+kind+'" data-hole-index="'+i+'" data-hole-axis="z" value="'+numeric(p.z)+'"></div>'+
      '<button data-remove-hole="'+kind+'" data-hole-index="'+i+'" title="Remove hole">✕</button>'+options+'</div>'+
-     (bad?'<p class="note warning">Invalid position. This hole will not be cut until corrected.</p>':''));
+     (bad?'<p class="note warning">Invalid position. This hole will not be cut until corrected.</p>':'')+'</div>');
    }
   }
   if(s.mount==='Edge fixing tabs'){
@@ -118,6 +195,30 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    }
   }
   list.innerHTML=html.join('')||'<p class="note">Use Place / move to make existing automatic holes editable, or add new holes by clicking the model.</p>';
+  list.querySelectorAll('[data-select-kind]').forEach(btn=>btn.onclick=()=>showSelection(btn.dataset.selectKind,btn.dataset.selectId,Number(btn.dataset.selectIndex),false));
+  const reorder=(from,to)=>{if(movePixelInString(s,from,to)){onEdit();onStatus('Changed string order · the cable route now follows the updated P1 → P2 order')}};
+  list.querySelectorAll('[data-pixel-up]').forEach(btn=>btn.onclick=()=>reorder(Number(btn.dataset.pixelUp),Number(btn.dataset.pixelUp)-1));
+  list.querySelectorAll('[data-pixel-down]').forEach(btn=>btn.onclick=()=>reorder(Number(btn.dataset.pixelDown),Number(btn.dataset.pixelDown)+1));
+  list.querySelectorAll('[data-hw-card-kind="pixel"][draggable]').forEach(card=>{
+   card.addEventListener('dragstart',e=>e.dataTransfer.setData('text/x-pixel-id',card.dataset.hwCardId));
+   card.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move'});
+   card.addEventListener('drop',e=>{
+    e.preventDefault();const id=e.dataTransfer.getData('text/x-pixel-id');
+    const from=s.manualPixelHoles.findIndex(p=>p.id===id),to=s.manualPixelHoles.findIndex(p=>p.id===card.dataset.hwCardId);
+    reorder(from,to);
+   });
+  });
+  list.querySelectorAll('[data-convert-kind]').forEach(btn=>btn.onclick=()=>{
+   const kind=btn.dataset.convertKind,current=getPlan(),s=getSettings();
+   if(kind==='pixel'){
+    s.manualPixelHoles=current.sockets.map((p,i)=>({id:p.id||'pixel-'+i,x:p.x,z:p.z,profileId:p.profileId,wireAngle:p.wireAngle??0}));
+    s.pixelPlacement='manual';s.pixelCount=s.manualPixelHoles.length;
+   }else{
+    s.manualMountHoles=current.mounts.map((p,i)=>({id:p.id||'mount-'+i,x:p.x,z:p.z}));
+    s.mountPlacement='manual';
+   }
+   ensureHardwareIds(s);onEdit();onStatus('Automatic '+kind+' locations converted to editable items');
+  });
   list.querySelectorAll('[data-hole-kind]').forEach(input=>input.onchange=()=>{
    const key=input.dataset.holeKind==='pixel'?'manualPixelHoles':'manualMountHoles';
    const item=s[key]?.[Number(input.dataset.holeIndex)],value=Number(input.value);
@@ -166,7 +267,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    const next=planHardware(getCrystals(),{...s,mount:'Edge fixing tabs',manualEdgeTabs:tabs});
    return next.tabs.some(t=>t.index===(replaceIndex===null?tabs.length-1:replaceIndex));
   }
-  if(kind==='exit')return getPlan().sockets.length>0;
+  if(kind==='exit'||kind==='entry')return getPlan().sockets.length>0;
   if(kind==='pixel'){
    const holes=(s.manualPixelHoles||[]).map(p=>({...p}));
    if(replaceIndex===null){if(holes.length>=60)return false;holes.push(pos)}
@@ -200,10 +301,10 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const data=findPoint(e);
   if(!data){preview.visible=false;lastCursor=null;return}
   const kind=placing;
-  const valid=(data.insideBase||kind==='tab'||kind==='exit')&&placementValid(kind,data.pos,draggingHole?.index??null);
+  const valid=(data.insideBase||kind==='tab'||kind==='exit'||kind==='entry')&&placementValid(kind,data.pos,draggingHole?.index??null);
   lastCursor={...data,valid,kind};
   const s=getSettings();
-  const diameter=(kind==='tab'||kind==='exit')?10:kind==='pixel'?resolvePixelProfile(s).maxDiameter:
+  const diameter=(kind==='tab'||kind==='exit'||kind==='entry')?10:kind==='pixel'?resolvePixelProfile(s).maxDiameter:
    s.mount==='Magnet inserts'?10.2:s.mount==='Threaded insert M3'?4.2:Number(s.mountHoleDiameter||4.5);
   const radius=Math.max(1,diameter/2);
   preview.scale.setScalar(radius);
@@ -220,6 +321,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   }
  }
  function setActive(value){
+  clearContext();
   placing=value;
   preview.visible=false;lastCursor=null;draggingHole=null;
   const active=!!placing;
@@ -234,16 +336,16 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   if(kind==='tab'){
    s.mount='Edge fixing tabs';
    if(!Array.isArray(s.manualEdgeTabs))s.manualEdgeTabs=plan.tabs.map(t=>({u:t.u}));
-  }else if(kind==='exit'){
+  }else if(kind==='exit'||kind==='entry'){
    s.cutSockets=true;s.wireChannels=true;s.wireExit=true;
-   if(s.pixelPlacement!=='manual'){
-    s.manualPixelHoles=plan.sockets.map(p=>({x:p.x,z:p.z,wireAngle:0,profileId:p.profileId}));
+   if(s.wireMode!=='string'&&s.pixelPlacement!=='manual'){
+    s.manualPixelHoles=plan.sockets.map(p=>({id:p.id,x:p.x,z:p.z,wireAngle:0,profileId:p.profileId}));
     s.pixelPlacement='manual';
    }
   }else if(kind==='pixel'){
    s.cutSockets=true;
    if(s.pixelPlacement!=='manual'){
-    s.manualPixelHoles=plan.sockets.map(p=>({x:+p.x.toFixed(1),z:+p.z.toFixed(1)}));
+    s.manualPixelHoles=plan.sockets.map(p=>({id:p.id,x:+p.x.toFixed(1),z:+p.z.toFixed(1),profileId:p.profileId,wireAngle:p.wireAngle??0}));
     s.pixelPlacement='manual';
    }
    // Continuous creation needs multi mode; the starting automatic LED is
@@ -253,7 +355,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   }else if(kind==='mount'){
    if(s.mount==='None')s.mount='Custom dual holes';
    if(s.mountPlacement!=='manual'){
-    s.manualMountHoles=plan.mounts.map(p=>({x:+p.x.toFixed(1),z:+p.z.toFixed(1)}));
+    s.manualMountHoles=plan.mounts.map(p=>({id:p.id,x:+p.x.toFixed(1),z:+p.z.toFixed(1)}));
     s.mountPlacement='manual';
    }
   }
@@ -268,6 +370,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  $('placeMountBtn').onclick=()=>manuallyPlace('mount');
  $('placeTabBtn').onclick=()=>manuallyPlace('tab');
  $('pickWireExitBtn').onclick=()=>manuallyPlace('exit');
+ $('pickWireEntryBtn').onclick=()=>manuallyPlace('entry');
  $('stopHolePlacementBtn').onclick=cancel;
  const canvas=renderer.domElement;
  canvas.addEventListener('pointermove',e=>updateCursor(e),true);
@@ -317,21 +420,51 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    if(!Array.isArray(s.manualEdgeTabs))s.manualEdgeTabs=[];
    s.manualEdgeTabs.push({u:nearestEdgePosition(getPlan().polygon,pos).u});
    s.tabCount=s.manualEdgeTabs.length;
-  }else if(kind==='exit'){
-   const pixel=s.manualPixelHoles?.[0];
-   if(pixel){
-    const edge=nearestEdgePosition(getPlan().polygon,pos);
-    pixel.wireEndX=edge.x;pixel.wireEndZ=edge.z;
+  }else if(kind==='exit'||kind==='entry'){
+   const edge=nearestEdgePosition(getPlan().polygon,pos);
+   if(s.wireMode==='string'){
+    const prefix=kind==='entry'?'wireEntry':'wireOutput';
+    s[prefix+'X']=edge.x;s[prefix+'Z']=edge.z;
+   }else{
+    const pixel=s.manualPixelHoles?.[0];
+    if(pixel){pixel.wireEndX=edge.x;pixel.wireEndZ=edge.z}
    }
   }else if(kind==='pixel'){
-   s.manualPixelHoles.push(pos);
+   s.manualPixelHoles.push({...pos,id:'pixel-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6)});
    s.pixelCount=s.manualPixelHoles.length;
-  }else if(kind==='mount')s.manualMountHoles.push(pos);
+  }else if(kind==='mount')s.manualMountHoles.push({...pos,id:'mount-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6)});
   onEdit(); // redraw rings & keep the placement mode active for next click.
   updateCursor(e);
  },true);
  canvas.addEventListener('pointercancel',()=>{pointerStart=null;draggingHole=null},true);
- document.addEventListener('keydown',e=>{if(e.key==='Escape'&&placing)cancel()},true);
+ canvas.addEventListener('dblclick',e=>{
+  if(!isBuild()||placing||e.button!==0)return;
+  const data=findPoint(e);if(!data?.insideBase)return;
+  contextPoint={...data.pos};
+  const rect=renderer.domElement.getBoundingClientRect();
+  contextMenu.style.left=Math.min(Math.max(8,e.clientX-rect.left),Math.max(8,rect.width-220))+'px';
+  contextMenu.style.top=Math.min(Math.max(8,e.clientY-rect.top),Math.max(8,rect.height-145))+'px';
+  contextMenu.hidden=false;
+  e.preventDefault();e.stopImmediatePropagation();
+ },true);
+ contextMenu.querySelector('[data-context-cancel]').onclick=clearContext;
+ contextMenu.querySelectorAll('[data-context-add]').forEach(button=>button.onclick=()=>{
+  if(!contextPoint)return;
+  const kind=button.dataset.contextAdd,point={...contextPoint};
+  clearContext();
+  manuallyPlace(kind);
+  if(!placementValid(kind,point)){cancel();onStatus('Invalid '+kind+' location: outside the safe base or too close to another hole');return}
+  const state=getSettings(),key=kind==='pixel'?'manualPixelHoles':'manualMountHoles';
+  state[key].push({...point,id:kind+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7)});
+  if(kind==='pixel'){state.lightingMode=state[key].length>1?'multi':'single';state.pixelCount=state[key].length}
+  cancel();onEdit();onStatus('Added '+kind+' hole at X '+point.x+' / Z '+point.z+' mm');
+ });
+ document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+   if(!contextMenu.hidden)clearContext();
+   if(placing)cancel();
+  }
+ },true);
  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{
   if(b.dataset.tab!=='build'&&placing)cancel();
   requestAnimationFrame(refresh);
