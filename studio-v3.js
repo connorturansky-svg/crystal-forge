@@ -1098,7 +1098,16 @@ $('singleWireExitBtn').onclick=()=>{
  snapView('bottom');
  setStatus('Cable grooves planned to the edge. The model and route layout must be inspected before printing.');
 };
-$('exportMountPlateBtn').onclick=()=>{$('detachablePlateBtn').click()};
+$('exportMountPlateBtn').onclick=async()=>{
+ if(!verifyPrepared()||s.mount!=='Detachable plate')return;
+ const button=$('exportMountPlateBtn');button.disabled=true;
+ try{
+  const wasm=await loadManifold(),plate=makeDetachableMountPlate(wasm,s,manufacturingReport.hardware);
+  saveSTL(plate.geometry,'crystal-forge-detachable-mount-plate.stl');plate.geometry.dispose();
+  setStatus('Registered mounting plate exported. Test real M3 fasteners, cable access and printed material strength.');
+ }catch(err){console.error(err);alert('Registered plate export failed: '+err.message)}
+ finally{button.disabled=false}
+};
 $('wiringCsvBtn').onclick=()=>{
  const plan=planHardware(crystals,s),routes=plan.wirePlan?.routes||[];
  const rows=[['Segment','Wire lane','From pixel','To pixel','Start X (mm)','Start Z (mm)','End X (mm)','End Z (mm)','Width (mm)','Depth (mm)','Length (mm)']];
