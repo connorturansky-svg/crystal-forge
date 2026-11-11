@@ -75,7 +75,7 @@ function restore(str){
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
- if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','splitPinDiameter','splitPinDepth','splitPinClearance','wireDepth'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
+ if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','splitPinDiameter','splitPinDepth','splitPinClearance','wireDepth'].includes(k))return Number(v).toFixed(['pixelFit','pixelRetentionLip','splitPinClearance'].includes(k)?2:1)+' mm';
  if(k==='crystalSize'||k==='studioBrightness')return Math.round(Number(v)*100)+'%';
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
