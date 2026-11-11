@@ -4,7 +4,7 @@
  * GitHub commit history supplies remote history; SHA guards prevent blind writes.
  */
 export const VAULT_PATH='.crystal-forge/vault-v1.json';
-const PROJECT='crystal-forge-v3',PROFILES='crystal-forge-pixel-library',TEMPLATES='crystal-forge-project-templates-v1';
+const PROJECT='crystal-forge-v3',PROFILES='crystal-forge-pixel-library',TEMPLATES='crystal-forge-project-templates-v1',PROJECTS='crystal-forge-project-library-v1';
 const PREFIX='crystal-forge-cloud-local-backup-';
 const deep=x=>JSON.parse(JSON.stringify(x));
 const parse=(value,fallback)=>{try{return JSON.parse(value||'null')??fallback}catch{return fallback}};
@@ -14,12 +14,15 @@ export function captureVault(storage,updatedAt=new Date().toISOString()){
  const project=parse(storage.getItem(PROJECT),null);
  const profiles=parse(storage.getItem(PROFILES),[]);
  const templates=parse(storage.getItem(TEMPLATES),[]);
+ const projects=parse(storage.getItem(PROJECTS),[]);
  return {schema:1,updatedAt,project,
   pixelProfiles:Array.isArray(profiles)?profiles:[],
-  templates:Array.isArray(templates)?templates:[]};
+  templates:Array.isArray(templates)?templates:[],
+  projects:Array.isArray(projects)?projects:[]};
 }
 export function validateVault(data){
- if(!data||data.schema!==1||!Array.isArray(data.pixelProfiles)||!Array.isArray(data.templates))
+ if(!data||data.schema!==1||!Array.isArray(data.pixelProfiles)||!Array.isArray(data.templates)||
+    (data.projects!==undefined&&!Array.isArray(data.projects)))
   throw Error('Cloud document is not a supported Crystal Forge vault.');
  if(data.project!=null&&(!data.project.settings||!Array.isArray(data.project.crystals)))
   throw Error('Cloud project is not an editable Crystal Forge project.');
@@ -49,10 +52,12 @@ export function mergeVault(storage,data,{restoreProject=true}={}){
  };
  storage.setItem(PROFILES,JSON.stringify(merge(local.pixelProfiles,remote.pixelProfiles)));
  storage.setItem(TEMPLATES,JSON.stringify(merge(local.templates,remote.templates)));
+ storage.setItem(PROJECTS,JSON.stringify(merge(local.projects,remote.projects||[])));
  if(restoreProject&&remote.project)storage.setItem(PROJECT,JSON.stringify(remote.project));
  return {backupKey,projectRestored:!!(restoreProject&&remote.project),
   profiles:merge(local.pixelProfiles,remote.pixelProfiles).length,
-  templates:merge(local.templates,remote.templates).length};
+  templates:merge(local.templates,remote.templates).length,
+  projects:merge(local.projects,remote.projects||[]).length};
 }
 const decode=b64=>{
  const binary=atob(b64.replace(/\s/g,'')),bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
