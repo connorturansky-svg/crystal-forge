@@ -16,6 +16,16 @@ These five packages consolidate **all ten original detailed phases** and the new
 | **D. Creative editor & hardware placement** | Drag/snap hardware editor, individual shapes/multiple selection, model templates, project migrations, materials/look development, contextual help | 0, 6, 8 | Queued |
 | **E. Production QA & distributable projects** | 10–60 crystal benchmarks, worker cancellation, real Cura checks, export pack/BOM/wiring diagram, physical print tests, documentation and workshops | 7, 9 | Continuous; final release gate queued |
 
+### GitHub phase trackers — ready for implementation
+
+- **[Package A — Cura & reliable fabrication](https://github.com/connorturansky-svg/crystal-forge/issues/6)** — candidate Cura export coded; real import, bridge, detail and print tests queued.
+- **[Package B — Physical LEDs & light paths](https://github.com/connorturansky-svg/crystal-forge/issues/7)** — underside wiring coded; clips, accessible optical channels and print validation queued.
+- **[Package C — Modular parts & mounting](https://github.com/connorturansky-svg/crystal-forge/issues/8)** — auto-splitting, dowels, removable plate and assembly queued.
+- **[Package D — Studio/editor & placement](https://github.com/connorturansky-svg/crystal-forge/issues/9)** — drag/snap hardware editing, templates, material look-dev and migration queued.
+- **[Package E — Production & QA](https://github.com/connorturansky-svg/crystal-forge/issues/10)** — performance budgets, printer sampling, export bundle and reproducible release criteria queued.
+
+The checked boxes in GitHub represent **code implemented on a branch**, not certified mechanical functionality or complete delivery. Each package has an individual review gate; maintain one master plan, no competing backlogs.
+
 ### Package A — Slicer-ready fabrication and Cura profiles
 
 **Immediate implementation:** an importable Cura profile generator, with Ultimaker 3 Extended, Ultimaker 2+, selected nozzle diameter, PLA/PETG and Fast-to-Fine quality. Nozzle selection must reject incompatible machine hardware. Profiles use the existing machine/material configuration in Cura; they do not generate G-code or replace printer firmware.
