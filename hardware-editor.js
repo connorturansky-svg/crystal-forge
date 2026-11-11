@@ -20,7 +20,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  preview.visible=false;
  const ray=new THREE.Raycaster(),cursorNDC=new THREE.Vector2();
  const ground=new THREE.Plane(new THREE.Vector3(0,1,0),0);
- let placing=null,pointerStart=null,lastCursor=null,draggingHole=null,selectedHardware=null;
+ let placing=null,pointerStart=null,lastCursor=null,draggingHole=null,selectedHardware=null,markerDrag=null;
  const markerLayer=document.createElement('div');
  markerLayer.className='hardware-marker-layer';
  renderer.domElement.parentElement.appendChild(markerLayer);
@@ -56,7 +56,21 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   button.textContent=label;button.title=label+' · click to edit '+kind;
   button.dataset.hwKind=kind;button.dataset.hwId=id;button.dataset.hwIndex=String(index);
   button.setAttribute('aria-label','Select '+label+' '+kind);
-  button.onclick=e=>{e.stopPropagation();showSelection(kind,id,index)};
+  button.onclick=e=>{e.stopPropagation();if(!markerDrag?.moved)showSelection(kind,id,index)};
+  button.addEventListener('pointerdown',e=>{
+   if(e.button!==0||!isBuild()||placing)return;
+   e.stopPropagation();
+   if(selectedHardware?.kind!==kind||selectedHardware?.id!==id)return;
+   const cfg=getSettings(),isPixel=kind==='pixel',key=isPixel?'manualPixelHoles':'manualMountHoles';
+   if(kind==='tab')return;
+   if((isPixel?cfg.pixelPlacement:cfg.mountPlacement)!=='manual'){
+    const plan=getPlan(),items=isPixel?plan.sockets:plan.mounts;
+    cfg[key]=items.map(t=>({id:t.id,x:t.x,z:t.z,profileId:t.profileId,wireAngle:t.wireAngle??0}));
+    cfg[isPixel?'pixelPlacement':'mountPlacement']='manual';
+   }
+   markerDrag={kind,id,key,startX:e.clientX,startY:e.clientY,moved:false,lastValid:null,lastPreview:0};
+   e.preventDefault();
+  });
   button.ondblclick=e=>{e.preventDefault();e.stopPropagation();showSelection(kind,id,index)};
   markerLayer.appendChild(button);markerObjects.push({button,p});
  }
@@ -110,7 +124,9 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
     tube.position.set(p.x,height/2,p.z);tube.renderOrder=85;guides.add(tube);
    }
   }
-  for(const route of plan.wirePlan?.routes||[]){
+  let arrowDistance=0;
+  const routePaths=plan.wirePlan?.previewRoutes?.length?plan.wirePlan.previewRoutes:(plan.wirePlan?.routes||[]);
+  for(const route of routePaths){
    const dx=route.b.x-route.a.x,dz=route.b.z-route.a.z;
    const length=Math.hypot(dx,dz)+.5;
    const angle=-Math.atan2(dz,dx);
@@ -119,11 +135,34 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    // It is only a GUIDE in Build; after Prepare Print, BOT shows the REAL cut.
    const geom=new THREE.BoxGeometry(length,route.depth+.6,route.width);
    const ghost=new THREE.Mesh(geom,new THREE.MeshBasicMaterial({
-    color:0x06bed2,transparent:true,opacity:.3,depthTest:false,depthWrite:false,side:THREE.DoubleSide}));
+    color:route.overLength?0xef334f:0x06bed2,transparent:true,opacity:route.overLength?.65:.3,depthTest:false,depthWrite:false,side:THREE.DoubleSide}));
    ghost.position.set(midX,(route.depth-.4)/2,midZ);ghost.rotation.y=angle;ghost.renderOrder=92;guides.add(ghost);
    const outline=new THREE.LineSegments(new THREE.EdgesGeometry(geom),
-    new THREE.LineBasicMaterial({color:0x49faff,depthTest:false,transparent:true,opacity:.95}));
+    new THREE.LineBasicMaterial({color:route.overLength?0xff3356:0x49faff,depthTest:false,transparent:true,opacity:.95}));
    outline.position.copy(ghost.position);outline.rotation.copy(ghost.rotation);outline.renderOrder=93;guides.add(outline);
+   if(s.wireDirectionArrows!==false&&route.lengthMm>0){
+    arrowDistance+=route.lengthMm;
+    if(arrowDistance>=14){
+     const arrow=new THREE.ArrowHelper(
+      new THREE.Vector3(dx/Math.hypot(dx,dz),0,dz/Math.hypot(dx,dz)),
+      new THREE.Vector3(midX,route.depth+1.8,midZ),
+      Math.min(8,Math.max(3,route.lengthMm)),route.overLength?0xff3356:0xe5faff,3,2);
+     arrow.renderOrder=104;
+     for(const item of [arrow.line,arrow.cone]){item.material.depthTest=false;item.material.transparent=true;item.material.opacity=.9;}
+     guides.add(arrow);arrowDistance=0;
+    }
+   }
+  }
+  if(s.wireShowLengths!==false){
+   for(const conn of plan.wirePlan?.connections||[]){
+    const candidates=routePaths.filter(t=>t.kind===conn.kind&&t.from===conn.from&&t.to===conn.to);
+    if(!candidates.length)continue;
+    const anchor=candidates[Math.floor(candidates.length/2)],p={x:(anchor.a.x+anchor.b.x)/2,z:(anchor.a.z+anchor.b.z)/2};
+    const tag=document.createElement('span');tag.className='hardware-route-length'+(conn.overLength?' exceeded':'');
+    tag.textContent=(conn.from==null?'IN':('P'+(conn.from+1)))+'→'+(conn.to==null?'OUT':'P'+(conn.to+1))+
+      ' '+conn.lengthMm.toFixed(0)+' mm'+(conn.allowedMm?' / '+conn.allowedMm.toFixed(0)+' mm':'');
+    markerLayer.appendChild(tag);markerObjects.push({button:tag,p});
+   }
   }
   guides.visible=isBuild();
  }
@@ -141,6 +180,14 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
       routing.routes.length?routing.routes.length+' legacy groove segment(s) · '+routing.lengthMm.toFixed(1)+' mm. Switch to Pixel string to route opposed IN/OUT tails.':
        routing.messages.join(' ')||'No safe cable groove planned.';
    $('wireRouteStatus').classList.toggle('warning',!!routing?.enabled&&!routing.ready&&routing.mode==='string');
+  }
+  if($('wireRouteDetails')){
+   const details=routing?.connections||[];
+   $('wireRouteDetails').textContent=details.map(c=>
+    (c.from==null?'IN':'P'+(c.from+1))+' → '+(c.to==null?'OUT':'P'+(c.to+1))+
+    ': '+c.lengthMm.toFixed(1)+' mm'+(c.allowedMm!=null?' / '+c.allowedMm.toFixed(1)+' mm'+(c.overLength?' — TOO LONG':' — OK'):'')
+   ).join('  ·  ');
+   $('wireRouteDetails').classList.toggle('warning',!!routing?.overLengthCount);
   }
   if($('hardwareGuideSummary'))$('hardwareGuideSummary').textContent=
    plan.sockets.length+' LED hole(s) · '+(plan.mounts.length+plan.tabHoles.length)+' mounting hole(s) · '+plan.tabs.length+' edge tab(s) · '+
@@ -169,7 +216,8 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    for(let i=0;i<items.length;i++){
     const p=items[i],bad=(kind==='pixel'?plan.invalidManualPixels:plan.invalidManualMounts).some(x=>x.index===i);
     const itemId=esc(p.id),itemName=hardwareName(kind,i);
-    const actions=kind==='pixel'?'<button type="button" data-pixel-up="'+i+'" aria-label="Move '+itemName+' earlier" '+(i===0?'disabled':'')+'>↑</button>'+
+    const actions=kind==='pixel'?'<button type="button" data-set-start="'+i+'" title="Make this pixel P1">Set P1</button>'+
+     '<button type="button" data-pixel-up="'+i+'" aria-label="Move '+itemName+' earlier" '+(i===0?'disabled':'')+'>↑</button>'+
      '<button type="button" data-pixel-down="'+i+'" aria-label="Move '+itemName+' later" '+(i===items.length-1?'disabled':'')+'>↓</button>':'';
     const options=kind==='pixel'?'<div class="control" style="grid-column:1 / -1"><label>Individual LED profile</label><select data-hole-profile="'+i+'">'+
      allPixelProfiles(s).map(profile=>'<option value="'+esc(profile.id)+'"'+((p.profileId||s.pixelProfileId)===profile.id?' selected':'')+'>'+esc(profile.name)+'</option>').join('')+'</select>'+
@@ -197,6 +245,12 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   list.innerHTML=html.join('')||'<p class="note">Use Place / move to make existing automatic holes editable, or add new holes by clicking the model.</p>';
   list.querySelectorAll('[data-select-kind]').forEach(btn=>btn.onclick=()=>showSelection(btn.dataset.selectKind,btn.dataset.selectId,Number(btn.dataset.selectIndex),false));
   const reorder=(from,to)=>{if(movePixelInString(s,from,to)){onEdit();onStatus('Changed string order · the cable route now follows the updated P1 → P2 order')}};
+  list.querySelectorAll('[data-set-start]').forEach(btn=>btn.onclick=()=>{
+   const index=Number(btn.dataset.setStart);
+   if(s.pixelPlacement!=='manual')return;
+   s.manualPixelHoles=[...s.manualPixelHoles.slice(index),...s.manualPixelHoles.slice(0,index)];
+   onEdit();onStatus('Selected starting pixel is now P1');
+  });
   list.querySelectorAll('[data-pixel-up]').forEach(btn=>btn.onclick=()=>reorder(Number(btn.dataset.pixelUp),Number(btn.dataset.pixelUp)-1));
   list.querySelectorAll('[data-pixel-down]').forEach(btn=>btn.onclick=()=>reorder(Number(btn.dataset.pixelDown),Number(btn.dataset.pixelDown)+1));
   list.querySelectorAll('[data-hw-card-kind="pixel"][draggable]').forEach(card=>{
@@ -371,6 +425,16 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  $('placeTabBtn').onclick=()=>manuallyPlace('tab');
  $('pickWireExitBtn').onclick=()=>manuallyPlace('exit');
  $('pickWireEntryBtn').onclick=()=>manuallyPlace('entry');
+ $('reversePixelStringBtn').onclick=()=>{
+  const cfg=getSettings(),plan=getPlan();
+  if(cfg.pixelPlacement!=='manual'){
+   cfg.manualPixelHoles=plan.sockets.map(p=>({id:p.id,x:p.x,z:p.z,profileId:p.profileId,wireAngle:p.wireAngle??0}));
+   cfg.pixelPlacement='manual';cfg.lightingMode=cfg.manualPixelHoles.length>1?'multi':'single';
+  }
+  cfg.manualPixelHoles.reverse();
+  for(const p of cfg.manualPixelHoles)p.wireAngle=((Number(p.wireAngle)||0)+180)%360;
+  onEdit();onStatus('Reversed P1→Pn direction and flipped each opposed cable axis');
+ };
  $('stopHolePlacementBtn').onclick=cancel;
  const canvas=renderer.domElement;
  canvas.addEventListener('pointermove',e=>updateCursor(e),true);
