@@ -8,7 +8,7 @@
 - **A:** `print-quality.js` real model nozzle, roof, wire and Cura review; printable checklist.
 - **B:** `optical-audit.js` per-spike candidate proximity, explicit unverified statuses, optional `pixelRetentionLip` inside Manifold cutter. Default off.
 - **C:** `split-joints.js` conservative base dowel plan, matching split STL recesses, separately printed pegs.
-- **D:** `design-workflows.js` shape presets and hardware X/Z grid snapping.
+- **D:** `design-workflows.js` shape presets, hardware X/Z grid snapping and Shift-drag repositioning of existing manual holes.
 - **E:** `production-pack.js`, reusable `encodeSTL`, a binary one-download ZIP with model, project, Cura candidate and build notes.
 - Full accepted/pending matrix: `docs/PR6_ALL_PHASES.md`; tracked issues #6–#10 remain open for real physical/optical/Cura and unfinished advanced work.
 - Mandatory: exact-head CI/static/browsers/Manifold tests, physical LED/dowel fit, Cura import, optical/roof review before merging. Preview or model topology does not certify physical safety.
