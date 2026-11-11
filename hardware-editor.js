@@ -150,21 +150,40 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   for(const [kind,enabled,items] of [['pixel',s.pixelPlacement==='manual',s.manualPixelHoles||[]],
      ['mount',s.mountPlacement==='manual',s.manualMountHoles||[]]]){
-   if(!enabled)continue;
-   html.push('<div class="divider"></div><p class="note"><b>'+(kind==='pixel'?'LED sockets':'Mounting holes')+' · manual</b></p>');
+   if(!enabled){
+    const actual=kind==='pixel'?plan.sockets:plan.mounts;
+    if(actual.length){
+     html.push('<div class="divider"></div><p class="note"><b>'+(kind==='pixel'?'Pixel string · automatic':'Mounting holes · automatic')+'</b></p>'+
+      '<button type="button" data-convert-kind="'+kind+'">✎ Make '+kind+' positions editable</button>');
+     actual.forEach((p,i)=>{
+      const id=esc(p.id||kind+'-'+i),name=hardwareName(kind,i);
+      html.push('<div class="hardware-edit-item'+(selectedHardware?.id===id&&selectedHardware.kind===kind?' selected':'')+
+       '" data-hw-card-kind="'+kind+'" data-hw-card-id="'+id+'">'+
+       '<button type="button" data-select-kind="'+kind+'" data-select-id="'+id+'" data-select-index="'+i+'">'+name+' · X '+numeric(p.x)+' / Z '+numeric(p.z)+' mm</button>'+
+       '<p class="note">Automatic location · convert to manual to change position'+(kind==='pixel'?' and string order':'')+'</p></div>');
+     });
+    }
+    continue;
+   }
+   html.push('<div class="divider"></div><p class="note"><b>'+(kind==='pixel'?'Pixel string order · drag or ↑↓ to reorder':'Mounting holes')+' · manual</b></p>');
    for(let i=0;i<items.length;i++){
     const p=items[i],bad=(kind==='pixel'?plan.invalidManualPixels:plan.invalidManualMounts).some(x=>x.index===i);
+    const itemId=esc(p.id),itemName=hardwareName(kind,i);
+    const actions=kind==='pixel'?'<button type="button" data-pixel-up="'+i+'" aria-label="Move '+itemName+' earlier" '+(i===0?'disabled':'')+'>↑</button>'+
+     '<button type="button" data-pixel-down="'+i+'" aria-label="Move '+itemName+' later" '+(i===items.length-1?'disabled':'')+'>↓</button>':'';
     const options=kind==='pixel'?'<div class="control" style="grid-column:1 / -1"><label>Individual LED profile</label><select data-hole-profile="'+i+'">'+
      allPixelProfiles(s).map(profile=>'<option value="'+esc(profile.id)+'"'+((p.profileId||s.pixelProfileId)===profile.id?' selected':'')+'>'+esc(profile.name)+'</option>').join('')+'</select>'+
  '<div class="control"><label>Pixel rotation (degrees)</label><input type="number" min="-180" max="180" step="5" data-wire-angle="'+i+'" value="'+Number(p.wireAngle??0)+'"></div>'+
  '<div class="grid2"><div class="control"><label>Exit centre X (mm)</label><input data-wire-end-x="'+i+'" type="number" step=".5" value="'+(p.wireEndX??'')+'" placeholder="Automatic"></div>'+
  '<div class="control"><label>Exit centre Z (mm)</label><input data-wire-end-z="'+i+'" type="number" step=".5" value="'+(p.wireEndZ??'')+'" placeholder="Automatic"></div></div>'+
- '<p class="note">Rotation turns both wire lanes together. Both end points stay aligned around this shared exit centre.</p></div>':'';
-    html.push('<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:end;margin:8px 0">'+
+ '<p class="note">This angle rotates the opposed cable IN/OUT ports. For string mode, perimeter entry/exit is controlled above; legacy paired mode uses old per-pixel exit fields.</p></div>':'';
+    html.push('<div class="hardware-edit-item'+(selectedHardware?.id===p.id&&selectedHardware.kind===kind?' selected':'')+'" data-hw-card-kind="'+kind+'" data-hw-card-id="'+itemId+'" '+(kind==='pixel'?'draggable="true"':'')+'>'+
+     '<div class="hardware-edit-heading"><button type="button" data-select-kind="'+kind+'" data-select-id="'+itemId+'" data-select-index="'+i+'">'+itemName+(bad?' · INVALID':'')+'</button>'+actions+'</div>'+
+     '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:end;margin:8px 0">'+
      '<div class="control"><label>X (mm)</label><input type="number" step=".5" data-hole-kind="'+kind+'" data-hole-index="'+i+'" data-hole-axis="x" value="'+numeric(p.x)+'"></div>'+
      '<div class="control"><label>Z (mm)</label><input type="number" step=".5" data-hole-kind="'+kind+'" data-hole-index="'+i+'" data-hole-axis="z" value="'+numeric(p.z)+'"></div>'+
      '<button data-remove-hole="'+kind+'" data-hole-index="'+i+'" title="Remove hole">✕</button>'+options+'</div>'+
-     (bad?'<p class="note warning">Invalid position. This hole will not be cut until corrected.</p>':''));
+     (bad?'<p class="note warning">Invalid position. This hole will not be cut until corrected.</p>':'')+'</div>');
    }
   }
   if(s.mount==='Edge fixing tabs'){
@@ -176,6 +195,30 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    }
   }
   list.innerHTML=html.join('')||'<p class="note">Use Place / move to make existing automatic holes editable, or add new holes by clicking the model.</p>';
+  list.querySelectorAll('[data-select-kind]').forEach(btn=>btn.onclick=()=>showSelection(btn.dataset.selectKind,btn.dataset.selectId,Number(btn.dataset.selectIndex),false));
+  const reorder=(from,to)=>{if(movePixelInString(s,from,to)){onEdit();onStatus('Changed string order · the cable route now follows the updated P1 → P2 order')}};
+  list.querySelectorAll('[data-pixel-up]').forEach(btn=>btn.onclick=()=>reorder(Number(btn.dataset.pixelUp),Number(btn.dataset.pixelUp)-1));
+  list.querySelectorAll('[data-pixel-down]').forEach(btn=>btn.onclick=()=>reorder(Number(btn.dataset.pixelDown),Number(btn.dataset.pixelDown)+1));
+  list.querySelectorAll('[data-hw-card-kind="pixel"][draggable]').forEach(card=>{
+   card.addEventListener('dragstart',e=>e.dataTransfer.setData('text/x-pixel-id',card.dataset.hwCardId));
+   card.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move'});
+   card.addEventListener('drop',e=>{
+    e.preventDefault();const id=e.dataTransfer.getData('text/x-pixel-id');
+    const from=s.manualPixelHoles.findIndex(p=>p.id===id),to=s.manualPixelHoles.findIndex(p=>p.id===card.dataset.hwCardId);
+    reorder(from,to);
+   });
+  });
+  list.querySelectorAll('[data-convert-kind]').forEach(btn=>btn.onclick=()=>{
+   const kind=btn.dataset.convertKind,current=getPlan(),s=getSettings();
+   if(kind==='pixel'){
+    s.manualPixelHoles=current.sockets.map((p,i)=>({id:p.id||'pixel-'+i,x:p.x,z:p.z,profileId:p.profileId,wireAngle:p.wireAngle??0}));
+    s.pixelPlacement='manual';s.pixelCount=s.manualPixelHoles.length;
+   }else{
+    s.manualMountHoles=current.mounts.map((p,i)=>({id:p.id||'mount-'+i,x:p.x,z:p.z}));
+    s.mountPlacement='manual';
+   }
+   ensureHardwareIds(s);onEdit();onStatus('Automatic '+kind+' locations converted to editable items');
+  });
   list.querySelectorAll('[data-hole-kind]').forEach(input=>input.onchange=()=>{
    const key=input.dataset.holeKind==='pixel'?'manualPixelHoles':'manualMountHoles';
    const item=s[key]?.[Number(input.dataset.holeIndex)],value=Number(input.value);
