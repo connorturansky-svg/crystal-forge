@@ -1,6 +1,14 @@
 # Crystal Forge — Changelog
 
-## v0.11.0 — 11 November 2026 (PR6 draft, all five phases)
+## v0.12.0 — 11 November 2026 (PR7 draft, not merged)
+
+- **Real underside wiring:** A single pixel needs an edge exit to produce a route; one click now enables both switches. Exit cutter crosses the perimeter, avoids other LED collars, and shows actual planned width/depth as a cyan 3D ribbon. BOT + Prepare Print reveals the real cut.
+- **Annotated pixel measurements:** Live 2D A–G SVG, double-ended dimension arrows and linked inputs for body width and full length, flange width/thickness, cap height and cable recess width/depth.
+- **Real-fit geometry fix:** B measures usable bore depth from Y=0 instead of cutter start Y=-3. Cap E and wire recess G honor measured values subject to roof clearance. Added a stepped five-hole body/flange/wire fitting coupon.
+- **Other engineering:** Opt-in tapered vault-to-crystal light ports with skip report, a separate matching plate STL, supported Cura nozzle suggestions, worker timing and optional 10/16/40/60 benchmark.
+- See `docs/PR7_MANUFACTURING_COMPLETION.md`. Physical optical, retention, bridge and structural validation remain outstanding.
+
+## v0.11.0 — 11 November 2026 (PR6 merged)
 
 - **A / Cura:** Model-aware thin-feature, roof and nozzle checklists downloadable as text.
 - **B / LEDs:** Per-crystal optical uncertainty CSV and optional experimental bore compression ridge, default off.

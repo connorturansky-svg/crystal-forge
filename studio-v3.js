@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
-import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,splitPreparedMesh,makeSplitPinCoupon} from './fabrication-v1.js';
+import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,makePixelSeatCoupon,makeDetachableMountPlate,splitPreparedMesh,makeSplitPinCoupon} from './fabrication-v1.js';
 import {buildProductionPack} from './production-pack.js';
 import {planSplitJoints} from './split-joints.js';
 import {applyShapePreset} from './design-workflows.js';
@@ -11,7 +11,9 @@ import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
+import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
 import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
+import {adviseCuraForModel} from './cura-model-advisor.js';
 import {assessPrintQuality,printChecklistText} from './print-quality.js';
 import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
 
@@ -20,8 +22,8 @@ const defaults={
   title:'Untitled cluster',count:16,height:155,width:130,crystalSize:1,widthRandomness:0,studioBrightness:.85,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
-  baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,
-  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:false,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountPlateThickness:4.5,mountSpacing:40,wireChannels:false,wireExit:true,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -75,12 +77,12 @@ function restore(str){
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
- if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','splitPinDiameter','splitPinDepth','splitPinClearance','wireDepth'].includes(k))return Number(v).toFixed(['pixelFit','pixelRetentionLip','splitPinClearance'].includes(k)?2:1)+' mm';
+ if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','splitPinDiameter','splitPinDepth','splitPinClearance','wireDepth','lightPortDiameter'].includes(k))return Number(v).toFixed(['pixelFit','pixelRetentionLip','splitPinClearance'].includes(k)?2:1)+' mm';
  if(k==='crystalSize'||k==='studioBrightness')return Math.round(Number(v)*100)+'%';
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
- if(['mountHoleDiameter','mountHoleDepth','mountSpacing','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
- if(k==='curaQuality')return v+'%';if(k==='hardwareSnapStep')return Number(v).toFixed(1)+' mm';if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
+ if(['mountHoleDiameter','mountHoleDepth','mountSpacing','mountPlateThickness','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
+ if(k==='curaQuality')return v+'%';if(k==='lightPortReach')return v+'%';if(k==='hardwareSnapStep')return Number(v).toFixed(1)+' mm';if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
 }
 const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
 function selectedCrystal(){return crystals.find(c=>c.id===selectedId)||null}
@@ -138,6 +140,7 @@ function syncForm(){
  $('projectName').textContent=s.title;
  syncShapeControls();
  $('edgeTabSettings').hidden=s.mount!=='Edge fixing tabs';
+ $('detachablePlateSettings').hidden=s.mount!=='Detachable plate';
  $('customPrinterSettings').hidden=s.printer!=='Custom / other';
  updateCuraProfileSummary();
  $('floatBtn').classList.toggle('active',!!s.floatView);
@@ -159,7 +162,7 @@ let manufacturingMesh=null,manufacturingReport=null,preparedSource=null;
 const relevantManufacturingKeys=[
  'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
- 'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightingMode','pixelCount','pixelDiameter',
+ 'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightPorts','lightPortDiameter','lightPortReach','lightingMode','pixelCount','pixelDiameter',
  'pixelFit','pixelRetentionLip','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireWidth','wireDepth','wireSlack','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','printerX','printerY','printerZ','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
 ];
 function sourceHash(){
@@ -294,7 +297,9 @@ function renderManufactureReport(report){
  f('reportUnrouted',report.unroutedPixels||0);
  f('reportLEDVents',report.ventCuts||0);
  f('reportLightPath',report.vault?.applied?'LED side vents · inspect in Cura':report.lightPathScreened?'Screened clear':'Review needed');
- f('reportPorts',report.hollowPorts||0);
+ f('reportPorts',(report.hollowPorts||0)+(report.directLightPorts||0));
+ f('reportDirectPorts',report.directLightPorts||0);
+ f('reportSkippedPorts',report.skippedDirectLightPorts||0);
  f('reportBaseDepth',report.baseFitsPixel?'Fits nominal pixel':'Too shallow');
  f('reportOverhang',report.quality.unsafeTriangles.toLocaleString());
  f('reportOrientation',report.orientation?.name||'Base down');
@@ -595,7 +600,7 @@ function schedule(full=true){
  },85);
 }
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix']);
-const previewKeys=new Set(['hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
+const previewKeys=new Set(['fitCouponStyle','hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
@@ -612,7 +617,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
     if(profile)s.pixelDiameter=profile.bodyDiameter;
     syncForm();
    }
-  if(key==='mount')$('edgeTabSettings').hidden=value!=='Edge fixing tabs';
+  if(key==='mount'){$('edgeTabSettings').hidden=value!=='Edge fixing tabs';$('detachablePlateSettings').hidden=value!=='Detachable plate'}
    if(key==='printer')$('customPrinterSettings').hidden=value!=='Custom / other';
    if(key==='printer'||key.startsWith('cura'))updateCuraProfileSummary();
   if(key==='lightingMode'&&value==='single')s.pixelCount=1;
@@ -744,10 +749,29 @@ document.addEventListener('keydown',e=>{
 const pixelFields={name:'pixelName',kind:'pixelKind',bodyDiameter:'pixelBodyDiameter',
  bodyHeight:'pixelBodyHeight',flangeDiameter:'pixelFlangeDiameter',flangeHeight:'pixelFlangeHeight',
  capHeight:'pixelCapHeight',wireWidth:'pixelWireWidth',wireDepth:'pixelWireDepth'};
+function updatePixelProfileDiagram(){
+ const values={};
+ for(const [k,id] of Object.entries(pixelFields))
+  values[k]=k==='kind'||k==='name'?$(id).value:Number($(id).value);
+ $('pixelProfileDiagram').innerHTML=renderPixelProfileDiagram(values);
+ const profile=normalisePixelProfile(values);
+ const adjusted=profile.bodyDiameter+Number(s.pixelFit||0);
+ $('pixelProfileDimensionsNotice').textContent='Nominal body Ø '+profile.bodyDiameter.toFixed(1)+
+  ' mm · full length '+profile.bodyHeight.toFixed(1)+' mm (includes curved cap) · current socket fit adjustment '+
+  (Number(s.pixelFit||0)>=0?'+':'')+Number(s.pixelFit||0).toFixed(2)+' mm · resulting body bore Ø '+
+  adjusted.toFixed(2)+' mm. Tap a letter to edit its field.';
+}
+for(const field of Object.values(pixelFields))
+ $(field).addEventListener('input',updatePixelProfileDiagram);
+$('pixelProfileDiagram').addEventListener('click',e=>{
+ const field=e.target.closest?.('[data-profile-field]')?.dataset.profileField;
+ if(field&&PIXEL_DIMENSIONS.some(dim=>dim.field===field))$(field).focus();
+});
 function closePixelEditor(){$('pixelProfileOverlay').hidden=true;$('editPixelProfileBtn').focus()}
 $('editPixelProfileBtn').onclick=()=>{
  const p=resolvePixelProfile(s);
  for(const [k,id] of Object.entries(pixelFields))$(id).value=p[k];
+ updatePixelProfileDiagram();
  $('pixelProfileOverlay').hidden=false;$('pixelName').focus();
 };
 $('closePixelProfileBtn').onclick=closePixelEditor;
@@ -830,11 +854,15 @@ async function buildManufacturing(){
   const id=++preparationSerial;
   const result=await new Promise((resolve,reject)=>{
    let worker;
-   try{worker=persistentFabricationWorker||new Worker(new URL('./fabrication-worker.js',import.meta.url),{type:'module'});
-    persistentFabricationWorker=worker;}
+   try{
+    worker=persistentFabricationWorker;
+    if(!worker){
+     worker=new Worker(new URL('./fabrication-worker.js',import.meta.url),{type:'module'});
+     persistentFabricationWorker=worker;window.__crystalForgeWorkerStarts++;
+    }
+   }
    catch(error){reject(error);return}
    activePreparationWorker=worker;activePreparationReject=reject;
-   window.__crystalForgeWorkerStarts++;
    worker.onmessage=event=>{
     const data=event.data;if(id!==preparationSerial)return;
     if(data.type==='progress')$('prepareStatus').textContent=data.stage;
@@ -865,7 +893,9 @@ async function buildManufacturing(){
   }));
   manufacturingMesh.visible=false;scene.add(manufacturingMesh);
   updateAppearance();renderManufactureReport(result.report);createHardwareAnnotations();
-  $('prepareStatus').textContent='✓ Mesh prepared off-thread in '+(result.report.preparationMs/1000).toFixed(1)+' s. Review warnings.';
+  $('prepareStatus').textContent='✓ Mesh prepared off-thread in '+(result.report.preparationMs/1000).toFixed(1)+
+   ' s (Manifold '+((result.report.timings?.manifoldMs||0)/1000).toFixed(1)+' s; engine '+
+   ((result.report.timings?.engineReadyMs||0)/1000).toFixed(1)+' s). Review warnings.';
   $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;$('productionPackBtn').disabled=false;
   $('splitExportBtn').disabled=!s.splitParts;
   $('showManufacturing').checked=true;manufacturingView(true);applyPrintHeatmap();
@@ -919,8 +949,8 @@ $('calibrationBtn').onclick=async()=>{
  await new Promise(resolve=>setTimeout(resolve,20));
  try{
   const nominal=resolvePixelProfile(s).boreDiameter;
-  const wasm=await loadManifold(),data=makeCalibrationStrip(wasm,nominal);
-  saveSTL(data.geometry,'pixel-fit-calibration-'+nominal.toFixed(1).replace('.','_')+'mm.stl');
+  const wasm=await loadManifold(),data=s.fitCouponStyle==='plain'?makeCalibrationStrip(wasm,nominal):makePixelSeatCoupon(wasm,s);
+  saveSTL(data.geometry,'pixel-fit-'+(s.fitCouponStyle==='plain'?'plain':'stepped')+'-'+nominal.toFixed(1).replace('.','_')+'mm.stl');
   data.geometry.dispose();
   setStatus('Calibration strip downloaded: '+data.diameters.map(d=>d.toFixed(2)).join(' · ')+' mm left-to-right');
  }catch(err){console.error(err);alert('Calibration strip failed: '+err.message)}
@@ -949,6 +979,15 @@ $('splitExportBtn').onclick=async()=>{
 
 function updateCuraProfileSummary(){
  const target=$('curaProfileSummary'),warn=$('curaProfileWarning'),button=$('curaProfileBtn');
+ const advice=adviseCuraForModel(crystals,s);
+ const adviceNode=$('curaModelAdvice'),recommend=$('curaRecommendedNozzleBtn');
+ if(adviceNode)adviceNode.textContent=advice.supported?
+  'Model-aware candidate: '+advice.nozzle.toFixed(2)+' mm nozzle · smallest screened feature '+
+  advice.featureWidthMm.toFixed(2)+' mm · approximately '+advice.estimatedLayers+
+  ' full-height layers. '+advice.reasons.at(0)+' Not a support, optical or flow guarantee.':
+  advice.reason;
+ if(recommend){recommend.disabled=!advice.supported;
+  recommend.textContent=advice.supported?'Use '+advice.nozzle.toFixed(2)+' mm candidate nozzle':'No compatible automatic choice';}
  if(!target||!warn||!button)return;
  try{
   const p=calculateCuraSettings({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
@@ -962,6 +1001,12 @@ function updateCuraProfileSummary(){
   warn.textContent=err.message;button.disabled=true;button.title=err.message;
  }
 }
+$('curaRecommendedNozzleBtn').onclick=()=>{
+ const a=adviseCuraForModel(crystals,s);
+ if(!a.supported)return;
+ s.curaNozzle=a.nozzle;syncForm();updateCuraProfileSummary();snapshot();
+ setStatus('Candidate nozzle '+a.nozzle+' mm selected in profile preview only. Fit the matching hardware and inspect the actual Cura slice.');
+};
 $('curaProfileBtn').onclick=()=>{
  try{
   const p=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
@@ -979,6 +1024,22 @@ $('opticalCsvBtn').onclick=()=>{
  const result=assessOpticalAccess(crystals,s,manufacturingReport);
  download(new Blob([opticalAuditCSV(result)],{type:'text/csv'}),'crystal-forge-optical-audit.csv');
  setStatus('Downloaded optical proximity audit · actual light paths unverified');
+};
+$('exportMountPlateBtn').onclick=async()=>{
+ if(!verifyPrepared()||s.mount!=='Detachable plate')return;
+ const button=$('exportMountPlateBtn');button.disabled=true;
+ try{
+  const wasm=await loadManifold(),plate=makeDetachableMountPlate(wasm,s,manufacturingReport.hardware);
+  saveSTL(plate.geometry,'crystal-forge-detachable-mount-plate.stl');plate.geometry.dispose();
+  setStatus('Matching plate exported: '+plate.holes+' M3-style fixing bores and '+plate.windows+' pixel windows. Test actual bolts and strength.');
+ }catch(err){console.error(err);alert('Detachable plate failed: '+err.message)}
+ finally{button.disabled=false}
+};
+$('singleWireExitBtn').onclick=()=>{
+ s.wireChannels=true;s.wireExit=true;
+ disposeManufacturing();syncForm();hardwareUI?.refresh();updateLEDs();renderInfo();snapshot();
+ snapView('bottom');
+ setStatus('Push-fit cable route planned to the outside edge. Cyan shows the guide; use Print → Prepare print mesh and BOT to inspect the real open groove.');
 };
 $('wiringCsvBtn').onclick=()=>{
  const plan=planHardware(crystals,s),routes=plan.wirePlan?.routes||[];
