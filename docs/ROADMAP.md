@@ -1,3 +1,7 @@
+# Active PR7 — All remaining fabrication phases
+
+[Draft PR7](https://github.com/connorturansky-svg/crystal-forge/pull/13) contains new work across all five phases. [PR7 implementation and real-world acceptance](PR7_COMPLETE_FABRICATION.md) is the current source of truth; [PR6 baseline](PR6_ALL_PHASES.md) and [PR5 master plan](PR5_MASTER_IMPLEMENTATION_PLAN.md) retain the earlier full backlog. Issues #6–#10 stay open until their real mechanical, optical and Cura test requirements are satisfied.
+
 # PR6 — Combined five-phase draft
 
 A single [draft PR6](https://github.com/connorturansky-svg/crystal-forge/pull/11) implements changes across all five delivery packages. [Full acceptance matrix](PR6_ALL_PHASES.md) distinguishes working code from advanced/physical features still pending. [Original detailed backlog](PR5_MASTER_IMPLEMENTATION_PLAN.md) and issues #6–#10 remain authoritative.

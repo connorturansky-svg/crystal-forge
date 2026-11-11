@@ -1,6 +1,16 @@
 # AI handover — read immediately after AGENTS.md
 
-**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.10.0 (PR5 merged). **Active:** draft PR #11 v0.11.0 on `feat/pr6-all-phases`.
+**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.11.0 (PR6 merged). **Active:** draft PR #13 v0.12.0 on `feat/pr7-complete-fabrication`.
+
+## PR7 handover — complete fabrication phases (11 November 2026)
+
+- PR13: https://github.com/connorturansky-svg/crystal-forge/pull/13. Based on merged PR6/main SHA `d71f7e781b247e4caf422ac600e010b2720614be`.
+- `targeted-light-paths.js` and manufacturing cutter add opt-in LED-to-crystal real narrow bores. Defaults OFF, alternative to slow balloon hollowing or vault. Conservative skip reporting; optical output NOT verified by Cura or physical print.
+- `resolveSocketProfile` and manual hardware editor let individual LEDs choose measured profiles. `makeSteppedPixelCoupon` creates three actual housing/retention/relief samples.
+- `detachable-plate.js` designs registered insert locations and `makeDetachablePlate` creates a separately printable M3 plate. Valid split STLs and dowels also join the production ZIP.
+- `print-quality.js` adds layer/flow estimates; `fabrication-worker.js` posts finer stage progress; `CRYSTAL_FORGE_BENCH_EXTENDED=1` times 10/16/40/60.
+- Full scope and merge/physical gates: `docs/PR7_COMPLETE_FABRICATION.md`. Preserve existing project JSON compatibility, no implied certified overhead load or continuous light paths.
+- Review exact latest static, browser and Manifold checks before marking ready, then test actual Cura and real PLA/PETG samples.
 
 ## PR6 all-phase handover (11 November 2026)
 

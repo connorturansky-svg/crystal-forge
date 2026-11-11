@@ -220,3 +220,24 @@ Five reusable global/individual crystal shaping presets with locked-object prote
 ## F29 — PR6 phase E: reproducible production pack
 
 A binary ZIP bundles the *current validated prepared STL*, editable JSON, Cura candidate when compatible, hardware/wiring CSVs, per-crystal audit, fabrication checklist and handoff note.
+
+## F30 — PR7 physical, targeted LED-to-crystal bores
+
+- Default-off alternative to slow global hollowing. Real subtractive cylinders connect valid LED socket roof positions through the base toward viable crystal spines.
+- Diameter/reach controls, conservative roof/mount/root screening, accepted/skipped manufacturing counts.
+- A Boolean manifold and proximity report do not prove optical continuity in real Cura slices or filament. Physical validation remains mandatory.
+
+## F31 — PR7 per-LED profiles and measured stepped fit tests
+
+- Individual manual LED positions can use different saved pixel profile IDs, affecting actual flange collision envelopes and Manifold cutters.
+- Three real stepped socket coupon sizes: nominal ±0.15 mm, including cap, flange, optional retention and relief.
+
+## F32 — PR7 physically registered detachable mounting plate
+
+- Detachable plate mount preset generates two M3 base insert pockets. Matching through-hole plate exports as its own STL when inside the base footprint.
+- Production ZIP includes valid plate and optional split parts/pegs. Separate actual inserts/bolts and strength/retention testing required.
+
+## F33 — PR7 Cura and manufacturing performance
+
+- Approximate material flow and layer count in Print; no replacement for G-code analysis.
+- Progress stages reported by Worker; opt-in 10/16/40/60-crystal benchmarks through CRYSTAL_FORGE_BENCH_EXTENDED.
