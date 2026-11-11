@@ -259,6 +259,8 @@ try{
  await page.waitForFunction(w=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.width===w,originalWidth,{timeout:8000});
  assert(await page.locator('#savedProjectSelect option').count()>=3,'Previous active project also backed up on open');
  assert(await page.locator('#cloudBackupImport').count(),'Complete portable vault backup may be reimported');
+ assert(await page.locator('#cloudHistory').count()&&await page.locator('#cloudHistoryRestore').count(),
+  'Private cloud vault history and restore controls are present');
  console.log('PR10 named multi-project save/open and active-project rollback verified');
  assert(await page.locator('#cloudRepo').count(),'Private GitHub cloud vault panel is available');
  await page.locator('.cloud-sync-panel summary').click();
