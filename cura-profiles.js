@@ -10,6 +10,23 @@
 export const CURA_NOZZLES=[0.25,0.4,0.6,0.8];
 export const CURA_MACHINES=['Ultimaker 3 Extended','Ultimaker 2+'];
 export const CURA_MATERIALS=['PLA','PETG'];
+// Cura makes imported quality_changes visible only when the quality type
+// exists for the ACTIVE machine/variant/material. Not every combo has 'normal'.
+export const CURA_QUALITY_TYPES=['auto','normal','high','draft','coarse','low','fast','extra coarse','fine','not_supported'];
+export function resolveCuraQualityType(machine,nozzle,selected='auto'){
+ if(selected!=='auto')return selected;
+ if(nozzle>=.8)return 'coarse';
+ if(nozzle>=.6)return 'draft';
+ if(nozzle<=.25)return 'high';
+ return 'normal';
+}
+export function curaFallbackText(p){
+ return ['Crystal Forge Cura settings — select the correct physical printer, nozzle/core and material first.',
+  'If a downloaded .curaprofile is invisible, select an existing available Cura profile and enter these settings in Custom mode.',
+  'Requested Cura quality type: '+p.qualityType,
+  ...Object.entries({...p.global,...p.extruder}).map(([k,v])=>k+' = '+v),
+  'DO NOT infer support-free geometry from these settings. Inspect every layer in Cura.'].join('\n')+'\n';
+}
 export const CURA_INTENTS=[
  {value:'light',name:'Light transmission (0% infill)'},
  {value:'balanced',name:'Balanced strength (10–15% infill)'},
@@ -25,6 +42,7 @@ export function validateCuraOptions(options={}){
  const material=options.material||'PLA';
  const quality=Number(options.quality??60);
  const intent=options.intent||'light';
+ const qualityType=String(options.qualityType||'auto').trim().toLowerCase();
  if(!CURA_MACHINES.includes(machine))throw Error('Select Ultimaker 3 Extended or Ultimaker 2+.');
  if(!CURA_NOZZLES.includes(nozzle))throw Error('Nozzle must be 0.25, 0.4, 0.6 or 0.8 mm.');
  if(machine==='Ultimaker 3 Extended'&&nozzle===.6)
@@ -32,7 +50,9 @@ export function validateCuraOptions(options={}){
  if(!CURA_MATERIALS.includes(material))throw Error('Material must be PLA or PETG.');
  if(!Number.isFinite(quality)||quality<0||quality>100)throw Error('Quality must be between 0 and 100.');
  if(!CURA_INTENTS.some(item=>item.value===intent))throw Error('Unknown print intent.');
- return {machine,nozzle,material,quality:Math.round(quality),intent};
+ if(!CURA_QUALITY_TYPES.includes(qualityType))throw Error('Select a known Cura quality type.');
+ return {machine,nozzle,material,quality:Math.round(quality),intent,
+  qualityType:resolveCuraQualityType(machine,nozzle,qualityType)};
 }
 export function calculateCuraSettings(options={}){
  const o=validateCuraOptions(options);
@@ -76,7 +96,7 @@ export function calculateCuraSettings(options={}){
   cool_fan_speed:fan
  };
  const warnings=[
-  'This file changes print settings only. Confirm the physical nozzle or AA print core and correct material in Cura before importing.',
+  'This file changes print settings only. Confirm physical nozzle/core, material and that quality type '+o.qualityType+' appears under the selected Cura configuration.',
   '0% infill does not guarantee connected optical cavities: Cura may still print solid skins between the LED and crystal spikes.',
   'Support-free printing and bridge spans are not guaranteed. Always inspect Cura layer preview, especially over open bases and LED channels.',
   'These values are conservative starting points, not measured or machine-tested optimisations. Test a small calibration piece.'
@@ -143,7 +163,7 @@ export function createCuraProfile(options={}){
  // A 'normal' quality base exists for the stock supported configurations.
  // This file overlays the installed Cura machine/material/variant profile;
  // it does not install/change a hardware definition or nozzle itself.
- const qualityType='normal';
+ const qualityType=p.qualityType;
  const title='Crystal Forge '+p.machine+' '+p.nozzle+'mm '+p.material+' Q'+p.quality;
  const global=makeContainer(title,definition,qualityType,material,variant,p.global);
  const extruder=makeContainer(title,definition,qualityType,material,variant,p.extruder,0);
@@ -156,5 +176,6 @@ export function createCuraProfile(options={}){
  const bytes=zipProfileEntries(entries);
  const base='Crystal-Forge_'+(p.machine==='Ultimaker 3 Extended'?'UM3-Extended':'UM2-Plus')+
   '_'+String(p.nozzle).replace('.','p')+'mm_'+p.material+'_Q'+p.quality;
- return {...p,bytes,files:entries.map(x=>x[0]),filename:base+'.curaprofile',title};
+ return {...p,bytes,files:entries.map(x=>x[0]),filename:base+'.curaprofile',title,
+  fallbackText:curaFallbackText(p),fallbackFilename:base+'-manual-settings.txt'};
 }
