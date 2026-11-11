@@ -36,7 +36,11 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  const isBuild=()=>!!document.querySelector('[data-tab="build"].active');
  const getPlan=()=>planHardware(getCrystals(),getSettings());
  function clear(){
-  for(const m of [...guides.children]){guides.remove(m);m.geometry.dispose();m.material.dispose()}
+  for(const m of [...guides.children]){guides.remove(m);m.traverse(node=>{
+   node.geometry?.dispose();
+   if(Array.isArray(node.material))node.material.forEach(item=>item.dispose());
+   else node.material?.dispose();
+  })}
   markerLayer.replaceChildren();markerObjects.length=0;
  }
  function showSelection(kind,id,index,scroll=true){
@@ -90,6 +94,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  }
  requestAnimationFrame(positionMarkers);
  function draw(plan){
+  const s=getSettings();
   clear();
   plan.sockets.forEach((p,i)=>addMarker('pixel',p,i));
   plan.mounts.forEach((p,i)=>addMarker('mount',p,i));
@@ -437,6 +442,56 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  };
  $('stopHolePlacementBtn').onclick=cancel;
  const canvas=renderer.domElement;
+ // A second click-and-hold on a selected marker moves the actual socket.
+ // Preserve orbit on empty canvas and commit only once the pointer is released.
+ document.addEventListener('pointermove',e=>{
+  if(!markerDrag)return;
+  if(Math.hypot(e.clientX-markerDrag.startX,e.clientY-markerDrag.startY)<5&&!markerDrag.moved)return;
+  const data=findPoint(e);
+  if(!data)return;
+  const state=getSettings(),key=markerDrag.key;
+  const i=state[key]?.findIndex(p=>p.id===markerDrag.id);
+  if(i<0)return;
+  const old=state[key][i];
+  if(!markerDrag.moved){
+   markerDrag.original={x:old.x,z:old.z};
+   markerDrag.moved=true;orbit.enabled=false;
+  }
+  const valid=data.insideBase&&placementValid(markerDrag.kind,data.pos,i);
+  const side=camera.position.y<data.y?-1:1;
+  preview.position.set(data.pos.x,data.y+side*.8,data.pos.z);
+  preview.scale.setScalar(Math.max(2,markerDrag.kind==='pixel'?resolvePixelProfile(state).maxDiameter/2:3));
+  preview.visible=true;rim.material.color.setHex(valid?0x32dbb3:0xff536b);disc.material.color.copy(rim.material.color);
+  if(valid){
+   old.x=data.pos.x;old.z=data.pos.z;markerDrag.lastValid={...data.pos};
+   const now=performance.now();
+   if(now-markerDrag.lastPreview>90){
+    markerDrag.lastPreview=now;
+    draw(getPlan()); // live cable lengths/overlaps without running expensive Manifold
+    $('wireRouteDetails').textContent=getPlan().wirePlan?.messages?.join(' ')||'';
+   }
+  }
+  e.preventDefault();
+ },true);
+ document.addEventListener('pointerup',e=>{
+  if(!markerDrag)return;
+  const drag=markerDrag;markerDrag=null;preview.visible=false;
+  if(!drag.moved)return;
+  orbit.enabled=!placing&&!gizmo.dragging;
+  const state=getSettings(),index=state[drag.key]?.findIndex(p=>p.id===drag.id);
+  if(index>=0){
+   const p=state[drag.key][index];
+   if(!drag.lastValid){p.x=drag.original.x;p.z=drag.original.z;}
+   onEdit();
+   onStatus(drag.lastValid?'Moved '+hardwareName(drag.kind,index)+' · routes recalculated':'Invalid position: original hole restored');
+  }
+ },true);
+ document.addEventListener('pointercancel',()=>{
+  if(!markerDrag)return;
+  const drag=markerDrag;markerDrag=null;preview.visible=false;orbit.enabled=!placing&&!gizmo.dragging;
+  const state=getSettings(),p=state[drag.key]?.find(x=>x.id===drag.id);
+  if(p&&drag.original){p.x=drag.original.x;p.z=drag.original.z;onEdit()}
+ },true);
  canvas.addEventListener('pointermove',e=>updateCursor(e),true);
  canvas.addEventListener('pointerleave',()=>{preview.visible=false;lastCursor=null},true);
  canvas.addEventListener('pointerdown',e=>{
