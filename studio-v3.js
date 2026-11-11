@@ -11,6 +11,7 @@ setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
 import {installResizablePanels} from './workspace-panels.js';
+import {saveTemplate,readTemplates,findTemplate,deleteTemplate} from './project-templates.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
@@ -691,6 +692,34 @@ document.querySelectorAll('[data-state]').forEach(e=>{
  });
  e.addEventListener('change',snapshot);
 });
+function refreshSavedTemplates(selected=''){
+ const list=$('templateSelect'),templates=readTemplates(localStorage);
+ list.replaceChildren(new Option('Choose a saved design…',''));
+ for(const t of templates)list.add(new Option(t.name,t.id));
+ list.value=selected;
+}
+refreshSavedTemplates();
+$('saveTemplateBtn').onclick=()=>{
+ const name=prompt('Name this reusable Crystal Forge design',s.title||'Untitled cluster');
+ if(!name?.trim())return;
+ try{
+  const saved=saveTemplate(localStorage,name.trim(),s,crystals);
+  refreshSavedTemplates(saved.id);setStatus('Saved reusable design '+saved.name);
+ }catch(err){alert('Could not save template: '+err.message)}
+};
+$('loadTemplateBtn').onclick=()=>{
+ const t=findTemplate(localStorage,$('templateSelect').value);
+ if(!t){setStatus('Select a saved design first');return}
+ try{
+  restore(JSON.stringify({settings:t.settings,crystals:t.crystals,selectedId:null}));
+  snapshot();setStatus('Loaded design '+t.name+' · full project remains editable');
+ }catch(err){alert('Template could not be loaded: '+err.message)}
+};
+$('deleteTemplateBtn').onclick=()=>{
+ const id=$('templateSelect').value;
+ if(!id||!confirm('Delete this locally saved template?'))return;
+ deleteTemplate(localStorage,id);refreshSavedTemplates();setStatus('Deleted saved template');
+};
 $('applyShapePresetBtn').onclick=()=>{
  const preset=$('shapePresetSelect').value;
  const result=applyShapePreset(crystals,s,selectedId,preset);
