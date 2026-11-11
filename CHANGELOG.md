@@ -2,6 +2,10 @@
 
 ## v0.10.0 — 11 November 2026 (PR5 draft; not merged)
 
+- **Cura profile generator:** in Print, choose UM3 Extended/UM2+, actual nozzle/print core (0.25 / 0.4 / 0.6 / 0.8 mm where compatible), PLA/PETG, Fast-to-Fine quality and translucent/balanced/durable intent. Download a .curaprofile ZIP with machine/material-specific overrides for layers, shells, speed, cooling and infill. Unsupported UM3 AA 0.6 is blocked with an explanation.
+- Added a real-time Cura settings summary, generated ZIP metadata tests and browser download coverage. Preset temperatures remain inherited from Cura's selected material; actual imports and physical prints must be verified.
+- Reorganised all unfinished features into **five large delivery packages** (A–E) covering Cura/printability, LED light paths/hardware, modular mounting, creative editor and production hardening; see the master plan and Cura import guide.
+
 - Added optional physical underside cable grooves between accepted pixels, with a deterministic planner, collision/roof checks, cyan Build previews, optional nearest edge exit and best-effort extra slack.
 - Manifold prints now cut planned wiring grooves, report the groove count, unconnected pixels and estimated wire length. Added CSV output with segment-by-segment X/Z coordinates and lengths.
 - Fit test coupon now follows the selected built-in or custom LED bore diameter rather than always using a 12 mm test. The diameter slider now supports small seed pixels.

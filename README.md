@@ -8,7 +8,7 @@ Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three
 
 Draft [PR5](https://github.com/connorturansky-svg/crystal-forge/pull/5) adds an opt-in underside wiring plan and manufacturing grooves, wire CSV, LED-specific calibration strips, conservative roof-span review and user-entered printer dimensions. The live app only updates after a reviewed merge to main.
 
-The **[PR5 master implementation plan](docs/PR5_MASTER_IMPLEMENTATION_PLAN.md)** tracks every known outstanding stage, from physical pixel retention through real optical passages, bridge/support checks, modular split connectors, hardware editing, performance and material previews. Items listed there are not automatically implemented.
+The **[PR5 master implementation plan](docs/PR5_MASTER_IMPLEMENTATION_PLAN.md)** groups all outstanding tasks into five large delivery packages, and the [Cura profile generator guide](docs/CURA_PROFILE_GENERATOR.md) explains machine/nozzle/material compatibility, importing the .curaprofile ZIP and the required test prints. The backlog tracks stages from physical pixel retention through real optical passages, bridge/support checks, modular split connectors, hardware editing, performance and material previews. Items listed there are not automatically implemented.
 
 ## Workspaces
 
