@@ -34,7 +34,7 @@ const index=read('index.html');
 assert.match(index,/<script\s+type="module"\s+src="\.\/studio-v3\.js"><\/script>/,'Active app is bootstrapped from studio-v3.js');
 assert.match(index,/type="importmap"/,'The browser import map is declared');
 for(const id of ['viewport','prepareBtn','prepareStatus','prepareReport','showManufacturing',
- 'stlBtn','threeMfBtn','placePixelBtn','placeMountBtn','reportVault','reportLEDVents','pixelProfileSelect','pixelProfileOverlay','descriptionsBtn','contextHelp','wiringCsvBtn','reportWireChannels','reportRoofSpan','customPrinterSettings','shapePresetSelect','applyShapePresetBtn','printChecklistBtn','opticalCsvBtn','productionPackBtn','detachablePlateBtn','steppedPixelCouponBtn','reportTargeted','reportSkippedLight','printFlowEstimate']){
+ 'stlBtn','threeMfBtn','placePixelBtn','placeMountBtn','placeTabBtn','pickWireExitBtn','resetTabsBtn','reportVault','reportLEDVents','pixelProfileSelect','pixelProfileOverlay','descriptionsBtn','contextHelp','wiringCsvBtn','reportWireChannels','reportRoofSpan','customPrinterSettings','shapePresetSelect','applyShapePresetBtn','printChecklistBtn','opticalCsvBtn','productionPackBtn','detachablePlateBtn','steppedPixelCouponBtn','reportTargeted','reportSkippedLight','printFlowEstimate']){
  assert(index.includes('id="'+id+'"'),'Missing essential UI element #'+id);
 }
 const defaults=read('studio-v3.js');
