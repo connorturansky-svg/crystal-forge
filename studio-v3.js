@@ -805,8 +805,19 @@ cloudVault=new GitHubVault({storage:localStorage,onStatus:message=>{
  const el=$('cloudStatus');if(el)el.textContent=message;
 }});
 $('cloudRepo').value=localStorage.getItem('crystal-forge-private-repo-name')||'';
+const refreshCloudHistory=async()=>{
+ const selector=$('cloudHistory');
+ selector.replaceChildren(new Option('Loading private history…',''));
+ const history=await cloudVault.listHistory();
+ selector.replaceChildren(new Option(history.length?'Select a historical backup…':'No backups saved yet',''));
+ for(const entry of history){
+  const label=(entry.date?new Date(entry.date).toLocaleString()+' · ':'')+entry.sha.slice(0,9)+' · '+entry.message.slice(0,54);
+  selector.add(new Option(label,entry.sha));
+ }
+ return history.length;
+};
 const cloudAction=async(action)=>{
- const buttons=['cloudConnect','cloudPull','cloudPush','cloudDisconnect'].map($);
+ const buttons=['cloudConnect','cloudPull','cloudPush','cloudDisconnect','cloudHistoryRefresh','cloudHistoryRestore'].map($);
  buttons.forEach(b=>{b.disabled=true});
  try{await action()}catch(error){
   console.error('Cloud vault operation',error);
@@ -820,9 +831,11 @@ $('cloudConnect').onclick=()=>cloudAction(async()=>{
  localStorage.setItem('crystal-forge-private-repo-name',repo);
  $('cloudAuto').checked=false;
  $('cloudStatus').textContent=result.exists?'Connected to private '+repo+'. Pull + merge before uploading.':'Connected to private '+repo+'. Click Sync Now to create your backup.';
+ await refreshCloudHistory();
 });
 $('cloudDisconnect').onclick=()=>{
  cloudVault.disconnect();$('cloudToken').value='';$('cloudAuto').checked=false;
+ $('cloudHistory').replaceChildren(new Option('Connect and refresh history…',''));
 };
 $('cloudPull').onclick=()=>cloudAction(async()=>{
  if(!cloudVault.connected)throw Error('Connect to your private GitHub repository first.');
@@ -836,6 +849,18 @@ $('cloudPull').onclick=()=>cloudAction(async()=>{
 $('cloudPush').onclick=()=>cloudAction(async()=>{
  if(!cloudVault.connected)throw Error('Connect to your private GitHub repository first.');
  await cloudVault.push();
+ await refreshCloudHistory();
+});
+$('cloudHistoryRefresh').onclick=()=>cloudAction(async()=>{await refreshCloudHistory()});
+$('cloudHistoryRestore').onclick=()=>cloudAction(async()=>{
+ const sha=$('cloudHistory').value;
+ if(!sha)throw Error('Select a previous private GitHub vault version.');
+ if(!confirm('Restore the selected historical vault? Your current local project is backed up first. Sync Now will create a NEW GitHub commit; older commits remain available.'))return;
+ const result=await cloudVault.restoreVersion(sha);
+ if(result.projectRestored)restore(localStorage.getItem('crystal-forge-v3'));
+ else mergePixelLibrary();
+ refreshSavedProjects();refreshSavedTemplates();snapshot();
+ $('cloudStatus').textContent='Historical vault restored locally. '+result.projects+' saved projects recovered. Sync Now creates a new remote revision.';
 });
 $('cloudAuto').onchange=()=>{
  const enabled=cloudVault.setAuto($('cloudAuto').checked);
