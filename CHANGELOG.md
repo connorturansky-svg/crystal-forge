@@ -1,6 +1,15 @@
 # Crystal Forge — Changelog
 
-## v0.10.0 — 11 November 2026 (PR5 draft; not merged)
+## v0.11.0 — 11 November 2026 (PR6 draft, all five phases)
+
+- **A / Cura:** Model-aware thin-feature, roof and nozzle checklists downloadable as text.
+- **B / LEDs:** Per-crystal optical uncertainty CSV and optional experimental bore compression ridge, default off.
+- **C / Modular:** Optional mating split-face dowel bores and separate printable peg coupon, solid bases only.
+- **D / Studio:** Five scope-aware crystal shaping presets, optional snapped manual LED/mount positions, and Shift-drag to reposition existing manual holes.
+- **E / Production:** Validated STL, editable project, Cura candidate, parts list, wiring CSV, optical audit, Cura checklist and build note in one ZIP; additional regression tests.
+- See `docs/PR6_ALL_PHASES.md`. All phases are represented in the PR; remaining advanced mechanics and real Cura/physical acceptance are **not** falsely marked complete.
+
+## v0.10.0 — 11 November 2026 (PR5 merged)
 
 - **Cura profile generator:** in Print, choose UM3 Extended/UM2+, actual nozzle/print core (0.25 / 0.4 / 0.6 / 0.8 mm where compatible), PLA/PETG, Fast-to-Fine quality and translucent/balanced/durable intent. Download a .curaprofile ZIP with machine/material-specific overrides for layers, shells, speed, cooling and infill. Unsupported UM3 AA 0.6 is blocked with an explanation.
 - Added a real-time Cura settings summary, generated ZIP metadata tests and browser download coverage. Preset temperatures remain inherited from Cura's selected material; actual imports and physical prints must be verified.

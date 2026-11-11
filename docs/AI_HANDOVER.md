@@ -1,6 +1,17 @@
 # AI handover — read immediately after AGENTS.md
 
-**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.9.0 (PR4 merged). **Active:** draft PR #5 v0.10.0 on `feat/pr5-wiring-diagnostics-roadmap`.
+**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.10.0 (PR5 merged). **Active:** draft PR #11 v0.11.0 on `feat/pr6-all-phases`.
+
+## PR6 all-phase handover (11 November 2026)
+
+- PR: https://github.com/connorturansky-svg/crystal-forge/pull/11. Based on main `fb0f2843e8a802a420932a65737b14f58ba715f5` (merged PR5).
+- **A:** `print-quality.js` real model nozzle, roof, wire and Cura review; printable checklist.
+- **B:** `optical-audit.js` per-spike candidate proximity, explicit unverified statuses, optional `pixelRetentionLip` inside Manifold cutter. Default off.
+- **C:** `split-joints.js` conservative base dowel plan, matching split STL recesses, separately printed pegs.
+- **D:** `design-workflows.js` shape presets, hardware X/Z grid snapping and Shift-drag repositioning of existing manual holes.
+- **E:** `production-pack.js`, reusable `encodeSTL`, a binary one-download ZIP with model, project, Cura candidate and build notes.
+- Full accepted/pending matrix: `docs/PR6_ALL_PHASES.md`; tracked issues #6–#10 remain open for real physical/optical/Cura and unfinished advanced work.
+- Mandatory: exact-head CI/static/browsers/Manifold tests, physical LED/dowel fit, Cura import, optical/roof review before merging. Preview or model topology does not certify physical safety.
 
 ## PR5 handover (11 November 2026)
 

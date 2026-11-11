@@ -145,6 +145,17 @@ const SETTINGS={
  "wireWidth": ["Wire channel width","Width of each open-bottom cable groove. Measure actual cable insulation and keep material around nearby holes."],
  "wireDepth": ["Wire channel depth","Depth of the underside cable groove. Increasing it leaves less plastic above the cable."],
  "wireSlack": ["Extra routing slack","Try a bend in the routing groove for additional cable slack. Fallback to a direct path when a bent route would cross an obstacle."],
+ "pixelRetentionLip": ["Experimental pixel retaining ridge","Adds an internal narrow compression band. Not a validated snap fit. Test real LED insertion and print strength."],
+ "printChecklistBtn": ["Cura review checklist","Download model-aware checks for thin features, printer configuration, roof and wiring. Not proof of printable geometry."],
+ "opticalCsvBtn": ["Crystal optical audit","Download per-crystal source distance and light-channel uncertainty. Not an optical simulation or verified shared lumen."],
+ "splitAlignment": ["Experimental alignment dowels","Cut mating pockets in solid split halves and export separate pegs. Real assembly fit and joint strength require testing."],
+ "splitPinDiameter": ["Dowel diameter","Nominal printable peg diameter."],
+ "splitPinDepth": ["Dowel depth","Length of the socket in each split half."],
+ "splitPinClearance": ["Dowel clearance","Extra diameter around the peg in the socket. Test for your machine/filament."],
+ "shapePresetSelect": ["Crystal shaping preset","Pick a reusable parameter set and apply globally or to an unlocked selected crystal."],
+ "applyShapePresetBtn": ["Apply crystal preset","Apply the selected shape only to the selected unlocked crystal, or to global shape parameters when none is selected."],
+ "hardwareSnap": ["Snap hardware coordinates","Applies grid snapping when adding/moving LED or mounting holes and when editing numeric coordinates."],
+ "hardwareSnapStep": ["Hardware snap spacing","Grid increment in millimetres for hardware hole placement; can be disabled without changing existing holes."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."
@@ -319,6 +330,7 @@ const BUTTONS={
   "Exports the prepared print geometry as a 3MF project model for slicing."
  ],
  "wiringCsvBtn": ["Export wiring plan CSV","Download accepted underside channel segments and lengths, including skipped-route counts. These are estimates; check your wiring physically."],
+ "productionPackBtn": ["Complete production pack","Export a ZIP containing the prepared STL, editable project, Cura candidate profile, hardware CSVs and inspection/safety notes. Requires a current manufacturing mesh."],
  "bomBtn": [
   "Parts list",
   "Downloads a CSV estimate of LEDs, crystals and mounting features."

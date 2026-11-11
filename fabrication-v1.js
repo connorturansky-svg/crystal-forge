@@ -142,7 +142,14 @@ function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
  const shaftEnd=tipY-capRise,depth=Math.max(.5,shaftEnd-start);
  const bodyRadius=Math.max(.8,p.boreDiameter/2),cutters=[];
  const cylinder=(r,y,h)=>hold(wasm.Manifold.cylinder(h,r,r,32).rotate([-90,0,0]).translate([pos.x,y,pos.z]));
- cutters.push(cylinder(bodyRadius,start,depth));
+ const lip=Math.min(.7,Math.max(0,Number(p.retentionLip)||0));
+ const lipFrom=Math.max(1.9,Number(p.flangeHeight||0)+.8),lipWidth=1.4;
+ if(lip>0&&depth>lipFrom-start+lipWidth+2&&bodyRadius-lip>1.4){
+  // Narrow bore section above the flange. Physical snap-fit is unverified.
+  cutters.push(cylinder(bodyRadius,start,lipFrom-start));
+  cutters.push(cylinder(bodyRadius-lip,lipFrom,lipWidth));
+  cutters.push(cylinder(bodyRadius,lipFrom+lipWidth,depth-(lipFrom+lipWidth-start)));
+ }else cutters.push(cylinder(bodyRadius,start,depth));
  if(p.kind!=='seed'&&p.flangeHeight>.1&&p.maxDiameter>p.boreDiameter+.1)
   cutters.push(cylinder(p.maxDiameter/2,-.5,Math.min(depth,p.flangeHeight+.5)));
  cutters.push(hold(wasm.Manifold.sphere(bodyRadius,32).scale([1,capRise/bodyRadius,1]).translate([pos.x,shaftEnd,pos.z])));
@@ -155,7 +162,7 @@ function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
   }
  }
  return {solid:hold(wasm.Manifold.union(cutters)),roofY,tipY,shaftEnd,
-  capRise,remainingWall:roofY-tipY,profileId:p.id};
+  capRise,remainingWall:roofY-tipY,profileId:p.id,retentionLip:lip};
 }
 function cleanupAll(list){
  for(const m of list){try{m.delete()}catch(e){}}
@@ -384,7 +391,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolvePixelProfile(s));
     cutters.push(bore.solid);
     socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
-      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId});
+      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId,retentionLip:bore.retentionLip});
     if(bore.shaftEnd<20)warnings.push('LED bore at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+Math.max(0,bore.shaftEnd).toFixed(1)+' mm of full-width clearance. Confirm the actual LED housing fits.');
    }
    const holes=hold(wasm.Manifold.union(cutters));
@@ -425,6 +432,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   }
   if(hardware.sockets.length&&Number(s.baseHeight||0)<resolvePixelProfile(s).bodyHeight)
    warnings.push('Selected LED body exceeds base depth; verify fit and protrusion in Cura.');
+  if(Number(s.pixelRetentionLip||0)>0)warnings.push('Experimental socket retaining ridge '+s.pixelRetentionLip+' mm: fit-test a real pixel before relying on this unverified compression feature.');
   if(s.cutSockets)warnings.push('Pixel fits are nominal. Test print tolerances and retention before installing any electronics.');
   if(hardware.mounts.length){
    const cutters=[];
@@ -525,7 +533,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
  }finally{cleanupAll(owned)}
 }
 // Converts Three.js Y-up preview into the Z-up coordinate convention used by slicers.
-export function saveSTL(geometry,filename='crystal-forge-manifold.stl'){
+export function encodeSTL(geometry){
  const p=geometry.getAttribute('position').array,count=Math.floor(p.length/9);
  const bytes=new ArrayBuffer(84+50*count),dv=new DataView(bytes);dv.setUint32(80,count,true);
  let off=84;const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),n=new THREE.Vector3();
@@ -535,7 +543,10 @@ export function saveSTL(geometry,filename='crystal-forge-manifold.stl'){
   for(const v of [n,a,b,c]){dv.setFloat32(off,v.x,true);dv.setFloat32(off+4,v.y,true);dv.setFloat32(off+8,v.z,true);off+=12}
   dv.setUint16(off,0,true);off+=2;
  }
- const blob=new Blob([bytes],{type:'model/stl'});
+ return new Uint8Array(bytes);
+}
+export function saveSTL(geometry,filename='crystal-forge-manifold.stl'){
+ const blob=new Blob([encodeSTL(geometry)],{type:'model/stl'});
  const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=filename;link.click();
  setTimeout(()=>URL.revokeObjectURL(url),1500);
  return blob;
@@ -601,7 +612,7 @@ export function makeCalibrationStrip(wasm,nominal=12){
   return {geometry:fromResultMesh(strip.getMesh()),diameters:Array.from({length:5},(_,i)=>Math.round((diameter+(i-2)*.1)*100)/100),triangles:strip.numTri()};
  }finally{cleanupAll(keep)}
 }
-export function splitPreparedMesh(wasm,mesh,cutX=0){
+export function splitPreparedMesh(wasm,mesh,cutX=0,jointPlan=null){
  const keep=[];const hold=o=>{keep.push(o);return o};
  try{
   const m=new wasm.Mesh({numProp:3,vertProperties:new Float32Array(mesh.points),triVerts:new Uint32Array(mesh.triangles)});
@@ -609,10 +620,34 @@ export function splitPreparedMesh(wasm,mesh,cutX=0){
   const body=hold(new wasm.Manifold(m));assertSolid(body,'Prepared assembly for splitting');
   const parts=body.splitByPlane([1,0,0],Number(cutX));
   parts.forEach(hold);
-  return parts.map((p,i)=>{
+  const bores=jointPlan?.points||[];
+  const result=parts.map((p,i)=>{
    if(p.isEmpty())return null;
-   assertSolid(p,'Split '+(i+1));
-   return{geometry:fromResultMesh(p.getMesh()),triangles:p.numTri(),volume:p.volume()}
+   let piece=p;
+   if(bores.length){
+    const cutters=bores.map(pt=>{
+     const length=pt.depth+.45,r=(pt.diameter+pt.clearance)/2;
+     const startX=i===0?Number(cutX)-pt.depth-.15:Number(cutX)-.30;
+     return hold(wasm.Manifold.cylinder(length,r,r,40).rotate([0,90,0]).translate([startX,pt.y,pt.z]));
+    });
+    const opened=hold(piece.subtract(hold(wasm.Manifold.union(cutters))));
+    assertSolid(opened,'Split alignment holes '+(i+1));piece=opened;
+   }
+   assertSolid(piece,'Split '+(i+1));
+   return{geometry:fromResultMesh(piece.getMesh()),triangles:piece.numTri(),volume:piece.volume()}
   });
+  result.joints=bores.length;
+  return result;
+ }finally{cleanupAll(keep)}
+}
+
+export function makeSplitPinCoupon(wasm,points=[]){
+ if(!points.length)return null;
+ const keep=[];const hold=x=>{keep.push(x);return x};
+ try{
+  const rods=points.map((pt,i)=>hold(wasm.Manifold.cylinder(pt.depth*2-.5,pt.diameter/2,pt.diameter/2,40)
+   .rotate([-90,0,0]).translate([i*(pt.diameter+6),0,0])));
+  const body=hold(wasm.Manifold.union(rods));assertSolid(body,'Alignment pin coupon');
+  return {geometry:fromResultMesh(body.getMesh()),count:points.length};
  }finally{cleanupAll(keep)}
 }

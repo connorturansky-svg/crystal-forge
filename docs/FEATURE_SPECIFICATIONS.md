@@ -200,3 +200,23 @@ Create a 16-crystal clustered design with a 25 mm integrated base and dome; test
 
 - **Behaviour:** existing five-hole test strip uses selected nominal bore with ±0.2 mm increments, including small seed pixels. Check body, flange and wire relief physically; stepped calibration coupons remain future work.
 - **Acceptance:** expected diameters and printable Manifold coupon; browser download.
+
+## F25 — PR6 phase A: model-aware Cura inspection
+
+Download warnings/inspection checklists for fine roots, selected nozzle, printed channel widths, roof bridging and adhesion. Explicitly not a slicer.
+
+## F26 — PR6 phase B: optical candidate audit and optional retention
+
+Per-crystal optical source distances and unverified status CSV. Optional short compression ridge in real LED socket cutter (off by default; test fit before use).
+
+## F27 — PR6 phase C: split dowels
+
+Conservative polygon/LED/mount collision-screened dowel points, matching holes in split Manifold parts and separate pin coupon STL. Solid base only and not structurally certified.
+
+## F28 — PR6 phase D: reusable creative shapes and snapped hardware
+
+Five reusable global/individual crystal shaping presets with locked-object protection, plus optional grid snapping of numeric and pointer-based manually placed LED/mount holes.
+
+## F29 — PR6 phase E: reproducible production pack
+
+A binary ZIP bundles the *current validated prepared STL*, editable JSON, Cura candidate when compatible, hardware/wiring CSVs, per-crystal audit, fabrication checklist and handoff note.
