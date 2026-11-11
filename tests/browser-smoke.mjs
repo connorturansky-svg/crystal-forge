@@ -257,9 +257,12 @@ try{
  await page.locator('[data-state="wireMode"]').selectOption('parallel');
  assert.equal(await page.locator('[data-state="wireMode"]').inputValue(),'parallel');
  await page.locator('[data-state="wirePairSpacing"]').evaluate(el=>{el.value='8';el.dispatchEvent(new Event('input',{bubbles:true}))});
- await page.waitForTimeout(120);
+ await page.waitForFunction(()=>{
+  const saved=JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings;
+  return saved?.wirePairSpacing===8;
+ },null,{timeout:12000});
  const pairedStored=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings);
- assert.equal(pairedStored.wirePairSpacing,8,'Paired wire spacing persists');
+ assert.equal(pairedStored.wirePairSpacing,8,'Paired wire spacing persists after the queued 3D rebuild');
  await page.locator('[data-state="wireMode"]').selectOption('single');
  await page.locator('[data-state="mount"]').selectOption('Edge fixing tabs');
  assert(await page.locator('#edgeTabSettings').isVisible(),'Edge tab controls are visible');
