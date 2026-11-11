@@ -5,7 +5,7 @@ import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
 import {nearestEdgePosition} from './edge-tabs.js';
 import {ensureHardwareIds,movePixelInString,hardwareName} from './hardware-identity.js';
 
-export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,onEdit,onStatus}){
+export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,getManufacturingVisible=()=>false,onEdit,onStatus}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
  guides.name='Live hardware holes';scene.add(guides);
  // A true cursor in the 3D scene, always visible above the intersected base
@@ -184,7 +184,10 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
     markerLayer.appendChild(tag);markerObjects.push({button:tag,p});
    }
   }
-  guides.visible=isBuild();
+  // The true prepared Manifold mesh must not be double-rendered with the
+  // translucent Build routing guides; they can resemble orphan wire stubs.
+  // P/M/T selection markers remain available independently.
+  guides.visible=isBuild()&&!getManufacturingVisible();
  }
  function refresh(){
   const s=getSettings();
