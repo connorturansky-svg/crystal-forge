@@ -190,6 +190,10 @@ body.light .cloud-sync-panel summary{color:#142d44}
 <p id="cloudStatus" class="note" role="status" aria-live="polite">Not connected · local data is still saved in this browser.</p>
 <div class="buttonrow"><button id="cloudPull" type="button">↓ Pull + merge from GitHub</button><button id="cloudPush" type="button">↑ Sync now to GitHub</button></div>
 <label class="checks"><input id="cloudAuto" type="checkbox"> Auto-sync changes when connected (3.5 s debounce)</label>
+<div class="control"><label>Private GitHub backup history</label>
+<select id="cloudHistory" aria-label="Choose an older private GitHub backup"><option value="">Connect and refresh history…</option></select></div>
+<div class="buttonrow"><button id="cloudHistoryRefresh" type="button">↻ Refresh history</button><button id="cloudHistoryRestore" type="button">↩ Restore selected version</button></div>
+<p class="note">Restoring copies the selected revision to this browser after preserving a local backup. Sync Now makes it the new current cloud revision without deleting GitHub history.</p>
 <button id="cloudBackup" type="button">↓ Download all local projects/profiles/templates backup</button>
 <div class="buttonrow"><label for="cloudBackupImport" class="note">Import a complete backup JSON</label><input id="cloudBackupImport" type="file" accept=".json,application/json" aria-label="Import an exported Crystal Forge vault backup"></div>
 <p class="note">Import keeps a local pre-import backup and merges profiles, projects and templates, retaining both versions on ID conflicts.</p>
