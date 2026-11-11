@@ -138,10 +138,15 @@ function positionedInnerCrystal(c,s,openingY,wall){
 }
 function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
  const p=profile||resolvePixelProfile({pixelDiameter:12,pixelFit:0});
- const tipY=Math.max(start+1.4,Math.min(roofY-2.8,start+p.bodyHeight)),available=tipY-start;
- const capRise=Math.min(Math.max(.35,p.capHeight),2.5,available*.24);
+ // The measured housing enters from the real bottom face (Y=0). The
+ // extra below-bed cutter length only opens the bore, not its usable depth.
+ const requestedBodyDepth=Math.max(1,Number(p.bodyHeight)||22);
+ const tipY=Math.max(start+1.4,Math.min(roofY-2.8,requestedBodyDepth)),available=tipY-start;
+ // Curved cap E is included within total B, not added on top.
+ const capRise=Math.min(Math.max(.35,Number(p.capHeight)||.35),Math.max(.35,Math.max(0,tipY)*.65));
  const shaftEnd=tipY-capRise,depth=Math.max(.5,shaftEnd-start);
  const bodyRadius=Math.max(.8,p.boreDiameter/2),cutters=[];
+ let relievedDepth=0;
  const cylinder=(r,y,h)=>hold(wasm.Manifold.cylinder(h,r,r,32).rotate([-90,0,0]).translate([pos.x,y,pos.z]));
  const lip=Math.min(.7,Math.max(0,Number(p.retentionLip)||0));
  const lipFrom=Math.max(1.9,Number(p.flangeHeight||0)+.8),lipWidth=1.4;
@@ -156,14 +161,16 @@ function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
  cutters.push(hold(wasm.Manifold.sphere(bodyRadius,32).scale([1,capRise/bodyRadius,1]).translate([pos.x,shaftEnd,pos.z])));
  if(p.wireWidth>.1&&p.wireDepth>.1){
   // Two shallow underside cable reliefs; not full wiring channels.
-  const w=Math.max(.8,p.wireWidth+p.clearance),h=Math.min(3,p.wireDepth),len=bodyRadius+4;
+  const w=Math.max(.8,p.wireWidth+p.clearance),h=Math.max(.2,Math.min(p.wireDepth,Math.max(.2,roofY-2.8))),len=bodyRadius+4;
+  relievedDepth=h;
   for(const sign of [-1,1]){
    cutters.push(hold(wasm.Manifold.cube([w,h+.5,len])
     .translate([pos.x-w/2,-.4,pos.z+(sign===1?bodyRadius*.35:-bodyRadius-4)])));
   }
  }
  return {solid:hold(wasm.Manifold.union(cutters)),roofY,tipY,shaftEnd,
-  capRise,remainingWall:roofY-tipY,profileId:p.id,retentionLip:lip};
+  capRise,remainingWall:roofY-tipY,profileId:p.id,retentionLip:lip,
+  requestedBodyDepth,usableBodyDepth:Math.max(0,tipY),wireReliefDepth:relievedDepth};
 }
 function cleanupAll(list){
  for(const m of list){try{m.delete()}catch(e){}}
@@ -429,7 +436,14 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
     const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,resolvePixelProfile(s));
     cutters.push(bore.solid);
     socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
-      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId,retentionLip:bore.retentionLip});
+      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall,profileId:bore.profileId,retentionLip:bore.retentionLip,requestedBodyDepth:bore.requestedBodyDepth,
+      usableBodyDepth:bore.usableBodyDepth,wireReliefDepth:bore.wireReliefDepth});
+    if(bore.usableBodyDepth<bore.requestedBodyDepth-.1)
+     warnings.push('LED at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+
+       bore.usableBodyDepth.toFixed(1)+' mm usable depth, less than the measured B length '+
+       bore.requestedBodyDepth.toFixed(1)+' mm. Increase base height or change the LED profile.');
+    if(bore.wireReliefDepth+.1<resolvePixelProfile(s).wireDepth)
+     warnings.push('Wire relief depth was reduced to preserve the roof. Verify cable clearance in Cura.');
     if(bore.shaftEnd<20)warnings.push('LED bore at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+Math.max(0,bore.shaftEnd).toFixed(1)+' mm of full-width clearance. Confirm the actual LED housing fits.');
    }
    const holes=hold(wasm.Manifold.union(cutters));
