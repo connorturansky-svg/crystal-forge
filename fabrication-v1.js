@@ -705,3 +705,23 @@ export function makeDetachablePlate(wasm,plan){
   return {geometry:fromResultMesh(plate.getMesh()),holes:plan.holes,thickness};
  }finally{cleanupAll(keep)}
 }
+
+export function makeSteppedPixelCoupon(wasm,settings){
+ const p=resolvePixelProfile(settings),keep=[],hold=x=>{keep.push(x);return x};
+ try{
+  const pitch=Math.max(22,p.maxDiameter+11),thick=Math.max(16,p.bodyHeight+6),width=Math.max(18,p.maxDiameter+8);
+  const body=hold(wasm.Manifold.cube([pitch*3,thick,width]));
+  const cuts=[];
+  const fits=[-.15,0,.15];
+  for(let i=0;i<3;i++){
+   const at={x:pitch*(i+.5),z:width/2},profile={...p,clearance:Number(p.clearance)+fits[i],
+    boreDiameter:p.boreDiameter+fits[i],maxDiameter:p.maxDiameter+fits[i]};
+   const bore=putSocket(wasm,hold,at,profile.maxDiameter/2,thick,-3,profile);
+   cuts.push(bore.solid);
+  }
+  const finished=hold(body.subtract(hold(wasm.Manifold.union(cuts))));
+  assertSolid(finished,'3-position stepped LED socket coupon');
+  return {geometry:fromResultMesh(finished.getMesh()),diameters:fits.map(x=>Number((p.boreDiameter+x).toFixed(2))),
+   profileName:p.name,triangles:finished.numTri()};
+ }finally{cleanupAll(keep)}
+}

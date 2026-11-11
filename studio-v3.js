@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
-import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,splitPreparedMesh,makeSplitPinCoupon,makeDetachablePlate} from './fabrication-v1.js';
+import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,splitPreparedMesh,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon} from './fabrication-v1.js';
 import {buildProductionPack} from './production-pack.js';
 import {planSplitJoints} from './split-joints.js';
 import {planDetachablePlate} from './detachable-plate.js';
@@ -935,6 +935,16 @@ $('threeMfBtn').onclick=()=>{
  if(!verifyPrepared())return;
  save3MF(manufacturingMesh.geometry,'crystal-forge-manifold.3mf');
  setStatus('Downloaded 3MF · inspect model and slicer results');
+};
+$('steppedPixelCouponBtn').onclick=async()=>{
+ const button=$('steppedPixelCouponBtn');button.disabled=true;
+ try{
+  const wasm=await loadManifold(),data=makeSteppedPixelCoupon(wasm,s);
+  saveSTL(data.geometry,'crystal-forge-stepped-'+s.pixelProfileId+'-coupon.stl');
+  data.geometry.dispose();
+  setStatus('Downloaded three stepped LED seats: '+data.diameters.join(', ')+' mm. Test insertion, wire relief and retention.');
+ }catch(err){console.error(err);alert('Pixel-fit coupon failed: '+err.message)}
+ finally{button.disabled=false}
 };
 $('calibrationBtn').onclick=async()=>{
  const button=$('calibrationBtn');button.disabled=true;button.textContent='Generating calibration strip…';

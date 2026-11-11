@@ -253,6 +253,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <p class="note">Packages the validated prepared STL, editable project, optional Cura profile, pixel audit, cable plan, print checklist, material list and assembly guidance. Requires Prepare print first.</p>
 <div class="note">Exports use only the prepared manufacturing mesh. Changing geometry or Build options requires preparing again.</div>
 <div class="divider"></div>
+<button id="steppedPixelCouponBtn" type="button" style="width:100%">⌖ Generate stepped pixel + wire-relief fit coupon</button>
+<p class="note">Three actual profile-shaped underside sockets, spaced at −0.15 / nominal / +0.15 mm. Test the LED flange, dome, existing retention band and cable exits before using these cuts on a full cluster.</p>
 <div class="buttonrow"><button id="wiringCsvBtn">↓ Wiring plan CSV</button><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div><div class="divider"></div><button id="calibrationBtn" style="width:100%">⌖ Generate selected pixel-fit test strip (STL)</button><p class="note">Five diameters around your selected pixel's current bore (+/− 0.2 mm in 0.1 mm steps). Print in the intended material and check real fit, flange and wire routing.</p>
 <div class="advanced-only"><div class="divider"></div>
 <div class="control"><label>Modular cut plane X <output data-out="splitX"></output></label><input data-state="splitX" type="range" min="-100" max="100" step="1"></div>

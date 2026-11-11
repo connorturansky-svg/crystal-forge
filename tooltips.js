@@ -161,6 +161,7 @@ const SETTINGS={
  "lightReach": ["Maximum LED reach","Limit the distance from an LED socket to a crystal to avoid long weak tunnels."],
  "plateThickness": ["Mount plate thickness","Thickness of independently printed detachable plate, secured by actual bolts and installed M3 inserts."],
  "detachablePlateBtn": ["Export detachable mounting plate","Generate a separate registered plate with M3 through-holes after preparing a solid base with a matching insert pattern."],
+ "steppedPixelCouponBtn": ["Stepped LED profile test strip","Print three shaped profile pockets with stepped flange, internal nose, optional retention band and cable relief. Physical insertion and extraction testing required."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."
