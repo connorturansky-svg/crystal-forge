@@ -3,13 +3,13 @@
  * The user creates a PRIVATE repo and supplies a narrowly scoped token in memory.
  * GitHub commit history supplies remote history; SHA guards prevent blind writes.
  */
+import {PROJECT_LIMIT,validateSavedProject} from './project-library.js';
 export const VAULT_PATH='.crystal-forge/vault-v1.json';
 const PROJECT='crystal-forge-v3',PROFILES='crystal-forge-pixel-library',TEMPLATES='crystal-forge-project-templates-v1',PROJECTS='crystal-forge-project-library-v1';
 const PREFIX='crystal-forge-cloud-local-backup-';
 const deep=x=>JSON.parse(JSON.stringify(x));
 const parse=(value,fallback)=>{try{return JSON.parse(value||'null')??fallback}catch{return fallback}};
 const idMatch=/^[a-zA-Z0-9_.-]{1,100}\/[a-zA-Z0-9_.-]{1,100}$/;
-const safeId=String;
 export function captureVault(storage,updatedAt=new Date().toISOString()){
  const project=parse(storage.getItem(PROJECT),null);
  const profiles=parse(storage.getItem(PROFILES),[]);
@@ -26,23 +26,21 @@ export function validateVault(data){
   throw Error('Cloud document is not a supported Crystal Forge vault.');
  if(data.project!=null&&(!data.project.settings||!Array.isArray(data.project.crystals)))
   throw Error('Cloud project is not an editable Crystal Forge project.');
+ for(const project of data.projects||[])validateSavedProject(project);
  const serialized=JSON.stringify(data);
  if(new TextEncoder().encode(serialized).length>900_000)throw Error('Vault exceeds the GitHub Contents inline-file limit. Export an archive and reduce stored items.');
  return deep(data);
 }
 export function mergeVault(storage,data,{restoreProject=true}={}){
  const remote=validateVault(data),local=captureVault(storage);
- // Preserve local data before any replacement, including a first import.
- const backupKey=PREFIX+Date.now();
- storage.setItem(backupKey,JSON.stringify(local));
- const merge=(ours,theirs)=>{const byId=new Map();
+ const merge=(ours,theirs)=>{
+  const byId=new Map();
   for(const [source,items] of [['local',ours],['cloud',theirs]]){
    for(const item of items){
     if(!item||typeof item!=='object')continue;
-    let id=String(item.id||item.name||'unknown');
+    const id=String(item.id||item.name||'unknown');
     if(!byId.has(id)){byId.set(id,item);continue}
     if(JSON.stringify(byId.get(id))===JSON.stringify(item))continue;
-    // Preserve BOTH conflicting user-defined items, never silently replace.
     const base=id+'-'+source;let n=1,copyId=base;
     while(byId.has(copyId))copyId=base+'-'+(++n);
     byId.set(copyId,{...item,id:copyId,name:String(item.name||id)+' ('+source+' import)'});
@@ -50,14 +48,37 @@ export function mergeVault(storage,data,{restoreProject=true}={}){
   }
   return [...byId.values()];
  };
- storage.setItem(PROFILES,JSON.stringify(merge(local.pixelProfiles,remote.pixelProfiles)));
- storage.setItem(TEMPLATES,JSON.stringify(merge(local.templates,remote.templates)));
- storage.setItem(PROJECTS,JSON.stringify(merge(local.projects,remote.projects||[])));
- if(restoreProject&&remote.project)storage.setItem(PROJECT,JSON.stringify(remote.project));
+ // Validate the complete merge before touching user data.
+ const profiles=merge(local.pixelProfiles,remote.pixelProfiles);
+ const templates=merge(local.templates,remote.templates);
+ const projects=merge(local.projects,remote.projects||[]);
+ for(const project of projects)validateSavedProject(project);
+ if(projects.length>PROJECT_LIMIT)
+  throw Error('Import would create '+projects.length+' named projects, exceeding the '+PROJECT_LIMIT+
+   '-project library limit. Export both backups and reconcile duplicate copies first. No data was changed.');
+ const writes=[[PROFILES,JSON.stringify(profiles)],[TEMPLATES,JSON.stringify(templates)],
+  [PROJECTS,JSON.stringify(projects)]];
+ if(restoreProject&&remote.project)writes.push([PROJECT,JSON.stringify(remote.project)]);
+ const before=new Map(writes.map(([key])=>[key,storage.getItem(key)]));
+ const stamp=Date.now();let backupKey=PREFIX+stamp,serial=1;
+ while(storage.getItem(backupKey)!==null)backupKey=PREFIX+stamp+'-'+serial++;
+ storage.setItem(backupKey,JSON.stringify(local));
+ const done=[];
+ try{
+  for(const [key,value] of writes){storage.setItem(key,value);done.push(key)}
+ }catch(error){
+  for(const key of done.reverse()){
+   try{
+    const old=before.get(key);
+    if(old===null)storage.removeItem(key);
+    else storage.setItem(key,old);
+   }catch(_rollbackError){/* Original snapshot remains stored under backupKey. */}
+  }
+  throw Error('Import interrupted; attempted to restore original local data. Complete pre-import backup is '+backupKey+
+   '. '+(error?.message||String(error)));
+ }
  return {backupKey,projectRestored:!!(restoreProject&&remote.project),
-  profiles:merge(local.pixelProfiles,remote.pixelProfiles).length,
-  templates:merge(local.templates,remote.templates).length,
-  projects:merge(local.projects,remote.projects||[]).length};
+  profiles:profiles.length,templates:templates.length,projects:projects.length};
 }
 const decode=b64=>{
  const binary=atob(b64.replace(/\s/g,'')),bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
@@ -78,7 +99,7 @@ export class GitHubVault{
   this.storage=storage;this.fetchFn=fetchFn;this.onStatus=onStatus;
   this.token='';this.repo='';this.sha=null;this.connected=false;this.reconciled=false;this.timer=null;this.busy=false;this.auto=false;
  }
- disconnect(){if(this.timer)clearTimeout(this.timer);this.timer=null;this.token='';this.repo='';this.sha=null;this.connected=false;this.reconciled=false;this.onStatus('Disconnected: token cleared from memory')}
+ disconnect(){if(this.timer)clearTimeout(this.timer);this.timer=null;this.token='';this.repo='';this.sha=null;this.connected=false;this.reconciled=false;this.auto=false;this.onStatus('Disconnected: token cleared from memory')}
  async request(path,options={}){
   if(!this.token||!this.repo)throw Error('Connect to a private repository first.');
   const res=await this.fetchFn('https://api.github.com/repos/'+this.repo+path,{
@@ -132,6 +153,7 @@ export class GitHubVault{
   if(!this.connected||!this.reconciled)throw Error('Connect and reconcile the latest vault before restoring history.');
   if(this.busy)throw Error('Sync in progress');
   if(!/^[a-f0-9]{40}$/.test(ref))throw Error('Choose a valid past commit.');
+  this.setAuto(false);
   this.busy=true;
   try{
    const current=await this.fetchRemote();
@@ -146,6 +168,7 @@ export class GitHubVault{
  async pull({restoreProject=true}={}){
   if(!this.connected)throw Error('Connect first');
   if(this.busy)throw Error('Sync in progress');
+  this.setAuto(false);
   this.busy=true;
   try{
    const remote=await this.fetchRemote();

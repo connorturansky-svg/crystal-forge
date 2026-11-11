@@ -1,5 +1,10 @@
 # AI handover — read immediately after AGENTS.md
 
+## PR11 is current: software hardening
+PR10/#16 is merged. PR11 draft adds a standalone manufacturing fingerprint, named-project preservation at capacity, validated and rollback-protected cloud imports, unique recovery backups and full root-JS CI triggers. [PR11 acceptance](PR11_HARDENING_TEST_GUIDE.md) governs testing. Do not merge until all three exact-head checks pass; do not confuse software checks with actual Cura/LED/print/optical/safety validation.
+
+---
+
 ## PR10 active implementation (11 November 2026)
 
 **PR:** [#16 — smooth pixel-string routing, Cura profile compatibility and private profile sync](https://github.com/connorturansky-svg/crystal-forge/pull/16); branch `feat/pr10-cable-geometry-cura-sync`. Merged PR9 is the base; do not change live `main` until green exact-head static, browser and Manifold tests. [Hands-on test guide](PR10_TEST_GUIDE.md) covers every manual acceptance case.

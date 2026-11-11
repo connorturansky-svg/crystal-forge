@@ -1,6 +1,6 @@
-# Crystal Forge — Browser Studio v0.14.0 candidate
+# Crystal Forge — Browser Studio v0.14.1 hardening candidate
 
-**Active draft [PR #16](https://github.com/connorturansky-svg/crystal-forge/pull/16).** This experimental version includes smooth opposed cable paths, length-budgets/rotation and direction UI, click-hold hardware positioning, Cura quality-type selection and optional private GitHub syncing. The live application stays on the last merged release until this PR is reviewed. [PR10 test + migration guide](docs/PR10_TEST_GUIDE.md). Physical Cura/LED/mechanical validation is outstanding.
+**PR10 [#16](https://github.com/connorturansky-svg/crystal-forge/pull/16) is merged in `main`.** This PR11 candidate hardens saved projects, cloud recovery and the manufacture-cache fingerprint. [PR11 acceptance guide](docs/PR11_HARDENING_TEST_GUIDE.md). Physical Cura, LED fit and illumination validation remains open.
 
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, touch-considerate crystal sculptures. Physical safety and print strength must still be verified. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/

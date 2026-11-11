@@ -21,16 +21,18 @@ export function validateSavedProject(project){
 export function listSavedProjects(storage){
  const entries=parse(storage.getItem(PROJECT_LIBRARY_KEY));
  if(!Array.isArray(entries))return [];
- return entries.slice(0,PROJECT_LIMIT).flatMap(item=>{
+ return entries.flatMap(item=>{
   try{return [validateSavedProject(item)]}catch{return []}
  });
 }
 export function saveNamedProject(storage,name,settings,crystals){
  name=String(name||'').trim();
  if(!name)throw Error('Please name the saved project.');
+ const existing=listSavedProjects(storage);
+ if(existing.length>=PROJECT_LIMIT)throw Error('Library full ('+PROJECT_LIMIT+' projects). Download a complete backup, then deliberately delete an unwanted project before saving more. No existing project has been removed.');
  const saved=validateSavedProject({id:'project-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9),
   name,settings,crystals,updatedAt:new Date().toISOString()});
- storage.setItem(PROJECT_LIBRARY_KEY,JSON.stringify([saved,...listSavedProjects(storage)].slice(0,PROJECT_LIMIT)));
+ storage.setItem(PROJECT_LIBRARY_KEY,JSON.stringify([saved,...existing]));
  return saved;
 }
 export function loadNamedProject(storage,id){
