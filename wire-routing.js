@@ -47,7 +47,7 @@ export function planWireRoutes(crystals,s,hardware){
   }
   const steps=Math.max(3,Math.ceil(d/4));
   for(let i=0;i<=steps;i++){
-   if(edge&&i===steps)continue;
+   if(edge&&i>=steps-2)continue;
    const t=i/steps,p={x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t};
    if(!inside(p,poly))return false;
    if(baseSurfaceHeight(crystals,s,p.x,p.z)<depth+1.6)return false;
@@ -108,7 +108,7 @@ export function planWireRoutes(crystals,s,hardware){
  if(plan.unrouted)plan.messages.push(plan.unrouted+' LED(s) lack safe paired wiring routes; move tabs, change wire angle or reduce dimensions.');
  if(s.wireExit){
   const source=sockets[0];
-  const custom=Number.isFinite(Number(source.wireEndX))&&Number.isFinite(Number(source.wireEndZ));
+  const custom=source.wireEndX!==undefined&&source.wireEndZ!==undefined&&Number.isFinite(Number(source.wireEndX))&&Number.isFinite(Number(source.wireEndZ));
   const choices=custom?[nearestEdgePosition(poly,{x:Number(source.wireEndX),z:Number(source.wireEndZ)})]:
    poly.map((a,i)=>closest(source,a,poly[(i+1)%poly.length]))
     .sort((a,b)=>dist(source,a)-dist(source,b));
