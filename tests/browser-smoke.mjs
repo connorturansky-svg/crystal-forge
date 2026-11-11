@@ -360,6 +360,18 @@ try{
  const steppedPromise=page.waitForEvent('download',{timeout:25000});
  await page.locator('#steppedPixelCouponBtn').click();
  assert((await steppedPromise).suggestedFilename().includes('stepped'),'Shaped pixel fit test download');
+ assert.equal(await page.locator('#fitResultSelect option').count(),3,'Three labelled full-shape holes listed left-to-right');
+ const fittedLabel=await page.locator('#fitResultSelect option').first().innerText();
+ assert(fittedLabel.includes('12.00'),'Exact printed diameter is readable in selection');
+ const fitBefore=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.pixelFit);
+ await page.locator('#fitResultSelect').selectOption('2');
+ await page.locator('#applyFitResultBtn').click();
+ const fitAfter=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.pixelFit);
+ assert(fitAfter>fitBefore,'Choosing larger physical hole applies increased clearance');
+ assert(await page.locator('#fitOverrideToolBtn').isVisible(),'Gear marks a measured override');
+ await page.locator('#resetFitOverrideBtn').click();
+ const fitReset=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.pixelFit);
+ assert.equal(fitReset,fitBefore,'Override reset restores previous fit');
  assert(await page.locator('#detachablePlateBtn').isDisabled(),'Plate export hidden until matching mount selected');
  await page.locator('#printHeatmap').check();
  await page.screenshot({path:'qa/browser-smoke.png'});
