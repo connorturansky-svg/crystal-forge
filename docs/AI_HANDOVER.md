@@ -1,5 +1,12 @@
 # AI handover — read immediately after AGENTS.md
 
+## PR7 reconciliation and per-LED optical fix (11 November 2026)
+
+- PR #12 was merged into `main` at `c6abc6809f84302fd6ba0daa8b2d42ca7bf973bd` while PR #13 remained based on PR6. PR #13 was reconciled with an ordinary two-parent merge commit `6aa9f38b07ff9281314e99ad6ba0d01b79389280`, preserving the newer PR #13 source tree rather than force-pushing or changing live `main`. GitHub subsequently reported PR #13 mergeable.
+- Audited earlier PR #12's major light channels, pixel measurements, live profile diagram, detachable M3 plate, Cura advice, wiring, and tests against the newer implementation. Some features use newer alternative implementations, especially paired-wire grooves and three/five-position engraved physical coupons.
+- Follow-up fix: `targeted-light-paths.js` now resolves each actual LED's body height before planning its optical bore start, avoiding an unintended solid plug where a short seed socket was incorrectly treated as the global gumdrop. `fabrication-v1.js` reports clearance of all actual socket bodies rather than only the globally selected pixel. A mixed LED profile geometry regression was added.
+- Require exact-head static, fabrication/Manifold and Playwright statuses before merge; prior browser workflow failures occurred at installing the test environment, not during executed browser interactions. Physical verification of labels, Cura layers, LED light paths, fit/strain relief, plate mating and installed load strength is outstanding.
+
 **Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.11.0 (PR6 merged). **Active:** draft PR #13 v0.12.0 on `feat/pr7-complete-fabrication`.
 
 ## PR7 fit calibration and access notes (11 November 2026)
