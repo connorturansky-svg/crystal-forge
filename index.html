@@ -152,6 +152,10 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="card teal"><div class="cardtitle"><span class="symbol">⌂</span> Zero-infill base structure</div><div class="cardbody">
 <label class="checks"><input data-state="baseVault" type="checkbox"> Create open underside cavity with permanent tapered buttresses</label>
 <div class="control"><label>Buttress spacing <output data-out="vaultSupportPitch"></output></label><input data-state="vaultSupportPitch" type="range" min="16" max="40" step="1"></div>
+<label class="checks"><input data-state="lightPorts" type="checkbox"> Cut roof-to-crystal light passages</label>
+<div class="advanced-only"><div class="control"><label>Light passage diameter <output data-out="lightPortDiameter"></output></label><input data-state="lightPortDiameter" type="range" min="1.5" max="8" step=".1"></div>
+<div class="control"><label>Passage reach into crystal <output data-out="lightPortReach"></output></label><input data-state="lightPortReach" type="range" min="25" max="72" step="1"></div></div>
+<p class="note">Requires an open underside vault. Carves tapered bores through the base roof into eligible crystals, following their actual lean. Too-narrow spikes are skipped. Inspect cross-sections and perform a lit test; not a guaranteed light path.</p>
 <p class="note">Optional real mesh geometry: carves the mound, keeps collars around hardware, and adds integral support columns with sloped crowns. Crystal spike infill remains controlled by Cura.</p>
 <p class="note warning">This reduces bridging distances but does not guarantee a zero-infill or support-free print. Inspect Cura layer previews at the mound roof and LED vents.</p>
 </div></div>
@@ -235,7 +239,7 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="stat"><span>Open base vault</span><strong id="reportVault">—</strong></div>
 <div class="stat"><span>Estimated roof gap</span><strong id="reportVaultGap">—</strong></div>
 <div class="stat"><span>Wiring grooves cut</span><strong id="reportWireChannels">—</strong></div><div class="stat"><span>Estimated routed wire</span><strong id="reportWireLength">—</strong></div><div class="stat"><span>LEDs without route</span><strong id="reportUnrouted">—</strong></div>
-<div class="stat"><span>LED side vent sets</span><strong id="reportLEDVents">—</strong></div><div class="stat"><span>Crystal light passages</span><strong id="reportPorts">—</strong></div><div class="stat"><span>Shared light path</span><strong id="reportLightPath">—</strong></div><div class="stat"><span>Base depth vs pixel</span><strong id="reportBaseDepth">—</strong></div>
+<div class="stat"><span>LED side vent sets</span><strong id="reportLEDVents">—</strong></div><div class="stat"><span>Direct spike bores cut</span><strong id="reportDirectPorts">—</strong></div><div class="stat"><span>Direct bores skipped</span><strong id="reportSkippedPorts">—</strong></div><div class="stat"><span>Crystal light passages</span><strong id="reportPorts">—</strong></div><div class="stat"><span>Shared light path</span><strong id="reportLightPath">—</strong></div><div class="stat"><span>Base depth vs pixel</span><strong id="reportBaseDepth">—</strong></div>
 <div class="stat"><span>Overhang risk faces</span><strong id="reportOverhang">—</strong></div>
 <div class="stat"><span>Suggested orientation</span><strong id="reportOrientation">—</strong></div>
 <div id="reportWarnings" class="note"></div>

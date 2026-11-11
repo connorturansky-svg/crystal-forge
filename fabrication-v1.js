@@ -10,6 +10,7 @@ import {crystalGeometry,crystalRootOffset,baseGeometry,baseSurfaceHeight} from '
 import {planHardware} from './hardware-layout.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
 import {estimateRoofReview} from './print-advisor.js';
+import {planCrystalLightPorts} from './light-port-plan.js';
 
 let modulePromise=null;
 export async function loadManifold(){
@@ -300,6 +301,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
    combined=joined;
   }
   let hollowed=0,hollowPorts=0,skippedHollowPorts=0;
+  let directLightPorts=0,skippedDirectLightPorts=0,lightPortDetails=[];
   let vault={applied:false,supportCount:0,pitch:0,gapEstimate:0};
   if(s.baseVault&&s.hollowCrystals)warnings.push('Base vault is unavailable during experimental whole-cluster hollowing.');
   if(s.baseVault&&!s.hollowCrystals){
@@ -308,6 +310,42 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
    if(made.cutter){
     const carved=hold(combined.subtract(made.cutter));assertSolid(carved,'Open underside zero-infill vault');
     combined=carved;
+   }
+  }
+  // Opt-in direct roof-to-spike passages: efficient Boolean cuts after
+  // the open underside vault is manufactured, and before pixel drilling.
+  const portPlan=planCrystalLightPorts(crystals,s);
+  if(portPlan.requested){
+   if(!vault.applied||!portPlan.enabled){
+    warnings.push(portPlan.reason||'Direct ports require a valid open underside vault.');
+   }else{
+    const cutters=[];
+    for(const port of portPlan.ports){
+     const c=crystals.find(x=>x.id===port.id),obj=live.find(m=>m.userData?.crystalId===port.id);
+     if(!c||!obj){skippedDirectLightPorts++;continue}
+     obj.updateMatrixWorld(true);
+     const baseY=baseSurfaceHeight(crystals,s,c.x,c.z);
+     const root=new THREE.Vector3(0,0,0).applyMatrix4(obj.matrixWorld);
+     const start=new THREE.Vector3(root.x,Math.max(.8,baseY-port.roofPenetration),root.z);
+     const sy=Math.max(.1,Number(c.sy??c.scale??1));
+     const upper=Math.min(c.h*.72,port.reach/sy);
+     const end=new THREE.Vector3((c.leanX||0)*upper,upper,(c.leanZ||0)*upper).applyMatrix4(obj.matrixWorld);
+     if(!Number.isFinite(end.y)||end.y<baseY+3||end.distanceTo(start)<9){
+      skippedDirectLightPorts++;continue;
+     }
+     const bore=lightTunnel(wasm,start,end,port.radius,Math.max(.5,port.radius*.65));
+     if(!bore){skippedDirectLightPorts++;continue}
+     cutters.push(hold(bore));directLightPorts++;
+     lightPortDetails.push({id:port.id,name:port.name,diameter:port.diameter,
+      startY:+start.y.toFixed(2),endY:+end.y.toFixed(2),status:'Modeled bore — inspect in Cura'});
+    }
+    skippedDirectLightPorts+=portPlan.skipped.length;
+    if(cutters.length){
+     const opened=hold(combined.subtract(hold(wasm.Manifold.union(cutters))));
+     assertSolid(opened,'Direct vault-to-crystal light bores');combined=opened;
+    }
+    if(skippedDirectLightPorts)warnings.push(skippedDirectLightPorts+' crystal(s) had no safe estimated direct bore and may remain unlit.');
+    warnings.push('Real vault-to-crystal passages were modeled. Inspect final cross-sections, remaining walls and light transmission physically.');
    }
   }
   if(s.hollowCrystals){
@@ -527,7 +565,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,roofReview,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
+    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,directLightPorts,skippedDirectLightPorts,lightPortDetails,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
      plannedSockets:hardware.sockets,plannedMounts:[...hardware.mounts,...hardware.tabHoles],hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
