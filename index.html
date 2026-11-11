@@ -319,7 +319,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="divider"></div>
 <button id="steppedPixelCouponBtn" type="button" style="width:100%">⌖ Generate stepped pixel + wire-relief fit coupon</button>
 <p class="note">Three physically engraved socket diameters (left → right). Their two cable grooves now cut completely through the coupon’s external side walls. Test flange fit, wire relief and extraction.</p>
-<div class="buttonrow"><button id="wiringCsvBtn">↓ Wiring plan CSV</button><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div><div class="divider"></div>
+<div class="buttonrow"><button id="wiringCsvBtn">↓ Wiring plan CSV</button><button id="pixelStringMapBtn">↓ P1… RGB index CSV</button><button id="bomBtn">↓ LED / parts CSV</button><button id="projectExportBtn">↓ Editable JSON</button></div>
+<p class="note">RGB index map uses 3 consecutive channels per WS2811 pixel in your chosen physical string order; it does not program xLights/FPP or assign controller universe/output settings.</p><div class="divider"></div>
 <div class="control"><label>Calibration strip type</label><select data-state="fitCouponStyle"><option value="stepped">Stepped body, cap, flange and wire relief</option><option value="plain">Simple diameter-only holes</option></select></div>
 <button id="calibrationBtn" style="width:100%">⌖ Generate selected pixel-fit test strip (STL)</button>
 <p class="note">Five sizes from left to right, each labelled in millimetres by engraved numerals on the coupon's top face. Full-body samples have wire channels opening through both side walls.</p>
