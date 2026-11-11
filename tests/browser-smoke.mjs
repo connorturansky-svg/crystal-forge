@@ -391,7 +391,13 @@ try{
  assert(Math.hypot(moved.x-start.x,moved.z-start.z)>1,'Second click-and-hold on selected P marker moves the physical pixel');
  assert(await page.locator('.hardware-marker[data-hw-id="'+draggedId+'"]').count(),'Direct manipulation preserves a stable pixel ID');
  console.log('PR10 selected 3D pixel click-hold moves the real saved position without renumbering');
- await page.mouse.dblclick(contextPoint.x,contextPoint.y);
+ // The original free location now contains the dragged LED. Find ANOTHER empty
+ // place so the old contextual Add Pixel test still exercises a valid hole.
+ await page.locator('#placePixelBtn').click();
+ const newContextPoint=await findValidPixel();
+ assert(newContextPoint,'Another free base point exists after moving selected P marker');
+ await page.keyboard.press('Escape');
+ await page.mouse.dblclick(newContextPoint.x,newContextPoint.y);
  assert(await page.locator('.hardware-context-menu:not([hidden])').count(),'Double-click blank model opens Add Pixel / Mount menu');
  const countBeforeContext=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualPixelHoles.length);
  await page.locator('[data-context-add="pixel"]').click();
