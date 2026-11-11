@@ -149,8 +149,8 @@ function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile){
   // Two shallow underside cable reliefs; not full wiring channels.
   const w=Math.max(.8,p.wireWidth+p.clearance),h=Math.min(3,p.wireDepth),len=bodyRadius+4;
   for(const sign of [-1,1]){
-   cutters.push(hold(wasm.Manifold.cube([w,h,len])
-    .translate([pos.x-w/2,start+.25,pos.z+(sign===1?bodyRadius*.35:-bodyRadius-4)])));
+   cutters.push(hold(wasm.Manifold.cube([w,h+.5,len])
+    .translate([pos.x-w/2,-.4,pos.z+(sign===1?bodyRadius*.35:-bodyRadius-4)])));
   }
  }
  return {solid:hold(wasm.Manifold.union(cutters)),roofY,tipY,shaftEnd,

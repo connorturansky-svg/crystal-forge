@@ -907,7 +907,7 @@ $('splitExportBtn').onclick=async()=>{
  finally{button.disabled=false}
 };
 $('bomBtn').onclick=()=>{
- const rows=[['Type','Quantity','Notes'],['12V gumdrop pixels',s.pixelCount,'12 mm nominal mounting hole; adjust by '+s.pixelFit+' mm'],['Crystal bodies',crystals.length,'experimental STL; not Boolean merged'],['Integrated base',s.baseType==='none'?0:1,'mounted by '+s.mount],['Mounting holes',planHardware(crystals,s).mounts.length+planHardware(crystals,s).tabHoles.length,s.mount+'; check fit dimensions'],['Edge tabs',planHardware(crystals,s).tabs.length,'Print-fit and strength require verification'],['Planned socket diameter',(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm','preview only']];
+ const rows=[['Type','Quantity','Notes'],['Pixel type: '+resolvePixelProfile(s).name,s.pixelCount,'Nominal '+resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm opening; check measured fit'],['Crystal bodies',crystals.length,'experimental STL; not Boolean merged'],['Integrated base',s.baseType==='none'?0:1,'mounted by '+s.mount],['Mounting holes',planHardware(crystals,s).mounts.length+planHardware(crystals,s).tabHoles.length,s.mount+'; check fit dimensions'],['Edge tabs',planHardware(crystals,s).tabs.length,'Print-fit and strength require verification'],['Planned socket diameter',(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm','preview only']];
  const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
  download(new Blob([csv],{type:'text/csv'}),'crystal-forge-bom.csv');
 };

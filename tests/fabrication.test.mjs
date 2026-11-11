@@ -5,6 +5,7 @@ import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfa
 import {setThreeInstance,prepareFabrication,makeCalibrationStrip,splitPreparedMesh,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
+import {PIXEL_PRESETS,normalisePixelProfile,resolvePixelProfile} from '../pixel-profiles.js';
 
 const wasm=await Module();wasm.setup();
 
@@ -234,6 +235,25 @@ for(const edge of [0,.75,2.5,5.5]){
  geo.dispose();
 }
 validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
+// PR4 — selected pixel shapes affect clearance and the manufactured socket.
+{
+ const base={...settings,count:10,baseHeight:25,baseDome:0,cutSockets:true,lightingMode:'single',pixelFit:.15};
+ for(const preset of PIXEL_PRESETS){
+  const cfg={...base,pixelProfileId:preset.id,pixelDiameter:preset.bodyDiameter};
+  const profile=resolvePixelProfile(cfg),plan=planHardware(generateFormation(cfg),cfg);
+  assert.equal(profile.id,preset.id);
+  assert(plan.sockets.every(p=>p.radius>=profile.maxDiameter/2-.001),'Flange included in layout');
+  assert.equal(plan.collisions.length,0);
+ }
+ const custom=normalisePixelProfile({id:'custom-test',name:'Measured test LED',kind:'gumdrop',
+   bodyDiameter:14,bodyHeight:19,flangeDiameter:16,flangeHeight:2,capHeight:3,wireWidth:4,wireDepth:2});
+ const cfg={...base,pixelProfileId:custom.id,pixelDiameter:custom.bodyDiameter,pixelProfiles:[custom]};
+ assert(Math.abs(resolvePixelProfile(cfg).maxDiameter-16.15)<.001);
+ const report=validate('custom-profile-bore',cfg);
+ assert(report.socketsCut>0,'Custom pixel profile creates a cut');
+ assert(report.socketCeilings.every(c=>c.remainingWall>=2.79),'Profile socket has blind roof');
+ console.log('PR4 pixel clearance and cut tests passed');
+}
 // Tabs must be physical fused geometry with THROUGH holes, not markers.
 const cfgTabs={...settings,count:8,baseHeight:25,baseDome:4,baseWidth:10,
  mount:'Edge fixing tabs',tabCount:3,tabHolesPerTab:2,
