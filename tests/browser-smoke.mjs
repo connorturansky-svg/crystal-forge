@@ -244,6 +244,22 @@ try{
  assert(await page.locator('[data-state="wireDirectionArrows"]').isChecked(),'Track direction arrows default on');
  assert(await page.locator('[data-state="wireShowLengths"]').isChecked(),'Cable lengths default visible');
  await page.locator('[data-tab="design"]').click();
+ // Save a full named project, change the active settings, then restore it.
+ const originalWidth=Number(await page.locator('[data-state="width"]').inputValue());
+ page.once('dialog',d=>d.accept('PR10 multi-computer fixture'));
+ await page.locator('#saveNamedProjectBtn').click();
+ assert(await page.locator('#savedProjectSelect option').count()===2,'Named full project saved to library');
+ assert.equal(await page.locator('#savedProjectSelect option').nth(1).innerText(),'PR10 multi-computer fixture');
+ await page.locator('[data-state="width"]').evaluate(el=>{
+  el.value=String(Number(el.value)+15);el.dispatchEvent(new Event('input',{bubbles:true}));
+ });
+ await page.waitForFunction(w=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.width!==w,originalWidth,{timeout:8000});
+ page.once('dialog',d=>d.accept());
+ await page.locator('#openNamedProjectBtn').click();
+ await page.waitForFunction(w=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.width===w,originalWidth,{timeout:8000});
+ assert(await page.locator('#savedProjectSelect option').count()>=3,'Previous active project also backed up on open');
+ assert(await page.locator('#cloudBackupImport').count(),'Complete portable vault backup may be reimported');
+ console.log('PR10 named multi-project save/open and active-project rollback verified');
  assert(await page.locator('#cloudRepo').count(),'Private GitHub cloud vault panel is available');
  await page.locator('.cloud-sync-panel summary').click();
  const backupDownload=page.waitForEvent('download');
