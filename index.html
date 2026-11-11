@@ -177,7 +177,11 @@ body.light .cloud-sync-panel summary{color:#142d44}
 <div class="divider"></div><label class="note">Saved design templates (stored in this browser)</label>
 <select id="templateSelect" class="full" aria-label="Saved design template"><option value="">Choose a saved design…</option></select>
 <div class="buttonrow"><button type="button" id="saveTemplateBtn">＋ Save design</button><button type="button" id="loadTemplateBtn">↩ Load</button><button type="button" id="deleteTemplateBtn">✕ Delete</button></div>
-<p class="note">Keeps named editable models and settings on this device. Use Export Project JSON for portable backups.</p>
+<p class="note">Presets are reusable starting points. To maintain separate complete designs across devices, save them into the named project library below.</p>
+<div class="divider"></div><label class="note"><strong>Saved projects — portable across your computers</strong></label>
+<select id="savedProjectSelect" class="full" aria-label="Choose named saved project"><option value="">Choose a saved project…</option></select>
+<div class="buttonrow"><button id="saveNamedProjectBtn" type="button">＋ Save current project</button><button id="openNamedProjectBtn" type="button">↩ Open saved</button><button id="deleteNamedProjectBtn" type="button">✕ Delete</button></div>
+<p class="note">The active model autosaves separately. Named projects remain available when you switch designs; they're included in cloud sync and complete backup files.</p>
 <details class="cloud-sync-panel"><summary>☁ Private GitHub sync — projects, custom LED profiles and templates</summary>
 <p class="note">Create your own <strong>private</strong> GitHub repository (separate from this public website). Enter an owner/repo and a fine-grained token with repository Contents read/write permission. Your token remains in browser memory only, is never saved to project data or this public site, and must be re-entered after a reload. Disconnect clears it. No OAuth/server credentials are installed.</p>
 <div class="control"><label>Private repository (owner/repository)</label><input id="cloudRepo" type="text" autocomplete="off" placeholder="your-account/private-crystal-data"></div>
@@ -187,6 +191,8 @@ body.light .cloud-sync-panel summary{color:#142d44}
 <div class="buttonrow"><button id="cloudPull" type="button">↓ Pull + merge from GitHub</button><button id="cloudPush" type="button">↑ Sync now to GitHub</button></div>
 <label class="checks"><input id="cloudAuto" type="checkbox"> Auto-sync changes when connected (3.5 s debounce)</label>
 <button id="cloudBackup" type="button">↓ Download all local projects/profiles/templates backup</button>
+<div class="buttonrow"><label for="cloudBackupImport" class="note">Import a complete backup JSON</label><input id="cloudBackupImport" type="file" accept=".json,application/json" aria-label="Import an exported Crystal Forge vault backup"></div>
+<p class="note">Import keeps a local pre-import backup and merges profiles, projects and templates, retaining both versions on ID conflicts.</p>
 <p class="note warning">Before pulling a different computer's project, your local version is backed up. Existing IDs are merged; unresolved conflicts require manual review. GitHub history provides remote recovery. Never use a public repo or a token with broad access.</p>
 </details>
 <p class="note">Applies to the selected unlocked crystal or globally when none is selected. Presets can be refined with the sliders and undone.</p>
