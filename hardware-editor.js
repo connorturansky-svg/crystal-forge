@@ -4,6 +4,7 @@ import {resolvePixelProfile,allPixelProfiles} from './pixel-profiles.js';
 import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
 import {nearestEdgePosition} from './edge-tabs.js';
 import {ensureHardwareIds,movePixelInString,hardwareName} from './hardware-identity.js';
+import {snapPixelsToWireLength} from './pixel-spacing-snap.js';
 
 export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,getManufacturingVisible=()=>false,onEdit,onStatus}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
@@ -200,6 +201,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const plan=getPlan();
   draw(plan);
   const routing=plan.wirePlan;
+  if($('snapPixelSpacingBtn'))$('snapPixelSpacingBtn').disabled=!(s.wireMode==='string'&&s.wireChannels&&plan.sockets.length>1);
   if($('wireRouteStatus')){
    $('wireRouteStatus').textContent=!routing?.enabled?'Wiring grooves are off. Enable to plan a physical cable-bundle string.':
     routing.mode==='string'?
@@ -453,6 +455,27 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  $('placeTabBtn').onclick=()=>manuallyPlace('tab');
  $('pickWireExitBtn').onclick=()=>manuallyPlace('exit');
  $('pickWireEntryBtn').onclick=()=>manuallyPlace('entry');
+ $('snapPixelSpacingBtn').onclick=()=>{
+  if(placing){onStatus('Finish hardware placement before snapping pixel spacing.');return}
+  const settings=getSettings();
+  const snap=snapPixelsToWireLength(getCrystals(),settings,{maxMoveMm:settings.pixelSnapMaxMove??5});
+  if(snap.changed){
+   // One deliberate, undoable design edit. All other settings, identities,
+   // LED profiles, angles and IN/OUT tail choices are left untouched.
+   Object.assign(settings,snap.settings);
+   onEdit();
+  }
+  const summary=snap.reason||('Aligned '+snap.aligned+'/'+snap.total+' internal runs to '+
+   snap.targetMm+' mm; moved '+(snap.moved||0)+' pixel(s) within '+snap.maxMoveMm+' mm.');
+  const skipped=(snap.links||[]).filter(item=>item.status==='skipped').map(item=>
+   item.label+' ('+(item.beforeMm==null?'no route':item.beforeMm.toFixed(1)+' mm')+'): '+item.reason);
+  const status=summary+' P1 stays fixed; IN/OUT tails do not use the pixel spacing. '+
+   (skipped.length?'Needs manual positioning: '+skipped.join(' | '):
+    'All accessible internal runs are now within the snap tolerance.');
+  $('wireSnapStatus').textContent=status;
+  $('wireSnapStatus').classList.toggle('warning',!!skipped.length||!!snap.reason&&snap.aligned!==snap.total);
+  onStatus(status.slice(0,400));
+ };
  $('reversePixelStringBtn').onclick=()=>{
   const cfg=getSettings(),plan=getPlan();
   if(cfg.pixelPlacement!=='manual'){
