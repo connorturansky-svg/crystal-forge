@@ -1,0 +1,148 @@
+/* Optional private-repository GitHub storage for Crystal Forge.
+ * No token ever enters the project JSON, localStorage, a URL or the public repo.
+ * The user creates a PRIVATE repo and supplies a narrowly scoped token in memory.
+ * GitHub commit history supplies remote history; SHA guards prevent blind writes.
+ */
+export const VAULT_PATH='.crystal-forge/vault-v1.json';
+const PROJECT='crystal-forge-v3',PROFILES='crystal-forge-pixel-library',TEMPLATES='crystal-forge-project-templates-v1';
+const PREFIX='crystal-forge-cloud-local-backup-';
+const deep=x=>JSON.parse(JSON.stringify(x));
+const parse=(value,fallback)=>{try{return JSON.parse(value||'null')??fallback}catch{return fallback}};
+const idMatch=/^[a-zA-Z0-9_.-]{1,100}\/[a-zA-Z0-9_.-]{1,100}$/;
+const safeId=String;
+export function captureVault(storage,updatedAt=new Date().toISOString()){
+ const project=parse(storage.getItem(PROJECT),null);
+ const profiles=parse(storage.getItem(PROFILES),[]);
+ const templates=parse(storage.getItem(TEMPLATES),[]);
+ return {schema:1,updatedAt,project,
+  pixelProfiles:Array.isArray(profiles)?profiles:[],
+  templates:Array.isArray(templates)?templates:[]};
+}
+export function validateVault(data){
+ if(!data||data.schema!==1||!Array.isArray(data.pixelProfiles)||!Array.isArray(data.templates))
+  throw Error('Cloud document is not a supported Crystal Forge vault.');
+ if(data.project!=null&&(!data.project.settings||!Array.isArray(data.project.crystals)))
+  throw Error('Cloud project is not an editable Crystal Forge project.');
+ const serialized=JSON.stringify(data);
+ if(serialized.length>8_000_000)throw Error('Vault is too large for this single-file sync; export an archive.');
+ return deep(data);
+}
+export function mergeVault(storage,data,{restoreProject=true}={}){
+ const remote=validateVault(data),local=captureVault(storage);
+ // Preserve local data before any replacement, including a first import.
+ const backupKey=PREFIX+Date.now();
+ storage.setItem(backupKey,JSON.stringify(local));
+ const merge=(ours,theirs)=>{const byId=new Map();
+  for(const item of [...theirs,...ours]){
+   if(!item||typeof item!=='object')continue;
+   const id=String(item.id||item.name||'unknown');
+   if(!byId.has(id))byId.set(id,item);
+  }
+  return [...byId.values()];
+ };
+ storage.setItem(PROFILES,JSON.stringify(merge(local.pixelProfiles,remote.pixelProfiles)));
+ storage.setItem(TEMPLATES,JSON.stringify(merge(local.templates,remote.templates)));
+ if(restoreProject&&remote.project)storage.setItem(PROJECT,JSON.stringify(remote.project));
+ return {backupKey,projectRestored:!!(restoreProject&&remote.project),
+  profiles:merge(local.pixelProfiles,remote.pixelProfiles).length,
+  templates:merge(local.templates,remote.templates).length};
+}
+const decode=b64=>{
+ const binary=atob(b64.replace(/\s/g,'')),bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));
+ return new TextDecoder().decode(bytes);
+};
+const encode=text=>{
+ const bytes=new TextEncoder().encode(text);
+ let binary='';for(let i=0;i<bytes.length;i+=8192)
+  binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
+ return btoa(binary);
+};
+export class CloudConflictError extends Error{
+ constructor(message='Cloud changed on another computer. Pull and reconcile before uploading.') {super(message);this.name='CloudConflictError'}
+}
+export class GitHubVault{
+ constructor({storage,fetchFn=fetch,onStatus=()=>{}}={}){
+  if(!storage)throw Error('Browser storage required');
+  this.storage=storage;this.fetchFn=fetchFn;this.onStatus=onStatus;
+  this.token='';this.repo='';this.sha=null;this.connected=false;this.reconciled=false;this.timer=null;this.busy=false;this.auto=false;
+ }
+ disconnect(){if(this.timer)clearTimeout(this.timer);this.timer=null;this.token='';this.repo='';this.sha=null;this.connected=false;this.reconciled=false;this.onStatus('Disconnected: token cleared from memory')}
+ async request(path,options={}){
+  if(!this.token||!this.repo)throw Error('Connect to a private repository first.');
+  const res=await this.fetchFn('https://api.github.com/repos/'+this.repo+path,{
+   ...options,headers:{Accept:'application/vnd.github+json',
+    Authorization:'Bearer '+this.token,'X-GitHub-Api-Version':'2022-11-28',
+    ...options.headers}
+  });
+  if(res.status===404)return null;
+  if(!res.ok){
+   const message=await res.text().catch(()=>res.statusText);
+   throw Error('GitHub returned '+res.status+': '+message.slice(0,250));
+  }
+  return res.json();
+ }
+ async connect(repo,token){
+  if(!idMatch.test(String(repo||'')))throw Error('Enter a GitHub owner/repository name.');
+  if(!String(token||'').trim())throw Error('Enter a fine-grained token with Contents read/write access.');
+  this.disconnect();this.repo=String(repo).trim();this.token=String(token).trim();
+  try{
+   const info=await this.request('');
+   if(!info||info.private!==true)throw Error('Cloud sync requires a PRIVATE repository. Public repos are refused.');
+   if(info.permissions?.push===false)throw Error('Token cannot write to this private repository.');
+   const remote=await this.fetchRemote();
+   this.sha=remote?.sha??null;
+   this.connected=true;this.reconciled=!remote;
+   this.onStatus(remote?'Private vault found. Pull + merge before enabling auto-sync.':'Private vault empty. Sync Now creates your first backup.');
+   return {exists:!!remote,repo:this.repo,private:true};
+  }catch(err){this.disconnect();throw err}
+ }
+ async fetchRemote(){
+  const raw=await this.request('/contents/'+VAULT_PATH);
+  if(!raw)return null;
+  if(raw.type!=='file'||typeof raw.content!=='string')throw Error('Cloud path is not a readable JSON file.');
+  return {sha:raw.sha,data:validateVault(JSON.parse(decode(raw.content)))};
+ }
+ async pull({restoreProject=true}={}){
+  if(!this.connected)throw Error('Connect first');
+  if(this.busy)throw Error('Sync in progress');
+  this.busy=true;
+  try{
+   const remote=await this.fetchRemote();
+   if(!remote)throw Error('No cloud backup exists yet. Use Sync Now to upload.');
+   const merged=mergeVault(this.storage,remote.data,{restoreProject});
+   this.sha=remote.sha;this.reconciled=true;
+   this.onStatus('Downloaded private vault, backed up local data and merged custom profiles/templates.');
+   return merged;
+  }finally{this.busy=false}
+ }
+ async push(){
+  if(!this.connected)throw Error('Connect first');
+  if(!this.reconciled)throw new CloudConflictError('Pull and merge the existing private cloud vault before uploading.');
+  if(this.busy)throw Error('Sync in progress');
+  this.busy=true;
+  try{
+   const current=await this.fetchRemote();
+   if((current?.sha??null)!==(this.sha??null))
+    throw new CloudConflictError();
+   const data=validateVault(captureVault(this.storage));
+   const body={message:'Crystal Forge private vault sync '+data.updatedAt,
+    content:encode(JSON.stringify(data))};
+   if(current?.sha)body.sha=current.sha;
+   const saved=await this.request('/contents/'+VAULT_PATH,{method:'PUT',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+   if(!saved?.content?.sha)throw Error('GitHub did not confirm an updated vault SHA.');
+   this.sha=saved.content.sha;this.onStatus('Saved private GitHub vault. Commit history keeps older versions.');
+   return {sha:this.sha};
+  }finally{this.busy=false}
+ }
+ schedule(){
+  if(!this.auto||!this.connected||!this.reconciled)return;
+  if(this.timer)clearTimeout(this.timer);
+  this.timer=setTimeout(()=>{this.timer=null;this.push().catch(err=>{this.auto=false;this.onStatus('Cloud auto-sync paused: '+err.message)})},3500);
+ }
+ setAuto(enabled){
+  this.auto=!!enabled&&this.connected&&this.reconciled;
+  if(!this.auto&&this.timer){clearTimeout(this.timer);this.timer=null}
+  return this.auto;
+ }
+}
