@@ -108,11 +108,39 @@ export class GitHubVault{
    return {exists:!!remote,repo:this.repo,private:true};
   }catch(err){this.disconnect();throw err}
  }
- async fetchRemote(){
-  const raw=await this.request('/contents/'+VAULT_PATH);
+ async fetchRemote(ref=null){
+  if(ref!==null&&!/^[a-f0-9]{40}$/.test(ref))throw Error('Invalid GitHub history commit SHA.');
+  const raw=await this.request('/contents/'+VAULT_PATH+(ref?'?ref='+ref:''));
   if(!raw)return null;
   if(raw.type!=='file'||typeof raw.content!=='string')throw Error('Cloud path is not a readable JSON file.');
   return {sha:raw.sha,data:validateVault(JSON.parse(decode(raw.content)))};
+ }
+ async listHistory(limit=20){
+  if(!this.connected)throw Error('Connect first');
+  if(this.busy)throw Error('Sync in progress');
+  const count=Math.max(1,Math.min(30,Math.floor(Number(limit)||20)));
+  const rows=await this.request('/commits?path='+encodeURIComponent(VAULT_PATH)+'&per_page='+count);
+  if(!Array.isArray(rows))return [];
+  return rows.filter(row=>/^[a-f0-9]{40}$/.test(row.sha||'')).map(row=>({
+   sha:row.sha,
+   date:String(row.commit?.committer?.date||row.commit?.author?.date||''),
+   message:String(row.commit?.message||'Cloud sync').split('\n')[0].slice(0,140)
+  }));
+ }
+ async restoreVersion(ref){
+  if(!this.connected||!this.reconciled)throw Error('Connect and reconcile the latest vault before restoring history.');
+  if(this.busy)throw Error('Sync in progress');
+  if(!/^[a-f0-9]{40}$/.test(ref))throw Error('Choose a valid past commit.');
+  this.busy=true;
+  try{
+   const current=await this.fetchRemote();
+   if((current?.sha??null)!==(this.sha??null))throw new CloudConflictError();
+   const previous=await this.fetchRemote(ref);
+   if(!previous)throw Error('No Crystal Forge backup exists at this commit.');
+   const merged=mergeVault(this.storage,previous.data,{restoreProject:true});
+   this.onStatus('Restored an older version locally with a pre-restore backup. Sync Now creates a new GitHub revision; history remains intact.');
+   return {...merged,revision:ref};
+  }finally{this.busy=false}
  }
  async pull({restoreProject=true}={}){
   if(!this.connected)throw Error('Connect first');
