@@ -19,7 +19,7 @@ const inside=(p,poly)=>{
  return ok;
 };
 const rotatedOffset=(pixel,side,pitch,heading)=>{
- const rad=Number.isFinite(Number(pixel?.wireAngle))?Number(pixel.wireAngle)*Math.PI/180:heading;
+ const rad=heading+(Number.isFinite(Number(pixel?.wireAngle))?Number(pixel.wireAngle)*Math.PI/180:0);
  return {x:-Math.sin(rad)*side*pitch/2,z:Math.cos(rad)*side*pitch/2};
 };
 export function planWireRoutes(crystals,s,hardware){
