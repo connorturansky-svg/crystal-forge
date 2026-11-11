@@ -586,7 +586,11 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
   if(disconnected>1)warnings.push(disconnected+' separate solids detected; the assembly is not one connected piece.');
   if(internalCavities>0)warnings.push(internalCavities+' isolated enclosed cavities were detected. These may not receive light from the underside pixel and should be inspected in a slicer.');
   const baseDepth=Number(s.baseHeight||0);
-  const baseFitsPixel=baseDepth>=resolvePixelProfile(s).bodyHeight+1;
+  // Report real accepted sockets, including mixed manual LED types, instead
+  // of treating the global default profile as if every socket were identical.
+  const baseFitsPixel=socketCeilings.length
+   ? socketCeilings.every(socket=>socket.usableBodyDepth>=socket.requestedBodyDepth-.1&&socket.remainingWall>=2.7)
+   : baseDepth>=resolvePixelProfile(s).bodyHeight+2.8;
   const lightPathScreened=!!s.hollowCrystals&&socketsCut>0&&hollowPorts>0&&internalCavities===0;
   if(s.hollowCrystals&&!lightPathScreened)
     warnings.push('A single shared illuminated cavity is NOT established by the topology screening. Inspect the cross-section and pixel channel in Cura.');
