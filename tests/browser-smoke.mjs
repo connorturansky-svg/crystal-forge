@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 const url=process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321';
-const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+const browser=await chromium.launch({
+ headless:true,
+ executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
+ args:['--no-sandbox','--disable-dev-shm-usage']
+});
 const logs=[];
 const context=await browser.newContext({viewport:{width:1440,height:950},deviceScaleFactor:2,acceptDownloads:true});
 const page=await context.newPage();
