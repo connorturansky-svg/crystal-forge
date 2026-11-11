@@ -5,7 +5,7 @@
 - **A / Cura:** Model-aware thin-feature, roof and nozzle checklists downloadable as text.
 - **B / LEDs:** Per-crystal optical uncertainty CSV and optional experimental bore compression ridge, default off.
 - **C / Modular:** Optional mating split-face dowel bores and separate printable peg coupon, solid bases only.
-- **D / Studio:** Five scope-aware crystal shaping presets and optional snapped manual LED/mount positions.
+- **D / Studio:** Five scope-aware crystal shaping presets, optional snapped manual LED/mount positions, and Shift-drag to reposition existing manual holes.
 - **E / Production:** Validated STL, editable project, Cura candidate, parts list, wiring CSV, optical audit, Cura checklist and build note in one ZIP; additional regression tests.
 - See `docs/PR6_ALL_PHASES.md`. All phases are represented in the PR; remaining advanced mechanics and real Cura/physical acceptance are **not** falsely marked complete.
 
