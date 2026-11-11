@@ -28,3 +28,9 @@ export function resolvePixelProfile(s){
  return {...p,bodyDiameter:diameter,clearance:fit,retentionLip:clamp(Number(s?.pixelRetentionLip)||0,0,.7),boreDiameter:diameter+fit,
   maxDiameter:Math.max(diameter,p.flangeDiameter)+fit};
 }
+
+export function resolveSocketProfile(s,pos={}){
+ if(!pos.profileId||pos.profileId===s.pixelProfileId)return resolvePixelProfile(s);
+ const item=allPixelProfiles(s).find(p=>p.id===pos.profileId);
+ return item?resolvePixelProfile({...s,pixelProfileId:item.id,pixelDiameter:item.bodyDiameter}):resolvePixelProfile(s);
+}

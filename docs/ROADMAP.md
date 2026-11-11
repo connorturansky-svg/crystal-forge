@@ -1,8 +1,8 @@
-# PR7 — Current integrated manufacturing work
+# Active PR7 — All remaining fabrication phases
 
-[Draft PR7](https://github.com/connorturansky-svg/crystal-forge/pull/12) covers light ports, measured LED fit, true underside routing, modular plate, Cura models, advanced editing and performance. Its [implementation and physical acceptance plan](PR7_MANUFACTURING_COMPLETION.md) distinguishes working source code from unverified hardware, optical and slicer work. The master phase backlog and issues #6–#10 remain active.
+[Draft PR7](https://github.com/connorturansky-svg/crystal-forge/pull/13) contains new work across all five phases. [PR7 implementation and real-world acceptance](PR7_COMPLETE_FABRICATION.md) is the current source of truth; [PR6 baseline](PR6_ALL_PHASES.md) and [PR5 master plan](PR5_MASTER_IMPLEMENTATION_PLAN.md) retain the earlier full backlog. Issues #6–#10 stay open until their real mechanical, optical and Cura test requirements are satisfied.
 
-# PR6 — Previously integrated five-phase work
+# PR6 — Combined five-phase draft
 
 A single [draft PR6](https://github.com/connorturansky-svg/crystal-forge/pull/11) implements changes across all five delivery packages. [Full acceptance matrix](PR6_ALL_PHASES.md) distinguishes working code from advanced/physical features still pending. [Original detailed backlog](PR5_MASTER_IMPLEMENTATION_PLAN.md) and issues #6–#10 remain authoritative.
 
@@ -77,3 +77,8 @@ On discovering a reproducible failure, add exact steps, input settings, actual/e
 - **Implemented on branch:** integrated full-hill/plinth modes, dome falloff and side wall controls; generic/custom LED profile selector, library editor, flange-aware socket cutting and shallow underside wire relief; persistent descriptions panel.
 - **Verification pending:** review GitHub checks against latest PR4 HEAD, test contour/fillet matching and base roof slicing in Cura, print a measured LED fitting sample and inspect cable exits.
 - **Follow-on milestones:** retaining clips, strain relief, full automatic wire routing, actual measured manufacturer's LED models, optical path cross sections and physical safety testing.
+
+## PR7 coupon calibration and source protection update
+
+Implemented on the draft PR7 branch: engraved five/three-size physical fit samples, side-open wire slots in full-body specimens, chosen-hole calibration applied globally to LED sockets with a visible reversible override, and an all-rights-reserved original-source notice. Physical tolerance, actual cable strain relief and real Cura/print tests remain acceptance requirements. Public source visibility remains unchanged.
+

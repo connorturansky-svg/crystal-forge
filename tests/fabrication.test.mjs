@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
 import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,baseProfileHeight,baseEdgeHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
-import {setThreeInstance,prepareFabrication,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,makeSplitPinCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
+import {setThreeInstance,prepareFabrication,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
 import {planWireRoutes} from '../wire-routing.js';
+import {planTargetedLightPaths} from '../targeted-light-paths.js';
+import {planDetachablePlate} from '../detachable-plate.js';
 import {estimateRoofReview} from '../print-advisor.js';
-import {PIXEL_PRESETS,normalisePixelProfile,resolvePixelProfile} from '../pixel-profiles.js';
+import {PIXEL_PRESETS,normalisePixelProfile,resolvePixelProfile,resolveSocketProfile} from '../pixel-profiles.js';
 
 const wasm=await Module();wasm.setup();
 
@@ -296,6 +298,72 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  assert(vault.messages.length,'Incompatible vault routing is explained');
 }
 
+// PR7 — Targeted physical optical paths, independent pixel profiles, detachable plate.
+{
+ const wide={...settings,count:1,width:160,height:160,baseWidth:25,baseHeight:28,
+  baseDome:5,cutSockets:true,pixelPlacement:'manual',manualPixelHoles:[{x:0,z:0}],
+  lightingMode:'single',pixelCount:1,bottomScale:2,topScale:1.2,
+  targetedLightPaths:true,lightBoreDiameter:3,lightReach:100,hollowCrystals:false,baseVault:false};
+ const construction=assembly(wide);
+ const plan=planHardware(construction.crystals,wide);
+ const optical=planTargetedLightPaths(construction.crystals,wide,plan);
+ assert(optical.enabled,'Targeted geometry mode enabled');
+ assert(optical.paths.length>0,'At least one wide crystal receives a planned bore');
+ assert(optical.paths.every(x=>x.baseSegments.length===3),'Routes connect from LED to root in three continuous segments');
+ // When the global choice is a 22 mm gumdrop but the installed hole is a
+ // 9 mm seed, the connecting tunnel must begin INSIDE the seed's real cavity.
+ // Using the global length would leave an unseen ~10 mm plug in the base.
+ const seedSource={...wide,manualPixelHoles:[{x:0,z:0,profileId:'seed'}]};
+ const seedHardware=planHardware(construction.crystals,seedSource);
+ const seedRoutes=planTargetedLightPaths(construction.crystals,seedSource,seedHardware);
+ assert(seedRoutes.paths.length>0,'Short manual seed gets a valid targeted optical conduit');
+ for(const path of seedRoutes.paths){
+  const actual=resolveSocketProfile(seedSource,seedHardware.sockets[path.sourceIndex]);
+  assert.equal(actual.id,'seed','The geometry uses the accepted individual LED profile');
+  assert(path.baseSegments[0][0].y<actual.bodyHeight-.5,
+   'Channel mouth overlaps the actual short seed socket rather than stopping above it');
+ }
+ const ready=validate('PR7 targeted light passages',wide);
+ assert(ready.targetedLightCount>0,'Manifold actually subtracts a physical optical passage');
+ assert.equal(ready.disconnected,1,'Targeted bore preserves the connected solid');
+ assert.equal(ready.internalCavities,0,'No hidden sealed cavities introduced by optical passages');
+ const restricted=planTargetedLightPaths(construction.crystals,{...wide,lightReach:15},
+  {...plan,sockets:[{x:300,z:300,radius:6} ]});
+ assert(restricted.skipped.length,'Out-of-range paths are skipped instead of silently cut');
+ assert.equal(planTargetedLightPaths(construction.crystals,{...wide,hollowCrystals:true},plan).paths.length,0,'No mixed balloon/targeted cuts');
+ for(const obj of construction.meshes)obj.geometry.dispose();
+
+ const mixed={...settings,count:2,width:180,baseWidth:30,baseHeight:25,baseStyle:'Circle',
+  cutSockets:true,lightingMode:'multi',pixelCount:2,pixelPlacement:'manual',
+  manualPixelHoles:[{x:-18,z:0,profileId:'seed'},{x:18,z:0,profileId:'gumdrop'}]};
+ const crystals=generateFormation(mixed),mixedPlan=planHardware(crystals,mixed);
+ assert.equal(mixedPlan.sockets.length,2,'Individual profiles accept two physically located sockets');
+ assert.equal(mixedPlan.sockets[0].profileId,'seed');
+ assert.equal(mixedPlan.sockets[1].profileId,'gumdrop');
+ assert(mixedPlan.sockets[0].radius<mixedPlan.sockets[1].radius,'Each LED reserves its actual flange radius');
+ assert.equal(resolveSocketProfile(mixed,mixedPlan.sockets[0]).id,'seed');
+ const coupon=makeSteppedPixelCoupon(wasm,{...settings,pixelProfileId:'gumdrop',pixelDiameter:12});
+ assert.equal(coupon.diameters.length,3,'Three shaped measured socket sizes');
+ assert(coupon.triangles>100,'Stepped socket coupon has printable geometry');
+ assert.equal(coupon.labelsEngraved,3,'Three sample sizes engraved directly on the model');
+ assert.equal(coupon.wireExitCount,6,'Both side walls open on all three full-body samples');
+ const unvented=makeSteppedPixelCoupon(wasm,{...settings,pixelProfileId:'gumdrop',pixelDiameter:12},{openWireExits:false});
+ assert(coupon.volumeMm3<unvented.volumeMm3-5,'Real wire exit channels remove volume all the way through sample sides');
+ unvented.geometry.dispose();coupon.geometry.dispose();
+
+ const plateConfig={...settings,mount:'Detachable plate',baseType:'integrated',baseHeight:25,
+  baseStyle:'Square',baseWidth:28,mountSpacing:20,plateThickness:4};
+ const plateCrystals=generateFormation(plateConfig),hardware=planHardware(plateCrystals,plateConfig);
+ const platePlan=planDetachablePlate(plateConfig,hardware);
+ assert.equal(hardware.mounts.length,2,'Detachable plate creates two actual M3 base pockets');
+ if(platePlan.valid){
+  const plate=makeDetachablePlate(wasm,platePlan);
+  assert(plate.geometry.getAttribute('position').count>30,'Separate registered plate STL exists');
+  plate.geometry.dispose();
+ }
+ console.log('PR7 targeted optics, per-pixel profiles, stepped fit and detachable plate checked');
+}
+
 // Tabs must be physical fused geometry with THROUGH holes, not markers.
 const cfgTabs={...settings,count:8,baseHeight:25,baseDome:4,baseWidth:10,
  mount:'Edge fixing tabs',tabCount:3,tabHolesPerTab:2,
@@ -351,6 +419,9 @@ verifyClearance('full-assembly',assembly({...settings,hollowCrystals:true,cutSoc
 const cal=makeCalibrationStrip(wasm);
 assert(cal.triangles>50,'Calibration strip created');
 const stepped=makePixelSeatCoupon(wasm,{...settings,pixelProfileId:'gumdrop',pixelDiameter:12,pixelFit:.15});
+assert.equal(stepped.labelsEngraved,5,'Five full-shape hole sizes engraved');
+assert.deepEqual(stepped.diameters,[11.95,12.05,12.15,12.25,12.35]);
+assert.equal(stepped.wireExitCount,10,'Five shapes have their wires open on both sides');
 assert.equal(stepped.diameters.length,5,'Stepped pixel housing and flange coupon has five holes');
 assert(stepped.geometry.getAttribute('position').count>200,'Stepped coupon has real printable geometry');
 assert.equal(geometryEdges(stepped.geometry).open,0,'Stepped coupon remains watertight');

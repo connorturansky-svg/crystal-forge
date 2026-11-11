@@ -1,15 +1,32 @@
 # AI handover — read immediately after AGENTS.md
 
-**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.11.0 (PR6 merged). **Active:** draft PR #12 v0.12.0 on `feat/pr7-lightpaths-hardware-print-performance`.
+## PR7 reconciliation and per-LED optical fix (11 November 2026)
 
-## PR7 handover (11 November 2026)
+- PR #12 was merged into `main` at `c6abc6809f84302fd6ba0daa8b2d42ca7bf973bd` while PR #13 remained based on PR6. PR #13 was reconciled with an ordinary two-parent merge commit `6aa9f38b07ff9281314e99ad6ba0d01b79389280`, preserving the newer PR #13 source tree rather than force-pushing or changing live `main`. GitHub subsequently reported PR #13 mergeable.
+- Audited earlier PR #12's major light channels, pixel measurements, live profile diagram, detachable M3 plate, Cura advice, wiring, and tests against the newer implementation. Some features use newer alternative implementations, especially paired-wire grooves and three/five-position engraved physical coupons.
+- Follow-up fix: `targeted-light-paths.js` now resolves each actual LED's body height before planning its optical bore start, avoiding an unintended solid plug where a short seed socket was incorrectly treated as the global gumdrop. `fabrication-v1.js` reports clearance of all actual socket bodies rather than only the globally selected pixel. A mixed LED profile geometry regression was added.
+- Require exact-head static, fabrication/Manifold and Playwright statuses before merge; prior browser workflow failures occurred at installing the test environment, not during executed browser interactions. Physical verification of labels, Cura layers, LED light paths, fit/strain relief, plate mating and installed load strength is outstanding.
 
-- PR: https://github.com/connorturansky-svg/crystal-forge/pull/12. Full implementation/physical acceptance: `docs/PR7_MANUFACTURING_COMPLETION.md`.
-- **Latest user issue:** lone LED with `wireExit=false` had no physical groove; now explicit warning and one-click route-to-edge, edge cutter actually exits base, other LED flanges are obstacles. 3D cyan volumes show planned width/depth, BOT/Prepare Print show actual cut.
-- `pixel-profile-diagram.js`: A–G live measured SVG, clickable letters; B includes cap E. `putSocket` corrected to actual positive Y body depth instead of starting from -3 mm, cap and wire relief honor profile with truncation warnings. Stepped coupon made with the real cavity cutter.
-- `light-port-plan.js` makes opt-in vault-to-spike channels and reports cut/skipped bores, not guaranteed optical connection. Detached M3-style plate STL implemented, not load-rated.
-- `cura-model-advisor.js` model-derived nozzle recommendation with explicit opt-in; worker-stage timing and extended 10/16/40/60 benchmark added.
-- Keep PR7 draft until final SHA static, browser and Manifold tests plus Cura actual slices, LED/wire fit samples, optical and plate strength are reviewed.
+**Updated:** 11 November 2026. **Repo:** `connorturansky-svg/crystal-forge`. **Production:** v0.11.0 (PR6 merged). **Active:** draft PR #13 v0.12.0 on `feat/pr7-complete-fabrication`.
+
+## PR7 fit calibration and access notes (11 November 2026)
+
+- Added `fit-calibration.js`: 5-position diameter mapping, 3-position full-body mapping, exact measured clearance selection, calibration snapshot and reversible global fit adjustment.
+- Both coupons use printable engraved 7-segment numerals, not just a CSV of values. Full-body coupon wire cuts now extend beyond opposite side edges; production socket cable relief is unchanged.
+- Build shows `⚙ Calibrated Ø …` after applying a measured fit; selection and original fit persist in the project and can be reset.
+- `LICENSE` reserves rights in original source without claiming public source is hidden. GitHub public viewing/forking remains permitted; see README.
+- Fixed fabrication worker undeclared manufacturing timing variables. CI install strategy now tries preinstalled browser before downloading Chromium.
+- Exact-head static + Manifold + browser CI and real printed coupons must still be checked before PR7 merge.
+
+## PR7 handover — complete fabrication phases (11 November 2026)
+
+- PR13: https://github.com/connorturansky-svg/crystal-forge/pull/13. Based on merged PR6/main SHA `d71f7e781b247e4caf422ac600e010b2720614be`.
+- `targeted-light-paths.js` and manufacturing cutter add opt-in LED-to-crystal real narrow bores. Defaults OFF, alternative to slow balloon hollowing or vault. Conservative skip reporting; optical output NOT verified by Cura or physical print.
+- `resolveSocketProfile` and manual hardware editor let individual LEDs choose measured profiles. `makeSteppedPixelCoupon` creates three actual housing/retention/relief samples.
+- `detachable-plate.js` designs registered insert locations and `makeDetachablePlate` creates a separately printable M3 plate. Valid split STLs and dowels also join the production ZIP.
+- `print-quality.js` adds layer/flow estimates; `fabrication-worker.js` posts finer stage progress; `CRYSTAL_FORGE_BENCH_EXTENDED=1` times 10/16/40/60.
+- Full scope and merge/physical gates: `docs/PR7_COMPLETE_FABRICATION.md`. Preserve existing project JSON compatibility, no implied certified overhead load or continuous light paths.
+- Review exact latest static, browser and Manifold checks before marking ready, then test actual Cura and real PLA/PETG samples.
 
 ## PR6 all-phase handover (11 November 2026)
 

@@ -1,6 +1,6 @@
 import {baseOutline,crystalEndRatios} from './geometry-v3.js';
 import {planEdgeTabs} from './edge-tabs.js';
-import {resolvePixelProfile} from './pixel-profiles.js';
+import {resolvePixelProfile,resolveSocketProfile} from './pixel-profiles.js';
 import {planWireRoutes} from './wire-routing.js';
 /* Hardware placement planner shared by printable geometry and viewport annotations.
  * All positions are x/z on the underside of the cluster, distances in mm.
@@ -41,9 +41,9 @@ export function mountingProfile(s){
   const preset=s.mount || 'None';
   const custom=preset==='Custom dual holes';
   const diameter=custom? Number(s.mountHoleDiameter||4.5) :
-    preset==='Magnet inserts'?10.2 : ['Threaded insert M3','Detachable plate'].includes(preset)?4.2 : 4.5;
+    preset==='Magnet inserts'?10.2 : (preset==='Threaded insert M3'||preset==='Detachable plate')?4.2 : 4.5;
   const depth=preset==='Magnet inserts'?Math.min(3.2,s.baseHeight-1.6):
-    ['Threaded insert M3','Detachable plate'].includes(preset)?Math.max(2.5,Math.min(6,s.baseHeight-2.5)):
+    (preset==='Threaded insert M3'||preset==='Detachable plate')?Math.min(6,s.baseHeight-1.6):
     custom?Math.max(1.2,Number(s.mountHoleDepth||s.baseHeight+2)):s.baseHeight+4;
   const enabled=!['None','Edge fixing tabs'].includes(preset)&&s.baseType!=='none';
   return {preset,enabled,diameter,depth,requested:enabled?2:0};
@@ -67,9 +67,10 @@ export function planHardware(crystals,s){
    s.lightingMode==='single'?1:max(0,Math.round(s.pixelCount));
   if(s.cutSockets&&(!Number.isFinite(socketDiameter)||socketDiameter<=0))throw new Error('Pixel socket diameter must be positive.');
   if(pixelManual&&pixelRequested)manualPixels.slice(0,pixelRequested).forEach((entry,i)=>{
-    const p={x:Number(entry.x),z:Number(entry.z)},radius=socketRadius;
+    const p={x:Number(entry.x),z:Number(entry.z)};
+    const specific=resolveSocketProfile(s,entry),radius=specific.maxDiameter/2;
     if(Number.isFinite(p.x)&&Number.isFinite(p.z)&&validHole(p,radius,sockets))
-      sockets.push({...p,radius,diameter:socketDiameter,profileId:profile.id,kind:'LED',manual:true,index:i});
+      sockets.push({...p,radius,diameter:specific.boreDiameter,profileId:specific.id,kind:'LED',manual:true,index:i,wireAngle:Number(entry.wireAngle??0),wireEndX:entry.wireEndX,wireEndZ:entry.wireEndZ});
     else invalidManualPixels.push({...p,radius,kind:'LED',index:i});
   });
   const ranked=pixelManual?[]:all.slice().sort((a,b)=>b.r*b.h-a.r*a.h);
@@ -160,7 +161,7 @@ export function planHardware(crystals,s){
   const requestedMounts=mp.preset==='Edge fixing tabs'?
    edgePlan.requested*edgePlan.holesEach:
    mp.enabled&&mountManual?min(20,manualMounts.length):mp.requested;
-  const wirePlan=planWireRoutes(crystals,s,{sockets,mounts,tabHoles:edgePlan.tabHoles,polygon});
+  const wirePlan=planWireRoutes(crystals,s,{sockets,mounts,tabs:edgePlan.tabs,tabHoles:edgePlan.tabHoles,polygon});
   messages.push(...wirePlan.messages);
   return {sockets,mounts,polygon,collisions,messages,clearance,wirePlan,
     invalidManualPixels,invalidManualMounts,

@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 const url=process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321';
-const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+const browser=await chromium.launch({
+ headless:true,
+ executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
+ args:['--no-sandbox','--disable-dev-shm-usage']
+});
 const logs=[];
 const context=await browser.newContext({viewport:{width:1440,height:950},deviceScaleFactor:2,acceptDownloads:true});
 const page=await context.newPage();
@@ -250,8 +254,30 @@ try{
  console.log('Manual LED X/Z editor and invalid position screening verified');
  // The tab preset must be accessible, visible, hover-explained and reflected
  // in the live hardware plan before preparing a manufacturing mesh.
+ await page.locator('[data-state="wireMode"]').selectOption('parallel');
+ assert.equal(await page.locator('[data-state="wireMode"]').inputValue(),'parallel');
+ await page.locator('[data-state="wirePairSpacing"]').evaluate(el=>{el.value='8';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForFunction(()=>{
+  const saved=JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings;
+  return saved?.wirePairSpacing===8;
+ },null,{timeout:12000});
+ const pairedStored=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings);
+ assert.equal(pairedStored.wirePairSpacing,8,'Paired wire spacing persists after the queued 3D rebuild');
+ await page.locator('[data-state="wireMode"]').selectOption('single');
  await page.locator('[data-state="mount"]').selectOption('Edge fixing tabs');
  assert(await page.locator('#edgeTabSettings').isVisible(),'Edge tab controls are visible');
+ await page.locator('#placeTabBtn').click();
+ assert((await page.locator('#manualHardwareList').innerText()).includes('Editable edge tabs'),'Tabs become individually editable');
+ const existingTabs=await page.locator('[data-remove-tab]').count();
+ if(existingTabs>0){
+  await page.locator('[data-remove-tab]').first().click();
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings);
+  assert.equal(saved.tabCount,existingTabs-1,'Deleting an edge tab persists');
+ }
+ await page.locator('#stopHolePlacementBtn').click();
+ await page.locator('#resetTabsBtn').click();
+ const resetTabs=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualEdgeTabs);
+ assert.equal(resetTabs,null,'Evenly spaced tab reset removes manual overrides');
  await page.locator('[data-state="tabCount"]').evaluate(el=>{el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}))});
  await page.locator('[data-state="tabHolesPerTab"]').evaluate(el=>{el.value='2';el.dispatchEvent(new Event('input',{bubbles:true}))});
  await page.waitForTimeout(300);
@@ -294,6 +320,15 @@ try{
  await page.locator('[data-state="pixelPlacement"]').selectOption('auto');
  await page.locator('[data-state="lightingMode"]').selectOption('single');
  console.log('Edge tabs, hover explanations, continuous 3D pixel cursor and two clicks verified');
+ await page.locator('[data-state="targetedLightPaths"]').check();
+ assert(await page.locator('[data-state="targetedLightPaths"]').isChecked(),'Targeted real light bore control enables');
+ await page.locator('[data-state="lightBoreDiameter"]').evaluate(el=>{el.value='3.2';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ await page.waitForFunction(()=>Number(JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.lightBoreDiameter)===3.2,null,{timeout:8000});
+ assert.equal(Number(await page.locator('[data-state="lightBoreDiameter"]').inputValue()),3.2,'Light bore slider retains selection');
+ await page.locator('[data-state="targetedLightPaths"]').uncheck();
+ await page.locator('[data-state="mount"]').selectOption('Detachable plate');
+ assert((await page.locator('[data-state="mount"]').inputValue())==='Detachable plate','M3 detachable mount selectable');
+ await page.locator('[data-state="mount"]').selectOption('None');
  await page.locator('[data-tab="print"]').click();
  await page.locator('#prepareBtn').click();
  assert(await page.evaluate(()=>window.__crystalForgeWorkerStarts>=1),'Prepare Print uses a Web Worker');
@@ -325,6 +360,43 @@ try{
  console.log('Mounting / hollow / sockets:',
   await page.locator('#reportHollow').innerText(),
   await page.locator('#reportSockets').innerText());
+ const steppedPromise=page.waitForEvent('download',{timeout:25000});
+ await page.locator('#steppedPixelCouponBtn').click();
+ assert((await steppedPromise).suggestedFilename().includes('stepped'),'Shaped pixel fit test download');
+ assert.equal(await page.locator('#fitResultSelect option').count(),3,'Three labelled full-shape holes listed left-to-right');
+ const fittedLabel=await page.locator('#fitResultSelect option').first().innerText();
+ assert(fittedLabel.includes('12.00'),'Exact printed diameter is readable in selection');
+ const fitBefore=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.pixelFit);
+ await page.locator('#fitResultSelect').selectOption('2');
+ await page.locator('#applyFitResultBtn').click();
+ const fitAfter=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.pixelFit);
+ assert(fitAfter>fitBefore,'Choosing larger physical hole applies increased clearance');
+ assert(await page.locator('#productionPackBtn').isDisabled(),
+  'Changing a physical socket fit invalidates the previously prepared model');
+ // The calibrated-fit indicator and Reset button intentionally live in Build,
+ // not inside the Print workspace where the specimen result was selected.
+ await page.locator('[data-tab="build"]').click();
+ assert(await page.locator('#fitOverrideToolBtn').isVisible(),
+  'Gear visibly identifies the measured override in the Build workspace');
+ await page.locator('#resetFitOverrideBtn').click();
+ const fitReset=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.pixelFit);
+ assert.equal(fitReset,fitBefore,'Override reset restores previous fit');
+ await page.locator('[data-tab="print"]').click();
+ // Applying/resetting calibration changes real Manifold bores, so old STL/ZIP
+ // exports must remain disabled until a fresh mesh is prepared.
+ assert(await page.locator('#productionPackBtn').isDisabled(),
+  'Resetting socket fit keeps stale manufacturing downloads disabled');
+ await page.locator('#prepareBtn').click();
+ await page.waitForFunction(()=>{
+  const status=document.querySelector('#prepareStatus')?.textContent||'';
+  return status.toLowerCase().includes('prepared')||status.toLowerCase().includes('failed');
+ },null,{timeout:120000});
+ assert(!/failed/i.test(await page.locator('#prepareStatus').innerText()),
+  'Rebuild after fit calibration reset produces a valid final mesh');
+ assert(await page.locator('#productionPackBtn').isEnabled(),
+  'Freshly prepared model re-enables the correct production bundle');
+ assert(await page.locator('#detachablePlateBtn').isDisabled(),
+  'Plate export remains unavailable without a matching plate mount');
  await page.locator('#printHeatmap').check();
  await page.screenshot({path:'qa/browser-smoke.png'});
  assert((await page.locator('#printAssuranceSummary').innerText()).includes('review note'),'Model-aware print check summary');

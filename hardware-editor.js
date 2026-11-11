@@ -1,7 +1,8 @@
 /* Build-stage placement/inspection: same authoritative plan as fabrication. */
 import {planHardware} from './hardware-layout.js';
-import {resolvePixelProfile} from './pixel-profiles.js';
+import {resolvePixelProfile,allPixelProfiles} from './pixel-profiles.js';
 import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
+import {nearestEdgePosition} from './edge-tabs.js';
 
 export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,onEdit,onStatus}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
@@ -88,17 +89,32 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    (plan.invalidManualPixels.length+plan.invalidManualMounts.length)+' invalid (red) · '+(plan.wirePlan?.routes.length||0)+' cyan wire segments · '+(plan.wirePlan?.unrouted||0)+' unconnected';
   const list=$('manualHardwareList');if(!list)return;
   const html=[];
+  const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   for(const [kind,enabled,items] of [['pixel',s.pixelPlacement==='manual',s.manualPixelHoles||[]],
      ['mount',s.mountPlacement==='manual',s.manualMountHoles||[]]]){
    if(!enabled)continue;
    html.push('<div class="divider"></div><p class="note"><b>'+(kind==='pixel'?'LED sockets':'Mounting holes')+' · manual</b></p>');
    for(let i=0;i<items.length;i++){
     const p=items[i],bad=(kind==='pixel'?plan.invalidManualPixels:plan.invalidManualMounts).some(x=>x.index===i);
+    const options=kind==='pixel'?'<div class="control" style="grid-column:1 / -1"><label>Individual LED profile</label><select data-hole-profile="'+i+'">'+
+     allPixelProfiles(s).map(profile=>'<option value="'+esc(profile.id)+'"'+((p.profileId||s.pixelProfileId)===profile.id?' selected':'')+'>'+esc(profile.name)+'</option>').join('')+'</select>'+
+ '<div class="control"><label>Pixel rotation (degrees)</label><input type="number" min="-180" max="180" step="5" data-wire-angle="'+i+'" value="'+Number(p.wireAngle??0)+'"></div>'+
+ '<div class="grid2"><div class="control"><label>Exit centre X (mm)</label><input data-wire-end-x="'+i+'" type="number" step=".5" value="'+(p.wireEndX??'')+'" placeholder="Automatic"></div>'+
+ '<div class="control"><label>Exit centre Z (mm)</label><input data-wire-end-z="'+i+'" type="number" step=".5" value="'+(p.wireEndZ??'')+'" placeholder="Automatic"></div></div>'+
+ '<p class="note">Rotation turns both wire lanes together. Both end points stay aligned around this shared exit centre.</p></div>':'';
     html.push('<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:end;margin:8px 0">'+
      '<div class="control"><label>X (mm)</label><input type="number" step=".5" data-hole-kind="'+kind+'" data-hole-index="'+i+'" data-hole-axis="x" value="'+numeric(p.x)+'"></div>'+
      '<div class="control"><label>Z (mm)</label><input type="number" step=".5" data-hole-kind="'+kind+'" data-hole-index="'+i+'" data-hole-axis="z" value="'+numeric(p.z)+'"></div>'+
-     '<button data-remove-hole="'+kind+'" data-hole-index="'+i+'" title="Remove hole">✕</button></div>'+
+     '<button data-remove-hole="'+kind+'" data-hole-index="'+i+'" title="Remove hole">✕</button>'+options+'</div>'+
      (bad?'<p class="note warning">Invalid position. This hole will not be cut until corrected.</p>':''));
+   }
+  }
+  if(s.mount==='Edge fixing tabs'){
+   html.push('<div class="divider"></div><b>Editable edge tabs</b><p class="note">Add, Shift-drag or delete tabs along the perimeter.</p>');
+   for(let i=0;i<(s.manualEdgeTabs||[]).length;i++){
+    const u=Number(s.manualEdgeTabs[i].u||0),bad=!plan.tabs.some(t=>t.index===i);
+    html.push('<div class="buttonrow"><label>Tab '+(i+1)+' · perimeter <input type="number" min="0" max="99.9" step=".5" data-tab-u="'+i+'" value="'+(u*100).toFixed(1)+'"> %</label><button data-remove-tab="'+i+'">✕ Delete</button></div>'+
+      (bad?'<p class="note warning">Tab conflicts with another feature and will not be cut.</p>':''));
    }
   }
   list.innerHTML=html.join('')||'<p class="note">Use Place / move to make existing automatic holes editable, or add new holes by clicking the model.</p>';
@@ -107,6 +123,30 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    const item=s[key]?.[Number(input.dataset.holeIndex)],value=Number(input.value);
    if(!item||!Number.isFinite(value))return;
    item[input.dataset.holeAxis]=snapHardwareCoordinate(value,s.hardwareSnap,s.hardwareSnapStep);onEdit();
+  });
+  list.querySelectorAll('[data-hole-profile]').forEach(select=>select.onchange=()=>{
+   const item=s.manualPixelHoles?.[Number(select.dataset.holeProfile)];
+   if(!item)return;
+   item.profileId=select.value;onEdit();
+  });
+  list.querySelectorAll('[data-wire-angle]').forEach(input=>input.onchange=()=>{
+   const p=s.manualPixelHoles?.[Number(input.dataset.wireAngle)];if(!p)return;
+   p.wireAngle=Math.max(-180,Math.min(180,Number(input.value)||0));onEdit();
+  });
+  for(const axis of ['x','z'])list.querySelectorAll('[data-wire-end-'+axis+']').forEach(input=>input.onchange=()=>{
+   const p=s.manualPixelHoles?.[Number(axis==='x'?input.dataset.wireEndX:input.dataset.wireEndZ)];if(!p)return;
+   const key=axis==='x'?'wireEndX':'wireEndZ';
+   if(input.value.trim()==='')delete p[key];
+   else if(Number.isFinite(Number(input.value)))p[key]=Number(input.value);
+   onEdit();
+  });
+  list.querySelectorAll('[data-tab-u]').forEach(input=>input.onchange=()=>{
+   const p=s.manualEdgeTabs?.[Number(input.dataset.tabU)];if(!p)return;
+   p.u=Math.max(0,Math.min(.999,Number(input.value)/100||0));onEdit();
+  });
+  list.querySelectorAll('[data-remove-tab]').forEach(button=>button.onclick=()=>{
+   s.manualEdgeTabs?.splice(Number(button.dataset.removeTab),1);
+   s.tabCount=s.manualEdgeTabs.length;onEdit();
   });
   list.querySelectorAll('[data-remove-hole]').forEach(button=>button.onclick=()=>{
    const key=button.dataset.removeHole==='pixel'?'manualPixelHoles':'manualMountHoles';
@@ -117,6 +157,16 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  }
  function placementValid(kind,pos,replaceIndex=null){
   const s=getSettings();
+  if(kind==='tab'){
+   const edge=nearestEdgePosition(getPlan().polygon,pos);
+   const tabs=[...(s.manualEdgeTabs||[])];
+   if(replaceIndex===null)tabs.push({u:edge.u});
+   else if(tabs[replaceIndex])tabs[replaceIndex]={u:edge.u};
+   else return false;
+   const next=planHardware(getCrystals(),{...s,mount:'Edge fixing tabs',manualEdgeTabs:tabs});
+   return next.tabs.some(t=>t.index===(replaceIndex===null?tabs.length-1:replaceIndex));
+  }
+  if(kind==='exit')return getPlan().sockets.length>0;
   if(kind==='pixel'){
    const holes=(s.manualPixelHoles||[]).map(p=>({...p}));
    if(replaceIndex===null){if(holes.length>=60)return false;holes.push(pos)}
@@ -149,11 +199,11 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   if(!placing||!isBuild())return;
   const data=findPoint(e);
   if(!data){preview.visible=false;lastCursor=null;return}
-  const kind=placing==='pixel'?'pixel':'mount';
-  const valid=data.insideBase&&placementValid(kind,data.pos,draggingHole?.index??null);
+  const kind=placing;
+  const valid=(data.insideBase||kind==='tab'||kind==='exit')&&placementValid(kind,data.pos,draggingHole?.index??null);
   lastCursor={...data,valid,kind};
   const s=getSettings();
-  const diameter=kind==='pixel'?resolvePixelProfile(s).maxDiameter:
+  const diameter=(kind==='tab'||kind==='exit')?10:kind==='pixel'?resolvePixelProfile(s).maxDiameter:
    s.mount==='Magnet inserts'?10.2:s.mount==='Threaded insert M3'?4.2:Number(s.mountHoleDiameter||4.5);
   const radius=Math.max(1,diameter/2);
   preview.scale.setScalar(radius);
@@ -181,7 +231,16 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  }
  function manuallyPlace(kind){
   const s=getSettings(),plan=getPlan();
-  if(kind==='pixel'){
+  if(kind==='tab'){
+   s.mount='Edge fixing tabs';
+   if(!Array.isArray(s.manualEdgeTabs))s.manualEdgeTabs=plan.tabs.map(t=>({u:t.u}));
+  }else if(kind==='exit'){
+   s.cutSockets=true;s.wireChannels=true;s.wireExit=true;
+   if(s.pixelPlacement!=='manual'){
+    s.manualPixelHoles=plan.sockets.map(p=>({x:p.x,z:p.z,wireAngle:0,profileId:p.profileId}));
+    s.pixelPlacement='manual';
+   }
+  }else if(kind==='pixel'){
    s.cutSockets=true;
    if(s.pixelPlacement!=='manual'){
     s.manualPixelHoles=plan.sockets.map(p=>({x:+p.x.toFixed(1),z:+p.z.toFixed(1)}));
@@ -191,7 +250,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    // retained as a first editable hole rather than silently discarded.
    s.lightingMode='multi';
    s.pixelCount=s.manualPixelHoles.length;
-  }else{
+  }else if(kind==='mount'){
    if(s.mount==='None')s.mount='Custom dual holes';
    if(s.mountPlacement!=='manual'){
     s.manualMountHoles=plan.mounts.map(p=>({x:+p.x.toFixed(1),z:+p.z.toFixed(1)}));
@@ -207,6 +266,8 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  }
  $('placePixelBtn').onclick=()=>manuallyPlace('pixel');
  $('placeMountBtn').onclick=()=>manuallyPlace('mount');
+ $('placeTabBtn').onclick=()=>manuallyPlace('tab');
+ $('pickWireExitBtn').onclick=()=>manuallyPlace('exit');
  $('stopHolePlacementBtn').onclick=cancel;
  const canvas=renderer.domElement;
  canvas.addEventListener('pointermove',e=>updateCursor(e),true);
@@ -218,9 +279,9 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   if(e.shiftKey){
    const data=findPoint(e);
    if(data){
-    const key=placing==='pixel'?'manualPixelHoles':'manualMountHoles';
-    const list=getSettings()[key]||[];
-    const nearest=list.map((p,index)=>({index,d:Math.hypot(p.x-data.pos.x,p.z-data.pos.z)}))
+    const key=placing==='pixel'?'manualPixelHoles':placing==='tab'?'manualEdgeTabs':'manualMountHoles';
+    const list=placing==='tab'?getPlan().tabs:(getSettings()[key]||[]);
+    const nearest=list.map((p,index)=>({index:placing==='tab'?p.index:index,d:Math.hypot(p.x-data.pos.x,p.z-data.pos.z)}))
      .sort((a,b)=>a.d-b.d)[0];
     if(nearest&&nearest.d<=Math.max(8,Number(getSettings().pixelDiameter||5)+3))
      draggingHole={kind:placing,index:nearest.index};
@@ -239,19 +300,33 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   if(draggingHole){
    const active=draggingHole;draggingHole=null;
    const data=findPoint(e);
-   if(data?.insideBase&&placementValid(active.kind,data.pos,active.index)){
-    const key=active.kind==='pixel'?'manualPixelHoles':'manualMountHoles';
+   if((data?.insideBase||active.kind==='tab')&&placementValid(active.kind,data.pos,active.index)){
+    const key=active.kind==='pixel'?'manualPixelHoles':active.kind==='tab'?'manualEdgeTabs':'manualMountHoles';
     const old=getSettings()[key]?.[active.index];
-    if(old){old.x=data.pos.x;old.z=data.pos.z;onEdit();onStatus('Moved existing '+active.kind+' hole; checked new clearances')}
+    if(old){
+     if(active.kind==='tab')old.u=nearestEdgePosition(getPlan().polygon,data.pos).u;
+     else {old.x=data.pos.x;old.z=data.pos.z}
+     onEdit();onStatus('Moved '+active.kind+' after collision review');
+    }
    }
    updateCursor(e);return;
   }
   if(movement>5||!lastCursor?.valid)return;
   const s=getSettings(),kind=placing,pos={...lastCursor.pos};
-  if(kind==='pixel'){
+  if(kind==='tab'){
+   if(!Array.isArray(s.manualEdgeTabs))s.manualEdgeTabs=[];
+   s.manualEdgeTabs.push({u:nearestEdgePosition(getPlan().polygon,pos).u});
+   s.tabCount=s.manualEdgeTabs.length;
+  }else if(kind==='exit'){
+   const pixel=s.manualPixelHoles?.[0];
+   if(pixel){
+    const edge=nearestEdgePosition(getPlan().polygon,pos);
+    pixel.wireEndX=edge.x;pixel.wireEndZ=edge.z;
+   }
+  }else if(kind==='pixel'){
    s.manualPixelHoles.push(pos);
    s.pixelCount=s.manualPixelHoles.length;
-  }else s.manualMountHoles.push(pos);
+  }else if(kind==='mount')s.manualMountHoles.push(pos);
   onEdit(); // redraw rings & keep the placement mode active for next click.
   updateCursor(e);
  },true);

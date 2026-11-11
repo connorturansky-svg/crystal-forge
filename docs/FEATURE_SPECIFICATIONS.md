@@ -221,14 +221,32 @@ Five reusable global/individual crystal shaping presets with locked-object prote
 
 A binary ZIP bundles the *current validated prepared STL*, editable JSON, Cura candidate when compatible, hardware/wiring CSVs, per-crystal audit, fabrication checklist and handoff note.
 
-## F30 — PR7 illustrated pixel profile / physical socket correction
+## F30 — PR7 physical, targeted LED-to-crystal bores
 
-A–G show the body diameter A, full length B (including cap E), flange diameter C, flange axial height D, cap E, wire relief width F and depth G. Double-ended arrows and letters focus matching fields. Actual cut depth B starts at real Y=0 rather than the -3 mm cutter overshoot. Measured cap and cable dimensions are used where roof permits. Five-hole stepped fit sample uses the production cutter.
+- Default-off alternative to slow global hollowing. Real subtractive cylinders connect valid LED socket roof positions through the base toward viable crystal spines.
+- Diameter/reach controls, conservative roof/mount/root screening, accepted/skipped manufacturing counts.
+- A Boolean manifold and proximity report do not prove optical continuity in real Cura slices or filament. Physical validation remains mandatory.
 
-## F31 — PR7 actual underside wire routing
+## F31 — PR7 per-LED profiles and measured stepped fit tests
 
-A single LED needs the outside-edge exit to create a groove; one-click routing enables both controls. The perimeter groove cuts beyond the boundary; routes avoid other LED flanges and mount obstacles. 3D cyan volumes preview the real groove width/depth. Prepare Print and BOT show actual carved mesh. Press-fit requires physical wire/strain-relief testing.
+- Individual manual LED positions can use different saved pixel profile IDs, affecting actual flange collision envelopes and Manifold cutters.
+- Three real stepped socket coupon sizes: nominal ±0.15 mm, including cap, flange, optional retention and relief.
 
-## F32 — PR7 wider manufacturing integration
+## F32 — PR7 physically registered detachable mounting plate
 
-Opt-in vault-to-spike light channels (unverified physical optical paths), separate matching M3-style plate STL, supported Cura nozzle advice with manual adoption, measured worker stages and opt-in extended 10/16/40/60 tests. Real slices and strength tests remain gates.
+- Detachable plate mount preset generates two M3 base insert pockets. Matching through-hole plate exports as its own STL when inside the base footprint.
+- Production ZIP includes valid plate and optional split parts/pegs. Separate actual inserts/bolts and strength/retention testing required.
+
+## F33 — PR7 Cura and manufacturing performance
+
+- Approximate material flow and layer count in Print; no replacement for G-code analysis.
+- Progress stages reported by Worker; opt-in 10/16/40/60-crystal benchmarks through CRYSTAL_FORGE_BENCH_EXTENDED.
+
+## F30 — Printed LED fit calibration (PR7)
+
+- Five engraved full-fit or plain diameter samples, marked in mm left-to-right on the specimen's top printable face; three-position full-body coupon is also engraved.
+- Full-body sample wires must physically exit both side walls, independently of production wiring channels.
+- Print → choose physically tested hole → apply exact diameter-derived global tolerance; the adjustment affects every pixel type via `pixelFit`, preserves the former value and shows a ⚙ override until reset.
+- Persist last printed coupon and applied fit in editable project JSON; do not silently alter individual nominal pixel dimensions.
+- Preserve source privacy choices: original source is rights-reserved, but public repositories and browser JS remain inspectable.
+

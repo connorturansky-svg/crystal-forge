@@ -5,8 +5,8 @@ import {planHardware} from './hardware-layout.js';
 import {planCrystalLightPorts} from './light-port-plan.js';
 export function assessOpticalAccess(crystals,s,report=null){
  const plan=planHardware(crystals,s),sockets=plan.sockets;
- const hasOpenInterior=!!(s.baseVault||s.hollowCrystals);
- const skipped=Number(report?.skippedHollowPorts||0)+Number(report?.skippedDirectLightPorts||0);
+ const hasOpenInterior=!!(s.baseVault||s.hollowCrystals||s.targetedLightPaths||s.lightPorts);
+ const skipped=Number(report?.skippedHollowPorts||0)+Number(report?.skippedDirectLightPorts||0)+Number(report?.targetedLightSkipped?.length||0);
  const planned=planCrystalLightPorts(crystals,s);
  const cutIds=new Set((report?.lightPortDetails||[]).map(p=>p.id));
  const results=crystals.filter(c=>!c.hidden).map(c=>{
@@ -20,13 +20,14 @@ export function assessOpticalAccess(crystals,s,report=null){
   const narrow=rootRadius<Math.max(1.25,Number(s.wallThickness||1.2)*2.2);
   let status='Unknown: no proven optical channel',reason='';
   if(!sockets.length){status='No LED socket';reason='Add an accepted physical LED socket.'}
+  else if(s.targetedLightPaths&&report?.targetedLightSkipped?.some(v=>v.id===c.id)){status='Conduit skipped';reason='Targeted planner rejected the geometry.'}
   else if(!hasOpenInterior){status='No modeled shared passage';reason='Solid roots can block light even if sparse infill is 0%.'}
   else if(narrow){status='Restricted root (review)';reason='Small root may not accommodate a safe light passage.'}
   else if(cutIds.has(c.id)){status='Modeled passage — inspect Cura';reason='A tapered direct bore was subtracted from the prepared mesh, but continuous open access and lighting are not yet verified.';}
   else if(planned.requested&&planned.enabled){status='Direct bore skipped / unverified';reason='No manufactured vault-to-spike opening was reported for this crystal.';}
   else{
    status='Candidate only — inspect slice';
-   reason=s.baseVault?'Base vault exists, but individual root-to-vault optical access is not proven.':
+   reason=s.targetedLightPaths?'A targeted physical bore was requested, but actual optical connectivity must be verified in Cura and with a working LED.':s.baseVault?'Base vault exists, but individual root-to-vault optical access is not proven.':
    'Experimental hollowing selected; individual lumen connection is not proven by this report.';
   }
   return {id:c.id,name:c.name,nearestPixel:nearest===null?null:nearest+1,distanceMm:Number.isFinite(distanceMm)?Math.round(distanceMm*10)/10:null,

@@ -7,7 +7,7 @@ import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
 import {planHardware} from './hardware-layout.js';
 import {resolvePixelProfile} from './pixel-profiles.js';
 const csv=rows=>rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n')+'\r\n';
-export function buildProductionPack({settings,crystals,report,stlBytes}){
+export function buildProductionPack({settings,crystals,report,stlBytes,extraFiles=[],assemblyWarnings=[]}){
  if(!report?.ready||!(stlBytes instanceof Uint8Array)||stlBytes.length<84)
   throw Error('Prepare and validate a manufacturing STL before exporting a production pack.');
  const s=settings,hardware=planHardware(crystals,s);
@@ -18,8 +18,8 @@ export function buildProductionPack({settings,crystals,report,stlBytes}){
   ['03_Reports/print-checklist.txt',printChecklistText(assurance,s)],
   ['03_Reports/optical-audit.csv',opticalAuditCSV(optical)],
   ['03_Reports/wiring-plan.csv',csv([
-   ['Segment','From pixel','To pixel','X1','Z1','X2','Z2','Width mm','Depth mm','Length mm'],
-   ...(hardware.wirePlan?.routes||[]).map((r,i)=>[i+1,r.from+1,r.to==null?'Edge':r.to+1,r.a.x,r.a.z,r.b.x,r.b.z,r.width,r.depth,r.lengthMm.toFixed(1)])
+   ['Segment','Wire lane','From pixel','To pixel','X1','Z1','X2','Z2','Width mm','Depth mm','Length mm'],
+   ...(hardware.wirePlan?.routes||[]).map((r,i)=>[i+1,r.lane??1,r.from+1,r.to==null?'Edge':r.to+1,r.a.x,r.a.z,r.b.x,r.b.z,r.width,r.depth,r.lengthMm.toFixed(1)])
   ])],
   ['03_Reports/parts-list.csv',csv([
    ['Component','Count','Notes'],
@@ -31,6 +31,13 @@ export function buildProductionPack({settings,crystals,report,stlBytes}){
    ['Alignment pins',s.splitParts&&s.splitAlignment?'Optional separate download':0,'Only after split export; not contained in joined STL']
   ])]
  ];
+ for(const item of extraFiles){
+  if(!item||typeof item.path!=='string'||!(item.bytes instanceof Uint8Array)||item.bytes.length<84)
+   throw Error('Invalid physical assembly file in production pack');
+  if(!/^05_Assembly\/[a-zA-Z0-9_.-]+\.stl$/.test(item.path))
+   throw Error('Unsafe assembly export path');
+  assets.push([item.path,item.bytes]);
+ }
  const condensed={status:report.status,bounds:report.bounds,printerFits:report.printerFits,
   triangleCount:report.triangleCount,volumeMm3:report.volumeMm3,
   estimatedPLAgrams:report.materialPLAgrams,socketsCut:report.socketsCut,
@@ -57,6 +64,8 @@ export function buildProductionPack({settings,crystals,report,stlBytes}){
   '5. Test-print a socket and check the actual LED/retention and wire exit.',
   '6. Test actual light transmission and mechanical installation before use.',
   '7. If you need separate split parts, export them using Split in the editor.',
+  '05_Assembly — optional split pieces, dowels and M3 mounting plate',
+  '',...assemblyWarnings,
   '',curaIncluded?'Cura profile included: review all settings after import.':
    'Cura profile omitted: '+curaWarning,
   '', 'This pack is not a guarantee of printable, support-free, safe or illuminated geometry.'

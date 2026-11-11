@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
-import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,makePixelSeatCoupon,makeDetachableMountPlate,splitPreparedMesh,makeSplitPinCoupon} from './fabrication-v1.js';
+import {loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,makePixelSeatCoupon,makeDetachableMountPlate,splitPreparedMesh,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon} from './fabrication-v1.js';
 import {buildProductionPack} from './production-pack.js';
 import {planSplitJoints} from './split-joints.js';
+import {planDetachablePlate} from './detachable-plate.js';
 import {applyShapePreset} from './design-workflows.js';
 setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
@@ -14,6 +15,7 @@ import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
 import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
 import {adviseCuraForModel} from './cura-model-advisor.js';
+import {calibrationSpec,selectedFitResult,resetFitCalibration} from './fit-calibration.js';
 import {assessPrintQuality,printChecklistText} from './print-quality.js';
 import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
 
@@ -23,7 +25,7 @@ const defaults={
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
-  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountPlateThickness:4.5,mountSpacing:40,wireChannels:false,wireExit:true,wireWidth:3,wireDepth:2,wireSlack:0,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'single',wirePairSpacing:7,wireWidth:3,wireDepth:2,wireSlack:0,manualEdgeTabs:null,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -77,7 +79,7 @@ function restore(str){
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
- if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','splitPinDiameter','splitPinDepth','splitPinClearance','wireDepth','lightPortDiameter'].includes(k))return Number(v).toFixed(['pixelFit','pixelRetentionLip','splitPinClearance'].includes(k)?2:1)+' mm';
+ if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','wirePairSpacing','lightPortDiameter','lightBoreDiameter','lightReach','splitPinDiameter','splitPinDepth','splitPinClearance','plateThickness','wireDepth'].includes(k))return Number(v).toFixed(['pixelFit','pixelRetentionLip','splitPinClearance'].includes(k)?2:1)+' mm';
  if(k==='crystalSize'||k==='studioBrightness')return Math.round(Number(v)*100)+'%';
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
@@ -121,6 +123,31 @@ function refreshPixelProfileOptions(){
  $('pixelProfileDetails').textContent=p.kind+' · '+p.bodyDiameter+' mm diameter × '+p.bodyHeight+
   ' mm body · '+p.flangeDiameter+' mm flange · '+p.wireWidth+' mm wire relief. Verify actual LED dimensions.';
 }
+function syncFitCalibration(){
+ const dropdown=$('fitResultSelect'),sample=s.fitCouponLast,previous=dropdown.value;
+ dropdown.replaceChildren();
+ if(sample?.diameters?.length&&sample.profileId===s.pixelProfileId){
+  sample.diameters.forEach((diameter,i)=>{
+   const opt=document.createElement('option');opt.value=String(i);
+   opt.textContent='Hole '+(i+1)+' — Ø '+Number(diameter).toFixed(2)+' mm ('+
+    (i===0?'smallest':i===sample.diameters.length-1?'largest':'from left')+')';
+   dropdown.appendChild(opt);
+  });
+  dropdown.value=[...dropdown.options].some(o=>o.value===previous)?previous:'0';
+  dropdown.disabled=false;$('applyFitResultBtn').disabled=false;
+  $('fitCalibrationStatus').textContent='Printed coupon '+sample.profileName+' (left → right): '+
+   sample.diameters.map(x=>Number(x).toFixed(2)+' mm').join(' · ');
+ }else{
+  const opt=document.createElement('option');opt.value='';opt.textContent='Download a coupon for this pixel profile';
+  dropdown.appendChild(opt);dropdown.disabled=true;$('applyFitResultBtn').disabled=true;
+  $('fitCalibrationStatus').textContent=sample?
+   'Last printed coupon belongs to '+sample.profileName+'. Select that profile or print a new one.':
+   'Download a coupon, insert the LED, then choose the best-fitting hole.';
+ }
+ const active=!!s.fitCalibration;
+ $('fitOverrideToolBtn').hidden=!active;$('resetFitOverrideBtn').hidden=!active;
+ if(active)$('fitOverrideToolBtn').textContent='⚙ Fit '+(Number(s.pixelFit)>=0?'+':'')+Number(s.pixelFit).toFixed(2)+' mm';
+}
 function syncForm(){
  refreshPixelProfileOptions();
  if(s.lightingMode==='single')s.pixelCount=1;
@@ -136,6 +163,7 @@ function syncForm(){
  }
  for(const e of document.querySelectorAll('[data-out]'))e.textContent=format(e.dataset.out,s[e.dataset.out]);
  $('actualHole').textContent=resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm';
+ syncFitCalibration();
  $('pixelBaseDepthHint').textContent=s.baseHeight>=resolvePixelProfile(s).bodyHeight+1?'Base accommodates selected nominal LED depth.':'Base is shallower than selected LED housing. Check fit.';
  $('projectName').textContent=s.title;
  syncShapeControls();
@@ -163,7 +191,7 @@ const relevantManufacturingKeys=[
  'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
  'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightPorts','lightPortDiameter','lightPortReach','lightingMode','pixelCount','pixelDiameter',
- 'pixelFit','pixelRetentionLip','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireWidth','wireDepth','wireSlack','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','printerX','printerY','printerZ','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
+ 'pixelFit','pixelRetentionLip','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireMode','wirePairSpacing','wireWidth','wireDepth','wireSlack','cutSockets','hollowCrystals','targetedLightPaths','lightBoreDiameter','lightReach','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','printerX','printerY','printerZ','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','manualEdgeTabs','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
@@ -230,7 +258,7 @@ function disposeManufacturing(){
  if($('printHeatmap'))$('printHeatmap').checked=false;
  if($('prepareStatus'))$('prepareStatus').textContent='Not prepared. Click Prepare print mesh after changing your design.';
  if($('prepareReport'))$('prepareReport').hidden=true;
- for(const id of ['stlBtn','threeMfBtn','splitExportBtn','productionPackBtn'])if($(id))$(id).disabled=true;
+ for(const id of ['stlBtn','threeMfBtn','splitExportBtn','productionPackBtn','detachablePlateBtn'])if($(id))$(id).disabled=true;
  for(const mesh of crystalMeshes||[])mesh.visible=!crystals.find(c=>c.id===mesh.userData.crystalId)?.hidden;
  if(baseMesh)baseMesh.visible=s.baseType!=='none';
  for(const m of baseAccents)m.visible=s.baseType!=='none';
@@ -297,14 +325,17 @@ function renderManufactureReport(report){
  f('reportUnrouted',report.unroutedPixels||0);
  f('reportLEDVents',report.ventCuts||0);
  f('reportLightPath',report.vault?.applied?'LED side vents · inspect in Cura':report.lightPathScreened?'Screened clear':'Review needed');
- f('reportPorts',(report.hollowPorts||0)+(report.directLightPorts||0));
+ f('reportPorts',(report.hollowPorts||0)+(report.directLightPorts||0)+(report.targetedLightCount||0));
  f('reportDirectPorts',report.directLightPorts||0);
  f('reportSkippedPorts',report.skippedDirectLightPorts||0);
+ f('reportTargeted',report.targetedLightCount||0);
+ f('reportSkippedLight',report.targetedLightSkipped?.length||0);
  f('reportBaseDepth',report.baseFitsPixel?'Fits nominal pixel':'Too shallow');
  f('reportOverhang',report.quality.unsafeTriangles.toLocaleString());
  f('reportOrientation',report.orientation?.name||'Base down');
  const inspection=assessPrintQuality(crystals,s,report),optics=assessOpticalAccess(crystals,s,report);
  $('printAssuranceSummary').textContent=inspection.status+' · '+inspection.findings.length+' review note(s) · roof proxy '+inspection.roof.estimateMm.toFixed(1)+' mm. Download full checklist.';
+ $('printFlowEstimate').textContent='Approx. '+(inspection.estimatedLayers??'—')+' layers · '+(inspection.approximateFlow??'—')+' mm³/s requested extrusion (not calibrated)';
  $('opticalAuditSummary').textContent=optics.results.length+' crystal(s), '+optics.acceptedPixels+' LED(s). Individual passage verification requires Cura and a physical test.';
  const list=report.warnings;
  $('reportWarnings').innerHTML=list.length?'<div class="alert">'+list.map(x=>'<p>'+escapeHTML(x)+'</p>').join('')+'</div>':
@@ -612,6 +643,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
     rebuild();snapshot();return;
   }
   s[key]=value;
+  if(key==='pixelFit'&&s.fitCalibration){s.fitCalibration=null;syncFitCalibration()}
    if(key==='pixelProfileId'){
     const profile=allPixelProfiles(s).find(p=>p.id===value);
     if(profile)s.pixelDiameter=profile.bodyDiameter;
@@ -625,11 +657,16 @@ document.querySelectorAll('[data-state]').forEach(e=>{
   if(key==='lightingMode'&&value==='multi'&&s.pixelCount<1)s.pixelCount=2;
    // One explicit manufacturing strategy at a time; avoid silently ignoring a vault.
    if(key==='baseVault'&&value)s.hollowCrystals=false;
-   if(key==='hollowCrystals'&&value)s.baseVault=false;
+   if(key==='hollowCrystals'&&value){s.baseVault=false;s.targetedLightPaths=false;}
+   if(key==='targetedLightPaths'&&value){s.hollowCrystals=false;s.baseVault=false;s.lightPorts=false;}
+   if(key==='lightPorts'&&value){s.baseVault=true;s.targetedLightPaths=false;s.hollowCrystals=false;}
+   if(key==='baseVault'&&!value)s.lightPorts=false;
+   if(key==='baseVault'&&value)s.targetedLightPaths=false;
   if(!previewKeys.has(key))disposeManufacturing();
   for(const o of document.querySelectorAll('[data-out="'+key+'"]'))o.textContent=format(key,value);
   if(key==='pixelDiameter'||key==='pixelFit'||key==='pixelProfileId')$('actualHole').textContent=resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm';
   if(key==='splitParts')$('splitExportBtn').disabled=!manufacturingMesh||!value;
+   if(key==='mount')$('detachablePlateBtn').disabled=!manufacturingMesh||value!=='Detachable plate';
   if(key==='glowColour'||key==='glowPreview')updateAppearance();
    if(key==='studioBrightness')refreshStudioLighting();
   if(key==='snap'){gizmo.setTranslationSnap(value?5:null);gizmo.setRotationSnap(value?THREE.MathUtils.degToRad(15):null);gizmo.setScaleSnap(value?.1:null)}
@@ -898,6 +935,7 @@ async function buildManufacturing(){
    ((result.report.timings?.engineReadyMs||0)/1000).toFixed(1)+' s). Review warnings.';
   $('stlBtn').disabled=false;$('threeMfBtn').disabled=false;$('productionPackBtn').disabled=false;
   $('splitExportBtn').disabled=!s.splitParts;
+   $('detachablePlateBtn').disabled=s.mount!=='Detachable plate';
   $('showManufacturing').checked=true;manufacturingView(true);applyPrintHeatmap();
   setStatus('Prepared '+result.report.triangleCount.toLocaleString()+' triangles · editor remained responsive');
  }catch(error){
@@ -924,11 +962,53 @@ hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBase
  onEdit:()=>{disposeManufacturing();syncForm();updateLEDs();hardwareUI.refresh();renderInfo();snapshot()}
 });
 
-$('productionPackBtn').onclick=()=>{
+$('detachablePlateBtn').onclick=()=>{
+ if(!verifyPrepared())return;
+ const plan=planDetachablePlate(s,planHardware(crystals,s));
+ if(!plan.valid){alert(plan.reasons.join(' '));return}
+ const button=$('detachablePlateBtn');button.disabled=true;
+ try{
+  // Use the existing Manifold module and release temporary geometry.
+  loadManifold().then(wasm=>{
+   const plate=makeDetachablePlate(wasm,plan);
+   saveSTL(plate.geometry,'crystal-forge-m3-detachable-plate.stl');
+   plate.geometry.dispose();
+   setStatus('Separate mounting plate STL exported; install real M3 inserts/bolts after fit testing');
+  }).catch(err=>alert(err.message)).finally(()=>{button.disabled=false});
+ }catch(e){button.disabled=false;alert(e.message)}
+};
+$('productionPackBtn').onclick=async()=>{
  if(!verifyPrepared())return;
  const button=$('productionPackBtn');button.disabled=true;
  try{
-  const release=buildProductionPack({settings:s,crystals,report:manufacturingReport,stlBytes:encodeSTL(manufacturingMesh.geometry)});
+  const assemblyFiles=[],assemblyWarnings=[],wasm=await loadManifold();
+  if(s.mount==='Detachable plate'){
+   const plan=planDetachablePlate(s,planHardware(crystals,s));
+   if(plan.valid){
+    const plate=makeDetachablePlate(wasm,plan);
+    assemblyFiles.push({path:'05_Assembly/m3-detachable-plate.stl',bytes:encodeSTL(plate.geometry)});
+    plate.geometry.dispose();
+   }else assemblyWarnings.push('Mounting plate omitted: '+plan.reasons.join(' '));
+  }
+  if(s.splitParts){
+   const layout=planSplitJoints(s,planHardware(crystals,s),s.splitX);
+   const halves=splitPreparedMesh(wasm,manufacturingReport.mesh,s.splitX,layout);
+   halves.forEach((piece,i)=>{
+    if(!piece)return;
+    assemblyFiles.push({path:'05_Assembly/split-piece-'+(i+1)+'.stl',bytes:encodeSTL(piece.geometry)});
+    piece.geometry.dispose();
+   });
+   if(layout.points.length){
+    const pegs=makeSplitPinCoupon(wasm,layout.points);
+    if(pegs){
+     assemblyFiles.push({path:'05_Assembly/alignment-pegs.stl',bytes:encodeSTL(pegs.geometry)});
+     pegs.geometry.dispose();
+    }
+   }
+   assemblyWarnings.push(...layout.messages);
+  }
+  const release=buildProductionPack({settings:s,crystals,report:manufacturingReport,
+   stlBytes:encodeSTL(manufacturingMesh.geometry),extraFiles:assemblyFiles,assemblyWarnings});
   download(new Blob([release.bytes],{type:'application/zip'}),release.filename);
   setStatus('Downloaded production pack · '+release.files.length+' files'+(release.curaIncluded?' including Cura profile':' (no compatible Cura profile)'));
  }catch(error){console.error(error);alert('Production pack failed: '+error.message)}
@@ -944,6 +1024,18 @@ $('threeMfBtn').onclick=()=>{
  save3MF(manufacturingMesh.geometry,'crystal-forge-manifold.3mf');
  setStatus('Downloaded 3MF · inspect model and slicer results');
 };
+$('steppedPixelCouponBtn').onclick=async()=>{
+ const button=$('steppedPixelCouponBtn');button.disabled=true;
+ try{
+  const wasm=await loadManifold(),data=makeSteppedPixelCoupon(wasm,s);
+  saveSTL(data.geometry,'crystal-forge-stepped-'+s.pixelProfileId+'-coupon.stl');
+  data.geometry.dispose();
+  s.fitCouponLast=calibrationSpec(s,'full');syncFitCalibration();snapshot();
+  setStatus('Engraved stepped coupon Ø left → right: '+data.diameters.map(x=>x.toFixed(2)).join(' · ')+
+   ' mm. Both cable outlets are open to the outside.');
+ }catch(err){console.error(err);alert('Pixel-fit coupon failed: '+err.message)}
+ finally{button.disabled=false}
+};
 $('calibrationBtn').onclick=async()=>{
  const button=$('calibrationBtn');button.disabled=true;button.textContent='Generating calibration strip…';
  await new Promise(resolve=>setTimeout(resolve,20));
@@ -952,9 +1044,28 @@ $('calibrationBtn').onclick=async()=>{
   const wasm=await loadManifold(),data=s.fitCouponStyle==='plain'?makeCalibrationStrip(wasm,nominal):makePixelSeatCoupon(wasm,s);
   saveSTL(data.geometry,'pixel-fit-'+(s.fitCouponStyle==='plain'?'plain':'stepped')+'-'+nominal.toFixed(1).replace('.','_')+'mm.stl');
   data.geometry.dispose();
-  setStatus('Calibration strip downloaded: '+data.diameters.map(d=>d.toFixed(2)).join(' · ')+' mm left-to-right');
+  s.fitCouponLast=calibrationSpec(s,s.fitCouponStyle);syncFitCalibration();snapshot();
+  setStatus('Engraved calibration sample Ø left → right: '+data.diameters.map(d=>d.toFixed(2)).join(' · ')+' mm.');
  }catch(err){console.error(err);alert('Calibration strip failed: '+err.message)}
  finally{button.disabled=false;button.textContent='⌖ Generate selected pixel-fit test strip (STL)'}
+};
+$('applyFitResultBtn').onclick=()=>{
+ try{
+  const selected=selectedFitResult(s,$('fitResultSelect').value);
+  s.pixelFit=selected.newFit;s.fitCalibration=selected.record;
+  syncForm();rebuild();snapshot();
+  setStatus('Applied printed hole Ø '+selected.record.diameter.toFixed(2)+
+   ' mm. The global socket allowance is now '+s.pixelFit.toFixed(2)+' mm for every pixel type.');
+ }catch(error){alert('Fit calibration error: '+error.message)}
+};
+$('resetFitOverrideBtn').onclick=()=>{
+ const original=resetFitCalibration(s);if(original===null)return;
+ s.pixelFit=original;s.fitCalibration=null;syncForm();rebuild();snapshot();
+ setStatus('Restored previous socket clearance '+original.toFixed(2)+' mm.');
+};
+$('fitOverrideToolBtn').onclick=()=>{
+ $('fitResultSelect').scrollIntoView({behavior:'smooth',block:'center'});
+ $('fitResultSelect').focus();
 };
 $('splitExportBtn').onclick=async()=>{
  if(!verifyPrepared()||!s.splitParts)return;
@@ -1025,27 +1136,32 @@ $('opticalCsvBtn').onclick=()=>{
  download(new Blob([opticalAuditCSV(result)],{type:'text/csv'}),'crystal-forge-optical-audit.csv');
  setStatus('Downloaded optical proximity audit · actual light paths unverified');
 };
+$('resetTabsBtn').onclick=()=>{
+ s.manualEdgeTabs=null;
+ if(s.mount!=='Edge fixing tabs')s.mount='Edge fixing tabs';
+ syncForm();rebuild();snapshot();
+ setStatus('Restored automatic equally spaced edge tabs');
+};
+$('singleWireExitBtn').onclick=()=>{
+ s.wireChannels=true;s.wireExit=true;syncForm();rebuild();snapshot();
+ snapView('bottom');
+ setStatus('Cable grooves planned to the edge. The model and route layout must be inspected before printing.');
+};
 $('exportMountPlateBtn').onclick=async()=>{
  if(!verifyPrepared()||s.mount!=='Detachable plate')return;
  const button=$('exportMountPlateBtn');button.disabled=true;
  try{
   const wasm=await loadManifold(),plate=makeDetachableMountPlate(wasm,s,manufacturingReport.hardware);
   saveSTL(plate.geometry,'crystal-forge-detachable-mount-plate.stl');plate.geometry.dispose();
-  setStatus('Matching plate exported: '+plate.holes+' M3-style fixing bores and '+plate.windows+' pixel windows. Test actual bolts and strength.');
- }catch(err){console.error(err);alert('Detachable plate failed: '+err.message)}
+  setStatus('Registered mounting plate exported. Test real M3 fasteners, cable access and printed material strength.');
+ }catch(err){console.error(err);alert('Registered plate export failed: '+err.message)}
  finally{button.disabled=false}
-};
-$('singleWireExitBtn').onclick=()=>{
- s.wireChannels=true;s.wireExit=true;
- disposeManufacturing();syncForm();hardwareUI?.refresh();updateLEDs();renderInfo();snapshot();
- snapView('bottom');
- setStatus('Push-fit cable route planned to the outside edge. Cyan shows the guide; use Print → Prepare print mesh and BOT to inspect the real open groove.');
 };
 $('wiringCsvBtn').onclick=()=>{
  const plan=planHardware(crystals,s),routes=plan.wirePlan?.routes||[];
- const rows=[['Segment','From pixel','To pixel','Start X (mm)','Start Z (mm)','End X (mm)','End Z (mm)','Width (mm)','Depth (mm)','Length (mm)']];
- routes.forEach((r,i)=>rows.push([i+1,r.from+1,r.to==null?'Exterior':r.to+1,r.a.x.toFixed(1),r.a.z.toFixed(1),r.b.x.toFixed(1),r.b.z.toFixed(1),r.width,r.depth,r.lengthMm.toFixed(1)]));
- rows.push(['SUMMARY','','','','','','','','',Math.round((plan.wirePlan?.lengthMm||0)*10)/10]);
+ const rows=[['Segment','Wire lane','From pixel','To pixel','Start X (mm)','Start Z (mm)','End X (mm)','End Z (mm)','Width (mm)','Depth (mm)','Length (mm)']];
+ routes.forEach((r,i)=>rows.push([i+1,r.lane??1,r.from+1,r.to==null?'Exterior':r.to+1,r.a.x.toFixed(1),r.a.z.toFixed(1),r.b.x.toFixed(1),r.b.z.toFixed(1),r.width,r.depth,r.lengthMm.toFixed(1)]));
+ rows.push(['SUMMARY','','','','','','','','','',Math.round((plan.wirePlan?.lengthMm||0)*10)/10]);
  rows.push(['Unrouted pixels',plan.wirePlan?.unrouted||0,'Review Build warnings before printing']);
  const csv=rows.map(row=>row.map(v=>String(v??'').includes(',')?'"'+String(v).replaceAll('"','""')+'"':String(v??'')).join(',')).join('\r\n');
  download(new Blob([csv],{type:'text/csv'}),'crystal-forge-wire-routing.csv');

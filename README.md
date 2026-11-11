@@ -4,13 +4,28 @@ A browser-based low-poly crystal generator and fabrication prototype for illumin
 
 Runs in Edge or Chrome with no installation or Python. JavaScript modules, Three.js and the Manifold WebAssembly geometry library load from the internet. Project files and theme preference are stored locally in your browser; export JSON for backups or moving to another computer.
 
-## PR7 — real underside grooves, measured LED profiles and manufacturing (draft)
 
-[PR7](https://github.com/connorturansky-svg/crystal-forge/pull/12) includes a physically open single-LED edge groove, live A–G pixel profile diagrams, corrected socket depth/cap/wire measurements and stepped fitting coupons. Other opt-in features include vault-to-spike light channels, a separate mating mount plate, Cura nozzle advice and worker timing. The [full implementation and acceptance checklist](docs/PR7_MANUFACTURING_COMPLETION.md) distinguishes source code from unverified optical, wire-fit, slicing and hardware results. PR7 is not deployed until merged.
+## Source visibility and reuse
+
+**Copyright © 2026 Crystal Forge project owner. All rights reserved.**
+Crystal Forge is presently developed in a **public GitHub repository** but
+its original code is **not offered as open source**. See [LICENSE](LICENSE).
+Public GitHub visibility still permits viewing and forking under GitHub's
+terms and cannot prevent copies. The hosted browser app must serve its
+client-side JavaScript, so a public deployment does not conceal its code.
+
+To restrict access to ongoing source development, consider migrating to a
+**private source repository** and hosting the built public website separately.
+Changing repository visibility may affect GitHub Pages availability on
+the account's plan and does not revoke existing clones/forks.
+
+## PR7 — Completion milestone (draft)
+
+[Draft PR7](https://github.com/connorturansky-svg/crystal-forge/pull/13) extends all five development packages in one branch. [PR7 scope and physical acceptance matrix](docs/PR7_COMPLETE_FABRICATION.md): real opt-in targeted light conduits, mixed per-LED socket profiles, shaped fit coupons, detachable M3 base/plate, modular production ZIP, worker progress and extended benchmarking. None of these guarantees every spike is illuminated or mounted safely without actual Cura/print testing.
 
 ## PR6: all five packages in one pull request
 
-[Draft PR6](https://github.com/connorturansky-svg/crystal-forge/pull/11) contains **implementation changes from all five major development packages**, with reviewable commits and an [all-phase acceptance matrix](docs/PR6_ALL_PHASES.md). It includes Cura/print checks, candidate optical audit and LED retention, split dowels, shape presets/hardware snap, and a complete production ZIP. It does **not** claim that physical safety, optical transmission, Cura imports or the advanced work backlog are all verified or complete.
+[Merged PR6](https://github.com/connorturansky-svg/crystal-forge/pull/11) contains **implementation changes from all five major development packages**, with reviewable commits and an [all-phase acceptance matrix](docs/PR6_ALL_PHASES.md). It includes Cura/print checks, candidate optical audit and LED retention, split dowels, shape presets/hardware snap, and a complete production ZIP. It does **not** claim that physical safety, optical transmission, Cura imports or the advanced work backlog are all verified or complete.
 
 ## PR5 development and what remains
 

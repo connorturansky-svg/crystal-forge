@@ -23,7 +23,8 @@ self.onmessage=async(event)=>{
    return mesh;
   });
   const manufacturingStart=performance.now();
-  const result=prepareFabrication({wasm,meshes:objects,crystals:data.crystals,settings:data.settings});
+  const result=prepareFabrication({wasm,meshes:objects,crystals:data.crystals,settings:data.settings,
+   onProgress:stage=>self.postMessage({type:'progress',stage})});
   const manufacturingEnd=performance.now();
   for(const obj of objects)obj.geometry.dispose();
   const positions=new Float32Array(result.geometry.getAttribute('position').array);
