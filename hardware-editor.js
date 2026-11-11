@@ -148,7 +148,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const routePaths=plan.wirePlan?.previewRoutes?.length?plan.wirePlan.previewRoutes:(plan.wirePlan?.routes||[]);
   for(const route of routePaths){
    const dx=route.b.x-route.a.x,dz=route.b.z-route.a.z;
-   const length=Math.hypot(dx,dz)+.5;
+   const length=Math.hypot(dx,dz)+.12; // guide-only overlap; avoid fake projecting stubs
    const angle=-Math.atan2(dz,dx);
    const midX=(route.a.x+route.b.x)/2,midZ=(route.a.z+route.b.z)/2;
    // This translucent volume matches the Manifold subtractor's width/depth.
@@ -160,7 +160,12 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    const outline=new THREE.LineSegments(new THREE.EdgesGeometry(geom),
     new THREE.LineBasicMaterial({color:route.overLength?0xff3356:0x49faff,depthTest:false,transparent:true,opacity:.95}));
    outline.position.copy(ghost.position);outline.rotation.copy(ghost.rotation);outline.renderOrder=93;guides.add(outline);
-   if(s.wireDirectionArrows!==false&&route.lengthMm>0){
+   // Arrow decorations are never allowed to cross an LED socket. They
+   // must live on an actual open stretch of cable rather than looking like
+   // a stray short unconnected groove through the yellow P ring.
+   const nearSocket=plan.sockets.some(p=>Math.hypot(midX-p.x,midZ-p.z)<
+    p.radius+Math.min(8,Math.max(3,route.lengthMm))+3);
+   if(s.wireDirectionArrows!==false&&route.lengthMm>0&&!nearSocket){
     arrowDistance+=route.lengthMm;
     if(arrowDistance>=14){
      const arrow=new THREE.ArrowHelper(
