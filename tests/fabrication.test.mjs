@@ -310,6 +310,19 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  assert(optical.enabled,'Targeted geometry mode enabled');
  assert(optical.paths.length>0,'At least one wide crystal receives a planned bore');
  assert(optical.paths.every(x=>x.baseSegments.length===3),'Routes connect from LED to root in three continuous segments');
+ // When the global choice is a 22 mm gumdrop but the installed hole is a
+ // 9 mm seed, the connecting tunnel must begin INSIDE the seed's real cavity.
+ // Using the global length would leave an unseen ~10 mm plug in the base.
+ const seedSource={...wide,manualPixelHoles:[{x:0,z:0,profileId:'seed'}]};
+ const seedHardware=planHardware(construction.crystals,seedSource);
+ const seedRoutes=planTargetedLightPaths(construction.crystals,seedSource,seedHardware);
+ assert(seedRoutes.paths.length>0,'Short manual seed gets a valid targeted optical conduit');
+ for(const path of seedRoutes.paths){
+  const actual=resolveSocketProfile(seedSource,seedHardware.sockets[path.sourceIndex]);
+  assert.equal(actual.id,'seed','The geometry uses the accepted individual LED profile');
+  assert(path.baseSegments[0][0].y<actual.bodyHeight-.5,
+   'Channel mouth overlaps the actual short seed socket rather than stopping above it');
+ }
  const ready=validate('PR7 targeted light passages',wide);
  assert(ready.targetedLightCount>0,'Manifold actually subtracts a physical optical passage');
  assert.equal(ready.disconnected,1,'Targeted bore preserves the connected solid');
