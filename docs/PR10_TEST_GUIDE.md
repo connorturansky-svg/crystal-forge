@@ -18,6 +18,16 @@ On the **original machine and browser profile**, open Crystal Forge and select *
 
 **Security/implementation limitation:** this version supports an explicit fine-grained token rather than browser OAuth/PKCE or a server-side credential broker. GitHub cannot authenticate your static public site to private repos automatically without a supported configured auth flow. Never paste your token into a project, message, URL, source file or screenshot. Tokens are not stored automatically; cloud auto-sync therefore requires an active authenticated session. GitHub public API restrictions and private repository availability can be checked only with a real connected account.
 
+### Save multiple projects and recover older versions
+
+Under **Design → Saved projects**, save complete editable models with distinct names. Open a saved project to restore its settings/crystals; the previously active model is first saved into the same library so it cannot be silently replaced. The complete backup JSON and private GitHub vault now include **all** named models alongside the current active model, custom pixel profiles and reusable templates.
+
+You can also use **Import a complete backup JSON** to recover an exported file. It creates a local pre-import backup, retains both variants when a profile or saved-project ID conflicts and updates the project/template lists. This import does not require a GitHub account or token.
+
+For a connected private vault, choose **Refresh history → select a previous commit → Restore selected version** to recover an older cloud snapshot. Auto-sync is deliberately paused while pulling or restoring history, allowing you to inspect the result. Press **Sync Now** deliberately when ready: it creates a new commit without erasing the older commits. REST API metadata visibility is limited to commits from the connected repository; the app never reads other repos.
+
+**Key limit:** named saves and this in-browser vault protect projects only once saved/imported from that computer. An old browser's local gumdrop measurements do not automatically appear on a new computer until uploaded or backed up.
+
 ## 3. Smooth physical wiring acceptance
 
 | Test | Action | Expected |
