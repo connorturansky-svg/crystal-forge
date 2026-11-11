@@ -30,7 +30,7 @@ const defaults={
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
   showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',pixelStringSpacing:50,wireMinBendRadius:5,wireInputTailLength:0,wireOutputTailLength:0,wireDirectionArrows:true,wireShowLengths:true,wirePairSpacing:7,wireWidth:3,wireDepth:2,wireSlack:0,manualEdgeTabs:null,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
-  printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
+  printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaQualityType:'auto',curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
 let s={...defaults},crystals=[],selectedId=null,activeTool='select',cameraTween=null;
@@ -1211,10 +1211,10 @@ function updateCuraProfileSummary(){
   recommend.textContent=advice.supported?'Use '+advice.nozzle.toFixed(2)+' mm candidate nozzle':'No compatible automatic choice';}
  if(!target||!warn||!button)return;
  try{
-  const p=calculateCuraSettings({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
+  const p=calculateCuraSettings({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent,qualityType:s.curaQualityType});
   target.textContent='Layer '+p.layerHeight.toFixed(3)+' mm · First layer '+p.initialHeight.toFixed(2)+' mm · '+p.wallCount+
    ' walls · '+p.topLayers+' top / '+p.bottomLayers+' bottom layers · '+p.density+'% infill · '+p.speed+
-   ' mm/s · '+p.adhesion+' adhesion';
+   ' mm/s · '+p.adhesion+' adhesion · Cura base quality type: '+p.qualityType;
   warn.textContent=p.warnings.filter(x=>x.includes('0% infill')||x.includes('support')||x.includes('nozzle')).join(' ');
   button.disabled=false;button.title='Export Cura quality changes for '+p.machine;
  }catch(err){
@@ -1228,9 +1228,16 @@ $('curaRecommendedNozzleBtn').onclick=()=>{
  s.curaNozzle=a.nozzle;syncForm();updateCuraProfileSummary();snapshot();
  setStatus('Candidate nozzle '+a.nozzle+' mm selected in profile preview only. Fit the matching hardware and inspect the actual Cura slice.');
 };
+$('curaFallbackBtn').onclick=()=>{
+ try{
+  const p=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent,qualityType:s.curaQualityType});
+  download(new Blob([p.fallbackText],{type:'text/plain'}),p.fallbackFilename);
+  setStatus('Downloaded manual Cura settings: useful even if your configuration rejects that quality type.');
+ }catch(err){alert(err.message)}
+};
 $('curaProfileBtn').onclick=()=>{
  try{
-  const p=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
+  const p=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent,qualityType:s.curaQualityType});
   download(new Blob([p.bytes],{type:'application/zip'}),p.filename);
   setStatus('Downloaded Cura profile '+p.title+' · select matching hardware and material in Cura before importing');
  }catch(err){console.error('Cura profile download',err);alert(err.message)}
