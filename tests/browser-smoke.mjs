@@ -283,6 +283,14 @@ try{
  await page.locator('[data-state="pixelPlacement"]').selectOption('auto');
  await page.locator('[data-state="lightingMode"]').selectOption('single');
  console.log('Edge tabs, hover explanations, continuous 3D pixel cursor and two clicks verified');
+ await page.locator('[data-state="targetedLightPaths"]').check();
+ assert(await page.locator('[data-state="targetedLightPaths"]').isChecked(),'Targeted real light bore control enables');
+ await page.locator('[data-state="lightBoreDiameter"]').evaluate(el=>{el.value='3.2';el.dispatchEvent(new Event('input',{bubbles:true}))});
+ assert.equal((await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.lightBoreDiameter)),3.2);
+ await page.locator('[data-state="targetedLightPaths"]').uncheck();
+ await page.locator('[data-state="mount"]').selectOption('Detachable plate');
+ assert((await page.locator('[data-state="mount"]').inputValue())==='Detachable plate','M3 detachable mount selectable');
+ await page.locator('[data-state="mount"]').selectOption('None');
  await page.locator('[data-tab="print"]').click();
  await page.locator('#prepareBtn').click();
  assert(await page.evaluate(()=>window.__crystalForgeWorkerStarts>=1),'Prepare Print uses a Web Worker');
@@ -314,6 +322,10 @@ try{
  console.log('Mounting / hollow / sockets:',
   await page.locator('#reportHollow').innerText(),
   await page.locator('#reportSockets').innerText());
+ const steppedPromise=page.waitForEvent('download',{timeout:25000});
+ await page.locator('#steppedPixelCouponBtn').click();
+ assert((await steppedPromise).suggestedFilename().includes('stepped'),'Shaped pixel fit test download');
+ assert(await page.locator('#detachablePlateBtn').isDisabled(),'Plate export hidden until matching mount selected');
  await page.locator('#printHeatmap').check();
  await page.screenshot({path:'qa/browser-smoke.png'});
  assert((await page.locator('#printAssuranceSummary').innerText()).includes('review note'),'Model-aware print check summary');
