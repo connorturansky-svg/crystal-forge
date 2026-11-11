@@ -605,6 +605,31 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    if(!contextMenu.hidden)clearContext();
    if(placing)cancel();
   }
+  // Fine positioning: Arrow = 1 mm, Shift+Arrow = 5 mm.
+  // Keep all form fields and text editing completely unaffected.
+  const delta={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+  if(!delta||!isBuild()||placing||markerDrag||!selectedHardware||e.altKey||e.ctrlKey||e.metaKey||
+    e.target?.closest?.('input,select,textarea,[contenteditable="true"]'))return;
+  const kind=selectedHardware.kind,id=selectedHardware.id;
+  if(kind!=='pixel'&&kind!=='mount')return;
+  const cfg=getSettings(),key=kind==='pixel'?'manualPixelHoles':'manualMountHoles',mode=kind+'Placement';
+  if(cfg[mode]!=='manual'){
+   const plan=getPlan(),items=kind==='pixel'?plan.sockets:plan.mounts;
+   cfg[key]=items.map((p,i)=>({id:p.id||kind+'-'+i,x:p.x,z:p.z,
+    ...(kind==='pixel'?{profileId:p.profileId,wireAngle:p.wireAngle??0}:{})}));
+   cfg[mode]='manual';
+  }
+  const i=cfg[key]?.findIndex(p=>String(p.id)===id);
+  if(i<0)return;
+  e.preventDefault();
+  const step=e.shiftKey?5:1,old=cfg[key][i],point={...old,
+   x:Math.round((old.x+delta[0]*step)*10)/10,z:Math.round((old.z+delta[1]*step)*10)/10};
+  if(!placementValid(kind,point,i)){
+   onStatus('Hardware nudge blocked: the hole would collide or leave the base.');
+   return;
+  }
+  old.x=point.x;old.z=point.z;onEdit();
+  onStatus('Moved '+hardwareName(kind,i)+' by '+step+' mm; rerouted pixel string.');
  },true);
  document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{
   if(b.dataset.tab!=='build'&&placing)cancel();
