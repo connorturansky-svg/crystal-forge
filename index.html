@@ -77,11 +77,19 @@ body.theme-light .dialog-body .safety{background:#fff4e4;color:#70491f;border-co
 body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80aee6;color:#1c599a}
 @media(max-width:1150px){.topbar{flex-wrap:wrap;justify-content:center}.layout{height:calc(100vh - 110px)}}
 
+#edgeTabSettings[hidden]{display:none!important}
+.control-tooltip{position:fixed;z-index:3000;pointer-events:none;max-width:300px;padding:10px 12px;border:1px solid #7a9cc5;border-radius:10px;background:#14253af5;color:#edf6ff;box-shadow:0 7px 30px #0008;font:12px/1.45 Inter,system-ui,Segoe UI,sans-serif;white-space:normal;overflow-wrap:anywhere}
+.control-tooltip strong{display:block;font-size:12px;color:#b9e9ff;margin-bottom:4px}
+.control-tooltip span{display:block;font-size:11.5px;color:#e3eefc}
+body.theme-light .control-tooltip{background:#fff;color:#1d3553;border-color:#aac3e3;box-shadow:0 8px 24px #20365333}
+body.theme-light .control-tooltip strong{color:#1a5384}
+body.theme-light .control-tooltip span{color:#334c6b}
+@media(prefers-reduced-motion:reduce){.control-tooltip{transition:none}}
 #shapeScope{margin:2px 0 8px}body .shape-selected{border-left:3px solid #49ef9b;background:#1b453a;color:#cbffe5;padding:10px;border-radius:6px}body.theme-light .shape-selected{background:#daf7e8;color:#136039}#multiplePixelsRow:not(.show){display:none!important}.viewbuttons button.active{background:#315d96!important;color:white!important}
 </style></head>
 <body class="simple">
 <header class="topbar">
-<div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.7.0 · Cluster Studio</span><span class="filename" id="projectName">Untitled cluster</span></div>
+<div class="topcluster"><span class="brand"><i>◇</i> Crystal Forge</span><span class="version">v0.8.0 · Cluster Studio</span><span class="filename" id="projectName">Untitled cluster</span></div>
 <nav class="workspace-tabs"><button class="active" data-tab="design">◇ Design</button><button data-tab="build">⚙ Build</button><button data-tab="print">▣ Print</button></nav>
 <div class="topcluster utility"><div class="modebar"><button id="simpleBtn" class="active">Simple</button><button id="advancedBtn">Advanced</button></div><button id="themeBtn" class="utility-button" title="Switch to light theme" aria-label="Switch theme">☀ Light</button><button id="helpBtn" class="utility-button" title="Help and keyboard shortcuts">? Help</button><button id="changelogBtn" class="utility-button" title="Version history and changes">✦ What’s new</button><button id="saveBtn" title="Download editable project">↓ Save</button><button id="loadBtn" title="Open project">↑ Open</button><input type="file" id="loadFile" accept=".json,application/json"></div>
 </header>
@@ -93,10 +101,12 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="control"><label>Growth pattern</label><select data-state="pattern"><option>Central Spire</option><option>Dense Cluster</option><option>Fan</option><option>Geode / Crescent</option><option>Wall Growth</option><option>Organic / Wild</option></select></div>
 <div class="control"><label>Crystals <output data-out="count"></output></label><input data-state="count" type="range" min="1" max="60" step="1"></div>
 <div class="control"><label>Overall height <output data-out="height"></output></label><input data-state="height" type="range" min="40" max="360" step="5"></div>
+<div class="control"><label>Crystal starting size <output data-out="crystalSize"></output></label><input data-state="crystalSize" type="range" min=".5" max="4" step=".1"><p class="note">Globally scales crystal thickness, not height or position. Existing saved designs retain their original appearance at 100%.</p></div>
 <div class="control"><label>Spread / footprint <output data-out="width"></output></label><input data-state="width" type="range" min="35" max="300" step="5"></div><div class="control"><label>Crystal spacing / overlap <output data-out="spacing"></output></label><input data-state="spacing" type="range" min="0" max="100" step="1"><p class="note">0% = super-clustered · 100% = massive spacing with no overlapping crystal envelopes (may exceed printer dimensions).</p></div>
 <div class="control"><label>Lean pattern</label><select data-state="leanMode"><option>Organic / natural</option><option>One direction</option><option>Criss-cross</option><option>Radial outward</option><option>Radial inward</option></select></div>
 <div class="control"><label>Lean amount <output data-out="leanAmount"></output></label><input data-state="leanAmount" type="range" min="0" max="100" step="1"><p class="note">0% = upright · 100% = strong preset-aligned lean.</p></div>
-<div class="control"><label>Angle randomness <output data-out="angleRandomness"></output></label><input data-state="angleRandomness" type="range" min="0" max="100" step="1"><p class="note">0% follows the pattern precisely; higher settings vary the directions around it.</p></div>
+<div class="control"><label>Angle randomness <output data-out="angleRandomness"></output></label><input data-state="angleRandomness" type="range" min="0" max="100" step="1"><p class="note">0% follows the pattern precisely. Lean rotates rigid crystals instead of stretching them.</p></div>
+<div class="control"><label>Width randomness <output data-out="widthRandomness"></output></label><input data-state="widthRandomness" type="range" min="0" max="100" step="1"><p class="note">Varies each crystal's top and bottom diameters independently. The same crystal IDs reproduce the same variation.</p></div>
 <div class="buttonrow"><button id="randomBtn">⚄ Randomise</button><button id="regenBtn">↻ Regenerate</button></div>
 <div class="advanced-only"><div class="divider"></div><div class="control"><label>Repeatable seed</label><input data-state="seed" type="number" min="1" max="999999999"></div><label class="checks"><input data-state="preserveLocked" type="checkbox"> Keep locked crystals when regenerating</label></div>
 </div></div>
@@ -104,10 +114,12 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div id="shapeScope" class="success">Global controls — all crystals. Select a crystal to edit only that crystal.</div>
 <div class="buttonrow" style="margin:8px 0 12px"><button id="clearCrystalSelection" hidden>↩ Edit all crystals</button><button id="resetCrystalShape" hidden>Reset individual overrides</button></div>
 <div class="control"><label>Crystal family</label><select data-state="familyMix"><option>Quartz</option><option>Shard</option><option>Blade</option><option>Cubic</option><option>Double terminated</option><option>Fantasy</option><option>Mixed</option></select></div>
-<div class="control"><label>Bottom diameter <output data-out="bottomScale"></output></label><input data-state="bottomScale" type="range" min=".55" max="1.7" step=".05"></div>
-<div class="control"><label>Top diameter (shoulder) <output data-out="topScale"></output></label><input data-state="topScale" type="range" min=".35" max="1.6" step=".05"></div>
+<div class="control"><label>Bottom width adjustment <output data-out="bottomScale"></output></label><input data-state="bottomScale" type="range" min=".15" max="5" step=".05"></div>
+<div class="control"><label>Top / shoulder width adjustment <output data-out="topScale"></output></label><input data-state="topScale" type="range" min=".15" max="5" step=".05"></div>
+<p class="note">Top and bottom are separate adjustments relative to Crystal starting size: 0% = unchanged, negative = narrower, positive = wider (up to +400%).</p>
 <div class="control"><label>Side corner rounding <output data-out="cornerRadius"></output></label><input data-state="cornerRadius" type="range" min="0" max="3" step=".1"></div>
 <div class="note">Rounds the upright facet corners and blends their curvature across the shoulders. Large flat faces stay faceted.</div>
+<div class="control"><label>Viewport brightness <output data-out="studioBrightness"></output></label><input data-state="studioBrightness" type="range" min=".3" max="1.4" step=".05"><p class="note">Soften or brighten studio lighting without changing the actual printable material.</p></div>
 <div class="advanced-only"><div class="divider"></div>
 <div class="control"><label>Tip length <output data-out="tipLength"></output></label><input data-state="tipLength" type="range" min=".10" max=".55" step=".01"></div>
 <div class="control"><label>Touch-safe tip radius <output data-out="tipRound"></output></label><input data-state="tipRound" type="range" min="1.5" max="8" step=".25"><p class="note">Actual rounded cap radius (mm). Larger values form a broader, smooth end, not a flat or pointed tip. For children, verify the printed surface physically; this control alone is not a safety certification.</p></div>
@@ -154,15 +166,22 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="note warning">When enabled, Print → Prepare Print cuts nominal socket holes using the Manifold engine. Check physical fit against your actual pixels. Retention lips and cable strain relief are not yet included.</div>
 </div></div>
 <div class="card purple advanced-only"><div class="cardtitle"><span class="symbol">⚙</span> Mounting & modularity</div><div class="cardbody">
-<div class="control"><label>Mount hole placement</label><select data-state="mountPlacement"><option value="auto">Automatic</option><option value="manual">Manual X/Z positions</option></select></div><div class="control"><label>Mounting preset</label><select data-state="mount"><option>None</option><option>Wall screws</option><option>Magnet inserts</option><option>Threaded insert M3</option><option>Custom dual holes</option><option>Detachable plate</option><option>Ceiling mount</option></select></div>
+<div class="control"><label>Mount hole placement</label><select data-state="mountPlacement"><option value="auto">Automatic</option><option value="manual">Manual X/Z positions</option></select></div><div class="control"><label>Mounting preset</label><select data-state="mount"><option>None</option><option>Wall screws</option><option>Magnet inserts</option><option>Threaded insert M3</option><option>Custom dual holes</option><option>Edge fixing tabs</option><option>Detachable plate</option><option>Ceiling mount</option></select></div>
 <div class="control"><label>Custom hole diameter <output data-out="mountHoleDiameter"></output></label><input data-state="mountHoleDiameter" type="range" min="2.5" max="12" step=".1"></div>
 <div class="control"><label>Hole spacing <output data-out="mountSpacing"></output></label><input data-state="mountSpacing" type="range" min="10" max="150" step="1"></div>
 <div class="control"><label>Custom hole depth <output data-out="mountHoleDepth"></output></label><input data-state="mountHoleDepth" type="range" min="2" max="30" step=".5"></div>
+<div id="edgeTabSettings" hidden><div class="divider"></div><strong>Semicircular perimeter fixing tabs</strong>
+<div class="control"><label>Number of tabs <output data-out="tabCount"></output></label><input data-state="tabCount" type="range" min="1" max="24" step="1"></div>
+<div class="control"><label>Holes per tab <output data-out="tabHolesPerTab"></output></label><input data-state="tabHolesPerTab" type="range" min="1" max="6" step="1"></div>
+<div class="control"><label>Hole diameter <output data-out="tabHoleDiameter"></output></label><input data-state="tabHoleDiameter" type="range" min="1.8" max="16" step=".2"></div>
+<div class="control"><label>Tab thickness <output data-out="tabThickness"></output></label><input data-state="tabThickness" type="range" min="2.5" max="15" step=".5"></div>
+<div class="control"><label>Material around holes <output data-out="tabWall"></output></label><input data-state="tabWall" type="range" min="2" max="8" step=".5"></div>
+<p class="note">Equally spaced perimeter ears with through-holes for zip ties or bolts. These are printed with the base; crowded tabs are skipped and reported. Verify actual strength, fit and layer adhesion.</p></div>
 <p class="note">Wall/ceiling screw through-holes, blind magnet pockets and M3 insert holes can now be cut in Prepare Print. Detachable plates, keyholes and alignment connectors are not yet generated.</p>
 <p class="note warning">Overhead installations need independently verified load-bearing fixings and secondary retention.</p>
 </div></div>
 <div class="card amber"><div class="cardtitle">◎ Hardware hole editor</div><div class="cardbody">
-<p class="note">LED holes appear yellow and mounting holes purple in the live Build viewport. Red manual holes are invalid and will not be cut.</p>
+<p class="note">LED holes appear yellow, mounting holes purple and edge tabs violet in Build. Red manual holes are invalid and will not be cut.</p>
 <p id="hardwareGuideSummary" class="softnotice">Hole layout pending…</p>
 <div class="buttonrow"><button id="placePixelBtn">＋ Place / move LED</button><button id="placeMountBtn">＋ Place mounting hole</button></div>
 <div class="buttonrow" style="margin-top:6px"><button id="stopHolePlacementBtn">✕ Stop placing</button></div>
@@ -183,7 +202,7 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
 <div class="stat"><span>Connected bodies</span><strong id="reportPieces">—</strong></div><div class="stat"><span>Enclosed void shells</span><strong id="reportCavities">—</strong></div><div class="stat"><span>Fits printer</span><strong id="reportPrinterFit">—</strong></div>
 <div class="stat"><span>Triangles</span><strong id="reportTriangles">—</strong></div>
 <div class="stat"><span>Approx. PLA</span><strong id="reportMass">—</strong></div>
-<div class="stat"><span>Socket holes cut</span><strong id="reportSockets">—</strong></div><div class="stat"><span>Mounting holes cut</span><strong id="reportMounting">—</strong></div>
+<div class="stat"><span>Socket holes cut</span><strong id="reportSockets">—</strong></div><div class="stat"><span>Mounting holes cut</span><strong id="reportMounting">—</strong></div><div class="stat"><span>Edge fixing tabs</span><strong id="reportTabs">—</strong></div>
 <div class="stat"><span>Hollow shell applied</span><strong id="reportHollow">—</strong></div>
 <div class="stat"><span>Open base vault</span><strong id="reportVault">—</strong></div>
 <div class="stat"><span>Estimated roof gap</span><strong id="reportVaultGap">—</strong></div>
@@ -240,7 +259,7 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
     <li>Click a crystal in the 3D scene or <strong>Object tree</strong>. Choose a transform tool to reveal the coloured X/Y/Z handles.</li>
     <li>In <strong>Build</strong>, choose a fitted, square, circular, rounded, organic or miniature crystal-crust base. Adjust its extra width independently of height.</li><li>Use <strong>One pixel · shared glowing cluster</strong> for the balloon-like hollow enclosure with one underside pixel access hole. Then <strong>Print → Prepare print mesh</strong> to export the merged shell.</li>
    </ol>
-   <h3>Individual crystal shaping</h3><p>Click a crystal or select it from the tree. It turns <strong>green</strong> (or red when locked). The same crystal-shape controls on the left switch to <strong>INDIVIDUAL CRYSTAL</strong> scope and only affect the selection. Use <strong>Edit all crystals</strong> to return to global adjustments, or <strong>Reset individual overrides</strong> to restore inheritance.</p><h3>Simple and Advanced</h3><p>Switch modes at any time. <strong>Simple</strong> keeps the main controls visible; <strong>Advanced</strong> reveals precision shaping, transforms and mounting presets. Switching does not regenerate your model.</p>
+   <h3>Crystal size, extreme taper and rigid lean</h3><p>Use <strong>Crystal starting size</strong> for overall thickness (not height). Bottom and top widths use signed percentages: +100% doubles an end and -50% halves it. Width randomness adds repeatable independent variations; leaning rigidly tilts each entire crystal. The entire root perimeter is embedded in the dome to prevent exposed lower corners.</p><h3>Individual crystal shaping</h3><p>Click a crystal or select it from the tree. It turns <strong>green</strong> (or red when locked). The same crystal-shape controls on the left switch to <strong>INDIVIDUAL CRYSTAL</strong> scope and only affect the selection. Use <strong>Edit all crystals</strong> to return to global adjustments, or <strong>Reset individual overrides</strong> to restore inheritance.</p><h3>Simple and Advanced</h3><p>Switch modes at any time. <strong>Simple</strong> keeps the main controls visible; <strong>Advanced</strong> reveals precision shaping, transforms and mounting presets. Switching does not regenerate your model.</p>
    <h3>Mouse and view controls</h3><ul>
     <li><strong>Left-drag on empty space</strong>: orbit camera. <strong>Scroll</strong>: zoom. <strong>Right-drag</strong>: pan.</li>
     <li><strong>ISO, FR, BK, LT, RT, TOP, BOT</strong>: standard camera views, including a direct underside inspection.</li><li><strong>Floating</strong>: hide the print-bed grid and orbit around the full object freely. Right-drag to pan.</li>
@@ -253,7 +272,13 @@ body.theme-light .dialog-tabs button.active{background:#dceaff;border-color:#80a
    <div class="safety"><strong>Fabrication warning:</strong> Use Print → Prepare Print for a Boolean-unioned, topologically validated manufacturing mesh. Hollowing is an approximate inset; LED sockets require fit calibration; unsupported regions need review in Cura before physical printing.</div>
   </div>
   <div class="dialog-body" data-info-pane="changelog" hidden>
-   <p>Changes are saved to GitHub and published through GitHub Pages.</p><div class="release"><strong>v0.7.0 — Directed growth, hardware editor & supported base vault</strong><div><time>10 November 2026</time></div><ul>
+   <p>Changes are saved to GitHub and published through GitHub Pages.</p><div class="release"><strong>v0.8.0 — Extreme shaping, rigid lean and softer studio light</strong><div><time>10 November 2026</time></div><ul>
+<li>Global Crystal starting size scales all crystal diameters from 50% to 400% without altering heights or individual edits.</li>
+<li>Independent top/bottom width offsets now range from -85% to +400%, with repeatable width randomness per crystal.</li>
+<li>Leaning physically rotates each crystal instead of stretching it, and full root perimeters remain embedded in the mound.</li>
+<li>Even studio lighting is softer, with adjustable Viewport brightness.</li>
+<li>LED channel ceilings have rounded/domed ends while retaining full-diameter entrances and optional side vents.</li>
+</ul></div><div class="release"><strong>v0.7.0 — Directed growth, hardware editor & supported base vault</strong><div><time>10 November 2026</time></div><ul>
 <li>Corrected the world-space lean direction; crystal facet rotations no longer scramble one-way, criss-cross or radial presets.</li>
 <li>Added visible LED and mounting-hole guides to Build, with automatic or manual X/Z placement, click-to-place and collision warnings.</li>
 <li>Added an optional zero-infill mound vault: a real underside cavity, integrated flared buttresses and permanent retaining collars around hardware holes.</li>

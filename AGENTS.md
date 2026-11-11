@@ -49,3 +49,13 @@ See `docs/ARCHITECTURE.md` for data flow and boundaries.
 GitHub is the **source of truth for committed code and documentation**. Only one assistant should actively change the same branch at a time. Codex local worktrees and ChatGPT GitHub branches can coexist; synchronise using PRs, not guessed state. Update `docs/AI_HANDOVER.md` at completion, link CI evidence, and say what remains unverified.
 
 Conflict priority: latest explicit user requirement → validated code/current repo configuration → `docs/FEATURE_SPECIFICATIONS.md` and accepted `docs/DESIGN_DECISIONS.md` → historical notes/roadmap. Record unresolved contradictions rather than making up a decision.
+
+
+## v0.8 geometry and hardware invariants
+
+- `crystalOrientation` must be used for all preview, worker and test mesh transforms: growth lean is a **rigid object tilt**, not per-ring vertex shear.
+- `crystalEndRatios` and `crystalSize` must be shared by visible geometry, base footprint and automatic LED planning. The base must seat the **entire rotated root perimeter**, not just the crystal centre.
+- In `Build`, `hardware-editor.js` handles a continuous LED/mount placement tool; disable OrbitControls while placing, retain the tool through repeated clicks, and expose a true moving hole ring with valid/invalid feedback.
+- `edge-tabs.js` is the authoritative perimeter-tab layout; `hardware-layout.js`, Build guides and Manifold tab unions/drills must agree. Tab holes are through-holes; no printed fixing is automatically rated for overhead loads.
+- `putSocket` makes an intentionally **blind** rounded LED bore. Never cut through the upper exterior or silently remove the minimum roof; side vents on optional vaulted bases are separate.
+- `tooltips.js` owns the shared accessible hover/focus help; add explanations when adding new controls.

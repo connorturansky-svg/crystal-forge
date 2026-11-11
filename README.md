@@ -1,4 +1,4 @@
-# Crystal Forge — Browser Studio v0.7.0
+# Crystal Forge — Browser Studio v0.8.0
 
 A browser-based low-poly crystal generator and fabrication prototype for illuminated, hollow, child-safe crystal sculptures. **Open the app:** https://connorturansky-svg.github.io/crystal-forge/
 
@@ -90,3 +90,13 @@ The older `app.js` file is an unreferenced archive of the first demonstration.
 Start with [AGENTS.md](AGENTS.md) followed by [AI handover](docs/AI_HANDOVER.md). The [project vision](docs/PROJECT_VISION.md), [feature contracts](docs/FEATURE_SPECIFICATIONS.md), [design decision log](docs/DESIGN_DECISIONS.md), [architecture](docs/ARCHITECTURE.md), [development history](docs/DEVELOPMENT_HISTORY.md), [roadmap](docs/ROADMAP.md), [testing guide](docs/TESTING.md) and [collaboration workflow](docs/COLLABORATION.md) provide persistent intent and implementation context. GitHub is the canonical committed source; develop features on task branches and review PRs before merging to production main.
 
 Lightweight syntax/wiring checks: `npm run test:static`. Existing representative Manifold tests: `npm test`. Chromium smoke tests: `npm run test:browser` (start local web server first). Timing sample: `npm run test:benchmark`. These checks do not replace Cura or physical prints.
+
+## v0.8.0 — Extreme shapes and printable hardware
+
+**Design:** Crystal starting size (50–400%) changes crystal diameter independently of height. Bottom and top/shoulder adjustments (-85% to +400%) and reproducible per-crystal width randomness create extreme tapered shapes. Lean is a rigid quaternion rotation rather than a stretched/sheared shaft; the whole root perimeter is seated inside the mound. Viewport brightness controls the softer studio lighting only.
+
+**LEDs:** Automatic socket placement searches crystal roots and the wider integrated base, using the actual global crystal scale. In Build choose Place / move LED: hover the model for a circular valid/invalid bore preview, click to add repeatedly without orbiting, then use Escape/Stop to exit. A rounded blind roof retains modeled wall above each LED channel; verify physical LED clearance and light routes in Cura.
+
+**Edge fixing tabs:** Advanced Build → Mounting → Edge fixing tabs. Set number of equally spaced semicircular ears, holes per ear, diameter, thickness and plastic web. Build shows planned ears/holes; valid ones are fused into the prepared mesh, and crowded ears are skipped with a warning. Neither geometry tests nor tooltips certify load strength or suitable overhead fastening.
+
+**Help:** Hover buttons, tabs and sliders (or keyboard-focus them) for a short contextual explanation. See the in-app What's new panel and [testing instructions](docs/TESTING.md).

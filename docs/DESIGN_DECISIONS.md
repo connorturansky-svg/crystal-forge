@@ -122,3 +122,30 @@ Each decision has **evidence class**: *explicit user requirement*, *jointly adop
 ## Conflict-resolution record
 
 If source behaviour contradicts an accepted requirement, log a bug rather than rewriting history to say the code is intended. If two historical goals compete — e.g. large hollow light paths vs fast solid-model generation, or a vaulted underside vs a separate access pocket — describe the trade-off and preserve a safe default. Historical implementation alone does not prove an explicit user choice.
+
+
+### ADR-016 — Separate size, taper and variation (explicit user requirement, v0.8)
+
+- **Decision:** global starting diameter multiplies individual crystal radii while independent signed bottom/top adjustments and seeded width randomness alter taper.
+- **Why:** prior maximum widths still looked thin, and making a dramatic crystal should not require hand-editing each shaft.
+- **Trade-off:** changing thickness in an existing hand-placed cluster may introduce overlaps; regeneration is a separate deliberate step. Old saved taper ratios remain numeric and compatible.
+
+### ADR-017 — Rigid lean and submerged root perimeter (explicit feedback, v0.8)
+
+- **Decision:** apply lean using quaternion object rotation, not shearing mesh rings. Seat the *entire* tilted lower perimeter inside the base mound.
+- **Why:** visual stretching and exposed bottom edges undermined both aesthetics and printable attachment.
+- **Consequence:** share transforms between live scene, Worker, tests and previews. A topology check cannot prove mechanical attachment strength.
+
+### ADR-018 — Continuous hardware placement and physical tabs (explicit requests, v0.8)
+
+- **Decision:** the live LED/mount cursor displays an actual bore circle and remains active across repeated clicks with orbit disabled. Perimeter fixing ears are printed solids, evenly distributed on the base outline, with user-configurable through holes.
+- **Why:** the user needs intentional, reliable, immediately visible placement of pixels, zip ties and bolts.
+- **Alternative:** one-click exit and hidden automatic bores were insufficient. Pure overlay-only tabs were rejected; they must appear in actual manufacturing geometry.
+- **Consequence:** the single planning module powers both Build and Manifold; invalid positions are rejected rather than blindly drilled. Mechanical rating is outside the tool.
+
+### ADR-019 — Blind domed LED roof (explicit observed defect, v0.8)
+
+- **Decision:** replace through-drilled LED cutter with a full-diameter underside shaft ending in a rounded, internal dome below the base surface; preserve separate vault side vents.
+- **Why:** the previous bore punched through the top, risking appearance, waterproofing and structural continuity.
+- **Consequence:** minimum modeled roof is a geometric bound only; Cura layers and physical printed thickness must still be inspected.
+

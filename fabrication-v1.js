@@ -133,11 +133,19 @@ function positionedInnerCrystal(c,s,openingY,wall){
  mesh.updateMatrixWorld(true);
  return mesh;
 }
-function putSocket(wasm,c,pos,radius,depth,start){
- // Manifold.cylinder is along Z. Rotate -90 degrees about X to align with +Y.
- const b=wasm.Manifold.cylinder(depth,radius,radius,32)
-  .rotate([-90,0,0]).translate([pos.x,start,pos.z]);
- return b;
+function putSocket(wasm,hold,pos,radius,roofY,start=-3){
+ // Blind full-width cylindrical entrance with a softly domed internal ceiling.
+ // The cap must stop below the exterior base surface (minimum 2.8 mm roof).
+ const wall=2.8,tipY=Math.max(start+1.4,roofY-wall);
+ const rise=Math.min(2.3,Math.max(.45,radius*.32),Math.max(.4,(tipY-start)*.24));
+ const shaftEnd=tipY-rise;
+ const shaft=hold(wasm.Manifold.cylinder(Math.max(.5,shaftEnd-start),radius,radius,40)
+  .rotate([-90,0,0]).translate([pos.x,start,pos.z]));
+ // An ellipsoidal dome is tangent at the shaft; its lower half overlaps the
+ // cylinder, creating no flat roof or through-hole.
+ const cap=hold(wasm.Manifold.sphere(radius,40)
+  .scale([1,rise/radius,1]).translate([pos.x,shaftEnd,pos.z]));
+ return {solid:hold(shaft.add(cap)),roofY,tipY,shaftEnd,capRise:rise,remainingWall:roofY-tipY};
 }
 function cleanupAll(list){
  for(const m of list){try{m.delete()}catch(e){}}
@@ -247,10 +255,33 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   const components=live.map(m=>hold(convertMesh(wasm,m)));
   combined=hold(wasm.Manifold.union(components));
   assertSolid(combined,'Unioned cluster');
+  // When the lower rim of a rigidly tilted crystal is fully embedded in a
+  // shallow mound, it can extend below the build plate. Intersect with a
+  // half-space to leave a flat Y=0 bottom before drilling holes.
+  if(s.baseType!=='none'){
+   const bb=combined.boundingBox(),low=bb.min,high=bb.max;
+   if(low[1]<-.025){
+    const bed=hold(wasm.Manifold.cube([
+      high[0]-low[0]+4,high[1]+4,high[2]-low[2]+4
+     ]).translate([low[0]-2,0,low[2]-2]));
+    const trimmed=hold(combined.intersect(bed));
+    assertSolid(trimmed,'Build plate underside');
+    combined=trimmed;
+    warnings.push('Tilted roots below the build plate were levelled to Y=0. For deeper intact roots, increase base thickness.');
+   }
+  }
   const initialVolume=combined.volume();
   const hardware=planHardware(crystals,s);
   if(hardware.collisions.length)throw new Error('Hardware holes overlap.');
   warnings.push(...hardware.messages);
+  // Permanent semicircular fixing ears are fused to the base before drilling.
+  if(hardware.tabs.length){
+   const tabs=hardware.tabs.map(tab=>hold(wasm.Manifold.cylinder(
+     tab.thickness,tab.radius,tab.radius,48).rotate([-90,0,0]).translate([tab.x,0,tab.z])));
+   const joined=hold(combined.add(hold(wasm.Manifold.union(tabs))));
+   assertSolid(joined,'Semicircular edge fixing tabs');
+   combined=joined;
+  }
   let hollowed=0,hollowPorts=0,skippedHollowPorts=0;
   let vault={applied:false,supportCount:0,pitch:0,gapEstimate:0};
   if(s.baseVault&&s.hollowCrystals)warnings.push('Base vault is unavailable during experimental whole-cluster hollowing.');
@@ -335,13 +366,16 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   // Single authoritative feature plan shared with the colour-coded viewport.
   // Pixel sockets are placed first; mount holes are searched for a safe
   // alternative location. Features that cannot fit are SKIPPED and warned.
-  let socketsCut=0,mountingHolesCut=0,ventCuts=0;
+  let socketsCut=0,mountingHolesCut=0,ventCuts=0,socketCeilings=[];
   if(hardware.sockets.length){
    const cutters=[];
    for(const pos of hardware.sockets){
     const roof=baseSurfaceHeight(crystals,s,pos.x,pos.z);
-    const depth=vault.applied?Math.max(8,roof-1):Math.max(27,Number(s.baseHeight||0)+Number(s.baseDome||0)+10),start=-3;
-    cutters.push(hold(putSocket(wasm,null,pos,pos.radius,depth,start)));
+    const bore=putSocket(wasm,hold,pos,pos.radius,roof);
+    cutters.push(bore.solid);
+    socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
+      straightHeight:bore.shaftEnd,capRise:bore.capRise,remainingWall:bore.remainingWall});
+    if(bore.shaftEnd<20)warnings.push('LED bore at ('+pos.x.toFixed(1)+', '+pos.z.toFixed(1)+') has only '+Math.max(0,bore.shaftEnd).toFixed(1)+' mm of full-width clearance. Confirm the actual LED housing fits.');
    }
    const holes=hold(wasm.Manifold.union(cutters));
    const cut=hold(combined.subtract(holes));assertSolid(cut,'LED socket cuts');
@@ -377,6 +411,17 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
    const cut=hold(combined.subtract(holes));assertSolid(cut,'Mounting-hole cuts');
    combined=cut;mountingHolesCut=hardware.mounts.length;
   }
+  if(hardware.tabHoles.length){
+   // The tab holes are open through the entire ear thickness, outside the
+   // main base outline, to accept a bolt or looped cable tie.
+   const tabCutters=hardware.tabHoles.map(p=>hold(wasm.Manifold.cylinder(
+     p.depth+2,p.radius,p.radius,40).rotate([-90,0,0]).translate([p.x,-1,p.z])));
+   const joined=hold(wasm.Manifold.union(tabCutters));
+   const opened=hold(combined.subtract(joined));
+   assertSolid(opened,'Edge fixing bolt and cable-tie holes');
+   combined=opened;mountingHolesCut+=hardware.tabHoles.length;
+  }
+  if(hardware.tabs.length)warnings.push('Perimeter fixing tabs are not rated structural attachments. Physically test hole sizes, printed web strength and layer adhesion before suspending the sculpture.');
   if(s.mount==='Ceiling mount')
     warnings.push('Ceiling mounting demands properly rated fixings and secondary retention. A printed bracket alone is not a certified overhead support.');
   if(s.mount==='Magnet inserts')warnings.push('Magnet pockets are nominal 10.2 mm diameter; verify magnet dimensions and required retention.');
@@ -436,7 +481,8 @@ export function prepareFabrication({wasm,meshes,crystals,settings}){
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketsCut,mountingHolesCut,plannedSockets:hardware.sockets,plannedMounts:hardware.mounts,hardware,warnings,mesh:indexed};
+    bounds:size,quality,hollowed,hollowPorts,skippedHollowPorts,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,
+     plannedSockets:hardware.sockets,plannedMounts:[...hardware.mounts,...hardware.tabHoles],hardware,warnings,mesh:indexed};
   return {geometry:geom,report};
  }finally{cleanupAll(owned)}
 }

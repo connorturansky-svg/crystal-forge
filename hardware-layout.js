@@ -1,4 +1,5 @@
-import {baseOutline} from './geometry-v3.js';
+import {baseOutline,crystalEndRatios} from './geometry-v3.js';
+import {planEdgeTabs} from './edge-tabs.js';
 /* Hardware placement planner shared by printable geometry and viewport annotations.
  * All positions are x/z on the underside of the cluster, distances in mm.
  * Conservative XY separation even where drilling depths do not overlap.
@@ -42,7 +43,7 @@ export function mountingProfile(s){
   const depth=preset==='Magnet inserts'?Math.min(3.2,s.baseHeight-1.6):
     preset==='Threaded insert M3'?Math.min(5.5,s.baseHeight-1.6):
     custom?Math.max(1.2,Number(s.mountHoleDepth||s.baseHeight+2)):s.baseHeight+4;
-  const enabled=!['None','Detachable plate'].includes(preset)&&s.baseType!=='none';
+  const enabled=!['None','Detachable plate','Edge fixing tabs'].includes(preset)&&s.baseType!=='none';
   return {preset,enabled,diameter,depth,requested:enabled?2:0};
 }
 export function planHardware(crystals,s){
@@ -71,7 +72,8 @@ export function planHardware(crystals,s){
   const ranked=pixelManual?[]:all.slice().sort((a,b)=>b.r*b.h-a.r*a.h);
   for(const c of ranked){
     if(sockets.length>=pixelRequested)break;
-    const r=c.r*(c.shape?.bottomScale??s.bottomScale)*min(c.sx||c.scale||1,c.sz||c.scale||1);
+    const ratios=crystalEndRatios(c,s);
+    const r=c.r*ratios.size*ratios.bottom*min(c.sx||c.scale||1,c.sz||c.scale||1);
     if(r<socketRadius+clearance+1.2)continue;
     // Try the crystal axis, then a few locations away from it in larger crystals.
     const offsets=[{x:0,z:0}];
@@ -85,6 +87,29 @@ export function planHardware(crystals,s){
       if(Math.hypot(o.x,o.z)+socketRadius+clearance > r-1.0)continue;
       if(!validHole(p,socketRadius,sockets))continue;
       sockets.push({...p,radius:socketRadius,diameter:socketDiameter,crystalId:c.id,kind:'LED'});
+    }
+  }
+  // A usable LED need not be entirely within a single crystal root.
+  // In Cura-first mode it can sit anywhere in the integrated base, so try
+  // deterministic positions throughout the base if root-centred placement fails.
+  if(!pixelManual&&sockets.length<pixelRequested&&polygon.length>=3&&s.baseType!=='none'){
+    const minX=Math.min(...polygon.map(p=>p.x)),maxX=Math.max(...polygon.map(p=>p.x));
+    const minZ=Math.min(...polygon.map(p=>p.z)),maxZ=Math.max(...polygon.map(p=>p.z));
+    const centroid={x:(minX+maxX)/2,z:(minZ+maxZ)/2};
+    const candidates=[centroid,{x:cx,z:cz}];
+    const extent=Math.hypot(maxX-minX,maxZ-minZ)/2;
+    const stride=Math.max(socketDiameter+clearance+2,6);
+    for(let radius=stride*.35;radius<extent+stride;radius+=stride*.6){
+      const count=Math.max(18,Math.ceil(2*Math.PI*radius/(stride*.65)));
+      for(let k=0;k<count;k++){
+        const angle=TAU*(k/count)+.17;
+        candidates.push({x:centroid.x+Math.cos(angle)*radius,z:centroid.z+Math.sin(angle)*radius});
+      }
+    }
+    for(const p of candidates){
+      if(sockets.length>=pixelRequested)break;
+      if(!validHole(p,socketRadius,sockets))continue;
+      sockets.push({...p,radius:socketRadius,diameter:socketDiameter,crystalId:null,kind:'LED',autoFallback:true});
     }
   }
   const mp=mountingProfile(s);
@@ -125,9 +150,17 @@ export function planHardware(crystals,s){
     if(dist(allHoles[i],allHoles[j])<allHoles[i].radius+allHoles[j].radius+clearance-1e-5)
       collisions.push([i,j]);
   }
-  const requestedMounts=mp.enabled&&mountManual?min(20,manualMounts.length):mp.requested;
+  const edgePlan=mp.preset==='Edge fixing tabs'?
+   planEdgeTabs(polygon,s,[...sockets,...mounts],clearance):
+   {tabs:[],tabHoles:[],requested:0,holesEach:0,skipped:0,messages:[]};
+  messages.push(...edgePlan.messages);
+  const requestedMounts=mp.preset==='Edge fixing tabs'?
+   edgePlan.requested*edgePlan.holesEach:
+   mp.enabled&&mountManual?min(20,manualMounts.length):mp.requested;
   return {sockets,mounts,polygon,collisions,messages,clearance,
     invalidManualPixels,invalidManualMounts,
+    tabs:edgePlan.tabs,tabHoles:edgePlan.tabHoles,skippedTabs:edgePlan.skipped,
+    requestedTabs:edgePlan.requested,
     requestedPixels:pixelRequested,skippedPixels,requestedMounts,
-    skippedMounts:requestedMounts-mounts.length,mounting:mp};
+    skippedMounts:requestedMounts-mounts.length-edgePlan.tabHoles.length,mounting:mp};
 }

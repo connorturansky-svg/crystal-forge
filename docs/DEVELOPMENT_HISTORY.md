@@ -65,3 +65,10 @@ The user requested that ChatGPT and Codex Desktop share one reliable repository 
 ## How to extend this timeline
 
 Append only evidence-backed milestones with version/commit (when known), user reason, trade-off, verified tests and remaining caveats. Avoid inventing older dates or implying historical approval for newly proposed workflow policies. Keep release notes in `CHANGELOG.md` and active work in `docs/AI_HANDOVER.md`.
+
+
+## v0.8 feature-branch continuation — 10 November 2026
+
+After the initial documentation PR was merged, user feedback highlighted thin crystals at maximum taper settings, stretched rather than rotated lean patterns, overbright even lighting, roots protruding from the mound, LED bores drilling through the top, unreliable auto pixel placement and a single-click placement tool that resumed orbiting. Further requests introduced continuous cursor-guided LED placement, highly variable extreme top/bottom widths, rounded blind bore ceilings, evenly spaced semicircular cable-tie/bolt tabs and small hover help boxes.
+
+Work on `feat/global-crystal-diameter` (PR #3) implemented these as v0.8.0. This work intentionally retains Cura-first exterior printing, one authoritative hardware planner, and separate preview/manufacturing geometries. The new Playwright checks exercise the cursor through multiple clicks and contextual help; further Manifold/Cura/physical verification remains necessary for blind bores, tab strength and roots in the printed model.

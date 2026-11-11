@@ -1,19 +1,20 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
-import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
+import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
 import {loadManifold,setThreeInstance,saveSTL,save3MF,makeCalibrationStrip,splitPreparedMesh} from './fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from './hardware-layout.js';
 import {createHardwareEditor} from './hardware-editor.js';
+import {installTooltips} from './tooltips.js';
 
 const $=id=>document.getElementById(id);
 const defaults={
-  title:'Untitled cluster',count:16,height:155,width:130,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
+  title:'Untitled cluster',count:16,height:155,width:130,crystalSize:1,widthRandomness:0,studioBrightness:.85,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
   familyMix:'Quartz',bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,
   tipFlat:.25,tipLength:.27,roundSteps:3,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,
-  showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,
+  showPixels:false,pixelCount:1,lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,cutSockets:true,hollowCrystals:false,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,splitX:0,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',overhang:45,preserveLocked:true,snap:true,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -55,9 +56,11 @@ function restore(str){
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
  if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit'].includes(k))return Number(v).toFixed(k==='pixelFit'?2:1)+' mm';
- if(['bottomScale','topScale','tipLength'].includes(k))return Math.round(v*100)+'%';
- if(['mountHoleDiameter','mountHoleDepth','mountSpacing'].includes(k))return Number(v).toFixed(1)+' mm';
- if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
+ if(k==='crystalSize'||k==='studioBrightness')return Math.round(Number(v)*100)+'%';
+  if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
+  if(k==='tipLength')return Math.round(v*100)+'%';
+ if(['mountHoleDiameter','mountHoleDepth','mountSpacing','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
+ if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang')return v+'°';return String(v);
 }
 const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
 function selectedCrystal(){return crystals.find(c=>c.id===selectedId)||null}
@@ -101,6 +104,7 @@ function syncForm(){
  $('pixelBaseDepthHint').textContent=s.baseHeight>=23?'Base has space for a nominal 22 mm gumdrop body.':'Base is shallower than the ~22 mm gumdrop body. 25 mm is recommended.';
  $('projectName').textContent=s.title;
  syncShapeControls();
+ $('edgeTabSettings').hidden=s.mount!=='Edge fixing tabs';
  $('floatBtn').classList.toggle('active',!!s.floatView);
  $('hardwareColoursBtn').classList.toggle('active',!!s.hardwareColourMode);
  refreshStudioLighting();
@@ -118,10 +122,10 @@ function setStatus(t){$('status').textContent=t}
 
 let manufacturingMesh=null,manufacturingReport=null,preparedSource=null;
 const relevantManufacturingKeys=[
- 'count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
+ 'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
  'baseType','baseHeight','baseDome','baseEdgeRadius','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightingMode','pixelCount','pixelDiameter',
- 'pixelFit','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing'
+ 'pixelFit','cutSockets','hollowCrystals','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
 ];
 function sourceHash(){
  return JSON.stringify({settings:Object.fromEntries(relevantManufacturingKeys.map(k=>[k,s[k]])),
@@ -245,6 +249,7 @@ function renderManufactureReport(report){
  f('reportMass',report.materialPLAgrams.toFixed(1)+' g');
  f('reportSockets',report.socketsCut);
  f('reportMounting',report.mountingHolesCut||0);
+ f('reportTabs',report.edgeTabs||0);
  f('reportHollow',report.hollowed?'Yes':'No');
  f('reportVault',report.vault?.applied?'Enabled · '+report.vault.supportCount+' integral buttresses':'Off');
  f('reportVaultGap',report.vault?.applied?report.vault.gapEstimate+' mm (estimate)':'—');
@@ -294,12 +299,14 @@ function refreshStudioLighting(){
  const even=!!s.evenLighting;
  hemisphere.color.set(even?0xf4faff:0xd9ebff);
  hemisphere.groundColor.set(even?0xc3dcfa:0x222b3d);
- hemisphere.intensity=even?1.75:2.2;
- sun.intensity=even?1.35:3.1;
- fill.intensity=even?.9:1;
- underside.intensity=even?1.55:0;
- rimLight.intensity=even?.85:0;
- ambience.intensity=even?.65:0;
+ // Preview-only lighting: gentler directional contrast and no blown-out pastels.
+  const level=Math.max(.3,Math.min(1.4,Number(s.studioBrightness)||.85));
+  hemisphere.intensity=(even?.9:.85)*level;
+ sun.intensity=(even?.75:1.55)*level;
+ fill.intensity=(even?.48:.35)*level;
+ underside.intensity=(even?.76:0)*level;
+ rimLight.intensity=(even?.32:0)*level;
+ ambience.intensity=(even?.28:.22)*level;
  $('studioLightBtn').classList.toggle('active',even);
  $('studioLightBtn').textContent=even?'☼ Even light: On':'☼ Even light: Off';
 }
@@ -324,8 +331,8 @@ const baseMat=()=>new THREE.MeshStandardMaterial({color:s.colour,metalness:0,rou
 function disposeMesh(m){if(!m)return;m.geometry?.dispose();m.material?.dispose();scene.remove(m)}
 function makeCrystal(c){
  const mesh=new THREE.Mesh(crystalGeometry(THREE,c,s),crystalMat());
- mesh.position.set(c.x,c.y+crystalRootOffset(crystals,s,c),c.z);
- mesh.rotation.set(c.rx||0,c.rotation||0,c.rz||0,'XYZ');
+ mesh.position.set(c.x,c.y+crystalRootOffset(crystals,s,c,THREE),c.z);
+ mesh.quaternion.copy(crystalOrientation(THREE,c));
  mesh.scale.set(c.sx||c.scale||1,c.sy||c.scale||1,c.sz||c.scale||1);
  mesh.userData.crystalId=c.id;mesh.visible=!c.hidden;
  scene.add(mesh);return mesh;
@@ -546,7 +553,7 @@ function schedule(full=true){
  },85);
 }
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix']);
-const previewKeys=new Set(['showPixels','glowPreview','glowColour','preserveLocked','snap','splitParts','splitX']);
+const previewKeys=new Set(['showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
@@ -558,6 +565,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
     rebuild();snapshot();return;
   }
   s[key]=value;
+  if(key==='mount')$('edgeTabSettings').hidden=value!=='Edge fixing tabs';
   if(key==='lightingMode'&&value==='single')s.pixelCount=1;
   if(key==='lightingMode'&&value==='none')s.pixelCount=0;
   if(key==='lightingMode'&&value==='multi'&&s.pixelCount<1)s.pixelCount=2;
@@ -569,6 +577,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
   if(key==='pixelDiameter'||key==='pixelFit')$('actualHole').textContent=(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm';
   if(key==='splitParts')$('splitExportBtn').disabled=!manufacturingMesh||!value;
   if(key==='glowColour'||key==='glowPreview')updateAppearance();
+   if(key==='studioBrightness')refreshStudioLighting();
   if(key==='snap'){gizmo.setTranslationSnap(value?5:null);gizmo.setRotationSnap(value?THREE.MathUtils.degToRad(15):null);gizmo.setScaleSnap(value?.1:null)}
   if(regenKeys.has(key))generate();
   else if(previewKeys.has(key)){updateLEDs();renderInfo();persist()}
@@ -783,7 +792,7 @@ $('prepareBtn').onclick=buildManufacturing;
 $('showManufacturing').onchange=e=>manufacturingView(e.target.checked);
 $('printHeatmap').onchange=applyPrintHeatmap;
 if(s.floatView){grid.visible=false;axes.visible=false}
-hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,
+hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh:()=>baseMesh,
  getSettings:()=>s,getCrystals:()=>crystals,onStatus:setStatus,
  onEdit:()=>{disposeManufacturing();syncForm();updateLEDs();hardwareUI.refresh();renderInfo();snapshot()}
 });
@@ -825,7 +834,7 @@ $('splitExportBtn').onclick=async()=>{
  finally{button.disabled=false}
 };
 $('bomBtn').onclick=()=>{
- const rows=[['Type','Quantity','Notes'],['12V gumdrop pixels',s.pixelCount,'12 mm nominal mounting hole; adjust by '+s.pixelFit+' mm'],['Crystal bodies',crystals.length,'experimental STL; not Boolean merged'],['Integrated base',s.baseType==='none'?0:1,'mounted by '+s.mount],['Mounting holes',s.mount==='None'?0:2,s.mount+'; check fit dimensions'],['Planned socket diameter',(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm','preview only']];
+ const rows=[['Type','Quantity','Notes'],['12V gumdrop pixels',s.pixelCount,'12 mm nominal mounting hole; adjust by '+s.pixelFit+' mm'],['Crystal bodies',crystals.length,'experimental STL; not Boolean merged'],['Integrated base',s.baseType==='none'?0:1,'mounted by '+s.mount],['Mounting holes',planHardware(crystals,s).mounts.length+planHardware(crystals,s).tabHoles.length,s.mount+'; check fit dimensions'],['Edge tabs',planHardware(crystals,s).tabs.length,'Print-fit and strength require verification'],['Planned socket diameter',(+s.pixelDiameter+(+s.pixelFit)).toFixed(2)+' mm','preview only']];
  const csv=rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');
  download(new Blob([csv],{type:'text/csv'}),'crystal-forge-bom.csv');
 };
@@ -840,3 +849,4 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Delete'&&selectedId){crystals=crystals.filter(c=>c.id!==selectedId);selectedId=null;rebuild();snapshot()}
 });
 syncForm();rebuild();snapshot();
+installTooltips();
