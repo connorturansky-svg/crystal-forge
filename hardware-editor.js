@@ -3,6 +3,7 @@ import {planHardware} from './hardware-layout.js';
 import {resolvePixelProfile,allPixelProfiles} from './pixel-profiles.js';
 import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
 import {nearestEdgePosition} from './edge-tabs.js';
+import {ensureHardwareIds,movePixelInString,hardwareName} from './hardware-identity.js';
 
 export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,onEdit,onStatus}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
@@ -19,15 +20,68 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  preview.visible=false;
  const ray=new THREE.Raycaster(),cursorNDC=new THREE.Vector2();
  const ground=new THREE.Plane(new THREE.Vector3(0,1,0),0);
- let placing=null,pointerStart=null,lastCursor=null,draggingHole=null;
+ let placing=null,pointerStart=null,lastCursor=null,draggingHole=null,selectedHardware=null;
+ const markerLayer=document.createElement('div');
+ markerLayer.className='hardware-marker-layer';
+ renderer.domElement.parentElement.appendChild(markerLayer);
+ const markerObjects=[];
+ const contextMenu=document.createElement('div');
+ contextMenu.className='hardware-context-menu';
+ contextMenu.hidden=true;
+ contextMenu.innerHTML='<strong>Add to this position</strong><button type="button" data-context-add="pixel">＋ Pixel hole</button><button type="button" data-context-add="mount">＋ Mounting hole</button><button type="button" data-context-cancel="1">Cancel</button>';
+ renderer.domElement.parentElement.appendChild(contextMenu);
+ let contextPoint=null;
+ const clearContext=()=>{contextMenu.hidden=true;contextPoint=null};
  const numeric=v=>Number(v).toFixed(1);
  const isBuild=()=>!!document.querySelector('[data-tab="build"].active');
  const getPlan=()=>planHardware(getCrystals(),getSettings());
  function clear(){
   for(const m of [...guides.children]){guides.remove(m);m.geometry.dispose();m.material.dispose()}
+  markerLayer.replaceChildren();markerObjects.length=0;
  }
+ function showSelection(kind,id,index,scroll=true){
+  selectedHardware={kind,id,index};
+  refresh();
+  if(scroll){
+   const card=[...document.querySelectorAll('[data-hw-card-kind]')].find(el=>el.dataset.hwCardKind===kind&&el.dataset.hwCardId===id);
+   card?.scrollIntoView({block:'nearest',behavior:'smooth'});
+  }
+  onStatus('Selected '+hardwareName(kind,index)+' · edit it in the Build panel');
+ }
+ function addMarker(kind,p,index,invalid=false){
+  if(!Number.isFinite(p.x)||!Number.isFinite(p.z))return;
+  const id=String(p.id||kind+'-'+index),label=hardwareName(kind,index);
+  const button=document.createElement('button');
+  button.type='button';button.className='hardware-marker'+(invalid?' invalid':'')+(selectedHardware?.kind===kind&&selectedHardware.id===id?' selected':'');
+  button.textContent=label;button.title=label+' · click to edit '+kind;
+  button.dataset.hwKind=kind;button.dataset.hwId=id;button.dataset.hwIndex=String(index);
+  button.setAttribute('aria-label','Select '+label+' '+kind);
+  button.onclick=e=>{e.stopPropagation();showSelection(kind,id,index)};
+  button.ondblclick=e=>{e.preventDefault();e.stopPropagation();showSelection(kind,id,index)};
+  markerLayer.appendChild(button);markerObjects.push({button,p});
+ }
+ function positionMarkers(){
+  const build=isBuild(),rect=renderer.domElement.getBoundingClientRect();
+  markerLayer.hidden=!build;
+  if(build&&rect.width&&rect.height)for(const {button,p} of markerObjects){
+   const pt=new THREE.Vector3(p.x,.8,p.z).project(camera);
+   const visible=pt.z>-1&&pt.z<1&&Math.abs(pt.x)<1.2&&Math.abs(pt.y)<1.2;
+   button.hidden=!visible;
+   if(visible){
+    button.style.left=((pt.x+1)*.5*rect.width)+'px';
+    button.style.top=((1-pt.y)*.5*rect.height)+'px';
+   }
+  }
+  requestAnimationFrame(positionMarkers);
+ }
+ requestAnimationFrame(positionMarkers);
  function draw(plan){
   clear();
+  plan.sockets.forEach((p,i)=>addMarker('pixel',p,i));
+  plan.mounts.forEach((p,i)=>addMarker('mount',p,i));
+  plan.tabHoles.forEach((p,i)=>addMarker('tab',p,i));
+  for(const p of plan.invalidManualPixels||[])addMarker('pixel',{...p,id:'invalid-pixel-'+p.index},p.index,true);
+  for(const p of plan.invalidManualMounts||[])addMarker('mount',{...p,id:'invalid-mount-'+p.index},p.index,true);
   // Preview the exact planned semicircular-tab footprint and through holes
   // before performing any expensive Manifold union.
   for(const tab of plan.tabs||[]){
@@ -74,15 +128,19 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   guides.visible=isBuild();
  }
  function refresh(){
-  const s=getSettings(),plan=getPlan();
+  const s=getSettings();
+  ensureHardwareIds(s);
+  const plan=getPlan();
   draw(plan);
   const routing=plan.wirePlan;
   if($('wireRouteStatus')){
-   $('wireRouteStatus').textContent=!routing?.enabled?'Wiring grooves are off. Enable them to plan a push-fit underside channel.':
-     routing.routes.length
-       ?routing.routes.length+' actual groove segment(s) planned · '+routing.lengthMm.toFixed(1)+' mm of route, '+(routing.exitAdded?'including a perimeter exit':'no perimeter exit')+'. Click BOT to inspect the underside, then Prepare Print for the cut model.'
-       :routing.messages.join(' ')||'No groove was planned. Add another LED or enable the perimeter exit.';
-   $('wireRouteStatus').classList.toggle('warning',!!routing?.enabled&&!routing.routes.length);
+   $('wireRouteStatus').textContent=!routing?.enabled?'Wiring grooves are off. Enable to plan a physical cable-bundle string.':
+    routing.mode==='string'?
+     (routing.ready?'✓ Pixel string IN → '+plan.sockets.map((_,i)=>'P'+(i+1)).join(' → ')+' → OUT · '+routing.lengthMm.toFixed(1)+' mm · '+routing.routes.length+' cut groove segments.':
+      'String blocked: '+routing.messages.join(' ')):
+      routing.routes.length?routing.routes.length+' legacy groove segment(s) · '+routing.lengthMm.toFixed(1)+' mm. Switch to Pixel string to route opposed IN/OUT tails.':
+       routing.messages.join(' ')||'No safe cable groove planned.';
+   $('wireRouteStatus').classList.toggle('warning',!!routing?.enabled&&!routing.ready&&routing.mode==='string');
   }
   if($('hardwareGuideSummary'))$('hardwareGuideSummary').textContent=
    plan.sockets.length+' LED hole(s) · '+(plan.mounts.length+plan.tabHoles.length)+' mounting hole(s) · '+plan.tabs.length+' edge tab(s) · '+
