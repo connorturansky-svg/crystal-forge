@@ -6,6 +6,7 @@ import {setThreeInstance,prepareFabrication,makeCalibrationStrip,splitPreparedMe
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
 import {planWireRoutes} from '../wire-routing.js';
+import {estimateRoofReview} from '../print-advisor.js';
 import {PIXEL_PRESETS,normalisePixelProfile,resolvePixelProfile} from '../pixel-profiles.js';
 
 const wasm=await Module();wasm.setup();
@@ -271,10 +272,15 @@ validate('domed-union',{...settings,baseDome:20,tipRound:3.5});
  assert.equal(plan.wirePlan.unrouted,0,'Both pixels linked in the simple example');
  const repeat=planHardware(generateFormation(cfg),cfg);
  assert.deepEqual(repeat.wirePlan.routes,plan.wirePlan.routes,'Wire routes are deterministic for identical settings');
+ const roof=estimateRoofReview(plan.polygon,cfg,{});
+ assert(roof.needsCura&&Number.isFinite(roof.estimateMm),'Roof span review remains advisory');
  const prepared=validate('wired-groove',cfg);
  assert.equal(prepared.wireChannelsCut,plan.wirePlan.routes.length,'Manufacturing uses the exact planned groove count');
  assert.equal(prepared.disconnected,1,'Wiring must not split the model into pieces');
  assert(prepared.wireLengthMm>=35,'Manufacturing report includes planned route length');
+ assert(prepared.roofReview?.needsCura,'Prepared model reports roof proxy and Cura caveat');
+ const smallPrinter=validate('custom-printer',{...settings,printer:'Custom / other',printerX:30,printerY:30,printerZ:50});
+ assert.equal(smallPrinter.printerFits,false,'Small custom machine is flagged as too small');
  const disabled=planWireRoutes(cs,{...cfg,wireChannels:false},plan);
  assert.equal(disabled.routes.length,0,'No routes with setting off');
  const vault=planWireRoutes(cs,{...cfg,baseVault:true},plan);

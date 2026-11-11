@@ -10,7 +10,7 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const local=p=>path.join(root,p);
 const jsPaths=fs.readdirSync(root).filter(p=>p.endsWith('.js'));
 for(const p of fs.readdirSync(local('tests')).filter(p=>p.endsWith('.mjs')))jsPaths.push('tests/'+p);
-assert(jsPaths.includes('studio-v3.js')&&jsPaths.includes('fabrication-v1.js')&&jsPaths.includes('hardware-editor.js')&&jsPaths.includes('pixel-profiles.js')&&jsPaths.includes('wire-routing.js'));
+assert(jsPaths.includes('studio-v3.js')&&jsPaths.includes('fabrication-v1.js')&&jsPaths.includes('hardware-editor.js')&&jsPaths.includes('pixel-profiles.js')&&jsPaths.includes('wire-routing.js')&&jsPaths.includes('print-advisor.js'));
 for(const p of jsPaths){
  // node --check parses ESM without importing CDN modules or starting WebGL.
  try{execFileSync(process.execPath,['--check',local(p)],{stdio:'pipe'})}
@@ -34,7 +34,7 @@ const index=read('index.html');
 assert.match(index,/<script\s+type="module"\s+src="\.\/studio-v3\.js"><\/script>/,'Active app is bootstrapped from studio-v3.js');
 assert.match(index,/type="importmap"/,'The browser import map is declared');
 for(const id of ['viewport','prepareBtn','prepareStatus','prepareReport','showManufacturing',
- 'stlBtn','threeMfBtn','placePixelBtn','placeMountBtn','reportVault','reportLEDVents','pixelProfileSelect','pixelProfileOverlay','descriptionsBtn','contextHelp','wiringCsvBtn','reportWireChannels']){
+ 'stlBtn','threeMfBtn','placePixelBtn','placeMountBtn','reportVault','reportLEDVents','pixelProfileSelect','pixelProfileOverlay','descriptionsBtn','contextHelp','wiringCsvBtn','reportWireChannels','reportRoofSpan','customPrinterSettings']){
  assert(index.includes('id="'+id+'"'),'Missing essential UI element #'+id);
 }
 const defaults=read('studio-v3.js');

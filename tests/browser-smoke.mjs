@@ -155,7 +155,17 @@ try{
  await page.locator('[data-state="wireChannels"]').uncheck();
  await page.locator('[data-state="wireExit"]').uncheck();
  await page.waitForTimeout(160);
- console.log('PR5 wiring controls, output and persistence verified');
+ await page.locator('[data-tab="print"]').click();
+ await page.locator('[data-state="printer"]').selectOption('Custom / other');
+ assert(await page.locator('#customPrinterSettings:not([hidden])').count(),'Custom dimensions shown');
+ await page.locator('[data-state="printerX"]').fill('125');
+ await page.locator('[data-state="printerX"]').dispatchEvent('input');
+ await page.waitForTimeout(250);
+ const chosenX=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings.printerX);
+ assert.equal(chosenX,125,'Custom machine size persists');
+ await page.locator('[data-state="printer"]').selectOption('Ultimaker 3 Extended');
+ assert(await page.locator('#customPrinterSettings[hidden]').count(),'Custom fields hidden for default printer');
+ console.log('PR5 wiring, CSV and custom printer verification passed');
  console.log('PR4 help, base profiles, pixel editor and persistence verified');
  console.log('Advanced editor and view controls verified');
  await page.locator('[data-tab="build"]').click();
