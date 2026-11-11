@@ -372,6 +372,25 @@ try{
  const marker=page.locator('.hardware-marker[data-hw-kind="pixel"]').first();
  await marker.evaluate(el=>el.click());
  assert(await page.locator('[data-hw-card-kind="pixel"].selected').count(),'3D P label selects matching Build card');
+ const draggedId=await marker.getAttribute('data-hw-id');
+ const start=await page.evaluate(id=>{
+  const p=JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualPixelHoles.find(p=>p.id===id);
+  return {x:p.x,z:p.z};
+ },draggedId);
+ const markerRect=await marker.boundingBox();
+ assert(markerRect,'Selected P marker is visible and can be directly manipulated');
+ await page.mouse.move(markerRect.x+markerRect.width/2,markerRect.y+markerRect.height/2);
+ await page.mouse.down();
+ await page.mouse.move(contextPoint.x,contextPoint.y,{steps:9});
+ await page.mouse.up();
+ await page.waitForTimeout(120);
+ const moved=await page.evaluate(id=>{
+  const p=JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualPixelHoles.find(p=>p.id===id);
+  return {x:p.x,z:p.z};
+ },draggedId);
+ assert(Math.hypot(moved.x-start.x,moved.z-start.z)>1,'Second click-and-hold on selected P marker moves the physical pixel');
+ assert(await page.locator('.hardware-marker[data-hw-id="'+draggedId+'"]').count(),'Direct manipulation preserves a stable pixel ID');
+ console.log('PR10 selected 3D pixel click-hold moves the real saved position without renumbering');
  await page.mouse.dblclick(contextPoint.x,contextPoint.y);
  assert(await page.locator('.hardware-context-menu:not([hidden])').count(),'Double-click blank model opens Add Pixel / Mount menu');
  const countBeforeContext=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.manualPixelHoles.length);
