@@ -40,6 +40,18 @@ Select **Build → Mounting preset → Detachable plate**. The same authoritativ
 - Worker gives progress stage updates during geometry preparation and remains cancelable through the existing UI.
 - The existing benchmark still runs its representative solid and vault cases. Set `CRYSTAL_FORGE_BENCH_EXTENDED=1` to add 10, 16, 40 and 60-crystal benchmark cases. Run on the same hardware and log memory plus elapsed time before claiming improvement.
 
+## November fit-test feedback — implemented in PR7
+
+The 5-position simple and stepped calibration strips and the 3-position full-body sample now carry **actual numeric diameter engraving** on their top printable faces (left to right). The full-body socket samples cut **two opposing cable slots entirely through the external walls**. This is coupon-only behaviour; it does **not** silently add exposed cable slots to the finished sculpture.
+
+**How to use it:** select a pixel profile and download a coupon from Print, physically insert a pixel in each labelled seat, choose the best-fitting hole in Print → Fit calibration, and click **Apply tested fit to all pixel sockets**. This sets the shared `pixelFit` clearance used by the authoritative planner and actual Manifold bore cutter for every LED profile. A **⚙ Calibrated Ø…** badge appears next to the adjustment; Reset restores the previous global value. The sample's diameters and selected tolerance are saved in editable project JSON. Re-prepare the manufacturing mesh after applying or resetting the fit.
+
+Limits: nominal printed diameters vary with filament, nozzle, slicer and extrusion settings. The label describes the generated geometry, not a metrology-verified hole. The full-body wire channels allow cables to escape the coupon sidewalls but do not provide a mechanical strain-relief fastener. Re-test when changing pixel housing, nozzle or material.
+
+## Public code visibility and protection
+
+The repository's original code is marked **all rights reserved** in [LICENSE](../LICENSE). This does not prevent public viewing or forking under GitHub's Terms, and the deployed static website necessarily exposes its client JavaScript. Making the source private, if desired, must be an explicit owner decision because it can alter Pages deployment and would not recall past clones.
+
 ## Test and merge requirements
 
 - [ ] Latest commit static tests (syntax/imports/default values/ZIP integrity)
