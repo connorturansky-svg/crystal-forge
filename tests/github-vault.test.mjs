@@ -18,23 +18,31 @@ assert.equal(doc.templates[0].name,'Test design');
 assert.equal(doc.projects.length,2,'Full backup includes ALL named user projects');
 assert.throws(()=>validateVault({schema:2,pixelProfiles:[],templates:[]}),/supported/);
 let remote=null,sha=null,n=0,authCalls=0;
+const historical=new Map(),history=[];
 const response=(status,data)=>({ok:status>=200&&status<300,status,statusText:'Mock',json:async()=>data,text:async()=>JSON.stringify(data)});
 const fakeFetch=async(url,options={})=>{
  const header=options.headers||{};
  assert(header.Authorization?.startsWith('Bearer '),'Authorization included only in request header');
  authCalls++;
  if(url.endsWith('/repos/example/private-designs'))return response(200,{private:true,permissions:{push:true}});
- if(url.endsWith('/repos/example/private-designs/contents/'+VAULT_PATH)){
+ if(url.includes('/repos/example/private-designs/commits?path=')){
+  return response(200,history.map(v=>({sha:v,commit:{message:'Crystal Forge private revision',committer:{date:'2026-11-11T12:00:00Z'}}})));
+ }
+ if(url.includes('/repos/example/private-designs/contents/'+VAULT_PATH)){
+  const ref=new URL(url).searchParams.get('ref');
   if(options.method==='PUT'){
    const body=JSON.parse(options.body);
    if(sha&&body.sha!==sha)return response(409,{message:'SHA conflict'});
    const binary=atob(body.content);remote=JSON.parse(new TextDecoder().decode(Uint8Array.from(binary,c=>c.charCodeAt(0))));
-   sha='sha-'+(++n);return response(201,{content:{sha}});
+   sha=(++n).toString(16).padStart(40,'0');
+   historical.set(sha,JSON.parse(JSON.stringify(remote)));history.unshift(sha);
+   return response(201,{content:{sha}});
   }
-  if(!remote)return response(404,{message:'Not Found'});
-  const bytes=new TextEncoder().encode(JSON.stringify(remote));
+  const selected=ref?historical.get(ref):remote;
+  if(!selected)return response(404,{message:'Not Found'});
+  const bytes=new TextEncoder().encode(JSON.stringify(selected));
   const binary=String.fromCharCode(...bytes);
-  return response(200,{type:'file',sha,content:btoa(binary)});
+  return response(200,{type:'file',sha:ref||sha,content:btoa(binary)});
  }
  throw Error('Unexpected GitHub request '+url);
 };
@@ -43,6 +51,8 @@ const first=await x.connect('example/private-designs','sample-secret-token');
 assert.equal(first.exists,false);
 assert.equal(x.connected,true);
 await x.push();
+const originalRevision=x.sha;
+assert.equal((await x.listHistory())[0].sha,originalRevision,'Private backup history is available in the app');
 assert.equal(remote.pixelProfiles[0].bodyHeight,24.5);
 assert.equal(remote.projects.length,2,'Private Github vault includes every named project');
 assert(!JSON.stringify(remote).includes('sample-secret-token'),'Credentials never enter cloud vault');
@@ -56,8 +66,16 @@ assert.equal(JSON.parse(b.getItem('crystal-forge-pixel-library'))[0].bodyHeight,
 assert.equal(JSON.parse(b.getItem('crystal-forge-v3')).crystals[0].id,'x');
 assert.equal(listSavedProjects(b).length,2,'Other computer receives ALL user models');
 assert(b.getItem(pulled.backupKey),'Local backup created before merge');
+a.setItem('crystal-forge-v3',JSON.stringify({settings:{title:'Changed later'},crystals:[{id:'later',x:99}]}));
 await x.push();
 await assert.rejects(()=>y.push(),CloudConflictError,'Remote SHA change requires another pull');
+assert((await x.listHistory()).length>=2,'Earlier GitHub backups remain listed');
+const restored=await x.restoreVersion(originalRevision);
+assert(restored.projectRestored,'Can recover a historical full active project');
+assert.equal(JSON.parse(a.getItem('crystal-forge-v3')).crystals[0].id,'x','Previous project settings and geometry restored from GitHub');
+assert(a.getItem(restored.backupKey),'History restore makes local pre-restore backup');
+await x.push();
+assert((await x.listHistory()).length>=3,'Restoring publishes a NEW revision without deleting history');
 y.disconnect();assert.equal(y.token,'');
 const publicFetch=async()=>response(200,{private:false,permissions:{push:true}});
 await assert.rejects(()=>new GitHubVault({storage:b,fetchFn:publicFetch}).connect('example/public-designs','secret'),/PRIVATE/);
@@ -73,4 +91,5 @@ assert(conflict.projects>=3,'Project ID conflicts preserve both models rather th
 assert(listSavedProjects(b).some(p=>p.name.includes('cloud import')),'Conflicting project receives recoverable name');
 assert(deleteNamedProject(b,second.id),'Can explicitly delete named project');
 assert(!loadNamedProject(b,second.id),'Deleted project no longer opens');
+await assert.rejects(()=>x.restoreVersion('invalid-sha'),/valid past commit/);
 console.log('PR10 private GitHub cloud backup, cross-machine multiple projects, collisions and token isolation passed');
