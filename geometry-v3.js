@@ -5,6 +5,20 @@
 const TAU=Math.PI*2,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function seeded(seed){let x=(Number(seed)|0)||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}}
 export const families=['Quartz','Shard','Blade','Cubic','Double terminated','Fantasy'];
+export function chooseWeightedFamily(randomValue,weights={}){
+ const values=families.map(name=>{
+  const n=Number(weights?.[name]??1);
+  return Number.isFinite(n)?Math.max(0,n):0;
+ });
+ const total=values.reduce((sum,n)=>sum+n,0);
+ if(total<=0)return families[Math.min(families.length-1,Math.floor(randomValue*families.length))];
+ let point=Math.min(.999999999,Math.max(0,randomValue))*total;
+ for(let i=0;i<values.length;i++){
+  if(point<values[i])return families[i];
+  point-=values[i];
+ }
+ return families.at(-1);
+}
 export const patterns=['Central Spire','Dense Cluster','Fan','Geode / Crescent','Wall Growth','Organic / Wild'];
 export const leanModes=['Organic / natural','One direction','Criss-cross','Radial outward','Radial inward'];
 // Stable per-object variation: changing sliders does not re-roll crystal IDs,
@@ -49,7 +63,7 @@ export function generateFormation(s){
    x=Math.cos(a)*s.width*.32*radialSpread;z=(Math.sin(a)*s.width*.23-s.width*.15)*radialSpread;
   }
   const factor=tier===0?.75+rand()*.25:tier===1?.40+rand()*.19:.19+rand()*.20;
-  const family=s.familyMix==='Mixed'?families[Math.floor(rand()*families.length)]:s.familyMix;
+  const family=s.familyMix==='Mixed'?chooseWeightedFamily(rand(),s.familyWeights):s.familyMix;
   const centreAngle=Math.atan2(z,x)||theta;
   const heading=leanMode==='One direction'?0:
    leanMode==='Criss-cross'?(i%2===0?0:Math.PI):
