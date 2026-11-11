@@ -42,7 +42,11 @@ export function planTargetedLightPaths(crystals,s,hardware){
   if(source.d>maxLength){reason('LED too far ('+source.d.toFixed(1)+' mm)');continue}
   if(rootWidth<boreRadius+wall*2.5){reason('Root too narrow for requested passage and wall margin');continue}
   const sourceRoof=baseSurfaceHeight(crystals,s,source.item.x,source.item.z);
-  const sourceTop=Math.min(sourceRoof-2.8,-3+Number(profile.bodyHeight||22));
+  // The socket cutter uses the profile attached to THIS accepted LED, not
+  // the global LED picker. Otherwise a seed beside a gumdrop can have an
+  // invisible solid gap between its actual bore cap and this new light tube.
+  const socketProfile=resolveSocketProfile(s,source.item);
+  const sourceTop=Math.min(sourceRoof-2.8,-3+Number(socketProfile.bodyHeight||22));
   let lowestRoof=Infinity;
   let blocked=false;
   const steps=Math.max(4,Math.ceil(source.d/6));
