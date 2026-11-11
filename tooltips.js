@@ -169,6 +169,7 @@ const SETTINGS={
  "singleWireExitBtn": ["Create a real underside wire route","Enables both wire channels and a perimeter exit, then shows the underside. Prepare Print cuts the cyan planned volume from the actual STL."],
  "wireChannels": ["Carve open-bottom grooves","Cuts routes between accepted LEDs. With one LED, also enable the edge-exit option or no route will exist."],
  "wireExit": ["Cut a wire route through the edge","Adds a real shallow groove from an LED socket out through the perimeter. The groove must be tested with actual insulated wire."],
+ "curaRecommendedNozzleBtn": ["Candidate nozzle from actual model","Uses a conservative four-extrusion-line heuristic for eligible crystal features, wire slots and light passages. Does not physically install a nozzle or verify slicing."],
  "pixelCount": [
   "Pixel count",
   "Number of LEDs requested in multi-pixel mode. The planner can reject holes without sufficient clearance."

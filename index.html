@@ -292,6 +292,8 @@ body.theme-light .control-tooltip span{color:#334c6b}
 <div class="control"><label>Quality (faster → finer) <output data-out="curaQuality"></output></label><input data-state="curaQuality" type="range" min="0" max="100" step="5"></div>
 <div class="control"><label>Printing intention</label><select data-state="curaIntent"><option value="light">Translucent / light transmission (0% infill)</option><option value="balanced">Balanced durability (10–15% infill)</option><option value="durable">Stronger / robust (25–30% infill)</option></select></div>
 <div id="curaProfileSummary" class="softnotice" aria-live="polite">Profile settings will appear here.</div>
+<div id="curaModelAdvice" class="note" aria-live="polite">Choose a machine to screen crystal features against supported nozzles.</div>
+<button id="curaRecommendedNozzleBtn" type="button" style="width:100%;margin:4px 0 9px">Use candidate nozzle for this model</button>
 <p class="note warning" id="curaProfileWarning">Import to Cura after selecting the correct printer, nozzle and material. Confirm actual walls, support and light access in the slicer.</p>
 <button id="curaProfileBtn" class="primary" type="button" style="width:100%">↓ Download Cura profile (.curaprofile)</button>
 <p class="note">This creates importable Cura 5-style quality overrides—not printer firmware or G-code. 0% infill does not guarantee an open light path; print cores and nozzles must match the physical machine.</p>

@@ -13,6 +13,7 @@ import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile} from './pixel-profiles.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
 import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
+import {adviseCuraForModel} from './cura-model-advisor.js';
 import {assessPrintQuality,printChecklistText} from './print-quality.js';
 import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
 
@@ -972,6 +973,15 @@ $('splitExportBtn').onclick=async()=>{
 
 function updateCuraProfileSummary(){
  const target=$('curaProfileSummary'),warn=$('curaProfileWarning'),button=$('curaProfileBtn');
+ const advice=adviseCuraForModel(crystals,s);
+ const adviceNode=$('curaModelAdvice'),recommend=$('curaRecommendedNozzleBtn');
+ if(adviceNode)adviceNode.textContent=advice.supported?
+  'Model-aware candidate: '+advice.nozzle.toFixed(2)+' mm nozzle · smallest screened feature '+
+  advice.featureWidthMm.toFixed(2)+' mm · approximately '+advice.estimatedLayers+
+  ' full-height layers. '+advice.reasons.at(0)+' Not a support, optical or flow guarantee.':
+  advice.reason;
+ if(recommend){recommend.disabled=!advice.supported;
+  recommend.textContent=advice.supported?'Use '+advice.nozzle.toFixed(2)+' mm candidate nozzle':'No compatible automatic choice';}
  if(!target||!warn||!button)return;
  try{
   const p=calculateCuraSettings({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
@@ -985,6 +995,12 @@ function updateCuraProfileSummary(){
   warn.textContent=err.message;button.disabled=true;button.title=err.message;
  }
 }
+$('curaRecommendedNozzleBtn').onclick=()=>{
+ const a=adviseCuraForModel(crystals,s);
+ if(!a.supported)return;
+ s.curaNozzle=a.nozzle;syncForm();updateCuraProfileSummary();snapshot();
+ setStatus('Candidate nozzle '+a.nozzle+' mm selected in profile preview only. Fit the matching hardware and inspect the actual Cura slice.');
+};
 $('curaProfileBtn').onclick=()=>{
  try{
   const p=createCuraProfile({machine:s.printer,nozzle:s.curaNozzle,material:s.curaMaterial,quality:s.curaQuality,intent:s.curaIntent});
