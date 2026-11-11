@@ -141,6 +141,16 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  }
  function placementValid(kind,pos,replaceIndex=null){
   const s=getSettings();
+  if(kind==='tab'){
+   const edge=nearestEdgePosition(getPlan().polygon,pos);
+   const tabs=[...(s.manualEdgeTabs||[])];
+   if(replaceIndex===null)tabs.push({u:edge.u});
+   else if(tabs[replaceIndex])tabs[replaceIndex]={u:edge.u};
+   else return false;
+   const next=planHardware(getCrystals(),{...s,mount:'Edge fixing tabs',manualEdgeTabs:tabs});
+   return next.tabs.some(t=>t.index===(replaceIndex===null?tabs.length-1:replaceIndex));
+  }
+  if(kind==='exit')return getPlan().sockets.length>0;
   if(kind==='pixel'){
    const holes=(s.manualPixelHoles||[]).map(p=>({...p}));
    if(replaceIndex===null){if(holes.length>=60)return false;holes.push(pos)}
@@ -173,11 +183,11 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   if(!placing||!isBuild())return;
   const data=findPoint(e);
   if(!data){preview.visible=false;lastCursor=null;return}
-  const kind=placing==='pixel'?'pixel':'mount';
-  const valid=data.insideBase&&placementValid(kind,data.pos,draggingHole?.index??null);
+  const kind=placing;
+  const valid=(data.insideBase||kind==='tab'||kind==='exit')&&placementValid(kind,data.pos,draggingHole?.index??null);
   lastCursor={...data,valid,kind};
   const s=getSettings();
-  const diameter=kind==='pixel'?resolvePixelProfile(s).maxDiameter:
+  const diameter=(kind==='tab'||kind==='exit')?10:kind==='pixel'?resolvePixelProfile(s).maxDiameter:
    s.mount==='Magnet inserts'?10.2:s.mount==='Threaded insert M3'?4.2:Number(s.mountHoleDiameter||4.5);
   const radius=Math.max(1,diameter/2);
   preview.scale.setScalar(radius);
@@ -205,7 +215,16 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  }
  function manuallyPlace(kind){
   const s=getSettings(),plan=getPlan();
-  if(kind==='pixel'){
+  if(kind==='tab'){
+   s.mount='Edge fixing tabs';
+   if(!Array.isArray(s.manualEdgeTabs))s.manualEdgeTabs=plan.tabs.map(t=>({u:t.u}));
+  }else if(kind==='exit'){
+   s.cutSockets=true;s.wireChannels=true;s.wireExit=true;
+   if(s.pixelPlacement!=='manual'){
+    s.manualPixelHoles=plan.sockets.map(p=>({x:p.x,z:p.z,wireAngle:0,profileId:p.profileId}));
+    s.pixelPlacement='manual';
+   }
+  }else if(kind==='pixel'){
    s.cutSockets=true;
    if(s.pixelPlacement!=='manual'){
     s.manualPixelHoles=plan.sockets.map(p=>({x:+p.x.toFixed(1),z:+p.z.toFixed(1)}));
@@ -215,7 +234,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    // retained as a first editable hole rather than silently discarded.
    s.lightingMode='multi';
    s.pixelCount=s.manualPixelHoles.length;
-  }else{
+  }else if(kind==='mount'){
    if(s.mount==='None')s.mount='Custom dual holes';
    if(s.mountPlacement!=='manual'){
     s.manualMountHoles=plan.mounts.map(p=>({x:+p.x.toFixed(1),z:+p.z.toFixed(1)}));
@@ -231,6 +250,8 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  }
  $('placePixelBtn').onclick=()=>manuallyPlace('pixel');
  $('placeMountBtn').onclick=()=>manuallyPlace('mount');
+ $('placeTabBtn').onclick=()=>manuallyPlace('tab');
+ $('pickWireExitBtn').onclick=()=>manuallyPlace('exit');
  $('stopHolePlacementBtn').onclick=cancel;
  const canvas=renderer.domElement;
  canvas.addEventListener('pointermove',e=>updateCursor(e),true);
@@ -242,8 +263,8 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   if(e.shiftKey){
    const data=findPoint(e);
    if(data){
-    const key=placing==='pixel'?'manualPixelHoles':'manualMountHoles';
-    const list=getSettings()[key]||[];
+    const key=placing==='pixel'?'manualPixelHoles':placing==='tab'?'manualEdgeTabs':'manualMountHoles';
+    const list=placing==='tab'?getPlan().tabs:(getSettings()[key]||[]);
     const nearest=list.map((p,index)=>({index,d:Math.hypot(p.x-data.pos.x,p.z-data.pos.z)}))
      .sort((a,b)=>a.d-b.d)[0];
     if(nearest&&nearest.d<=Math.max(8,Number(getSettings().pixelDiameter||5)+3))
@@ -263,19 +284,33 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   if(draggingHole){
    const active=draggingHole;draggingHole=null;
    const data=findPoint(e);
-   if(data?.insideBase&&placementValid(active.kind,data.pos,active.index)){
-    const key=active.kind==='pixel'?'manualPixelHoles':'manualMountHoles';
+   if((data?.insideBase||active.kind==='tab')&&placementValid(active.kind,data.pos,active.index)){
+    const key=active.kind==='pixel'?'manualPixelHoles':active.kind==='tab'?'manualEdgeTabs':'manualMountHoles';
     const old=getSettings()[key]?.[active.index];
-    if(old){old.x=data.pos.x;old.z=data.pos.z;onEdit();onStatus('Moved existing '+active.kind+' hole; checked new clearances')}
+    if(old){
+     if(active.kind==='tab')old.u=nearestEdgePosition(getPlan().polygon,data.pos).u;
+     else {old.x=data.pos.x;old.z=data.pos.z}
+     onEdit();onStatus('Moved '+active.kind+' after collision review');
+    }
    }
    updateCursor(e);return;
   }
   if(movement>5||!lastCursor?.valid)return;
   const s=getSettings(),kind=placing,pos={...lastCursor.pos};
-  if(kind==='pixel'){
+  if(kind==='tab'){
+   if(!Array.isArray(s.manualEdgeTabs))s.manualEdgeTabs=[];
+   s.manualEdgeTabs.push({u:nearestEdgePosition(getPlan().polygon,pos).u});
+   s.tabCount=s.manualEdgeTabs.length;
+  }else if(kind==='exit'){
+   const pixel=s.manualPixelHoles?.[0];
+   if(pixel){
+    const edge=nearestEdgePosition(getPlan().polygon,pos);
+    pixel.wireEndX=edge.x;pixel.wireEndZ=edge.z;
+   }
+  }else if(kind==='pixel'){
    s.manualPixelHoles.push(pos);
    s.pixelCount=s.manualPixelHoles.length;
-  }else s.manualMountHoles.push(pos);
+  }else if(kind==='mount')s.manualMountHoles.push(pos);
   onEdit(); // redraw rings & keep the placement mode active for next click.
   updateCursor(e);
  },true);
