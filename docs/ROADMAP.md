@@ -1,6 +1,14 @@
+# PR11 — v0.14.1 production hardening (current draft)
+
+PR10 [#16](https://github.com/connorturansky-svg/crystal-forge/pull/16) is merged into `main`. PR11 safeguards saved designs and backup recovery, corrects manufacturing cache validity for new routing parameters, and broadens CI triggers. [PR11 test guide](PR11_HARDENING_TEST_GUIDE.md).
+
+**Release gates:** static + browser + real Manifold checks must pass on the exact PR head; manual 40-project capacity, backup recovery, and interrupted-print tests must pass. Real Cura imports, printed LED sockets, translucent light passages, cable strain relief and mounting safety are separate unresolved acceptance gates.
+
+---
+
 # PR10 — v0.14 software candidate: curved cabling, Cura and private sync
 
-[Draft PR #16](https://github.com/connorturansky-svg/crystal-forge/pull/16) implements the user's latest priorities on a new branch after merged PR9. [Manual acceptance guide](PR10_TEST_GUIDE.md) includes cross-device recovery and physical print tests.
+[Merged PR #16](https://github.com/connorturansky-svg/crystal-forge/pull/16) delivered the user's latest priorities. [Manual acceptance guide](PR10_TEST_GUIDE.md) includes cross-device recovery and physical print tests.
 
 - **P0:** physically opposed 180° LED IN/OUT ports, smooth tangent-led cable routes, 25/50/100/custom interpixel length limits, red warning and fail-closed manufacturing, arrows, Set P1/reverse and selected marker click-hold dragging.
 - **P1:** optional GitHub PRIVATE repository vault with memory-only scoped token, local backup before pull/merge, auto-sync while connected, SHA conflict prevention, a named multi-project library, complete local backup import/export, previous GitHub version restoration and custom LED profile/template portability. An old machine's local profiles still require export or upload from that machine.
