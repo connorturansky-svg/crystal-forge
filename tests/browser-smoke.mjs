@@ -241,6 +241,10 @@ try{
  assert.equal(Number(await page.locator('[data-state="pixelStringSpacing"]').inputValue()),25,'Measured 25 mm cable spacing preset persists');
  await page.locator('#wireSpacingPreset').selectOption('50');
  assert(await page.locator('#reversePixelStringBtn').count(),'Reverse physical string direction control exists');
+ assert(await page.locator('#snapPixelSpacingBtn').count(),
+  'Measured cable-length alignment button exists');
+ assert.equal(Number(await page.locator('[data-state="pixelSnapMaxMove"]').inputValue()),5,
+  'Maximum pixel fine-adjustment defaults to 5 mm');
  assert(await page.locator('[data-state="wireDirectionArrows"]').isChecked(),'Track direction arrows default on');
  assert(await page.locator('[data-state="wireShowLengths"]').isChecked(),'Cable lengths default visible');
  await page.locator('[data-tab="design"]').click();

@@ -1,5 +1,14 @@
 # Crystal Forge — Changelog
 
+## v0.15.1 — PR14 measured physical cable-length snapping (draft)
+
+- **One-click fine positioning:** Build → underside wiring now has "Snap internal pixels to cable length" and a configurable 5 mm default maximum correction per pixel.
+- **Actual curved lengths:** uses the existing sampled route planner and socket-centre additions, with a fine sub-0.2 mm acceptance band below 25/50/100/custom mm spacing rather than the straight-line XY distance.
+- **Controlled movement:** P1 fixed, subsequent P2…Pn adjusted in string order only if candidate sockets and all previously snapped links remain valid, without changing mounts or unintentionally breaking the existing IN/OUT tails.
+- **Safe limits and undo:** Links too far away or obstructed are left unchanged and reported; accepted changes are one saved/undoable edit preserving IDs, type and wire rotation.
+- **Regression:** new pure snap planner tests + browser availability assertion. Real cable length, LED strain relief and Cura layer acceptance still require physical checks.
+
+
 ## v0.15.0 — Final consolidated software-production candidate (PR13/#19, DRAFT)
 
 - **Wiring correctness:** every externally routed socket now omits the old isolated fixed-axis local reliefs, including projects saved with legacy single/parallel routing. An unconnected stand-alone socket retains its old relief only when physical wiring is disabled. PR12's new-string fix is retained.
