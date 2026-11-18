@@ -4,7 +4,7 @@
 
 ## External contributor pilot
 
-- **WT-001 / Issue #31:** [Independent AI review of PR #30](https://github.com/connorturansky-svg/crystal-forge/issues/31). Ready to give to a contributor now. Review-only, no code write/merging. [Copy/paste invitation](EXTERNAL_AGENT_START.md).
+- **WT-001 / Issue #31:** [Independent AI review of PR #30](https://github.com/connorturansky-svg/crystal-forge/issues/31). **Independent review delivered**; [archived reproducible findings](reviews/WT-001-stage-b-review.md) show three P1 defects and one P2 UX gap, no P0. Follow-up tracked on Issue #31 and reviewed in PR #35. The read-only pilot is complete; fixes not yet verified.
 - **Contributor-intake:** [merged PR #32](https://github.com/connorturansky-svg/crystal-forge/pull/32). Issue forms, PR template, CODEOWNERS and AI PR metadata/duplicate-task checks are now on `main`; branch protection/rulesets still require owner administration via Issue #33.
 - **Repository permissions:** public read, Issues and PRs enabled, forking allowed. No direct collaborator invitation needed for personal fork + PR. Branch-protection settings could not be changed through current connector and need manual owner configuration.
 - **Daily audit:** a ChatGPT automation is enabled for 09:00 Europe/London, beginning 2026-11-19. It inspects PRs, Issues, duplicate claims and CI and reports meaningful blockers, but does **not** dispatch agents or merge. Enabled monitoring depends on its connected environment.
@@ -12,13 +12,13 @@
 
 ## WT-002 — Next owned implementation
 
-- **WT-002 / Issue #34:** [Compact Studio layout and six-family creative geometry expansion](https://github.com/connorturansky-svg/crystal-forge/issues/34), approved as continuation of Stage B's programme. **New Stage C0:** shrink/collapse the model rail, close/restore all auxiliary panels, unify global toolbar and move Home/Library/Design/Build/Print to compact workspace navigation; then expand procedural styles for six families. Specification: `prompts/002-six-family-creative-expansion.md`. Codex should claim after checking existing Issues and current PRs; open a distinct **draft PR** on `main` with the full pinned spec SHA. This does not duplicate independent review WT-001.
+- **WT-002 / Issue #34:** [Compact Studio layout and six-family creative geometry expansion](https://github.com/connorturansky-svg/crystal-forge/issues/34), approved as continuation of Stage B's programme. **New Stage C0:** shrink/collapse the model rail, close/restore all auxiliary panels, unify global toolbar and move Home/Library/Design/Build/Print to compact workspace navigation; then expand procedural styles for six families. Specification: `prompts/002-six-family-creative-expansion.md`. Codex **claimed** Issue #34 and opened [draft PR #35](https://github.com/connorturansky-svg/crystal-forge/pull/35), with pinned specification SHA `5fa48fa20200b67938bd84d807022f214fae8973`. Its latest observed head at review intake was `d7d199a88232307b7228243c58f1f1ac1b701228` (CI was in progress; recheck exact head). This does not duplicate independent review WT-001.
 - PR #30 and #32 are merged on `main` as of 2026-11-18; last verified main `948cd5ac31330fc1c7da3f1386c9ad60e0328361`.
 - **Issue #33:** owner still needs to configure enforceable protection for `main` and contribution/IP terms.
 
 ## Existing in-flight work
 
-- **Merged PR #30:** [Stage B: Contextual editing and creative Cogs & Gears](https://github.com/connorturansky-svg/crystal-forge/pull/30). External review WT-001 remains a separate read-only assignment; do not re-implement Stage B.
+- **Merged PR #30:** [Stage B: Contextual editing and creative Cogs & Gears](https://github.com/connorturansky-svg/crystal-forge/pull/30). External review WT-001 is complete; defects are logged in [review findings](reviews/WT-001-stage-b-review.md). Before expanding shared palette/Build/material code, triage its P1s with PR #35 integration owner, avoiding any second competing implementation.
 - **Merged PR #29:** [Unified Wonder Trunks interface](https://github.com/connorturansky-svg/crystal-forge/pull/29). Contextual visual controls were incomplete on first rollout and are within Stage B scope.
 - **Legacy Issues #6–#10 and #1** remain open at time of check; they describe earlier fabrication/LED/production phases and an audit. Reconcile their actual remaining acceptance criteria against merged code before adding new tasks, marking closed or creating duplicates. Do not assume their labels reflect current work.
 
@@ -35,4 +35,4 @@
 
 ## Safe immediate action
 
-Proceed with WT-002 on its own feature branch once the approved spec SHA is pinned in Issue #34. Do not dispatch overlap with WT-001 read-only review, or self-merge; finish owner protection settings tracked under Issue #33.
+Keep [PR #35](https://github.com/connorturansky-svg/crystal-forge/pull/35) as the one WT-002 implementation branch. Request targeted P1 fixes/tests from [WT-001 review](reviews/WT-001-stage-b-review.md) before propagating its palette, pixel placement and material logic to six new generators. Avoid competing work; no auto-merge. Finish owner protection settings under Issue #33.
