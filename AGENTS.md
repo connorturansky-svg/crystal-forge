@@ -59,3 +59,11 @@ Conflict priority: latest explicit user requirement → validated code/current r
 - `edge-tabs.js` is the authoritative perimeter-tab layout; `hardware-layout.js`, Build guides and Manifold tab unions/drills must agree. Tab holes are through-holes; no printed fixing is automatically rated for overhead loads.
 - `putSocket` makes an intentionally **blind** rounded LED bore. Never cut through the upper exterior or silently remove the minimum roof; side vents on optional vaulted bases are separate.
 - `tooltips.js` owns the shared accessible hover/focus help; add explanations when adding new controls.
+
+## Cross-AI prompt library and contributor handover
+
+**For new external contributors:** This repository's curated onboarding and prompt history live on the separate `planning/prompts` branch. Read `prompts/000-contributor-onboarding.md`, `prompts/PROJECT_CONTEXT.md`, `prompts/README.md` and `prompts/HANDOVER_PROTOCOL.md` from that branch, then verify all claims against current `main` source, `docs/AI_HANDOVER.md` and CI. If the branch is not present locally, `git fetch origin planning/prompts` and inspect files with `git show origin/planning/prompts:prompts/000-contributor-onboarding.md`.
+
+**Approval rule:** A prompt stored in GitHub is not permission to implement. Work only on user-assigned approved briefs with a **pinned full commit SHA**. Always preserve the user's latest explicit instructions. Implementation branches come from the appropriate current `main`, not the planning branch; do not merge planning changes solely to launch coding.
+
+**Handover rule:** Every substantial implementation PR must update `docs/AI_HANDOVER.md` and relevant current architecture, design decisions, roadmap, testing and acceptance documents. Explain original user intent and trade-offs, actual implemented status, touched modules and contracts, migrations, remaining gaps, exact tested commit/CI, manual Cura and physical checks, and reproducible next steps. See `prompts/HANDOVER_PROTOCOL.md` on the planning branch. Do not claim functionality based solely on old chats or unexecuted tests.
