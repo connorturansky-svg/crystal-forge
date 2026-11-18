@@ -1,8 +1,8 @@
 # Owner priority review — Wonder Trunks Studio — 18 November 2026
 
-> **Status:** Owner-supplied prioritisation, **NOT** approval to launch a new coding task. This is a queue and recommendation document, not an immutable implementation brief.
+> **Status:** Owner-supplied priorities and **approved combined next milestone (WT-012)**, **planning only; coding has NOT been dispatched**. This file is a recorded choice, not itself the immutable implementation brief.
 > **Source:** User's direct submitted choices from the interactive prioritisation of 18 backlog areas.
-> **No automatic implementation:** Do not dispatch Codex, create an approved WT-012 brief, assign an external agent, replace/supersede WT-011, push to `main`, or merge any PR merely because this file exists.
+> **No automatic implementation:** A separate immutable approved brief now exists at `prompts/012-creative-catalogue-shared-routing.md` / [Issue #52](https://github.com/connorturansky-svg/crystal-forge/issues/52). Owner chose the **combined** option, but **do not dispatch Codex, assign agents, edit `main`, create an implementation PR, or merge** until a separate explicit owner instruction. WT-011 is preserved, not replaced.
 > **Verified baseline at review:** `main` = `9abcecbe0235c889d16139e110e1b8c621472ca1`; WT-010 [PR #50](https://github.com/connorturansky-svg/crystal-forge/pull/50) **merged**; WT-003 external SVG [PR #37](https://github.com/connorturansky-svg/crystal-forge/pull/37) remains open/draft; WT-011 approved spec remains pinned and implementation not started. Recheck GitHub before coding.
 
 ## User's exact priority selections
@@ -30,7 +30,15 @@
 
 **Interpretation:** `UNDECIDED` is **not** `LOW`, `NOT NEEDED`, or approval to cancel. User selected 2 high, 7 medium, 5 low, 4 undecided. Do not infer anything beyond these choices.
 
-## Recommended next implementation order — PROPOSAL, owner decision pending
+## Subsequent owner decision — COMBINED phase chosen
+
+On 18 November 2026, the owner explicitly selected: **"I prefer a combined Creative Catalogue and Shared Pixel Routing milestone. Design one carefully bounded full-size phase and prepare its GitHub brief, preserving WT-011 on hold and not launching coding yet."**
+
+The approved future-phase contract is **WT-012 / Issue #52**, `prompts/012-creative-catalogue-shared-routing.md` on `planning/prompts` with a full immutable SHA pinned in Issue #52. Implementation **has not started**. It is bounded to **four genuine new structural variation mechanisms / six visual presets across Tiles, decorative Gears and Light Pods**, plus **real opt-in serial routing for two conservative solid families (Tiles and decorative Gears)**. Light Pods' thin/hollow shells are not automatically eligible for cables. Existing Crystal Cluster geometry and P1 routing remain the benchmark. Jordan's SVG importer remains isolated and undecided. WT-011 remains approved/on hold.
+
+The following routing-first/separate-catalogue split was a **historical suggestion, superseded as a queue order by the owner's combined choice**. It was not a source-code task and is not to be dispatched independently.
+
+## Historical suggested next implementation order — superseded proposal
 
 ### Candidate first full-size phase: WT-012 (number reserved as proposal, **not** approved or created)
 
@@ -56,4 +64,4 @@ User says they **rarely print models requiring splitting** and gave automatic sp
 
 ## Decision gate
 
-Owner must explicitly choose **routing-first**, **catalogue-first**, or a different priority/order before an approved WT-012 implementation brief and new Issue are created. After approval, use a pinned `planning/prompts` commit SHA, fresh `main`, one clearly bounded draft PR, real browser/Manifold checks and no auto-merge. Jordan's unmerged SVG work stays isolated regardless of order. Cross-cutting reliability tests are required in every implementation rather than postponed as an excuse to omit them.
+**Decision made:** owner chose a **single combined WT-012**, and approved scope/Issue have been prepared without launching coding. **Remaining gate:** an additional explicit owner instruction to **dispatch/implement**. Codex must then use the full immutable SHA pinned on [Issue #52](https://github.com/connorturansky-svg/crystal-forge/issues/52), start from fresh `main`, build one draft PR and run real Chromium/Manifold checks. No auto-merge. Jordan's unmerged SVG work stays isolated. Reliability regression gates remain mandatory.
