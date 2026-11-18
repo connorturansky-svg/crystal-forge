@@ -2,6 +2,13 @@
 
 > Updated 2026-11-18 via GitHub connector. **Not live.** Recheck Issues/PRs/CI before assigning work. This file is a read-only planning snapshot; task ownership and status belong to GitHub Issues/PRs.
 
+## External contributor pilot
+
+- **WT-001 / Issue #31:** [Independent AI review of PR #30](https://github.com/connorturansky-svg/crystal-forge/issues/31). Ready to give to a contributor now. Review-only, no code write/merging. [Copy/paste invitation](EXTERNAL_AGENT_START.md).
+- **Contributor-intake:** staged on `chore/ai-contributor-intake`; Issue forms, PR template, CODEOWNERS and AI PR metadata/duplicate-task check are **not enabled on main** until owner-reviewed merge.
+- **Repository permissions:** public read, Issues and PRs enabled, forking allowed. No direct collaborator invitation needed for personal fork + PR. Branch-protection settings could not be changed through current connector and need manual owner configuration.
+- **Authority:** Only owner approves merging/deployment; no recurring agent dispatch or task assignment is active by default.
+
 ## Existing in-flight work
 
 - **Draft PR #30:** [Stage B: Contextual editing and creative Cogs & Gears](https://github.com/connorturansky-svg/crystal-forge/pull/30). Last observed head `c2d000990597aba0a9d5bf6a6abb7f92199a5b28`. One active implementing PR. **Do not launch another Stage B PR or request another AI to implement the same files while this is in progress.** Review its code and exact-head CI when complete.
