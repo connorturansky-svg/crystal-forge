@@ -5,6 +5,17 @@
 ## Vision
 A friendly, visual, flexible, physically credible browser-based parametric fabrication studio for 3D printing tactile, decorative, mechanical and illuminated objects. Primary project: **The Snowsmith Wonder Trunks** — four installations: The Goat Farm, Thawmor River, McDigger Mine Co. and The Weather Workshop. Typical printing environment: Ultimaker 3 Extended and Ultimaker 2+, PLA/PETG, applicable nozzle/core sizes around 0.25/0.4/0.6/0.8 mm when supported. Prioritise physical and sensory experimentation, accessibility and resilient work across computers.
 
+## Approved refinement — compact and dismissible workspace (2026-11-18)
+
+The original three-column editor decision is retained, but the user rejected the broad left model list and scattered top-level controls visible in the v0.16.0-dev.6 screenshot. The next WT-002 implementation must:
+
+- Reduce the left model selector to a narrow rail (~160–190 px expanded) and let users toggle an icon-only (~52–60 px) view, with an unambiguous active model, access to add models and restore controls.
+- Give **every auxiliary panel** a sensible collapse/close and restore path: model rail, right precision settings, centre-lower visual palette, explorer accordions, dialogs and focus view. Persist these layout preferences independently of model geometry.
+- Put Studio brand/project/version/status, Undo/Redo, Save/Open/Reload, Simple/Advanced, theme, Help, Descriptions and What's New in one coherent **global app header**. Move Home/Library/Design/Build/Print into compact **workspace sub-navigation** in/near centre content instead of mixing it into global settings. Avoid controls floating over important 3D viewport hit areas.
+- Preserve selections, saved models, orbit targets, keyboard navigation, undo history and real Build functionality during panel switches. A collapsed panel must never become unrecoverable.
+
+These are interface hierarchy and state-management requirements, not a request to rewrite the whole editor. See pinned WT-002 brief §2A and AC-C15–AC-C21.
+
 ## Eight settled interface decisions
 1. **Home:** Combined Creative Home with welcoming visual model categories, recent work and project access; no project setup required to create one model.
 2. **Workspace:** three-column architecture; models left, actual pinned rotatable 3D viewport centre upper, independently scrolling visual controls centre lower, independently scrolling precise settings on right; resizable panels and focus view.
