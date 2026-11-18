@@ -12,7 +12,7 @@
 
 ## WT-002 — Next owned implementation
 
-- **WT-002 / Issue #34:** [Six-family creative geometry expansion](https://github.com/connorturansky-svg/crystal-forge/issues/34), approved as continuation of Stage B's programme. Specification: `prompts/002-six-family-creative-expansion.md`. Codex should claim after checking existing Issues and current PRs; open a distinct **draft PR** on `main` with the full pinned spec SHA. This does not duplicate independent review WT-001.
+- **WT-002 / Issue #34:** [Compact Studio layout and six-family creative geometry expansion](https://github.com/connorturansky-svg/crystal-forge/issues/34), approved as continuation of Stage B's programme. **New Stage C0:** shrink/collapse the model rail, close/restore all auxiliary panels, unify global toolbar and move Home/Library/Design/Build/Print to compact workspace navigation; then expand procedural styles for six families. Specification: `prompts/002-six-family-creative-expansion.md`. Codex should claim after checking existing Issues and current PRs; open a distinct **draft PR** on `main` with the full pinned spec SHA. This does not duplicate independent review WT-001.
 - PR #30 and #32 are merged on `main` as of 2026-11-18; last verified main `948cd5ac31330fc1c7da3f1386c9ad60e0328361`.
 - **Issue #33:** owner still needs to configure enforceable protection for `main` and contribution/IP terms.
 
