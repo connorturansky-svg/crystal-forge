@@ -11,8 +11,8 @@ This folder is the GitHub-backed source of truth for **future approved Codex dev
 | ID | Brief | Status | Approved revision | Implementation PR |
 |---|---|---|---|---|
 | 000 | [Fresh contributor / AI onboarding](./000-contributor-onboarding.md) | Reference — always read first; **not a coding task** | No implementation approval needed | — |
-| 001 | [External AI independent review pilot](./001-independent-pr-review-pilot.md) | **Owner-authorised: read-only**; [Issue #31](https://github.com/connorturansky-svg/crystal-forge/issues/31) | Planning revision — pin the SHA supplied with the invitation | No implementation PR; review PR #30 |
-| 002 | [Compact Studio layout + six-family creative geometry](./002-six-family-creative-expansion.md) | Owner-approved incl. §2A layout refinement and Stage C0; [WT-002 / Issue #34](https://github.com/connorturansky-svg/crystal-forge/issues/34); ready for Codex claim | **Use newest superseding pinned SHA** posted on Issue #34 | Not started |
+| 001 | [External AI independent review pilot](./001-independent-pr-review-pilot.md) | Review delivered, **changes requested**: [P1/P2 findings](./reviews/WT-001-stage-b-review.md); [Issue #31](https://github.com/connorturansky-svg/crystal-forge/issues/31) tracks follow-up | Pinned original review task revision under Issue #31 | Reviewed merged PR #30; fixes to be triaged on WT-002 PR #35 |
+| 002 | [Compact Studio layout + six-family creative geometry](./002-six-family-creative-expansion.md) | **In progress** on [Issue #34](https://github.com/connorturansky-svg/crystal-forge/issues/34); Stage C0 underway; incorporate WT-001 review triage | **5fa48fa20200b67938bd84d807022f214fae8973** | [Draft PR #35](https://github.com/connorturansky-svg/crystal-forge/pull/35) |
 | — | New implementation briefs will be added here after user review | — | — | — |
 
 Create the first entry when we save an approved brief. Past requirements and ongoing Codex sessions are **not** silently reissued or marked complete by this setup.
