@@ -10,9 +10,13 @@
 - **Daily audit:** a ChatGPT automation is enabled for 09:00 Europe/London, beginning 2026-11-19. It inspects PRs, Issues, duplicate claims and CI and reports meaningful blockers, but does **not** dispatch agents or merge. Enabled monitoring depends on its connected environment.
 - **Authority:** Only owner approves merging/deployment; no recurring agent dispatch or task assignment is active by default.
 
-## WT-002 — Next owned implementation
+## WT-006 — Next owner-Codex implementation
 
-- **WT-002 / Issue #34:** [Compact Studio layout and six-family creative geometry expansion](https://github.com/connorturansky-svg/crystal-forge/issues/34), approved as continuation of Stage B's programme. **New Stage C0:** shrink/collapse the model rail, close/restore all auxiliary panels, unify global toolbar and move Home/Library/Design/Build/Print to compact workspace navigation; then expand procedural styles for six families. Specification: `prompts/002-six-family-creative-expansion.md`. Codex **claimed** Issue #34 and opened [draft PR #35](https://github.com/connorturansky-svg/crystal-forge/pull/35), with pinned specification SHA `5fa48fa20200b67938bd84d807022f214fae8973`. Its latest observed head at review intake was `d7d199a88232307b7228243c58f1f1ac1b701228` (CI was in progress; recheck exact head). This does not duplicate independent review WT-001.
+- **WT-006 / Issue #40:** [Shared interactive Pixel Builder + fit-test workflow](https://github.com/connorturansky-svg/crystal-forge/issues/40). Owner-approved prompt `prompts/006-interactive-pixel-builder.md` will be pinned to an immutable revision in Issue #40. Begin from current main after merged WT-002 PR #35; build genuine in-canvas click-select/hold-drag and fitting selection, real verified bores/wire routes and physical-fitting coupon downloads. No code overlap with WT-003 external importer PR #37. One owned draft PR, no auto-merge.
+
+## WT-002 — Merged milestone
+
+- **WT-002 / Issue #34:** [Merged compact Studio layout and six-family creative geometry expansion](https://github.com/connorturansky-svg/crystal-forge/issues/34), approved as continuation of Stage B's programme. **New Stage C0:** shrink/collapse the model rail, close/restore all auxiliary panels, unify global toolbar and move Home/Library/Design/Build/Print to compact workspace navigation; then expand procedural styles for six families. Specification: `prompts/002-six-family-creative-expansion.md`. Codex completed and owner **merged PR #35** on 2026-11-18; merge SHA `351e2c7cd6bb521f27b238354d8a5bc5c9ac3f35`. The merged milestone includes compact workspace controls, six-family real styles and the three WT-001 P1 fixes. Selected-pixel contextual movement, fitting parity and physical qualification remain open and are in WT-006. This does not duplicate independent review WT-001.
 - PR #30 and #32 are merged on `main` as of 2026-11-18; last verified main `948cd5ac31330fc1c7da3f1386c9ad60e0328361`.
 - **Issue #33:** owner still needs to configure enforceable protection for `main` and contribution/IP terms.
 
@@ -41,4 +45,4 @@
 
 ## Safe immediate action
 
-Keep [PR #35](https://github.com/connorturansky-svg/crystal-forge/pull/35) as the one WT-002 implementation branch. Request targeted P1 fixes/tests from [WT-001 review](reviews/WT-001-stage-b-review.md) before propagating its palette, pixel placement and material logic to six new generators. Avoid competing work; no auto-merge. Finish owner protection settings under Issue #33.
+Begin WT-006 on its own freshly based branch only after Codex checks current main and open claims. PR #35 is merged, three WT-001 P1s addressed; WT-003 PR #37 remains independent. No auto-merge; main ruleset now exists and requires a static check. Continue owner/agent dispatch setup as separate WT-004/005 tasks.
