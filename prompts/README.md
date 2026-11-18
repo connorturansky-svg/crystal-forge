@@ -6,11 +6,11 @@ This folder is the GitHub-backed source of truth for **future approved Codex dev
 
 **Do not treat a file's presence as permission to implement it.** The user's explicit go-ahead, an agreed scope, and a particular version of that file are required.
 
-## Owner priorities and pending next-phase decision (18 November 2026)
+## Owner priorities and approved combined next phase (18 November 2026)
 
-The owner ranked **creative model catalogue expansion** and **shared pixel routing across suitable models** as **HIGH**; seven other tracks MEDIUM, five LOW (including modular splitting), and four UNDECIDED (including SVG integration). [Complete owner-selected priority table and proposed phase order](./OWNER_PRIORITY_REVIEW_2026-11-18.md).
+The owner ranked **creative model catalogue expansion** and **shared pixel routing across suitable models** as **HIGH**; seven other tracks MEDIUM, five LOW (including modular splitting), and four UNDECIDED (including SVG integration). [Full owner priority list and final combined choice](./OWNER_PRIORITY_REVIEW_2026-11-18.md).
 
-**Suggested, NOT YET APPROVED next order:** shared pixel-routing native families first, then catalogue expansion. The owner may prefer catalogue-first. **No WT-012 task, approved brief, Codex dispatch or source PR has been started.** The existing WT-011 approved spec remains intact but deferred pending owner re-prioritisation. External WT-003 remains separate. Read the full priority review before proposing the next brief.
+**Owner selected one combined, carefully bounded full-size phase: [WT-012 / Issue #52](https://github.com/connorturansky-svg/crystal-forge/issues/52), [approved preparation-only brief](./012-creative-catalogue-shared-routing.md).** It covers 4 new structural styles/6 visual presets across 3 families plus certified, opt-in real serial routing on 2 compatible solid non-Crystal families. **Do not dispatch Codex or create an implementation PR until the owner separately instructs you to start coding.** WT-011 remains approved/on hold with its original immutable spec untouched. Jordan's SVG draft PR #37 remains isolated.
 
 
 ## Brief index
@@ -27,6 +27,7 @@ The owner ranked **creative model catalogue expansion** and **shared pixel routi
 | 009 | [Named production packs and print-job manifest](./009-print-export-identity.md) | **Merged** 2026-11-18; [Issue #47](https://github.com/connorturansky-svg/crystal-forge/issues/47) | **9e7423dbcd27cdb7c13683a6fe244e32bc4d8548** | [Merged PR #48](https://github.com/connorturansky-svg/crystal-forge/pull/48) |
 | 010 | [Rename saved projects in the visual Library](./010-rename-saved-projects.md) | **Merged** 2026-11-18; [Issue #49](https://github.com/connorturansky-svg/crystal-forge/issues/49) | **799711681429789b5c49723a90f81c1367ef2671** | [Merged PR #50](https://github.com/connorturansky-svg/crystal-forge/pull/50) |
 | 011 | [Modular fabrication and assembly Studio](./011-modular-assembly.md) | **APPROVED SPEC RETAINED · implementation ON HOLD (LOW owner priority)**; [Issue #51](https://github.com/connorturansky-svg/crystal-forge/issues/51) | **51b915da7fa96d07776cd8bfff6bafb5b926e4d5** | Not started; no PR or supersession |
+| 012 | [Combined Creative Catalogue and Shared Pixel Routing](./012-creative-catalogue-shared-routing.md) | **OWNER-APPROVED BRIEF · PREPARATION ONLY; WAIT for separate Codex dispatch**; [Issue #52](https://github.com/connorturansky-svg/crystal-forge/issues/52) | **Pinned full immutable SHA in Issue #52** | Not started — no branch/PR |
 | — | New implementation briefs will be added here after user review | — | — | — |
 
 Create the first entry when we save an approved brief. Past requirements and ongoing Codex sessions are **not** silently reissued or marked complete by this setup.
