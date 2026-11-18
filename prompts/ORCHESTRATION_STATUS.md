@@ -5,8 +5,9 @@
 ## External contributor pilot
 
 - **WT-001 / Issue #31:** [Independent AI review of PR #30](https://github.com/connorturansky-svg/crystal-forge/issues/31). Ready to give to a contributor now. Review-only, no code write/merging. [Copy/paste invitation](EXTERNAL_AGENT_START.md).
-- **Contributor-intake:** staged on `chore/ai-contributor-intake`; Issue forms, PR template, CODEOWNERS and AI PR metadata/duplicate-task check are **not enabled on main** until owner-reviewed merge.
+- **Contributor-intake:** [draft PR #32](https://github.com/connorturansky-svg/crystal-forge/pull/32), staged on `chore/ai-contributor-intake`; Issue forms, PR template, CODEOWNERS and AI PR metadata/duplicate-task check are **not enabled on main** until owner-reviewed merge.
 - **Repository permissions:** public read, Issues and PRs enabled, forking allowed. No direct collaborator invitation needed for personal fork + PR. Branch-protection settings could not be changed through current connector and need manual owner configuration.
+- **Daily audit:** a ChatGPT automation is enabled for 09:00 Europe/London, beginning 2026-11-19. It inspects PRs, Issues, duplicate claims and CI and reports meaningful blockers, but does **not** dispatch agents or merge. Enabled monitoring depends on its connected environment.
 - **Authority:** Only owner approves merging/deployment; no recurring agent dispatch or task assignment is active by default.
 
 ## Existing in-flight work
