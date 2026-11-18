@@ -22,12 +22,18 @@
 - **Merged PR #29:** [Unified Wonder Trunks interface](https://github.com/connorturansky-svg/crystal-forge/pull/29). Contextual visual controls were incomplete on first rollout and are within Stage B scope.
 - **Legacy Issues #6–#10 and #1** remain open at time of check; they describe earlier fabrication/LED/production phases and an audit. Reconcile their actual remaining acceptance criteria against merged code before adding new tasks, marking closed or creating duplicates. Do not assume their labels reflect current work.
 
+## WT-003 — Parallel external implementation (assigned scope, not yet claimed)
+
+- **WT-003 / Issue #36:** [Isolated SVG-to-3D extrusion and print engine](https://github.com/connorturansky-svg/crystal-forge/issues/36). The external AI may claim and implement from the exact approved prompt at `prompts/003-svg-extrusion-engine.md` (full SHA pinned on Issue #36). Own only new `svg-import/`, isolated SVG fixtures/tests, dedicated CI and dedicated handover files. Read existing `studio-geometry.js` and `studio-material-export.js` but do **not** modify them or any files currently owned by WT-002 PR #35.
+- **Integration gate:** External task produces a real standalone import/preview/Manifold/STL/3MF demonstration and a documented adapter. Native Studio, shared Build and Library/Print wiring must be a **later coordinated PR** after #35 is reconciled. Do not represent an isolated importer as shipped in the Studio.
+- Do not assign a second coder to any file already being edited by the owner Codex.
+
 ## Candidate future work — not authorised/claimed
 
 | Candidate | Dependency | Duplicate risk | Next action |
 |---|---|---|---|
 | Expand six remaining generators with genuine tactile/visual geometry | Stage B merged | Scoped and owner-approved as WT-002 | Codex claim Issue #34 and follow pinned specification |
-| SVG upload → extrusion → shared Build | Stable generator geometry, shared Build handling | Moderate — already in roadmap | Create owner-reviewed focused prompt |
+| SVG upload → extrusion → shared Build | WT-003 owns isolated SVG importer engine; WT-002 owns Studio shell | High if both edit shared UI/geometry | External AI builds isolated engine under Issue #36; integrate with Studio later |
 | STL/OBJ upload → scale, orient, validated mesh Build | SVG/shared geometry conventions | Moderate | Do not dispatch before import feasibility/mesh validation |
 | Complete shared direct 3D pixel/manifold tools | Stage B + existing Crystal engine | High — earlier Issues #7, #9 | Reconcile existing implementation with feature tests |
 | Combined Library + reliable cross-device workflows | Existing Library/vault; interface parity | Moderate — prior implementation present | Scope only missing behaviours |
