@@ -6,6 +6,13 @@ This folder is the GitHub-backed source of truth for **future approved Codex dev
 
 **Do not treat a file's presence as permission to implement it.** The user's explicit go-ahead, an agreed scope, and a particular version of that file are required.
 
+## Owner priorities and pending next-phase decision (18 November 2026)
+
+The owner ranked **creative model catalogue expansion** and **shared pixel routing across suitable models** as **HIGH**; seven other tracks MEDIUM, five LOW (including modular splitting), and four UNDECIDED (including SVG integration). [Complete owner-selected priority table and proposed phase order](./OWNER_PRIORITY_REVIEW_2026-11-18.md).
+
+**Suggested, NOT YET APPROVED next order:** shared pixel-routing native families first, then catalogue expansion. The owner may prefer catalogue-first. **No WT-012 task, approved brief, Codex dispatch or source PR has been started.** The existing WT-011 approved spec remains intact but deferred pending owner re-prioritisation. External WT-003 remains separate. Read the full priority review before proposing the next brief.
+
+
 ## Brief index
 
 | ID | Brief | Status | Approved revision | Implementation PR |
@@ -18,8 +25,8 @@ This folder is the GitHub-backed source of truth for **future approved Codex dev
 | 007 | [Visual saved-project gallery](./007-visual-saved-projects.md) | **Merged** 2026-11-18 after green CI; [Issue #43](https://github.com/connorturansky-svg/crystal-forge/issues/43) | **59015ccdd8ebdc48b3bbb1ae0f485ca75376bd7a** | [Merged PR #44](https://github.com/connorturansky-svg/crystal-forge/pull/44) |
 | 008 | [Reliable visual Print Centre queue and per-job settings](./008-print-centre-queue.md) | **Merged** 2026-11-18; [Issue #45](https://github.com/connorturansky-svg/crystal-forge/issues/45) | **7473bf73fd46fd4f0c4668c91f80524bded800bf** | [Merged PR #46](https://github.com/connorturansky-svg/crystal-forge/pull/46) |
 | 009 | [Named production packs and print-job manifest](./009-print-export-identity.md) | **Merged** 2026-11-18; [Issue #47](https://github.com/connorturansky-svg/crystal-forge/issues/47) | **9e7423dbcd27cdb7c13683a6fe244e32bc4d8548** | [Merged PR #48](https://github.com/connorturansky-svg/crystal-forge/pull/48) |
-| 010 | [Rename saved projects in the visual Library](./010-rename-saved-projects.md) | **Codex implementation in progress**; [Issue #49](https://github.com/connorturansky-svg/crystal-forge/issues/49); verify status before WT-011 | **799711681429789b5c49723a90f81c1367ef2671** | Codex task in progress — do not duplicate |
-| 011 | [Modular fabrication and assembly Studio](./011-modular-assembly.md) | **Owner-approved next full-size milestone; WAIT for WT-010 merge and refreshed credits**; [Issue #51](https://github.com/connorturansky-svg/crystal-forge/issues/51) | **Immutable SHA pinned in Issue #51** | Not started — one large draft PR after start gate |
+| 010 | [Rename saved projects in the visual Library](./010-rename-saved-projects.md) | **Merged** 2026-11-18; [Issue #49](https://github.com/connorturansky-svg/crystal-forge/issues/49) | **799711681429789b5c49723a90f81c1367ef2671** | [Merged PR #50](https://github.com/connorturansky-svg/crystal-forge/pull/50) |
+| 011 | [Modular fabrication and assembly Studio](./011-modular-assembly.md) | **APPROVED SPEC RETAINED · implementation ON HOLD (LOW owner priority)**; [Issue #51](https://github.com/connorturansky-svg/crystal-forge/issues/51) | **51b915da7fa96d07776cd8bfff6bafb5b926e4d5** | Not started; no PR or supersession |
 | — | New implementation briefs will be added here after user review | — | — | — |
 
 Create the first entry when we save an approved brief. Past requirements and ongoing Codex sessions are **not** silently reissued or marked complete by this setup.
