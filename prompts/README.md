@@ -12,7 +12,7 @@ This folder is the GitHub-backed source of truth for **future approved Codex dev
 |---|---|---|---|---|
 | 000 | [Fresh contributor / AI onboarding](./000-contributor-onboarding.md) | Reference — always read first; **not a coding task** | No implementation approval needed | — |
 | 001 | [External AI independent review pilot](./001-independent-pr-review-pilot.md) | **Owner-authorised: read-only**; [Issue #31](https://github.com/connorturansky-svg/crystal-forge/issues/31) | Planning revision — pin the SHA supplied with the invitation | No implementation PR; review PR #30 |
-| 002 | [Six-family creative geometry expansion](./002-six-family-creative-expansion.md) | Owner-approved continuation; [WT-002 / Issue #34](https://github.com/connorturansky-svg/crystal-forge/issues/34); ready for Codex claim | Use exact pinned SHA posted on Issue #34 | Not started |
+| 002 | [Compact Studio layout + six-family creative geometry](./002-six-family-creative-expansion.md) | Owner-approved incl. §2A layout refinement and Stage C0; [WT-002 / Issue #34](https://github.com/connorturansky-svg/crystal-forge/issues/34); ready for Codex claim | **Use newest superseding pinned SHA** posted on Issue #34 | Not started |
 | — | New implementation briefs will be added here after user review | — | — | — |
 
 Create the first entry when we save an approved brief. Past requirements and ongoing Codex sessions are **not** silently reissued or marked complete by this setup.
