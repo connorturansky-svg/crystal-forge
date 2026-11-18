@@ -11,6 +11,7 @@ This folder is the GitHub-backed source of truth for **future approved Codex dev
 | ID | Brief | Status | Approved revision | Implementation PR |
 |---|---|---|---|---|
 | 000 | [Fresh contributor / AI onboarding](./000-contributor-onboarding.md) | Reference — always read first; **not a coding task** | No implementation approval needed | — |
+| 001 | [External AI independent review pilot](./001-independent-pr-review-pilot.md) | **Owner-authorised: read-only**; [Issue #31](https://github.com/connorturansky-svg/crystal-forge/issues/31) | Planning revision — pin the SHA supplied with the invitation | No implementation PR; review PR #30 |
 | — | New implementation briefs will be added here after user review | — | — | — |
 
 Create the first entry when we save an approved brief. Past requirements and ongoing Codex sessions are **not** silently reissued or marked complete by this setup.
@@ -32,5 +33,7 @@ Create the first entry when we save an approved brief. Past requirements and ong
 - Maintain Crystal Cluster functional/manufacturing parity, real geometry validation, truthful physical-test status, saved-data compatibility, and new version + changelog entries for app releases.
 
 See [`ORCHESTRATION.md`](./ORCHESTRATION.md) for proposed multi-AI roles, approval rights, duplicate-work prevention and scheduling, plus [`ORCHESTRATION_STATUS.md`](./ORCHESTRATION_STATUS.md) for the latest planning snapshot (recheck GitHub before dispatch). See [`WORKFLOW.md`](./WORKFLOW.md) for exact copy/paste Codex handoff instructions, [`TEMPLATE.md`](./TEMPLATE.md) for brief structure, [`PROJECT_CONTEXT.md`](./PROJECT_CONTEXT.md) for settled design/technical intentions, and [`HANDOVER_PROTOCOL.md`](./HANDOVER_PROTOCOL.md) for updates required after **every** implementation. A new contributor should start with [`000-contributor-onboarding.md`](./000-contributor-onboarding.md).
+
+**First external contributor:** use [EXTERNAL_AGENT_START.md](./EXTERNAL_AGENT_START.md) and the live [WT-001 starter Issue](https://github.com/connorturansky-svg/crystal-forge/issues/31). A separate [contributor-intake PR](https://github.com/connorturansky-svg/crystal-forge/pulls) stages active Issue/PR templates and automated metadata checks for owner review; do not claim these work on main until merged.
 
 **Repository:** `connorturansky-svg/crystal-forge`
