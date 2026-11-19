@@ -14,7 +14,7 @@ on:
       - 'package.json'
       - '.github/workflows/fabrication-tests.yml'
   pull_request:
-    branches: [main]
+    branches: [main, feat/verified-tile-gear-routing]
     paths:
       - '*.js'
       - 'index.html'

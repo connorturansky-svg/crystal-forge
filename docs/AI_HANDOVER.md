@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## Routing on verified stock
+
+Waves certify their solid rectangular underside. Eligible Caps, Characters and non-illuminated Pods can use an explicitly enabled solid fitting slab. Cavities, mounting cuts, added bases, part offsets and dual material remain guarded. Check physical cable seating under #10.
+
 ## Tile and Gear routing verification
 
 The native planner identifies the numbered fitting that fails the diameter or edge-clearance gate. Catalogue fixtures cover successful, short-pitch, obstructed and serialized routes on solid Tiles and decorative Gears. Physical cable seating remains part of #10.

@@ -51,11 +51,14 @@ function cutter(points,label){
 }
 
 export function nativeRouteEligibility(recipe,build){
- if(!recipe.serialSupport)return recipe.serialReason||'Only solid-backed tactile tiles and solid decorative gears are supported.';
+ if(!recipe.serialSupport)return recipe.serialReason||'Enable fitting backing to check this model for serial routing.';
  if(recipe.dualMaterial)return 'Use a single material for native serial routing.';
  if(recipe.serialSupport.thickness<depth+roof)return 'Routing needs at least 3.8 mm of solid backing for the groove and roof.';
- if(recipe.negative.length||build.mounting||build.base||Object.values(build.partOffsets||{}).some(offset=>offset?.some?.(value=>value!==0)))
-  return 'Remove mounting cuts, added bases or part offsets before routing.';
+ const blocksBacking=part=>part.kind!=='box'||part.rotation||!Array.isArray(part.position)||
+  part.position[1]+part.size[1]/2>0;
+ const obstructed=recipe.serialSupport.explicitBacking?recipe.negative.some(blocksBacking):recipe.negative.length>0;
+ if(obstructed||build.mounting||build.base||Object.values(build.partOffsets||{}).some(offset=>offset?.some?.(value=>value!==0)))
+  return 'Existing cavities, mounting cuts, added bases or part offsets prevent safe routing.';
  return '';
 }
 

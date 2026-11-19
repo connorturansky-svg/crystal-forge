@@ -1,5 +1,9 @@
 # Crystal Forge — Changelog
 
+## v0.16.0-dev.21 — Serial cable routing on additional verified models
+
+- Route cables on solid Waves and eligible single-material models with explicit fitting backing.
+
 ## v0.16.0-dev.20 — Clearer Tile and Gear routing feedback
 
 - Identify the fitting that needs a larger bore or more clearance at the backing edge.

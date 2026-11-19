@@ -6,7 +6,7 @@ concurrency:
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/verified-tile-gear-routing]
   push:
     branches: [main]
     paths:
