@@ -37,9 +37,9 @@ assert(fs.existsSync(path.join(root,'sensory-studio.css')),'Missing referenced S
 // Regression: merely copying root *.js files is NOT sufficient for nested
 // importer modules on the published version-scoped Pages base URL.
 const pagesWorkflow=fs.readFileSync(path.join(root,'.github/workflows/pages.yml'),'utf8');
-assert.match(pagesWorkflow,/git archive HEAD \\| tar -x -C "_site\\/releases\\/\\$GITHUB_SHA"/,
+assert.match(pagesWorkflow,/git archive HEAD \| tar -x -C "_site\/releases\/\$GITHUB_SHA"/,
  'Pages must stage the entire repository into the versioned release directory');
-assert.doesNotMatch(pagesWorkflow,/cp _site\\/\\*\\.js/,
+assert.doesNotMatch(pagesWorkflow,/cp _site\/\*\.js/,
  'Publishing root-only JavaScript would omit svg-import/ and freeze startup');
 
 const actual=inspect(release);
