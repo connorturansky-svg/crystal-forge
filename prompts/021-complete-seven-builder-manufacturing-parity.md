@@ -121,6 +121,51 @@ The rotary knob remains a **useful representative acceptance example only**; oth
 - The separate [draft #91](https://github.com/connorturansky-svg/crystal-forge/pull/91) implements a scoped Crystal routing worker and initial left tool finder, rebased against #88 in a merge commit. **Do not treat #91 as the final WT-021 release; prove its current exact-head CI before any owner merge.** The obsolete #90 startup draft must not overwrite #89's working Pages vendor packaging.
 - Codex should carry forward verified #91 results if appropriate and complete all remaining WT-021 P0/P1, especially seven-builder pixel drag, unified mounting holes/screw/magnet/external tab UI, actual rendered printable mesh, numeric slider fields and reset, physically correct face-aligned fittings, Library and Print end-to-end evidence. Preserve seven equal family gates and keep physical validation #10 separate. Leave all owner merges/deployment untouched.
 
+## OWNER CLARIFICATION — RESTORE FULL-SIZE 1:1 PIXEL BODY TEST MODELS (P0 FEATURE REGRESSION)
+
+**Owner observation (19 November 2026):** "I can see the pixel fit tool, but what happened to the full size pixel test tool, which actually builds the domed shape of the gumdrop based on the profile I made?" The **full-size POSITIVE LED body replica** and the **NEGATIVE socket-fit calibration coupon** are DIFFERENT deliverables. **Both must exist, work, and be easy to find in every applicable Design/Build/Print workflow, independently of which of the seven model families is active.** Do not claim the calibration strip reproduces the actual LED body.
+
+### Two separately named physical test tools
+
+1. **"Download 1:1 pixel replica (STL/3MF)"**: a standalone **POSITIVE 3D model of ONE complete LED package**, generated from the user's measured/saved profile. For a gumdrop, this must include its genuinely curved/domed tip, straight body, shoulder/collar/flange and the two opposite wire-entry/exit relief shapes; not an empty hole, a rectangular coupon, a marker, a 2D diagram or an abstract cylinder.
+2. **"Download pixel/socket fit coupon (STL/3MF)"**: the existing **NEGATIVE** five-size / stepped / wire-relief socket test that helps select an actual printable hole clearance and flange seating. Preserve the existing coupon controls and printed fit measurement workflow exactly; don't replace or mislabel them.
+
+Both actions must be clearly exposed inside **Create/edit pixel profile**, next to or below the A–G dimensions, as well as the common **Build → Pixel fittings** panel and global **Print Centre**. The left **Find tools & downloads** search should return distinct results for `full-size pixel`, `1:1 gumdrop`, `pixel replica`, `dummy LED`, `3D pixel` versus `fit coupon`, `socket calibration`, `test strip`, `bore size`. The user should be able to download the replica directly using the saved currently selected profile or the currently edited A–G values (clearly label saved vs unsaved), with no need to add a crystal or print an entire model first.
+
+### Exact measured shape: authoritative A–G mapping
+
+The existing `pixel-profile-diagram.js`, `pixel-profiles.js` and `index.html` define these 1:1 dimensions in **millimetres**:
+
+- **A = outside body diameter** (the cylindrical housing excluding its wider flange)
+- **B = total LED body length including E**, measured flange-underside to highest cap tip — **NEVER add E to B a second time**
+- **C = outside flange/collar diameter**, kept at the original profile's measurement (do not apply the socket clearance)
+- **D = flange/collar thickness/height at wire end**
+- **E = curved upper dome height**, a real smooth cap with measured rise, smoothly joining the cylindrical body and reaching total B
+- **F = width of EACH of the two opposing wire-bundle outlet recesses**
+- **G = depth of those two wire-bundle outlet recesses** (at 180° to one another, without inventing unmeasured wire lengths)
+
+Support the existing **gumdrop, bullet and seed** kinds with appropriately different truthful external caps/bodies and any physically supported shoulder/flange. Reuse the same saved/custom profiles and correct dimensions used by the fitting planner; **do not change the user's existing saved profile or silently add the printer's bore fit tolerance to the positive body.** Treat physical shape dimension (A) separately from nominal printable socket diameter (A + mathrm{clearance}). The dummy is only a **physical dimensional mock-up**, not a functioning electronic LED, cable strain certification or optical proof.
+
+### Genuine geometry and export, not a drawing
+
+- Construct real **watertight, Manifold-valid positive volume** (printable single solid where possible), with smoothly curved cap and actual symmetric F/G underside wire recesses. Check that the cap/flange/reliefs intersect and form an intended printable shape, not floating parts or nonmanifold slivers.
+- Show an interactive **3D replica preview** linked to the A–G editor, with orbit, rotate, numeric dimensions, section/cutaway/edge inspection and an explicit **Render actual pixel model** action if the preview is illustrative. Reuse shared manufacturing rendering instead of an unrelated fake mesh.
+- Provide separate one-click **STL** and **3MF** downloads with an informative stable filename such as `pixel-replica-<profile>-1to1.stl`. Both must represent exactly the same Z-up millimetre physical model and honour the current profile revision, without a printer clearance offset or accidental arbitrary scale.
+- Reuse safe printing controls (UM3 Extended / UM2+, material, nozzle, quality as applicable), and include the replica as an independently selectable printable job in Print Centre if the user wants to prepare a production ZIP. Do not send a full Crystal Cluster or socket coupon when "pixel replica" is requested.
+- Maintain source persistence in existing JSON/Library/backup and across switching between seven builder tabs; custom profiles should remain identifiable. Do not create a new parallel or disconnected store for replica dimensions.
+
+### Mandatory browser and manufacturing evidence
+
+1. For a **custom saved gumdrop A–G profile**, modify A, B, C, D, E, F and G; visually inspect the 3D dummy; download STL and 3MF. Parse both and assert actual width, **full B total height**, flange C/D, curved cap E and two opposite relieved openings F/G, within explicit mesh tolerances. Assert physically positive volume rather than a negative-hole calibration bar.
+2. Switch to a **different saved custom profile**, and then a default seed/bullet; prove output changes correspondingly without profile leakage or hidden B+E height error. Never mutate measured dimensions when downloading.
+3. Test default gumdrop, minimum feasible nominal size, zero flange/zero wire relief where valid, excessive F/G that must be rejected with a useful reason, and unsupported/degenerate cap heights without freezing the UI.
+4. Switch across **ALL seven model families** and verify the same two correctly named tools appear and download the same profile-matched 1:1 dummy/fit coupon, without exporting the family geometry by mistake. Reload and restore the saved profile; verify the same exact replica dimensions and source version.
+5. Compare **actual Manifold prepared mesh, STL and 3MF** geometries and their dimensions, orientation, component count and verified validity; test file downloads with actual Playwright events. No mock STL, no source-string-only acceptance.
+
+**GitHub state:** The currently inspected `main` at `30d8cf34db6ca8d93dfc323aa06ab27b9d05061d` has `renderPixelProfileDiagram` as an **annotated 2D SVG**, and `makePixelSeatCoupon`, `makeSteppedPixelCoupon`, `makeCalibrationStrip` as **negative-hole test plates**; the current `pixelFitCoupon` adapter exports a clearance strip rather than a fully modelled pixel replica. The user's recollection of an earlier full-size generator should be treated as a requirement to restore, **not proof that the current implementation already satisfies it**.
+
+Implement and test this as part of the existing **WT-021 true seven-builder parity milestone in Issue #79**. This is **additive**, not a replacement for external mounting, exact-value Reset, pixel dragging, safe routing, seven-family prints or the original physical test coupons. Coordinate with #91's left search rather than creating duplicate search components; preserve #89 and merged #88. Owner controls all merges/deployments, physical proof remains #10.
+
 ## 0. Exact user intent: this is a WORKING APP, not a partial UI
 
 The owner expects to open **ANY of the seven model families**, use the **full shared hardware toolset established by Crystal Clusters**, add/edit pixels, real external mounting tabs AND independent mounting holes, and make a genuinely printable STL/3MF with a downloadable Cura profile. A rotary knob with a pixel and two tabs is **only one illustrative example**; it is not the centre of scope, nor does it count as parity if the other six families are incomplete.
