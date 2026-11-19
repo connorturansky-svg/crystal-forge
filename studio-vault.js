@@ -32,25 +32,27 @@ export async function unpackStudioVault(manifest,readAsset){
 export class StudioVault {
  constructor(client){this.client=client;this.sha=null;this.busy=false;}
  async remote(){const file=await this.client.request('/contents/'+STUDIO_MANIFEST);return file?{sha:file.sha,manifest:JSON.parse(decode(file.content))}:null;}
- async pull(){
+ async pull({acknowledge=true}={}){
   if(this.busy)throw Error('Studio sync is already running.');this.busy=true;
   try{const current=await this.remote();if(!current)throw Error('This private repository has no Sensory Model Studio backup yet.');
    const state=await unpackStudioVault(current.manifest,async hash=>{const file=await this.client.request('/contents/'+assetPath(hash));if(!file)throw Error('A studio asset is missing; the local workspace has not changed.');return JSON.parse(decode(file.content));});
-   this.sha=current.sha;return state;
+   if(acknowledge){this.sha=current.sha;return state;}
+   return {state,sha:current.sha};
   }finally{this.busy=false;}
  }
  async push(state){
   if(this.busy)throw Error('Studio sync is already running.');this.busy=true;
   try{const current=await this.remote();if((current?.sha??null)!==this.sha)throw Error('The private studio vault changed. Pull and reconcile both versions before uploading.');
    const {manifest,assets}=await packStudioVault(state);
+   let uploaded=0;
    for(const [hash,value]of assets){const path=assetPath(hash),existing=await this.client.request('/contents/'+path);
     if(existing){if(await assetHash(JSON.parse(decode(existing.content)))!==hash)throw Error('An immutable remote asset has different contents.');continue;}
-    try{await this.client.request('/contents/'+path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Add immutable studio asset',content:encode(canonical(value))})});}
+    try{await this.client.request('/contents/'+path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Add immutable studio asset',content:encode(canonical(value))})});uploaded++;}
     catch(error){const concurrent=await this.client.request('/contents/'+path);if(!concurrent||await assetHash(JSON.parse(decode(concurrent.content)))!==hash)throw error;}
    }
    const latest=await this.remote();if((latest?.sha??null)!==this.sha)throw Error('The studio manifest changed while assets uploaded. Previous backups remain complete. Pull before retrying.');
    const response=await this.client.request('/contents/'+STUDIO_MANIFEST,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Commit complete Sensory Model Studio backup',content:encode(JSON.stringify(manifest)),...(this.sha?{sha:this.sha}:{})})});
-   if(!response?.content?.sha)throw Error('GitHub did not confirm the manifest update.');this.sha=response.content.sha;return {sha:this.sha,assets:assets.size};
+   if(!response?.content?.sha)throw Error('GitHub did not confirm the manifest update.');this.sha=response.content.sha;return {sha:this.sha,assets:assets.size,uploaded};
   }finally{this.busy=false;}
  }
 }
