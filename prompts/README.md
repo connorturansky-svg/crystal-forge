@@ -6,6 +6,10 @@ This folder is the GitHub-backed source of truth for **future approved Codex dev
 
 **Do not treat a file's presence as permission to implement it.** The user's explicit go-ahead, an agreed scope, and a particular version of that file are required.
 
+## WT-019 — Next owner priority (19 November 2026)
+
+**New canonical next milestone:** [True Studio-Wide Model Parity and Complete Shared Tooling](./019-true-studio-model-parity.md), tracked in [Issue #79](https://github.com/connorturansky-svg/crystal-forge/issues/79), **planning brief saved / implementation not started**. The owner requires matching real shared Design, Build, direct 3D hardware (double-click pixel **and mount**, click-hold drag), visible and physically truthful routing, Library/Print, viewport and accessible controls across **all seven model families** and valid imported artwork. Pinned planning brief revision: `10cdb618b0a0a0f09affbd4cdcab3d2c45525045`. **Do not mistake the #72–#75/#78 feature-stack merges for deployments to main.** WT-018 draft #77 is still a merge prerequisite at the last check. Historical Issues #1, #6–#9 were closed as superseded/duplicate with links to #79, physical #10 and held assembly #51; nothing was physically certified.
+
 ## Current owner direction — 19 November 2026
 
 **WT-018 is underway.** Drafts #71–#75 recover workspace reliability and backed routing, integrate the import stack and add native double-click pixel placement. These drafts await owner review. Full seven-family parity and physical testing remain open.
@@ -40,6 +44,7 @@ The owner ranked **creative model catalogue expansion** and **shared pixel routi
 | 016 | [Safe private sync, conflict preview and recovery](./016-safe-cross-device-sync.md) | Merged into main ([#62](https://github.com/connorturansky-svg/crystal-forge/pull/62)); [Issue #59](https://github.com/connorturansky-svg/crystal-forge/issues/59) | **c855fe2f04ee69cbb8a2dfd90384bfacee3133c0** | See production and physical verification in #10 |
 | 017 | [Seven-family Build pixel fitting](./017-seven-family-pixel-build.md) | Merged into main ([#64](https://github.com/connorturansky-svg/crystal-forge/pull/64)); [Issue #63](https://github.com/connorturansky-svg/crystal-forge/issues/63) | **Immutable SHA pinned in Issue #63** | See production and physical verification in #10 |
 | 018 | [Repository consolidation and seven-builder parity](./018-repository-consolidation-and-parity.md) | Staged draft integration in progress; partial native placement parity | `32e8fc8c805ccc9503fbe6b9ef0009bc65e45fea` | Drafts #71 → #72 → #73 → #74 → #75 |
+| 019 | [True Studio-Wide Model Parity and Complete Shared Tooling](./019-true-studio-model-parity.md) | **NEW OWNER-REQUESTED BRIEF / NOT IMPLEMENTED** · [Issue #79](https://github.com/connorturansky-svg/crystal-forge/issues/79) · requires reconciled WT-018 merge base and full real seven-family interaction/manufacturing acceptance | **10cdb618b0a0a0f09affbd4cdcab3d2c45525045** | Future reviewable draft PR(s); no merge/deploy |
 | — | New implementation briefs will be added here after user review | — | — | — |
 
 Create the first entry when we save an approved brief. Past requirements and ongoing Codex sessions are **not** silently reissued or marked complete by this setup.
