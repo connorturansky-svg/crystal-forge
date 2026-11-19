@@ -1,5 +1,9 @@
 # Crystal Forge — Changelog
 
+## v0.16.0-dev.25 — Open pixel placement from the 3D model
+
+- Double-click a solid native Build surface to check and place the selected pixel profile.
+
 ## v0.16.0-dev.24 — Import STL and OBJ models into Studio
 
 - Confirm source units, scale and bed placement for local STL and triangulated OBJ models before adding them.

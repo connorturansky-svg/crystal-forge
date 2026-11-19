@@ -639,6 +639,44 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   }).filter(hit=>hit.distance<=14).sort((a,b)=>a.distance-b.distance)[0]?.marker;
  }
  const viewport=renderer.domElement;
+ function fittingSurface(model,event){
+  pixelRay(event);
+  const meshes=cache.get(model.id)?.group?.children.filter(mesh=>mesh.visible&&mesh.isMesh&&!mesh.userData.previewOnly)||[];
+  return partRay.intersectObjects(meshes,false)[0]?.point;
+ }
+ function placeFittingAt(model,point,duplicate=null){
+  const holes=pixelHoles(model);
+  if(holes.length>=16){pixelStatus(model,'Use up to 16 fittings per model.');return false;}
+  const fresh=newPixel(chosenProfile(model),Math.round(point.x*10)/10,Math.round(point.z*10)/10);
+  const hole=duplicate?{...duplicate,id:fresh.id,x:fresh.x,z:fresh.z}:fresh;
+  const issue=pixelIssue(model,hole,holes);
+  if(issue){pixelStatus(model,pixelPlacementAdvice(model,issue));return false;}
+  return savePixels(model,[...holes,{...hole,checked:true}],hole.id);
+ }
+ const fittingActions=document.createElement('dialog');
+ fittingActions.setAttribute('aria-label','Hardware at this point');
+ fittingActions.innerHTML='<p data-fitting-message></p><button type="button" data-add-point-pixel>Add pixel</button> <button type="button" data-cancel-point>Cancel</button>';
+ document.body.append(fittingActions);
+ fittingActions.querySelector('[data-cancel-point]').onclick=()=>fittingActions.close();
+ viewport.addEventListener('dblclick',event=>{
+   const model=active();
+   if(event.button!==0||!canEditPixels(model)||model.link||placementModel===model.id||!panel.querySelector('#smsPixelAdd'))return;
+   const marker=markerAt(model,event);
+   if(marker){consume(event);selectPixel(model,marker.userData.pixelId);return;}
+   const point=fittingSurface(model,event);
+   if(!point)return;
+   consume(event);
+   const add=fittingActions.querySelector('[data-add-point-pixel]');
+   const holes=pixelHoles(model), candidate=newPixel(chosenProfile(model),Math.round(point.x*10)/10,Math.round(point.z*10)/10);
+   const issue=holes.length>=16?'Use up to 16 fittings per model.':pixelIssue(model,candidate,holes);
+   fittingActions.querySelector('[data-fitting-message]').textContent=issue?pixelPlacementAdvice(model,issue):'Place the selected pixel profile here.';
+   add.disabled=!!issue;
+   add.onclick=()=>{
+    fittingActions.close();
+    if(active()?.id===model.id&&canEditPixels(model))placeFittingAt(model,point);
+   };
+   fittingActions.showModal();
+  },true);
  const consume=event=>{event.preventDefault();event.stopImmediatePropagation();};
  const canEditPixels=model=>mode==='model'&&stage==='build'&&model&&model.generator.typeId!=='crystals';
  viewport.addEventListener('pointerdown',event=>{
@@ -700,18 +738,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    editPixel(model,index,gesture.candidate);return;
   }
   if(!gesture.placing||gesture.marker)return;
-  pixelRay(event);
-  const group=cache.get(model.id)?.group;
-  const hit=partRay.intersectObjects(group?.children.filter(mesh=>mesh.isMesh&&!mesh.userData.previewOnly)||[],false)[0];
-  if(!hit){pixelStatus(model,pixelPlacementAdvice(model,'Click a solid model surface to place this fitting.'));return;}
-  const holes=pixelHoles(model);
-  if(holes.length>=16){pixelStatus(model,'Use up to 16 fittings per model.');return;}
-  const fresh=newPixel(chosenProfile(model),Math.round(hit.point.x*10)/10,Math.round(hit.point.z*10)/10);
-  const hole=pendingDuplicate?{...pendingDuplicate,id:fresh.id,x:fresh.x,z:fresh.z}:fresh;
-  const issue=pixelIssue(model,hole,holes);
-  if(issue){pixelStatus(model,pixelPlacementAdvice(model,issue));return;}
-  placementModel=null;pendingDuplicate=null;
-  savePixels(model,[...holes,{...hole,checked:true}],hole.id);
+  const point=fittingSurface(model,event);
+  if(!point){pixelStatus(model,pixelPlacementAdvice(model,'Click a solid model surface to place this fitting.'));return;}
+  if(placeFittingAt(model,point,pendingDuplicate)){placementModel=null;pendingDuplicate=null;}
  },true);
  viewport.addEventListener('keydown',event=>{
   const model=active();

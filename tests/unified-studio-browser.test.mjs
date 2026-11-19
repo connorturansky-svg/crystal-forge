@@ -305,9 +305,16 @@ try{
  assert.equal((await getHoles()).length,0);
  await page.locator('[data-view=top]').click();
  await page.waitForTimeout(380);
- await pixelPalette.getByRole('button',{name:'Place LED fitting in 3D'}).click();
  const surface=await page.locator('canvas').first().boundingBox();
- await page.mouse.click(surface.x+surface.width/2,surface.y+surface.height/2);
+ await page.mouse.dblclick(surface.x+surface.width/2,surface.y+surface.height/2);
+ const fittingActions=page.getByRole('dialog',{name:'Hardware at this point'});
+ await fittingActions.waitFor();
+ await shot('wt018-tile-hardware-context');
+ await page.keyboard.press('Escape');
+ await fittingActions.waitFor({state:'hidden'});
+ assert.equal((await getHoles()).length,0);
+ await page.mouse.dblclick(surface.x+surface.width/2,surface.y+surface.height/2);
+ await fittingActions.getByRole('button',{name:'Add pixel',exact:true}).click();
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles.length===1);
  const [placed]=await getHoles();
  assert.notEqual(placed.id,sameId);
