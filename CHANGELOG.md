@@ -1,5 +1,9 @@
 # Crystal Forge — Changelog
 
+## v0.16.0-dev.20 — Protect a newer workspace saved in another tab
+
+- Ask before proceeding when another tab has saved a newer workspace.
+
 ## v0.16.0-dev.19 — Prepared print dimensions
 
 - Show the prepared X, Y and Z dimensions in Print Centre and exported production packs.

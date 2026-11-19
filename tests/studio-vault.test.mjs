@@ -88,3 +88,10 @@ commitRecovery(storage,local,recovered.candidate,key);
 assert.equal(data.get(key),original);
 assert.equal(JSON.parse(data.get(WORKSPACE_KEY)).library.length,2);
 console.log('WT-016 non-destructive conflict copies, repeated recovery, selective restore and quota rollback passed.');
+
+const later=JSON.stringify({...local,project:{...local.project,title:'Saved in another tab'}});
+data.set(WORKSPACE_KEY,later);
+const staleKey=RECOVERY_PREFIX+'124-stale';
+assert.throws(()=>commitRecovery(storage,local,recovered.candidate,staleKey,original),/Another tab saved/);
+assert.equal(data.get(WORKSPACE_KEY),later);
+assert(!data.has(staleKey));

@@ -6,7 +6,7 @@ concurrency:
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, fix/production-print-handoff]
   push:
     branches: [main]
     paths:

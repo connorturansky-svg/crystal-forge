@@ -14,7 +14,7 @@ on:
       - 'package.json'
       - '.github/workflows/browser-tests.yml'
   pull_request:
-    branches: [main]
+    branches: [main, fix/production-print-handoff]
     paths:
       - '*.js'
       - 'index.html'

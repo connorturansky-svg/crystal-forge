@@ -126,16 +126,23 @@ export async function reconcileArchive(local,source,{mode='merge',selection='all
  return {candidate,importedModels,importedProjects};
 }
 
-export function commitRecovery(storage,local,candidate,recoveryKey){
+export function assertWorkspaceVersion(storage,expected){
+ if(storage.getItem(WORKSPACE_KEY)!==expected)
+  throw Error('Another tab saved this workspace. Download a backup of your current edits, then reload to review the newer saved workspace.');
+}
+export function commitRecovery(storage,local,candidate,recoveryKey,expected=storage.getItem(WORKSPACE_KEY)){
+ assertWorkspaceVersion(storage,expected);
  validateArchive(candidate);
  if(!recoveryKey.startsWith(RECOVERY_PREFIX)||storage.getItem(recoveryKey)!==null)throw Error('Recovery snapshot already exists.');
  const before=JSON.stringify(local),after=JSON.stringify(candidate);
  try{
   storage.setItem(recoveryKey,before);
   if(storage.getItem(recoveryKey)!==before)throw Error('Recovery snapshot could not be verified.');
+  assertWorkspaceVersion(storage,expected);
   storage.setItem(WORKSPACE_KEY,after);
  }catch(error){
   storage.removeItem(recoveryKey);
+  assertWorkspaceVersion(storage,expected);
   throw Error('Recovery could not be saved locally. Download your backup and free browser storage before retrying.',{cause:error});
  }
 }

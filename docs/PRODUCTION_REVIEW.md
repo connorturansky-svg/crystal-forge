@@ -19,9 +19,9 @@ The PR checks identify the exact head. Use `npm run test:static` for static, doc
 | --- | --- |
 | Design and Build | Existing Chromium coverage exercises model switching, resizable panels, hardware selection and a seven-family placement fixture. Manual orbit and independent camera checks on each family remain pending. |
 | Fittings and routing | WT-017 supplies representative native fabrication fixtures. Crystal placement, routing and cutaway have separate regressions. A passing example gives no guarantee of seating on every preset. |
-| Library and recovery | Chromium covers saved-project and template workflows and JSON recovery. Mock tests exercise conflicting sources and interrupted writes. Live private vault use across two computers remains pending. |
+| Library and recovery | Chromium covers saved-project and template workflows and JSON recovery. Mock tests exercise conflicting sources and interrupted writes. A stale local tab is blocked from overwriting the newer stored workspace. Live private vault use across two computers remains pending. |
 | Print handoff | Chromium downloads a 3MF and pack and compares exported coordinates with the manifest dimensions. Cura and physical checks are pending. |
-| Layout | Existing Chromium captures include desktop and 390 px. Full keyboard, tablet and both-theme visual acceptance remains pending. |
+| Layout | Chromium checks viewport overflow and global-action visibility in four widths and two themes. Detailed visual and keyboard acceptance remains pending. |
 
 ## Physical review checklist
 

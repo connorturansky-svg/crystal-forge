@@ -1,3 +1,4 @@
+import {WORKSPACE_KEY} from '../studio-documents.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -797,6 +798,34 @@ try{
  assert(await bottomTabs.evaluate(node=>node.scrollLeft>0));
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1));
  await shot('wt014-narrow');
+ for(const width of [1440,1280,768,390]){
+  await page.setViewportSize({width,height:900});
+  for(const capture of ['current','alternate']){
+   if(capture==='alternate')await page.locator('#themeBtn').click();
+   for(const [name,selector] of [
+    ['design','.sms-workspace-nav [data-tab=design]'],
+    ['build','.sms-workspace-nav [data-tab=build]'],
+    ['library','#smsLibrary'],
+    ['print','.sms-workspace-nav [data-tab=print]']
+   ]){
+    await page.locator(selector).click();
+    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),name+' at '+width+' must not overflow');
+    assert(await page.locator('#themeBtn').isVisible(),name+' keeps global actions visible');
+    if(capture==='alternate'&&(width===390||width===1440))await shot('rc-'+name+'-'+width);
+   }
+   if(capture==='alternate')await page.locator('#themeBtn').click();
+  }
+ }
+ const otherTab=await page.evaluate(key=>{
+  const before=localStorage.getItem(key),saved=JSON.parse(before);
+  saved.project.title='Newer saved workspace from another tab';
+  const newer=JSON.stringify(saved);localStorage.setItem(key,newer);
+  return {before,newer};
+ },WORKSPACE_KEY);
+ await nameProject('Unsaved edits in this tab');
+ await page.locator('#smsSaveState').filter({hasText:'Save failed'}).waitFor();
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),otherTab.newer);
+ await page.evaluate(({key,before})=>localStorage.setItem(key,before),{key:WORKSPACE_KEY,before:otherTab.before});
  assert.deepEqual(errors,[]);
  console.log('Unified Home, Design, Build, Library and Quick Print screenshots captured.');
 }catch(error){

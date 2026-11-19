@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## Local workspace guard
+
+Before writing, Studio compares the saved workspace with the most recent version it read or wrote. If another tab saved in the meantime, the in-memory work can still be downloaded as JSON. This is a stale-write check; browser localStorage does not provide atomic cross-tab compare-and-swap.
+
 ## Production review candidate
 
 Print Centre and production packs use the same bounding dimensions of the prepared mesh in its exported, Z-up frame. See [production review](PRODUCTION_REVIEW.md) for test scope, walkthrough and physical checks.

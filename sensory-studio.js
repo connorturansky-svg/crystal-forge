@@ -1,4 +1,4 @@
-import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive} from './studio-sync-plan.js';
+import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive,assertWorkspaceVersion} from './studio-sync-plan.js';
 import {readOrganisation,organisationName,ensureSnapshotIds,templateProject} from './studio-organisation.js';
 import {createLightInspector} from './studio-light-inspector.js';
 import {lightPassageExportBlock,lightPassageReportEntries} from './light-passage-inspection.js';
@@ -20,6 +20,13 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const $=id=>document.getElementById(id);
 export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstrap,adapter}){
  const state=bootstrap,project=state.project;
+ let savedWorkspace=localStorage.getItem(WORKSPACE_KEY);
+ function writeWorkspace(workspace){
+  assertWorkspaceVersion(localStorage,savedWorkspace);
+  const serialized=JSON.stringify(workspace);
+  localStorage.setItem(WORKSPACE_KEY,serialized);
+  savedWorkspace=serialized;
+ }
  delete project.snapshotId; // Snapshot identity belongs only to the saved Library copy.
  renderer.localClippingEnabled=true;
  const unified=new URLSearchParams(location.search).get('layout')!=='legacy';
@@ -258,11 +265,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  function save(){
   dirty=true;$('smsSaveState').textContent='Saving…';clearTimeout(saveTimer);
   saveTimer=setTimeout(()=>{
-   try{validateProject(project);localStorage.setItem(WORKSPACE_KEY,JSON.stringify(state));dirty=false;$('smsSaveState').textContent='Saved locally';}
+   try{validateProject(project);writeWorkspace(state);dirty=false;$('smsSaveState').textContent='Saved locally';}
    catch(error){$('smsSaveState').textContent='Save failed — download a backup';adapter.status('Your work is still in memory. '+error.message);}
   },120);
  }
- function saveImmediately(){clearTimeout(saveTimer);validateProject(project);localStorage.setItem(WORKSPACE_KEY,JSON.stringify(state));dirty=false;}
+ function saveImmediately(){clearTimeout(saveTimer);validateProject(project);writeWorkspace(state);dirty=false;}
  window.addEventListener('beforeunload',event=>{try{if(dirty)saveImmediately();}catch{event.preventDefault();event.returnValue='';}});
  function remember(){
   if(!currentId)return;const model=active();
@@ -1182,7 +1189,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const next=copy(state.organisation);change(next);
    const valid=readOrganisation(next);
    validateProject(project);
-   localStorage.setItem(WORKSPACE_KEY,JSON.stringify({...state,organisation:valid}));
+   writeWorkspace({...state,organisation:valid});
    state.organisation=valid;after();if(redraw)renderLibraryCards();
    $('smsOrganisationStatus').textContent='Saved locally.';
   }catch(error){$('smsOrganisationStatus').textContent=error.message;}
@@ -1329,7 +1336,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
      const next=templateProject(source);captureCrystal();
      const saved=copy(project);saved.snapshotId=newId();
      const savedProjects=[...state.savedProjects,saved];
-     localStorage.setItem(WORKSPACE_KEY,JSON.stringify({...state,savedProjects}));
+     writeWorkspace({...state,savedProjects});
      state.savedProjects=savedProjects;remember();replaceProject(next);
     }catch(error){$('smsOrganisationStatus').textContent=error.message;}
    });
@@ -1375,21 +1382,25 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     dialog.close();recoveryStatus('Backup reviewed. Local workspace kept. Merge the complete backup before uploading over an existing manifest.');return;
    }
    if(!confirm('Apply the selected recovery? A verified local snapshot will be saved first.'))return;
-   apply.disabled=cancel.disabled=true;status.textContent='Preparing recovery preview…';
+   const choice={mode:strategy.value,selection:selection.value};
+   apply.disabled=cancel.disabled=selection.disabled=strategy.disabled=true;
+   status.textContent='Preparing recovery preview…';
    try{
     const initial=JSON.stringify(state);
-    const {candidate,importedModels,importedProjects}=await reconcileArchive(state,remote,{mode:strategy.value,selection:selection.value});
+    const {candidate,importedModels,importedProjects}=await reconcileArchive(state,remote,choice);
     if(JSON.stringify(state)!==initial)throw Error('Local work changed during recovery. Review the backup again.');
+    assertWorkspaceVersion(localStorage,savedWorkspace);
     const key=RECOVERY_PREFIX+Date.now()+'-'+newId();
     if(JSON.stringify(candidate)!==initial){
-     commitRecovery(localStorage,state,candidate,key);
+     commitRecovery(localStorage,state,candidate,key,savedWorkspace);
+     savedWorkspace=JSON.stringify(candidate);
      clearTimeout(saveTimer);dirty=false;$('smsSaveState').textContent='Saved locally';
      for(const field of ['library','savedProjects','organisation','legacyTemplates'])state[field]=candidate[field];
     }
-    if(selection.value==='all')acknowledge();
+    if(choice.selection==='all')acknowledge();
     dialog.close();if(mode==='library'){renderLibraryCards();renderRecoveryList();}
     recoveryStatus('Recovery complete · '+importedModels+' Library records · '+importedProjects+' projects added.');
-   }catch(error){status.textContent=error.message;apply.disabled=cancel.disabled=false;}
+   }catch(error){status.textContent=error.message;apply.disabled=cancel.disabled=selection.disabled=strategy.disabled=false;}
   };
   document.body.append(dialog);dialog.showModal();
  }
