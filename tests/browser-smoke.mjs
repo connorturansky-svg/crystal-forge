@@ -58,6 +58,11 @@ try{
  await page.locator('#applyShapePresetBtn').click();
  const presetGlobal=await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.tipRound);
  assert.equal(presetGlobal,7,'PR6 global shaping preset changes actual crystal geometry');
+ const tipStyle=page.locator('[data-state="tipStyle"]');
+ await tipStyle.selectOption('Flat');
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.tipStyle==='Flat');
+ await tipStyle.selectOption('Rounded');
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.tipStyle==='Rounded');
  await page.locator('#shapePresetSelect').selectOption('Classic Quartz');
  await page.locator('#applyShapePresetBtn').click();
  await page.locator('[data-tool="translate"]').click();

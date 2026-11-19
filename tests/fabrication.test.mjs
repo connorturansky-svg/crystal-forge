@@ -184,6 +184,20 @@ assert.notDeepEqual(Array.from(meshA.getAttribute('position').array),
  Array.from(meshB.getAttribute('position').array),'Individual shape override changes mesh');
 meshA.dispose();meshB.dispose();
 safetyGeometryCheck();
+{
+ const crystal=generateFormation({...settings,count:1})[0];
+ const shapes=new Map(['Rounded','Blunt','Flat'].map(tipStyle=>{
+  const geometry=crystalGeometry(THREE,crystal,{...settings,tipStyle});
+  assert.equal(geometryEdges(geometry).open,0,tipStyle+' tip is closed');
+  const points=Array.from(geometry.getAttribute('position').array);
+  geometry.dispose();
+  return [tipStyle,points];
+ }));
+ assert.notDeepEqual(shapes.get('Rounded'),shapes.get('Blunt'));
+ assert.notDeepEqual(shapes.get('Rounded'),shapes.get('Flat'));
+ const flat=shapes.get('Flat'),top=Math.max(...flat.filter((_,i)=>i%3===1));
+ assert(flat.some((x,i)=>i%3===0&&Math.abs(x)>1&&Math.abs(flat[i+1]-top)<.001),'Flat tip ends in a measurable plane');
+}
 function testLeanAndSpacing(){
  const base={...settings,count:12,baseDome:0,spacing:100,leanAmount:90,angleRandomness:0};
  for(const mode of ['One direction','Criss-cross','Radial outward','Radial inward','Organic / natural']){

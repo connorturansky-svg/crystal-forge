@@ -1,7 +1,7 @@
 /* Physical manufacturing geometry signature. Visual guides do not invalidate exports. */
 export const relevantManufacturingKeys=[
  'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','familyWeights','bottomScale','topScale',
- 'cornerRadius','shoulderRound','tipFlat','tipRound','tipLength','roundSteps',
+ 'cornerRadius','shoulderRound','tipFlat','tipRound','tipStyle','tipLength','roundSteps',
  'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightPorts','lightPortDiameter','lightPortReach','lightingMode','pixelCount','pixelDiameter',
  'pixelFit','pixelRetentionLip','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireMode','wirePairSpacing','wireWidth','wireDepth','wireSlack','pixelStringSpacing','wireMinBendRadius','wireInputTailLength','wireOutputTailLength','cutSockets','hollowCrystals','targetedLightPaths','lightBoreDiameter','lightReach','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','printerX','printerY','printerZ','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','manualEdgeTabs','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
 ];

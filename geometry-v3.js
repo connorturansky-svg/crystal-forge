@@ -154,30 +154,37 @@ export function crystalGeometry(THREE,c,s){
  // flanks. The chosen radius is a REAL curvature radius in millimetres.
  // Unlike a tiny point fillet, its tangent starts BELOW the old sharp tip,
  // so there is no pointed nub and no abrupt, flat cut across the top.
- const slope=top/Math.max(1,tipH);
- const requested=Math.max(.3,Number(shape.tipRound??3));
- const maximal=Math.max(.3,tipH*slope*Math.sqrt(1+slope*slope)*.83);
- const capRadius=Math.min(requested,maximal);
- const tangentR=capRadius/Math.sqrt(1+slope*slope);
- const centreY=height-capRadius*Math.sqrt(1+slope*slope)/slope;
- const tangentY=centreY+capRadius*slope/Math.sqrt(1+slope*slope);
- // Remove the neck if a very small crystal would otherwise reverse order.
- const shoulderY=rings[rings.length-1][0][1];
- if(tangentY>shoulderY+.015){
-   add(tangentY,tangentR);
-   const startAngle=Math.atan2(tangentR,tangentY-centreY);
-   const capSteps=Math.max(9,Math.min(20,Math.round(Number(shape.roundSteps||3)*2+7)));
-   for(let k=1;k<capSteps;k++){
-     const phi=startAngle*(1-k/capSteps);
-     add(centreY+capRadius*Math.cos(phi),Math.max(.0005,capRadius*Math.sin(phi)));
-   }
+ let apexY;
+ if(shape.tipStyle==='Flat'){
+  const radius=top*.32;
+  apexY=height-tipH*.32;
+  add(apexY,radius);
  }else{
-   // Tiny crystals retain a compact rounded apex: do not add a sharp cone.
-   add(Math.max(shoulderY+.1,height-.6),Math.min(top*.4,capRadius*.65));
+  const slope=top/Math.max(1,tipH);
+  const requested=Math.max(.3,Number(shape.tipRound??3))*(shape.tipStyle==='Blunt'?2:1);
+  const maximal=Math.max(.3,tipH*slope*Math.sqrt(1+slope*slope)*.83);
+  const capRadius=Math.min(requested,maximal);
+  const tangentR=capRadius/Math.sqrt(1+slope*slope);
+  const centreY=height-capRadius*Math.sqrt(1+slope*slope)/slope;
+  const tangentY=centreY+capRadius*slope/Math.sqrt(1+slope*slope);
+  // Remove the neck if a very small crystal would otherwise reverse order.
+  const shoulderY=rings[rings.length-1][0][1];
+  if(tangentY>shoulderY+.015){
+    add(tangentY,tangentR);
+    const startAngle=Math.atan2(tangentR,tangentY-centreY);
+    const capSteps=Math.max(9,Math.min(20,Math.round(Number(shape.roundSteps||3)*2+7)));
+    for(let k=1;k<capSteps;k++){
+      const phi=startAngle*(1-k/capSteps);
+      add(centreY+capRadius*Math.cos(phi),Math.max(.0005,capRadius*Math.sin(phi)));
+    }
+  }else{
+    // Tiny crystals retain a compact rounded apex: do not add a sharp cone.
+    add(Math.max(shoulderY+.1,height-.6),Math.min(top*.4,capRadius*.65));
+  }
+  // Final pole: triangular fans close a curved cap without making a flat
+  // polygon at the very top. A tangent dome has zero radial width here.
+  apexY=centreY+capRadius;
  }
- // Final pole: triangular fans close a curved cap without making a flat
- // polygon at the very top. A tangent dome has zero radial width here.
- const apexY=centreY+capRadius;
  const n=rings[0].length;
  for(let r=0;r<rings.length-1;r++)for(let i=0;i<n;i++){const j=(i+1)%n;quad(rings[r][i],rings[r+1][i],rings[r+1][j],rings[r][j])}
  const base=rings[0],cap=rings[rings.length-1];
