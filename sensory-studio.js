@@ -20,6 +20,7 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const $=id=>document.getElementById(id);
 export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstrap,adapter}){
  const state=bootstrap,project=state.project;
+ delete project.snapshotId; // Snapshot identity belongs only to the saved Library copy.
  renderer.localClippingEnabled=true;
  const unified=new URLSearchParams(location.search).get('layout')!=='legacy';
  let printExpanded=false,quickPrintThumbnail=null;
@@ -1593,7 +1594,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  function replaceProject(saved){
   for(const worker of workers.values())worker.terminate();workers.clear();prepared.clear();
   for(const c of cache.values())if(c.group)disposeGroup(c.group);else adapter.release(c);cache.clear();
-  currentId=null;Object.assign(project,copy(saved));for(const job of project.printJobs){job.status='stale';job.requestId=null;job.preparedRevision=null;}
+  currentId=null;Object.assign(project,copy(saved));delete project.snapshotId;for(const job of project.printJobs){job.status='stale';job.requestId=null;job.preparedRevision=null;}
   $('smsProjectTitle').value=project.title;switchModel(project.activeTab||project.models[0]?.id);save();
  }
  async function importFile(event){
