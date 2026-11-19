@@ -2,10 +2,10 @@
 
 **Status:** Owner-requested, implementation-authorised scope for Codex. This brief **clarifies and supersedes the incomplete software parity/finish-up portions of WT-020**, but retains its safety, validation, migration, publishing and owner-approval requirements. It is **not** another brainstorming or planning milestone.
 
-**Repository:** \`connorturansky-svg/crystal-forge\`  
-**Prompt source:** \`planning/prompts/prompts/021-complete-seven-builder-manufacturing-parity.md\`, using the pinned commit supplied in the launch message.  
+**Repository:** `connorturansky-svg/crystal-forge`  
+**Prompt source:** `prompts/021-complete-seven-builder-manufacturing-parity.md` (on branch `planning/prompts`), using the pinned commit supplied in the launch message.  
 **Authoritative software tracker:** [Issue #79](https://github.com/connorturansky-svg/crystal-forge/issues/79). **Do not create another parity issue.**  
-**Reference:** [WT-020 full final release brief](./020-final-software-parity-release.md), pinned at \`f9c248fc6933da3d0451f5168e4eab830b5af6fe\`; [WT-019 approved brief](./019-true-studio-model-parity.md) pinned at \`10cdb618b0a0a0f09affbd4cdcab3d2c45525045\`.
+**Reference:** [WT-020 full final release brief](./020-final-software-parity-release.md), pinned at `f9c248fc6933da3d0451f5168e4eab830b5af6fe`; [WT-019 approved brief](./019-true-studio-model-parity.md) pinned at `10cdb618b0a0a0f09affbd4cdcab3d2c45525045`.
 
 ## 0. Exact user intent: this is a WORKING APP, not a partial UI
 
@@ -22,13 +22,13 @@ Full parity means **equal shared tool availability and behaviour for every appli
 ## 1. Reconcile latest GitHub before coding; do not reimplement past stacks
 
 At briefing audit on **19 November 2026**:
-- Verified latest \`main\`: \`8f5b0a6f2d7e395c38d5afd85359117745fedee3\` (owner-merged #86, native 2–8 mm **through-holes**). #84 merged to main; #85 was merged to an intermediate feature branch; its tested functionality is contained in later descendants. Do not confuse “PR merged” with “commits included on main” or re-cherry-pick older #82/#83/#85.
-- [PR #87](https://github.com/connorturansky-svg/crystal-forge/pull/87) is a **still-unmerged draft to main** on \`wt020/native-camera-framing\`, head \`c703dbb1a9c6316af855547e931fb4da96762466\` at audit. A static release-metadata mismatch was corrected on this head and the static check then passed; browser/fabrication exact-head checks were still pending. Recheck status and do not overwrite that branch.
-- Existing native mounting code \`studio-mount-builder.js\` + \`studio-catalogue.js\` + \`sensory-studio.js\` makes **negative vertical through-bores**; the owner is explicitly asking for **positive outward tabs/ears with fixing holes**. They are different manufacturing operations.
-- Current \`docs/MODEL_BUILDER_PARITY.md\` marks most capabilities **L (limited)**; no seven-family production and Studio evidence is complete. A code path existing is not a proved capability.
+- Verified latest `main`: `8f5b0a6f2d7e395c38d5afd85359117745fedee3` (owner-merged #86, native 2–8 mm **through-holes**). #84 merged to main; #85 was merged to an intermediate feature branch; its tested functionality is contained in later descendants. Do not confuse “PR merged” with “commits included on main” or re-cherry-pick older #82/#83/#85.
+- [PR #87](https://github.com/connorturansky-svg/crystal-forge/pull/87) is a **still-unmerged draft to main** on `wt020/native-camera-framing`, head `c703dbb1a9c6316af855547e931fb4da96762466` at audit. A static release-metadata mismatch was corrected on this head and the static check then passed; browser/fabrication exact-head checks were still pending. Recheck status and do not overwrite that branch.
+- Existing native mounting code `studio-mount-builder.js` + `studio-catalogue.js` + `sensory-studio.js` makes **negative vertical through-bores**; the owner is explicitly asking for **positive outward tabs/ears with fixing holes**. They are different manufacturing operations.
+- Current `docs/MODEL_BUILDER_PARITY.md` marks most capabilities **L (limited)**; no seven-family production and Studio evidence is complete. A code path existing is not a proved capability.
 - Pixel/route/face behaviour is still geometry-dependent. The user's prior **openwork Gear P1–P4** reproduction and its truthful impossible-route state remain mandatory regressions.
 
-**Before touching code:** fetch current \`main\`, all active PRs/diffs/checks, Issue #79, \`AGENTS.md\`, \`docs/AI_HANDOVER.md\`, \`docs/ROADMAP.md\`, \`docs/MODEL_BUILDER_PARITY.md\`, \`docs/FEATURE_SPECIFICATIONS.md\`, \`docs/DESIGN_DECISIONS.md\`, \`docs/TESTING.md\`, \`docs/ARCHITECTURE.md\`, complete WT-019/020 briefs and relevant source. Identify main-reachable code, verified PR ancestry, exact-head CI and active collaborator work.
+**Before touching code:** fetch current `main`, all active PRs/diffs/checks, Issue #79, `AGENTS.md`, `docs/AI_HANDOVER.md`, `docs/ROADMAP.md`, `docs/MODEL_BUILDER_PARITY.md`, `docs/FEATURE_SPECIFICATIONS.md`, `docs/DESIGN_DECISIONS.md`, `docs/TESTING.md`, `docs/ARCHITECTURE.md`, complete WT-019/020 briefs and relevant source. Identify main-reachable code, verified PR ancestry, exact-head CI and active collaborator work.
 
 **Work ownership:** Codex owns this application implementation and its tests and code PRs; ChatGPT may maintain the prompt/index/#79 coordination. **Use your own worktree/branch; never edit another session's branch, force-push or overwrite an unreviewed PR.** If #87 has since merged, start on the new main. If it is still pending, either prepare a clean branch based on its tested integration head or build independently against main and document the exact merge order/rebase; avoid simultaneous edits to #87.
 
@@ -143,11 +143,11 @@ The owner has **Ultimaker 3 Extended and Ultimaker 2+**, often 2.85 mm filament,
 
 ## 7. REQUIRE production acceptance tests before claiming completion
 
-Do not mark any family \`P\` without an evidence-linked **real browser and manufacturing** test. Keep the canonical matrix in \`docs/MODEL_BUILDER_PARITY.md\`, with **one row per family** and columns:
+Do not mark any family `P` without an evidence-linked **real browser and manufacturing** test. Keep the canonical matrix in `docs/MODEL_BUILDER_PARITY.md`, with **one row per family** and columns:
 
-\`Design/create/edit | Pixel manual + auto / correct face | External tabs (positive geometry) | Mount holes | Wiring guides/cuts | 3D camera/selection | Library/reload/backup | Print STL+3MF+Cura | Release SHA/evidence\`.
+`Design/create/edit | Pixel manual + auto / correct face | External tabs (positive geometry) | Mount holes | Wiring guides/cuts | 3D camera/selection | Library/reload/backup | Print STL+3MF+Cura | Release SHA/evidence`.
 
-Statuses: \`P\` tested/proved; \`L\` limited; \`M\` missing; \`B\` truly physically blocked *for a specific incompatible design*, with a tested functional variant in same family; \`N/A\` inherently irrelevant, justified. **No blanket P via a text assertion, marker visibility or one Tile test.**
+Statuses: `P` tested/proved; `L` limited; `M` missing; `B` truly physically blocked *for a specific incompatible design*, with a tested functional variant in same family; `N/A` inherently irrelevant, justified. **No blanket P via a text assertion, marker visibility or one Tile test.**
 
 ### Mandatory automated journey per each of all seven
 1. Create family model, choose a real preset and change a meaningful parametric value; inspect every camera.
@@ -165,17 +165,17 @@ Plus focused top-priority fixtures:
 - **Crystal** complete regression including optical/base/vault/root, richest editing, physical pixel seats/mount and dual-exports.
 - **Imported SVG and valid/invalid STL/OBJ**, true geometry/preview-only and round-trip.
 
-Run \`npm run test:static\`, \`npm test\`, \`npm run test:browser\`, \`npm run test:benchmark\`, release metadata verification and any current source-specific tests. Use Playwright pointer/dblclick and file-download assertions; Manifold volume/connectedness/cutter tests; STL/3MF parsers and generated .curaprofile content checks. Capture screenshots, artifact samples and **exact GitHub Actions run links for latest head**. Fix failures rather than removing checks or labelling all blocked.
+Run `npm run test:static`, `npm test`, `npm run test:browser`, `npm run test:benchmark`, release metadata verification and any current source-specific tests. Use Playwright pointer/dblclick and file-download assertions; Manifold volume/connectedness/cutter tests; STL/3MF parsers and generated .curaprofile content checks. Capture screenshots, artifact samples and **exact GitHub Actions run links for latest head**. Fix failures rather than removing checks or labelling all blocked.
 
-No browser test mocking \`window.__sensoryStudio\` counts as a real click path when a user-facing action exists. Avoid tests only on generators' \`recipe()\` without executing exported product pipeline.
+No browser test mocking `window.__sensoryStudio` counts as a real click path when a user-facing action exists. Avoid tests only on generators' `recipe()` without executing exported product pipeline.
 
 ## 8. Integration, review, published-site gate
 
-- **Recheck #87's actual state on arrival.** If open, preserve its camera and openwork Gear fixes, latest tested HEAD and owner merge choice; coordinate this work without editing #87 directly. If already merged, use new main. \`main\` must ultimately contain the approved software changes, not just feature-branch merges.
+- **Recheck #87's actual state on arrival.** If open, preserve its camera and openwork Gear fixes, latest tested HEAD and owner merge choice; coordinate this work without editing #87 directly. If already merged, use new main. `main` must ultimately contain the approved software changes, not just feature-branch merges.
 - Implement in **one or a small number of substantial reviewable draft PRs**. Prefer a shared attachment/geometry foundation PR and a final full parity + exports integration PR if necessary, **not** dozens of tiny drafts. Link all PRs to **existing Issue #79** and pinned scope.
 - Version, CHANGELOG, in-app What’s New, README, Help, architecture/test docs, roadmap, handover and real parity matrix must correspond to actual code. Distinguish current from historical milestones.
 - The owner keeps approval over **all merges and deploys**; do not merge, publish or bypass required checks automatically. Provide exact safe merge order and any needed retarget/rebase after an approved merge.
-- **After owner approves/merges**, verify the actual \`main\` commit includes all features and a GitHub Pages deploy for that exact SHA succeeded, then run clean-browser end-to-end at \`https://connorturansky-svg.github.io/crystal-forge/\` against the published site, including knob→pixel→external tabs→STL+Cura and a separate Gear and Crystal check. Avoid deleting the user's local saved data. A green CI workflow on a draft is **not proof that the website is published or that the owner's hardware works**.
+- **After owner approves/merges**, verify the actual `main` commit includes all features and a GitHub Pages deploy for that exact SHA succeeded, then run clean-browser end-to-end at `https://connorturansky-svg.github.io/crystal-forge/` against the published site, including knob→pixel→external tabs→STL+Cura and a separate Gear and Crystal check. Avoid deleting the user's local saved data. A green CI workflow on a draft is **not proof that the website is published or that the owner's hardware works**.
 - No new software issues. Update #79 checklists/comments with evidence and close #79 only if every accepted P0/P1 software capability is verified **on the released site**, or the owner explicitly approves precise documented exceptions. Physical tests #10 remain open; modular assembly #51 stays on hold; Jordan #36/#37 and the Copilot pilot #33/#42 remain independently owned.
 
 ## 9. End condition and Codex handover
@@ -186,7 +186,7 @@ No browser test mocking \`window.__sensoryStudio\` counts as a real click path w
 
 Repeat the same class of flow with all six other families. Unsupported individual geometry must have an actual workable in-family alternative. Maintain equal shared controls and preserve family-specific tools.
 
-**Final report must include:** latest \`main\` SHA; all draft PR URLs/heads, exact tested CI, 7×feature acceptance matrix and artifacts, detailed knob fixture and real manufactured dimensions, openwork Gear evidence, standalone Cura output verification, print/export downloads, post-merge Pages SHA if approved, known physical/functional restrictions and explicit owner merge order.
+**Final report must include:** latest `main` SHA; all draft PR URLs/heads, exact tested CI, 7×feature acceptance matrix and artifacts, detailed knob fixture and real manufactured dimensions, openwork Gear evidence, standalone Cura output verification, print/export downloads, post-merge Pages SHA if approved, known physical/functional restrictions and explicit owner merge order.
 
 **Never call this “fully functional”, “parity complete”, “production ready” or “published” based on controls, draft PRs or partial tests.** If something remains broken, fix it in the milestone or state precisely what remains and why. Preserve the owner's ability to choose when to merge.
 
