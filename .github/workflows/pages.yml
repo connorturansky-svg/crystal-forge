@@ -33,12 +33,18 @@ jobs:
       - name: Stage release assets
         run: |
           mkdir -p "_site/releases/$GITHUB_SHA"
-          git archive HEAD | tar -x -C _site
-          cp _site/*.js _site/*.css "_site/releases/$GITHUB_SHA/"
+          # Ship the COMPLETE revision. Root-only *.js copies omitted nested
+          # ES modules (including svg-import/index.js), silently breaking startup.
+          git archive HEAD | tar -x -C "_site/releases/$GITHUB_SHA"
           sed "s|<head>|<head><base href=\"./releases/$GITHUB_SHA/\"><meta name=\"studio-release\" content=\"$GITHUB_SHA\">|" index.html > _site/index.html
+          node tests/pages-release-assets.test.mjs "_site/releases/$GITHUB_SHA"
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify the live published module tree
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: node tests/pages-public-smoke.mjs "$GITHUB_SHA"
