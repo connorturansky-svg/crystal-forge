@@ -320,6 +320,24 @@ try{
  assert.notEqual(placed.id,sameId);
  assert.equal(placed.checked,true);
  await shot('wt006-pixel-placement');
+ await pixelPalette.getByRole('button',{name:'Place LED fitting in 3D'}).click();
+ const nativeCanvas=viewer.locator('canvas');
+ await pixelPalette.getByRole('button',{name:'Done placing pixels'}).waitFor();
+ const y=surface.y+surface.height/2;
+ for(const fraction of [.58,.42,.64,.36,.70,.30]){
+  const x=surface.x+surface.width*fraction;
+  await page.mouse.move(x,y);
+  if(await nativeCanvas.getAttribute('data-native-placement')==='valid'){
+   await page.mouse.click(x,y);
+   break;
+  }
+ }
+ assert.equal((await getHoles()).length,2,'Manual placement adds another fitting and remains active.');
+ await pixelPalette.getByRole('button',{name:'Done placing pixels'}).waitFor();
+ await shot('wt019-native-placement');
+ await page.keyboard.press('Escape');
+ await pixelPalette.getByRole('button',{name:'Done placing pixels'}).waitFor({state:'hidden'});
+ assert.equal((await getHoles()).length,2,'Exiting placement keeps accepted fittings.');
  const nameProject=async name=>{
   await page.locator('#smsProjectTitle').fill(name);
   await page.locator('#smsProjectTitle').press('Tab');
