@@ -3,10 +3,11 @@
 import assert from 'node:assert/strict';
 const sha=process.argv[2];
 assert(/^[a-f0-9]{40}$/i.test(sha||''),'Provide the exact deployed SHA');
-const site=new URL(process.env.PAGE_URL||'https://connorturansky-svg.github.io/crystal-forge/');
+const supplied=process.env.PAGE_URL||'https://connorturansky-svg.github.io/crystal-forge/';
+const site=new URL(supplied.endsWith('/')?supplied:supplied+'/');
 const resources=[
  'index.html',
- 'studio-v3.js','sensory-studio.js','sensory-studio.css',
+ 'studio-v3.js','studio-startup-recovery.js','sensory-studio.js','sensory-studio.css',
  'svg-import/index.js','svg-import/document.js','svg-import/path.js','svg-import/contours.js'
 ];
 async function verify(){
