@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## WT-016 — Backup review and recovery
+
+The Library reviews private vault and local JSON backups without changing the workspace. Recovery can add complete archives or selected project/model revisions. A verified local snapshot precedes the workspace write. Conflicting records use deterministic copy identities and their linked sources and organisation references transfer together. A complete reviewed recovery acknowledges the remote manifest SHA. Upload remains manual and commits immutable assets before the guarded manifest. Credentials stay on the existing in-memory client. Real private GitHub setup and second-computer testing remain manual.
+
 ## WT-015 — Library organisation
 
 Library favourites apply to saved Library records and saved project snapshots. Collections use stable IDs and unique case-insensitive names. Saved snapshots get an additive identity separate from the project ID. Project templates keep valid project-scoped model IDs and reset print readiness. Models pin an explicit Library revision. Local JSON and the private vault retain the optional versioned organisation record. Missing template sources are displayed for recovery.

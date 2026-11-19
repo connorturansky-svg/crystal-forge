@@ -1,4 +1,5 @@
-import {readOrganisation,organisationName,ensureSnapshotIds,templateProject,mergeOrganisation} from './studio-organisation.js';
+import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive} from './studio-sync-plan.js';
+import {readOrganisation,organisationName,ensureSnapshotIds,templateProject} from './studio-organisation.js';
 import {createLightInspector} from './studio-light-inspector.js';
 import {lightPassageExportBlock,lightPassageReportEntries} from './light-passage-inspection.js';
 import {renderPixelProfileDiagram} from './pixel-profile-diagram.js';
@@ -19,6 +20,7 @@ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const $=id=>document.getElementById(id);
 export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstrap,adapter}){
  const state=bootstrap,project=state.project;
+ delete project.snapshotId; // Snapshot identity belongs only to the saved Library copy.
  renderer.localClippingEnabled=true;
  const unified=new URLSearchParams(location.search).get('layout')!=='legacy';
  let printExpanded=false,quickPrintThumbnail=null;
@@ -1081,7 +1083,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  }
  function showLibrary(){captureCrystal();mode='library';overlay.hidden=false;document.body.classList.add('sms-sidebar-mode');panel.hidden=false;
   panel.innerHTML='<h2>Library</h2><p class="sms-descriptor">Your models, starting points and complete projects.</p><label>Search<input id="smsSearch" value="'+esc(search)+'"></label><label>Model type<select id="smsFilter"><option value="all">All types</option>'+registry.list().map(g=>'<option value="'+g.typeId+'" '+(filter===g.typeId?'selected':'')+'>'+esc(g.displayName)+'</option>').join('')+'</select></label><button id="smsBrowseModels">Browse model starting points</button><button id="smsDemo">Open Wonder Trunks examples</button><button id="smsSaveProject">Save project to Library</button><button id="smsBackup">Download complete backup</button><label>Restore backup or old Crystal JSON<input id="smsImport" type="file" accept=".json"></label><p class="sms-descriptor">Connect your private GitHub repository in a Crystal model’s saved-project controls. Your token stays in memory.</p>';
-  const syncActions=document.createElement('div');syncActions.className='sms-actions';syncActions.innerHTML='<button id="smsCloudPush">Upload studio backup</button><button id="smsCloudPull">Pull and reconcile studio backup</button><p id="smsSyncState" role="status">Local — no sync requested</p>';panel.append(syncActions);
+  const syncActions=document.createElement('details');syncActions.innerHTML='<summary>Backups &amp; Recovery</summary>';syncActions.open=true;syncActions.insertAdjacentHTML('beforeend','<div class="sms-actions"><button id="smsCloudPush">Upload studio backup</button><button id="smsCloudPull">Check private backup</button></div><p id="smsSyncState" role="status">Saved locally</p><p>On another computer, connect the same private repository through a Crystal model’s saved-project controls. Check the backup, review the differences and choose what to recover. For offline recovery, download a complete backup and restore its JSON file.</p><div id="smsRecoveryList"></div>');panel.append(syncActions);
+  syncActions.append($('smsBackup'),$('smsImport').parentElement);
+  renderRecoveryList();
+  recoveryStatus(adapter.vault()?.connected?'Private repository connected. Check the backup before recovering or uploading.':'Local only. Connect a private repository to use cross-device backup.');
   $('smsCloudPush').onclick=()=>syncStudio(false);$('smsCloudPull').onclick=()=>syncStudio(true);
   $('smsSearch').oninput=e=>{search=e.target.value;renderLibraryCards();};$('smsFilter').onchange=e=>{filter=e.target.value;renderLibraryCards();};
   $('smsBrowseModels').onclick=openPicker;$('smsDemo').onclick=demo;$('smsSaveProject').onclick=()=>{saveProjectSnapshot();save();renderLibraryCards();};$('smsBackup').onclick=backup;$('smsImport').onchange=importFile;
@@ -1265,34 +1270,83 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   }
   if(!grid.childElementCount)grid.textContent='No matching templates. Save a model or project as a reusable template to get started.';
  }
+ function recoveryStatus(message){
+  const node=$('smsSyncState');if(node)node.textContent=message;else adapter.status(message);
+ }
+ function renderRecoveryList(){
+  const root=$('smsRecoveryList');if(!root)return;root.replaceChildren();
+  const keys=Object.keys(localStorage).filter(key=>key.startsWith(RECOVERY_PREFIX)).sort().reverse().slice(0,3);
+  for(const key of keys){
+   const button=document.createElement('button');
+   button.type='button';button.textContent='Review local snapshot · '+new Date(Number(key.slice(RECOVERY_PREFIX.length).split('-')[0])).toLocaleString();
+   button.onclick=()=>{try{previewRecovery(JSON.parse(localStorage.getItem(key)),'Local recovery snapshot');}catch(error){recoveryStatus(error.message);}};
+   root.append(button);
+  }
+ }
+ function previewRecovery(remote,source,acknowledge=()=>{}){
+  const summary=archiveSummary(state,remote);
+  const dialog=document.createElement('dialog');dialog.setAttribute('aria-label','Review backup');
+  dialog.innerHTML='<h2>Review backup</h2><p data-source></p><div data-changes></div><label>Recover <select data-selection></select></label><label>Recovery strategy <select data-strategy><option value="keep">Keep local workspace</option><option value="copies">Import separate copies</option><option value="merge">Merge new items and copy conflicts</option></select></label><p>Recovered projects appear in the Library. The active project stays open.</p><p role="status"></p><div class="sms-actions"><button type="button" data-apply>Apply choice</button><button type="button" data-cancel>Cancel</button></div>';
+  dialog.querySelector('[data-source]').textContent=source+' · '+summary.revisions+' Library revisions · '+summary.collections+' collections · '+summary.templates+' templates';
+  const changes=dialog.querySelector('[data-changes]');
+  for(const [group,record] of [['Library models',summary.models],['Projects',summary.projects]]){
+   const title=document.createElement('h3');title.textContent=group;changes.append(title);
+   for(const [label,names] of [['Local only',record.localOnly],['Backup only',record.remoteOnly],['Same ID, different content',record.conflicts]]){
+    const row=document.createElement('p');row.textContent=label+' ('+names.length+')'+(names.length?' · '+names.slice(0,12).join(', '):'');changes.append(row);
+   }
+   const identical=document.createElement('p');identical.textContent='Identical · '+record.identical;changes.append(identical);
+  }
+  const selection=dialog.querySelector('[data-selection]'),strategy=dialog.querySelector('[data-strategy]');
+  selection.append(new Option('Complete backup','all'),...archiveChoices(remote).map(item=>new Option(item.label,item.key)));
+  const status=dialog.querySelector('[role=status]'),apply=dialog.querySelector('[data-apply]'),cancel=dialog.querySelector('[data-cancel]');
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  dialog.addEventListener('cancel',event=>{if(apply.disabled)event.preventDefault();});
+  cancel.onclick=()=>dialog.close();
+  apply.onclick=async()=>{
+   if(strategy.value==='keep'){
+    dialog.close();recoveryStatus('Backup reviewed. Local workspace kept. Merge the complete backup before uploading over an existing manifest.');return;
+   }
+   if(!confirm('Apply the selected recovery? A verified local snapshot will be saved first.'))return;
+   apply.disabled=cancel.disabled=true;status.textContent='Preparing recovery preview…';
+   try{
+    const initial=JSON.stringify(state);
+    const {candidate,importedModels,importedProjects}=await reconcileArchive(state,remote,{mode:strategy.value,selection:selection.value});
+    if(JSON.stringify(state)!==initial)throw Error('Local work changed during recovery. Review the backup again.');
+    const key=RECOVERY_PREFIX+Date.now()+'-'+newId();
+    if(JSON.stringify(candidate)!==initial){
+     commitRecovery(localStorage,state,candidate,key);
+     clearTimeout(saveTimer);dirty=false;$('smsSaveState').textContent='Saved locally';
+     for(const field of ['library','savedProjects','organisation','legacyTemplates'])state[field]=candidate[field];
+    }
+    if(selection.value==='all')acknowledge();
+    dialog.close();if(mode==='library'){renderLibraryCards();renderRecoveryList();}
+    recoveryStatus('Recovery complete · '+importedModels+' Library records · '+importedProjects+' projects added.');
+   }catch(error){status.textContent=error.message;apply.disabled=cancel.disabled=false;}
+  };
+  document.body.append(dialog);dialog.showModal();
+ }
  async function syncStudio(pull){
-  const label=$('smsSyncState');
+  const buttons=[$('smsCloudPush'),$('smsCloudPull')];buttons.forEach(button=>{if(button)button.disabled=true;});
   try{
-   const client=adapter.vault();if(!client?.connected)throw Error('Connect a PRIVATE repository first using the saved-project controls in a Crystal model.');
+   const client=adapter.vault();
+   if(!client?.connected)throw Error('Local only. Connect a private repository in a Crystal model’s saved-project controls.');
    if(client!==vaultClient){vaultClient=client;studioVault=new StudioVault(client);}
-   captureCrystal();saveImmediately();if(label)label.textContent=pull?'Checking and downloading…':'Uploading changed assets…';
+   const connection=studioVault;
    if(pull){
-    const remote=await studioVault.pull();localStorage.setItem('sensory-model-studio-before-cloud-'+Date.now(),JSON.stringify(state));
-    const sourceIds=new Map(),organisationIds=new Map();
-    ensureSnapshotIds(remote.savedProjects);
-    for(const record of remote.library){const local=state.library.find(r=>r.id===record.id);
-     if(local&&JSON.stringify(local)!==JSON.stringify(record)){const old=record.id;record.id=newId();sourceIds.set(old,record.id);organisationIds.set('model:'+old,'model:'+record.id);for(const version of record.versions){version.model.id=record.id;version.model.name+=' (cloud copy)';}state.library.push(record);}
-     else if(!local)state.library.push(record);
-    }
-    const all=[...state.savedProjects,project];
-    for(const candidate of [remote.project,...remote.savedProjects]){
-     for(const model of candidate.models)if(model.link&&sourceIds.has(model.link.sourceId))model.link.sourceId=sourceIds.get(model.link.sourceId);
-     if(all.some(p=>JSON.stringify(p)===JSON.stringify(candidate)))continue;
-     if(all.some(p=>p.id===candidate.id)){candidate.id=newId();candidate.title+=' (cloud copy)';}
-     const oldSnapshot=candidate.snapshotId;
-     if(!oldSnapshot||state.savedProjects.some(saved=>saved.snapshotId===oldSnapshot))candidate.snapshotId=newId();
-     if(oldSnapshot)organisationIds.set('project:'+oldSnapshot,'project:'+candidate.snapshotId);
-     state.savedProjects.push(candidate);all.push(candidate);
-    }
-    state.organisation=mergeOrganisation(state.organisation,remote.organisation,organisationIds);
-    saveImmediately();renderLibraryCards();if(label)label.textContent='Synced — local and cloud versions preserved. Open the cloud project copy from Saved projects.';
-   }else{await studioVault.push(state);if(label)label.textContent='Synced — complete private backup saved.';}
-  }catch(error){if(label)label.textContent='Sync paused / conflict: '+error.message;adapter.status(error.message);}
+    recoveryStatus('Checking and verifying the private backup…');
+    const {state:remote,sha}=await connection.pull({acknowledge:false});
+    if(mode!=='library'){recoveryStatus('Private backup verified. Return to the Library and check it again to review.');return;}
+    previewRecovery(remote,'Private GitHub backup · manifest v1 · '+sha.slice(0,12),()=>{connection.sha=sha;});
+    recoveryStatus('Backup verified. Review the differences before applying.');
+   }else{
+    if(!confirm('Upload this workspace to the connected private backup repository?'))return;
+    captureCrystal();validateArchive(state);saveImmediately();
+    recoveryStatus('Uploading immutable assets, then committing the manifest…');
+    const result=await connection.push(state);
+    recoveryStatus('Backup saved · '+result.uploaded+' new assets · manifest '+result.sha.slice(0,12));
+   }
+  }catch(error){recoveryStatus(error.message);}
+  finally{buttons.forEach(button=>{if(button)button.disabled=false;});}
  }
  function enqueue(id){return project.printJobs.find(job=>job.modelId===id)||queueModel(project,id);}
  function send(id){captureCrystal();enqueue(id);save();showPrint();}
@@ -1540,29 +1594,29 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  function replaceProject(saved){
   for(const worker of workers.values())worker.terminate();workers.clear();prepared.clear();
   for(const c of cache.values())if(c.group)disposeGroup(c.group);else adapter.release(c);cache.clear();
-  currentId=null;Object.assign(project,copy(saved));for(const job of project.printJobs){job.status='stale';job.requestId=null;job.preparedRevision=null;}
+  currentId=null;Object.assign(project,copy(saved));delete project.snapshotId;for(const job of project.printJobs){job.status='stale';job.requestId=null;job.preparedRevision=null;}
   $('smsProjectTitle').value=project.title;switchModel(project.activeTab||project.models[0]?.id);save();
  }
- async function importFile(e){
-  const file=e.target.files[0];if(!file)return;
-  try{const data=JSON.parse(await file.text());
-   if(data.schemaVersion===1&&data.project){
-    validateProject(data.project);
-    const organisation=mergeOrganisation(state.organisation,data.organisation);
-    const savedProjects=ensureSnapshotIds([...(data.savedProjects||[])].map(validateProject));
-    if(!confirm('Restore this workspace backup? Your current workspace will be kept in a local recovery copy.'))return;
-    saveImmediately();localStorage.setItem('sensory-model-studio-before-import-'+Date.now(),JSON.stringify(state));
-    saveProjectSnapshot();
-    state.library.push(...(data.library||[]).filter(r=>!state.library.some(ours=>ours.id===r.id)));
-    state.savedProjects.push(...savedProjects.filter(saved=>!state.savedProjects.some(ours=>ours.snapshotId===saved.snapshotId)));
-    state.organisation=organisation;
-    if(!state.legacyTemplates?.length)state.legacyTemplates=data.legacyTemplates||[];
-    replaceProject(data.project);
+ async function importFile(event){
+  const file=event.target.files[0];if(!file)return;event.target.value='';
+  try{
+   if(file.size>32*1024*1024)throw Error('Choose a JSON backup smaller than 32 MB.');
+   const data=JSON.parse(await file.text());
+   if(data?.schemaVersion===1&&data.project){
+    previewRecovery({...data,savedProjects:data.savedProjects||[],library:data.library||[]},'JSON workspace backup');
+    return;
    }
-   else if(data.schemaVersion===1&&data.generator){addModel(project,data);switchModel(data.id);}
-   else if(data.settings&&Array.isArray(data.crystals)){const model=createModel({name:data.settings.title||file.name,typeId:'crystals',parameters:data.settings,editableState:{crystals:data.crystals,selectedId:null}});addModel(project,model);switchModel(model.id);}
-   else throw Error('This is not a supported studio backup or Crystal project.');
-  }catch(error){adapter.status('Import failed. '+error.message);}
+   let model;
+   if(data?.schemaVersion===1&&data.generator)model=data;
+   else if(data?.settings&&Array.isArray(data.crystals))model=createModel({
+    name:data.settings.title||file.name,typeId:'crystals',parameters:data.settings,editableState:{crystals:data.crystals,selectedId:null}
+   });
+   else throw Error('Choose a supported Studio backup, model JSON or legacy Crystal project.');
+   const recoveryProject=copy(project);
+   recoveryProject.id=model.id;recoveryProject.title=model.name;
+   recoveryProject.models=[model];recoveryProject.tabs=[model.id];recoveryProject.activeTab=model.id;recoveryProject.printJobs=[];
+   previewRecovery({schemaVersion:1,project:recoveryProject,savedProjects:[],library:[]},'Editable model JSON');
+  }catch(error){recoveryStatus('Could not read backup. '+error.message);}
  }
  function demo(){
   const entries=[['tactile-tiles','Grass tile',{pattern:'grass'}],['characters','Goat silhouette',{character:'Goat'}],['tactile-tiles','Wool tile',{pattern:'wool'}],['waves','Thawmor river',{}],['tactile-tiles','River ripple tile',{pattern:'river'}],['light-pods','River light pod',{}],['crystals','McDigger crystal mine',null],['tactile-tiles','Mineral tile',{pattern:'mineral'}],['light-pods','Faceted pebble',{facets:12}],['gears','Weather cog',{}],['control-caps','Weather button',{}],['tactile-tiles','Raindrop tile',{pattern:'rain',dualMaterial:true}]];

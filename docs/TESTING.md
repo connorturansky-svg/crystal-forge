@@ -1,5 +1,9 @@
 # Crystal Forge — verification strategy and commands
 
+## WT-016 backup recovery
+
+The mocked vault tests cover guarded writes, immutable asset integrity and interruption. Recovery tests cover linked conflict remapping, favourites and templates, repeated import, selective revisions and quota rollback. Chromium reviews local JSON, cancels and applies recovery while keeping the active project open.
+
 ## WT-015 Library organisation
 
 Static tests check organisation validation, project template identity, legacy manifest compatibility and the mocked private-vault round-trip. Chromium exercises Library filtering and template actions with real browser controls.

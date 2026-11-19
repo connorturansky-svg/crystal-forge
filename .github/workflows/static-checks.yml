@@ -6,7 +6,7 @@ concurrency:
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/WT-015-library-organisation]
   push:
     branches: [main]
     paths:

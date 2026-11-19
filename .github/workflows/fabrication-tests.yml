@@ -14,7 +14,7 @@ on:
       - 'package.json'
       - '.github/workflows/fabrication-tests.yml'
   pull_request:
-    branches: [main]
+    branches: [main, feat/WT-015-library-organisation]
     paths:
       - '*.js'
       - 'index.html'

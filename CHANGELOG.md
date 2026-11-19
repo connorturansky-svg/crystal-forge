@@ -1,5 +1,10 @@
 # Crystal Forge — Changelog
 
+## v0.16.0-dev.17 — Safe backup review and recovery
+
+- Review private backups and JSON archives before changing your workspace.
+- Recover complete backups or selected projects and model revisions with a verified local snapshot.
+
 ## v0.16.0-dev.16 — Library collections, favourites and reusable templates
 
 - Organise saved models and projects with collections and favourites.
