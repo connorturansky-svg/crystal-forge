@@ -1,3 +1,7 @@
+## Studio SVG artwork
+
+Studio uses the SVG engine from Jordan’s draft #37 at `0dbd1c80ce255dbcefde73f5ef99d1517bc3a0f0`. Open New model → Import SVG, choose a local file, set width and depth, and review the normalized preview. Studio stores the source metadata and contours, and uses standard Manifold preparation and export. Unsupported artwork, external content and disconnected pieces are rejected by the source engine.
+
 ## Extended native routing
 
 Waves certify their solid rectangular underside. Eligible Caps, Characters and non-illuminated Pods can use an explicitly enabled solid fitting slab. Cavities, mounting cuts, added bases, part offsets and dual material remain guarded. Check physical cable seating under #10.

@@ -826,6 +826,31 @@ try{
  await page.locator('#smsSaveState').filter({hasText:'Save failed'}).waitFor();
  assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),otherTab.newer);
  await page.evaluate(({key,before})=>localStorage.setItem(key,before),{key:WORKSPACE_KEY,before:otherTab.before});
+ await page.setViewportSize({width:1440,height:1000});
+ await page.locator('#smsNew').click();
+ await page.getByRole('button',{name:'Import SVG',exact:true}).click();
+ const importer=page.getByRole('dialog',{name:'Import SVG artwork'});
+ const beforeImport=await page.evaluate(()=>window.__sensoryStudio.project.models.length);
+ await importer.locator('input[type=file]').setInputFiles({
+  name:'bad.svg',mimeType:'image/svg+xml',buffer:Buffer.from('<svg><path')
+ });
+ await importer.getByRole('status').filter({hasNotText:'Reading local artwork'}).waitFor();
+ assert(await importer.getByRole('button',{name:'Create artwork model'}).isDisabled());
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.project.models.length),beforeImport);
+ await importer.locator('input[type=file]').setInputFiles('tests/fixtures/svg-import/clockwork.svg');
+ await importer.getByRole('img',{name:'Filled artwork preview'}).waitFor();
+ await importer.getByLabel('Width (mm)').fill('72');
+ await importer.getByLabel('Extrusion depth (mm)').fill('6');
+ await shot('studio-svg-import');
+ await importer.getByRole('button',{name:'Create artwork model'}).click();
+ await importer.waitFor({state:'hidden'});
+ const svgModel=await page.evaluate(()=>window.__sensoryStudio.currentModel);
+ assert.equal(svgModel.generator.typeId,'svg-artwork');
+ assert.equal(svgModel.parameters.artwork.dimensions.widthMm,72);
+ assert.equal(svgModel.parameters.artwork.loops.filter(loop=>loop.kind==='hole').length,5);
+ await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
+ await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
+ assert.equal(await page.evaluate(id=>window.__sensoryStudio.project.models.find(model=>model.id===id)?.parameters.artwork.dimensions.depthMm,svgModel.id),6);
  assert.deepEqual(errors,[]);
  console.log('Unified Home, Design, Build, Library and Quick Print screenshots captured.');
 }catch(error){

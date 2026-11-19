@@ -1,5 +1,9 @@
 # Crystal Forge — Changelog
 
+## v0.16.0-dev.23 — Import SVG artwork into Studio
+
+- Preview local SVG artwork, set the width and extrusion depth in millimetres, and save it as a Studio model.
+
 ## v0.16.0-dev.22 — Serial cable routing on additional verified models
 
 - Route cables on solid Waves and eligible single-material models with explicit fitting backing.

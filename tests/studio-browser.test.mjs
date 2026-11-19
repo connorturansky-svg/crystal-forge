@@ -71,7 +71,7 @@ try{
   await fs.mkdir('qa',{recursive:true});
   await page.screenshot({path:`qa/unified-family-${type}.png`});
  }
- assert.equal(await page.evaluate(()=>window.__sensoryStudio.registry.list().length),7);
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.registry.list().filter(generator=>generator.category!=='Imports').length),7);
  await page.locator('#model-tab-'+first+' .close-tab').click();assert(await page.evaluate(id=>window.__sensoryStudio.project.models.some(m=>m.id===id),first));
  await page.locator('#smsLibrary').click();await page.locator('#smsProjectModels .sms-tile').filter({hasText:'Tactile Texture Tiles'}).first().getByRole('button',{name:'Open',exact:true}).click();
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.id),first);

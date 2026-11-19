@@ -1,5 +1,5 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js';
-import {generators,applyBuildModules} from './studio-catalogue.js';
+import {studioGenerators,applyBuildModules} from './studio-catalogue.js';
 import {prepareRecipe} from './studio-geometry.js';
 import {loadManifold,setThreeInstance,prepareFabrication} from './fabrication-v1.js';
 import {crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,crystalOrientation} from './geometry-v3.js';
@@ -32,7 +32,7 @@ self.onmessage=async({data})=>{
     prepared={report:{...result.report,engine:'Manifold',coordinateFrame:'Y-up'},bodies:[{role:'primary',volume:Math.abs(volume),mesh}]};result.geometry.dispose();
    }finally{for(const mesh of meshes){mesh.geometry.dispose();mesh.material.dispose();}}
   }else{
-   const generator=generators.find(g=>g.typeId===ticket.model.generator.typeId);if(!generator)throw Error('Generator is unavailable.');
+   const generator=studioGenerators.find(g=>g.typeId===ticket.model.generator.typeId);if(!generator)throw Error('Generator is unavailable.');
    const recipe=applyBuildModules(generator.recipe(ticket.model.parameters),ticket.model.build,generator.capabilities);
    prepared=prepareRecipe(THREE,wasm,recipe,{onProgress:progress});
   }

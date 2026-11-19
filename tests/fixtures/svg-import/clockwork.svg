@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 110 110">
+  <path fill="#95642b" fill-rule="evenodd"
+    d="M 43 5 H 67 L 70 17 L 82 22 L 94 18 L 92 31 L 97 43 L 105 45
+       V 65 L 97 67 L 92 79 L 94 92 L 82 88 L 70 93 L 67 105
+       H 43 L 40 93 L 28 88 L 16 92 L 18 79 L 13 67 L 5 65
+       V 45 L 13 43 L 18 31 L 16 18 L 28 22 L 40 17 Z
+       M 55 42 L 68 55 L 55 68 L 42 55 Z
+       M 50 22 H 60 V 34 H 50 Z
+       M 76 50 H 88 V 60 H 76 Z
+       M 50 76 H 60 V 88 H 50 Z
+       M 22 50 H 34 V 60 H 22 Z"/>
+</svg>
