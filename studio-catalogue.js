@@ -1,3 +1,4 @@
+import {buildSvgExtrusionRecipe} from './svg-import/index.js';
 import {planNativePixelString} from './studio-native-routing.js';
 import {layeredCharacter} from './studio-character-relief.js';
 import {createPodShell} from './wt002-pod-shell.js';
@@ -449,8 +450,11 @@ export const characterGenerator=define('characters','Characters & Silhouettes','
 });
 export const tileGenerator={...tactileTileGenerator,parameterSchema:tactileTileGenerator.parameterSchema.map(s=>({...s,label:s.label||s.key.replace(/[A-Z]/g,c=>' '+c.toLowerCase()),step:s.key==='seed'?1:s.key==='randomness'?.05:.5})),
  recipe(input){const r=generateTile(input);return {serialSupport:{outline:r.bodies[0].mesh.boreOutline,thickness:r.parameters.thickness},pixelBoreSupport:{outline:r.bodies[0].mesh.boreOutline,minThickness:r.parameters.thickness},positive:[{kind:'mesh',mesh:r.bodies[0].mesh}],partitioned:r.parameters.dualMaterial,secondary:r.bodies.length===2?[{kind:'mesh',mesh:r.bodies[1].mesh}]:[],negative:[],dualMaterial:r.parameters.dualMaterial,bounds:this.estimateBounds(input),warnings:['Tactile feel, cleanability and edge comfort require a printed sample.']};}};
+export const svgArtworkGenerator=define('svg-artwork','Imported SVG artwork','Imports',[],[],
+ p=>buildSvgExtrusionRecipe(p.artwork),{supportsDualMaterial:false});
 export const generators=[tileGenerator,gearGenerator,waveGenerator,capGenerator,characterGenerator,pebbleGenerator];
-export function makeCatalogue(crystalAdapter){const registry=createGeneratorRegistry();for(const g of [crystalAdapter,...generators].filter(Boolean))registry.register(g);return registry;}
+export const studioGenerators=[...generators,svgArtworkGenerator];
+export function makeCatalogue(crystalAdapter){const registry=createGeneratorRegistry();for(const g of [crystalAdapter,...studioGenerators].filter(Boolean))registry.register(g);return registry;}
 export function applyBuildModules(recipe,build={},capabilities={}, {preview=false}={}){
  const r={...recipe,positive:[...recipe.positive],negative:[...(recipe.negative||[])],secondary:[...(recipe.secondary||[])],warnings:[...(recipe.warnings||[])]};
  // The same recipe reaches both preview and the fabrication worker.

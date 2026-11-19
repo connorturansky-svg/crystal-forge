@@ -14,7 +14,7 @@ on:
       - 'package.json'
       - '.github/workflows/browser-tests.yml'
   pull_request:
-    branches: [main, feat/verified-tile-gear-routing]
+    branches: [main, feat/verified-tile-gear-routing, feat/backed-family-cable-routing]
     paths:
       - '*.js'
       - 'index.html'

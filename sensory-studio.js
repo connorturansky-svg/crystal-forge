@@ -1,3 +1,4 @@
+import {parseSvgArtwork,createSvgImport,MAX_SVG_BYTES} from './svg-import/index.js';
 import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive} from './studio-sync-plan.js';
 import {readOrganisation,organisationName,ensureSnapshotIds,templateProject} from './studio-organisation.js';
 import {createLightInspector} from './studio-light-inspector.js';
@@ -221,8 +222,57 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    grid.append(back);
    for(const preset of visualPresets(generator))appendCard(generator,preset);
   }else{
-   for(const family of registry.list())appendCard(family,null);
+   for(const family of registry.list())if(family.typeId!=='svg-artwork')appendCard(family,null);
+   const artwork=document.createElement('button');artwork.type='button';artwork.textContent='Import SVG';
+   artwork.onclick=()=>{picker.close();openSvgImport();};grid.append(artwork);
   }
+ }
+ function openSvgImport(){
+  const dialog=document.createElement('dialog');dialog.setAttribute('aria-label','Import SVG artwork');
+  dialog.innerHTML='<h2>Import SVG artwork</h2><label>Local SVG file <input type="file" accept=".svg,image/svg+xml"></label><figure data-artwork-preview></figure><label>Width (mm) <input type="number" min=".5" max="500" step="any" value="60" data-width></label><label>Extrusion depth (mm) <input type="number" min=".5" max="500" step="any" value="5" data-depth></label><p role="status" aria-live="polite"></p><div class="sms-actions"><button type="button" data-import disabled>Create artwork model</button><button type="button" data-cancel>Cancel</button></div>';
+  const fileInput=dialog.querySelector('[type=file]'),width=dialog.querySelector('[data-width]'),depth=dialog.querySelector('[data-depth]');
+  const status=dialog.querySelector('[role=status]'),preview=dialog.querySelector('figure'),commit=dialog.querySelector('[data-import]');
+  let artwork=null,record=null,version=0;
+  const inspect=()=>{
+   record=null;commit.disabled=true;
+   if(!artwork)return;
+   try{
+    record=createSvgImport(artwork,{widthMm:width.valueAsNumber,depthMm:depth.valueAsNumber});
+    const size=record.dimensions;
+    status.textContent=[size.widthMm,size.heightMm,size.depthMm].map(n=>n.toFixed(2)).join(' × ')+' mm. '+artwork.warnings.join(' ');
+    commit.disabled=false;
+   }catch(error){status.textContent=error.message;}
+  };
+  fileInput.onchange=async()=>{
+   const request=++version,file=fileInput.files[0];
+   artwork=null;record=null;commit.disabled=true;preview.replaceChildren();status.textContent='';
+   if(!file)return;
+   try{
+    if(file.size>MAX_SVG_BYTES)throw Error('SVG is larger than 256 KiB. Simplify the artwork and try again.');
+    status.textContent='Reading local artwork…';
+    const parsed=await parseSvgArtwork(await file.text(),{name:file.name});
+    if(request!==version||!dialog.open)return;
+    artwork=parsed;
+    const d=artwork.source.dimensions;
+    if(Number.isFinite(d?.widthMm)&&d.widthMm>=.5&&d.widthMm<=500)width.value=d.widthMm;
+    const {minX,minY,width:w,height:h}=artwork.bounds;
+    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),path=document.createElementNS(ns,'path');
+    svg.setAttribute('viewBox',[minX,minY,w,h].join(' '));svg.setAttribute('width','240');svg.setAttribute('height','160');
+    svg.setAttribute('role','img');svg.setAttribute('aria-label','Filled artwork preview');
+    path.setAttribute('fill','currentColor');path.setAttribute('fill-rule','evenodd');
+    path.setAttribute('d',artwork.loops.map(loop=>'M '+loop.points.map(point=>point.join(' ')).join(' L ')+' Z').join(' '));
+    svg.append(path);preview.append(svg);inspect();
+   }catch(error){if(request===version&&dialog.open)status.textContent=error.message;}
+  };
+  width.oninput=depth.oninput=inspect;
+  commit.onclick=()=>{
+   if(!record)return;
+   const name=record.source.name.replace(/\.svg$/i,'')||'Imported artwork';
+   try{add('svg-artwork',{artwork:record},name);dialog.close();}catch(error){status.textContent=error.message;}
+  };
+  dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
+  dialog.addEventListener('close',()=>{version++;dialog.remove();},{once:true});
+  document.body.append(dialog);dialog.showModal();
  }
  const snapshot=adapter.capture();
  if(!project.models.length)addModel(project,createModel({name:snapshot.settings.title||'Crystal Mine',typeId:'crystals',parameters:snapshot.settings,editableState:{crystals:snapshot.crystals,selectedId:snapshot.selectedId}}));
