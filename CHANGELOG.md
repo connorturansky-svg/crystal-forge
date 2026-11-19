@@ -1,5 +1,9 @@
 # Crystal Forge — Changelog
 
+## v0.16.0-dev.22 — Serial cable routing on additional verified models
+
+- Route cables on solid Waves and eligible single-material models with explicit fitting backing.
+
 ## v0.16.0-dev.21 — Protect workspace saves across tabs
 
 - Warn when another tab has saved a newer workspace.

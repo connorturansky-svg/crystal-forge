@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## Routing on verified stock
+
+Waves certify their solid rectangular underside. Eligible Caps, Characters and non-illuminated Pods can use an explicitly enabled solid fitting slab. Cavities, mounting cuts, added bases, part offsets and dual material remain guarded. Check physical cable seating under #10.
+
 ## Workspace stale-write protection
 
 WT-018 recovers the save and recovery guards from PR #66. The comparison uses local storage and is not atomic across tabs. Export in-memory work as JSON if the newer saved workspace blocks a write.

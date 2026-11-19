@@ -186,7 +186,7 @@ export const waveGenerator=define('waves','Waves & Organic Forms','Organic',[
  const w = p.width / 2, d = p.depth / 2;
  const pixelBoreSupport = {outline:[[-w,-d],[w,-d],[w,d],[-w,d]],minThickness:p.thickness};
  const material=p.flowStyle==='Parallel'?{secondary:[box([p.width,.8,p.depth],[0,.4,0])]}:{secondary:[],materialSplitHeight:.8,materialSplitRole:'top'};
- return {positive:[{kind:'mesh',mesh}],...material,pixelBoreSupport,negative:[],bounds:{width:p.width,depth:p.depth,height:p.thickness+p.amplitude},warnings:['Review the wave slopes in Cura; the flat underside is the intended bed face.']};
+ return {positive:[{kind:'mesh',mesh}],...material,pixelBoreSupport,serialSupport:{outline:pixelBoreSupport.outline,thickness:p.thickness},negative:[],bounds:{width:p.width,depth:p.depth,height:p.thickness+p.amplitude},warnings:['Review the wave slopes in Cura; the flat underside is the intended bed face.']};
 });
 function raisedControlSymbol(symbol,width,surface,offset=0){
  const h=2.4,y=surface, size=width*.34;
@@ -491,7 +491,10 @@ export function applyBuildModules(recipe,build={},capabilities={}, {preview=fals
   if(!Number.isFinite(thickness)||thickness<3||thickness>10)
    throw Error('Choose 3–10 mm fitting backing thickness.');
   const b=r.bounds,spread=12;
-  r.positive.push(box([b.width+spread*2,thickness,b.depth+spread*2]));
+  const width=b.width+spread*2,depth=b.depth+spread*2;
+  r.positive.push(box([width,thickness,depth]));
+  // Only certify the new continuous underside slab. The planner still checks cutters.
+  r.serialSupport={outline:[[-width/2,-depth/2],[width/2,-depth/2],[width/2,depth/2],[-width/2,depth/2]],thickness,explicitBacking:true};
   r.bounds={...b,width:b.width+spread*2,depth:b.depth+spread*2,height:Math.max(b.height,thickness)};
   r.warnings.push('Expanded fitting backing was explicitly enabled. Inspect underside openings, material joins and support requirements in Cura and on a printed sample.');
  }
