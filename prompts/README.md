@@ -6,6 +6,17 @@ This folder is the GitHub-backed source of truth for **future approved Codex dev
 
 **Do not treat a file's presence as permission to implement it.** The user's explicit go-ahead, an agreed scope, and a particular version of that file are required.
 
+## Active issue policy — 19 November 2026
+
+To prevent a growing list of overlapping tickets, use **one durable issue per unresolved workstream**:
+- [#79 — WT-019 shared Studio/model parity](https://github.com/connorturansky-svg/crystal-forge/issues/79): all Design/Build bugs and related user observations, including the user-reported openwork Gear double-click, wrong-face fitting and invisible wiring P0 (detailed duplicate [#81](https://github.com/connorturansky-svg/crystal-forge/issues/81) is closed).
+- [#10 — physical Cura/LED/cable/optical/production acceptance](https://github.com/connorturansky-svg/crystal-forge/issues/10): must stay open until real evidence; never convert software CI to physical proof.
+- [#51 — held modular fabrication/assembly](https://github.com/connorturansky-svg/crystal-forge/issues/51): ON HOLD.
+- [#36 — Jordan's external SVG contribution](https://github.com/connorturansky-svg/crystal-forge/issues/36): preserve separate author/review ownership.
+- [#33 — owner GitHub settings and Copilot decisions](https://github.com/connorturansky-svg/crystal-forge/issues/33): protected-main, contributor rights, pilot PR #42 and optional WT-004 dispatch; former #38/#39 were closed only as duplicates, with their remaining decisions carried here.
+
+**Before creating a new Issue**, search these tracks and add a concise reproduction, expected result, source evidence, scope and acceptance to the existing issue as a checklist/comment whenever it belongs there. New issue only for genuinely independent owner-authorised work, a distinct external contribution or a necessary security response. Do not close requirements merely to meet a numerical ticket target. Keep implementation draft PRs reviewable and correctly stacked; leave owner merges and deployments untouched. Codex must read the **latest #79 body** alongside immutable [WT-019 pinned brief](./019-true-studio-model-parity.md).
+
 ## WT-019 — Next owner priority (19 November 2026)
 
 **New canonical next milestone:** [True Studio-Wide Model Parity and Complete Shared Tooling](./019-true-studio-model-parity.md), tracked in [Issue #79](https://github.com/connorturansky-svg/crystal-forge/issues/79), **planning brief saved / implementation not started**. The owner requires matching real shared Design, Build, direct 3D hardware (double-click pixel **and mount**, click-hold drag), visible and physically truthful routing, Library/Print, viewport and accessible controls across **all seven model families** and valid imported artwork. Pinned planning brief revision: `10cdb618b0a0a0f09affbd4cdcab3d2c45525045`. **Do not mistake the #72–#75/#78 feature-stack merges for deployments to main.** WT-018 draft #77 is still a merge prerequisite at the last check. Historical Issues #1, #6–#9 were closed as superseded/duplicate with links to #79, physical #10 and held assembly #51; nothing was physically certified.
