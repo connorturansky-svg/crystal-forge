@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test:static": "node tests/static.test.mjs && node tests/cura-profiles.test.mjs && node tests/all-phases.test.mjs && node tests/wire-tab-edit.test.mjs && node tests/pixel-string.test.mjs && node tests/pr9-creative.test.mjs && node tests/github-vault.test.mjs && node tests/fit-calibration.test.mjs && node tests/production-hardening.test.mjs && node tests/bed-split.test.mjs && node tests/pixel-spacing-snap.test.mjs && node tests/studio-documents.test.mjs && node tests/tactile-tile.test.mjs && node tests/exact-controls.test.mjs && node tests/pixel-motion.test.mjs && node tests/studio-vault.test.mjs && node tests/studio-pixel-fit.test.mjs",
-    "test": "node --test tests/svg-import-engine.mjs && node tests/fabrication.test.mjs && node tests/tactile-manifold.test.mjs && node tests/studio-catalogue.test.mjs && node tests/studio-pixel-fit-manifold.test.mjs",
+    "test": "node tests/mesh-import-manifold.mjs && node --test tests/svg-import-engine.mjs && node tests/fabrication.test.mjs && node tests/tactile-manifold.test.mjs && node tests/studio-catalogue.test.mjs && node tests/studio-pixel-fit-manifold.test.mjs",
     "test:browser": "node tests/unified-studio-browser.test.mjs && node tests/browser-smoke.mjs && node tests/studio-browser.test.mjs",
     "test:benchmark": "node tests/benchmark.mjs"
   },

@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## STL and OBJ in Studio
+
+New model → Import 3D model accepts binary and standard facet-per-line ASCII STL and triangulated OBJ. The dialog previews the bed footprint and confirms units, source up-axis, scale, rotation and position. Records retain normalized indexed source geometry and transforms. Open, degenerate, inconsistently wound and disconnected meshes can be viewed as preview-only, while production requires closed topology and final Manifold validation. A verified explicit backing supports fittings on suitable closed imported solids. Limits are 4 MiB, 30,000 triangles and 500 mm extents. OBJ material files are ignored; no external resources are fetched.
+
 ## SVG artwork in Studio
 
 Studio uses the SVG engine from Jordan’s draft #37 at `0dbd1c80ce255dbcefde73f5ef99d1517bc3a0f0`. Open New model → Import SVG, choose a local file, set width and depth, and review the normalized preview. Studio stores the source metadata and contours, and uses standard Manifold preparation and export. Unsupported artwork, external content and disconnected pieces are rejected by the source engine.

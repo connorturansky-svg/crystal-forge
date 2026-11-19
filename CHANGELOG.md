@@ -1,5 +1,9 @@
 # Crystal Forge — Changelog
 
+## v0.16.0-dev.24 — Import STL and OBJ models into Studio
+
+- Confirm source units, scale and bed placement for local STL and triangulated OBJ models before adding them.
+
 ## v0.16.0-dev.23 — Import SVG artwork into Studio
 
 - Preview local SVG artwork, set the width and extrusion depth in millimetres, and save it as a Studio model.

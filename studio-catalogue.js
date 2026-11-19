@@ -1,3 +1,4 @@
+import {importedMeshRecipe} from './studio-mesh-import.js';
 import {buildSvgExtrusionRecipe} from './svg-import/index.js';
 import {planNativePixelString} from './studio-native-routing.js';
 import {layeredCharacter} from './studio-character-relief.js';
@@ -453,10 +454,22 @@ export const tileGenerator={...tactileTileGenerator,parameterSchema:tactileTileG
 export const svgArtworkGenerator=define('svg-artwork','Imported SVG artwork','Imports',[],[],
  p=>buildSvgExtrusionRecipe(p.artwork),{supportsDualMaterial:false});
 export const generators=[tileGenerator,gearGenerator,waveGenerator,capGenerator,characterGenerator,pebbleGenerator];
-export const studioGenerators=[...generators,svgArtworkGenerator];
+export const importedMeshGenerator=define('imported-mesh','Imported 3D model','Imports',[
+ choice('unit','Source units','mm',['mm','cm','in']),
+ choice('up','Source up-axis','Z',['Y','Z']),
+ numeric('scale','Import scale',1,.001,100,'',.001),
+ numeric('rotation','Bed rotation',0,-180,180,'degrees',1),
+ numeric('x','Bed X position',0,-250,250),
+ numeric('z','Bed Y position',0,-250,250)
+],[],p=>importedMeshRecipe(p.source,{...p,previewOnly:true}),{supportsDualMaterial:false});
+export const studioGenerators=[...generators,svgArtworkGenerator,importedMeshGenerator];
 export function makeCatalogue(crystalAdapter){const registry=createGeneratorRegistry();for(const g of [crystalAdapter,...studioGenerators].filter(Boolean))registry.register(g);return registry;}
 export function applyBuildModules(recipe,build={},capabilities={}, {preview=false}={}){
  const r={...recipe,positive:[...recipe.positive],negative:[...(recipe.negative||[])],secondary:[...(recipe.secondary||[])],warnings:[...(recipe.warnings||[])]};
+ if(r.meshIssue){
+  if(!preview)throw Error('Preview only: '+r.meshIssue);
+  return r;
+ }
  // The same recipe reaches both preview and the fabrication worker.
  if(!r.partitioned){
   for(const role of ['positive','secondary']){

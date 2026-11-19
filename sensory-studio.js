@@ -1,4 +1,5 @@
 import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive,assertWorkspaceVersion} from './studio-sync-plan.js';
+import {readMeshFile,importedMeshRecipe,MAX_MESH_BYTES} from './studio-mesh-import.js';
 import {parseSvgArtwork,createSvgImport,MAX_SVG_BYTES} from './svg-import/index.js';
 import {readOrganisation,organisationName,ensureSnapshotIds,templateProject} from './studio-organisation.js';
 import {createLightInspector} from './studio-light-inspector.js';
@@ -229,9 +230,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    grid.append(back);
    for(const preset of visualPresets(generator))appendCard(generator,preset);
   }else{
-   for(const family of registry.list())if(family.typeId!=='svg-artwork')appendCard(family,null);
+   for(const family of registry.list())if(!['svg-artwork','imported-mesh'].includes(family.typeId))appendCard(family,null);
    const artwork=document.createElement('button');artwork.type='button';artwork.textContent='Import SVG';
    artwork.onclick=()=>{picker.close();openSvgImport();};grid.append(artwork);
+   const mesh=document.createElement('button');mesh.type='button';mesh.textContent='Import 3D model';
+   mesh.onclick=()=>{picker.close();openMeshImport();};grid.append(mesh);
   }
  }
  function openSvgImport(){
@@ -279,6 +282,57 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   };
   dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
   dialog.addEventListener('close',()=>{version++;dialog.remove();},{once:true});
+  document.body.append(dialog);dialog.showModal();
+ }
+ function openMeshImport(){
+  const dialog=document.createElement('dialog');dialog.setAttribute('aria-label','Import 3D model');
+  dialog.innerHTML='<h2>Import STL or OBJ</h2><label>Local mesh file <input type="file" accept=".stl,.obj"></label><label>Source units <select name="unit"><option value="">Choose units</option><option>mm</option><option>cm</option><option>in</option></select></label><label>Source up-axis <select name="up"><option>Z</option><option>Y</option></select></label><label>Scale <input name="scale" type="number" min=".001" max="100" step="any" value="1"></label><label>Bed rotation (degrees) <input name="rotation" type="number" min="-180" max="180" step="1" value="0"></label><label>Bed X (mm) <input name="x" type="number" min="-250" max="250" step="any" value="0"></label><label>Bed Y (mm) <input name="z" type="number" min="-250" max="250" step="any" value="0"></label><figure></figure><p role="status" aria-live="polite"></p><div class="sms-actions"><button type="button" data-create disabled>Add model</button><button type="button" data-cancel>Cancel</button></div>';
+  const input=dialog.querySelector('[type=file]'),status=dialog.querySelector('[role=status]');
+  const figure=dialog.querySelector('figure'),commit=dialog.querySelector('[data-create]');
+  let source=null,parameters=null,sequence=0;
+  const inspect=()=>{
+   figure.replaceChildren();parameters=null;commit.disabled=true;
+   if(!source)return;
+   try{
+    for(const field of dialog.querySelectorAll('input[type=number]'))if(!field.checkValidity()||!Number.isFinite(field.valueAsNumber))throw Error('Check scale, rotation and bed position.');
+    const next=Object.fromEntries([...dialog.querySelectorAll('[name]')].map(field=>[field.name,field.type==='number'?field.valueAsNumber:field.value]));
+    if(!next.unit)throw Error('Confirm the units used by this mesh.');
+    const recipe=importedMeshRecipe(source,{...next,previewOnly:true});
+    const {width,height,depth}=recipe.bounds;
+    status.textContent=[width,depth,height].map(n=>n.toFixed(2)).join(' × ')+' mm. '+(recipe.meshIssue?'Preview only: '+recipe.meshIssue:'Closed mesh. Prepare a print job for final Manifold validation.');
+    const {points,triangles}=recipe.positive[0].mesh;
+    const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg'),path=document.createElementNS(ns,'path');
+    const span=Math.max(20,width+2*Math.abs(next.x),depth+2*Math.abs(next.z))*1.05;
+    svg.setAttribute('viewBox',[-span/2,-span/2,span,span].join(' '));svg.setAttribute('width','220');svg.setAttribute('height','160');
+    svg.setAttribute('role','img');svg.setAttribute('aria-label','Top view of mesh on the print bed');
+    const faces=[],stride=Math.max(1,Math.ceil(triangles.length/900))*3;
+    for(let i=0;i<triangles.length;i+=stride){
+     const corners=triangles.slice(i,i+3).map(id=>[points[id*3],points[id*3+2]].join(' '));
+     faces.push('M '+corners.join(' L ')+' Z');
+    }
+    path.setAttribute('d',faces.join(' '));path.setAttribute('fill','none');path.setAttribute('stroke','currentColor');path.setAttribute('stroke-width',span/500);
+    svg.append(path);figure.append(svg);
+    parameters={...next,source};commit.disabled=false;commit.textContent=recipe.meshIssue?'Add preview-only model':'Add model';
+   }catch(error){status.textContent=error.message;}
+  };
+  input.onchange=async()=>{
+   const request=++sequence,file=input.files[0];source=null;inspect();status.textContent='';
+   if(!file)return;
+   try{
+    if(file.size>MAX_MESH_BYTES)throw Error('Choose an STL or OBJ smaller than 4 MiB.');
+    const data=await file.arrayBuffer();if(request!==sequence||!dialog.open)return;
+    source=readMeshFile(file.name,data);
+    dialog.querySelector('[name=up]').value=source.format==='obj'?'Y':'Z';inspect();
+   }catch(error){if(request===sequence&&dialog.open)status.textContent=error.message;}
+  };
+  for(const field of dialog.querySelectorAll('[name]'))field.oninput=inspect;
+  commit.onclick=()=>{
+   if(!parameters)return;
+   try{add('imported-mesh',parameters,source.name.replace(/\.(stl|obj)$/i,'')||'Imported model');dialog.close();}
+   catch(error){status.textContent=error.message;}
+  };
+  dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
+  dialog.addEventListener('close',()=>{sequence++;dialog.remove();},{once:true});
   document.body.append(dialog);dialog.showModal();
  }
  const snapshot=adapter.capture();
