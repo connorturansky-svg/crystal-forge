@@ -14,7 +14,7 @@ on:
       - 'package.json'
       - '.github/workflows/browser-tests.yml'
   pull_request:
-    branches: [main]
+    branches: [main, feat/WT-015-library-organisation]
     paths:
       - '*.js'
       - 'index.html'

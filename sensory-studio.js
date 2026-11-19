@@ -1085,6 +1085,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const syncActions=document.createElement('details');syncActions.innerHTML='<summary>Backups &amp; Recovery</summary>';syncActions.open=true;syncActions.insertAdjacentHTML('beforeend','<div class="sms-actions"><button id="smsCloudPush">Upload studio backup</button><button id="smsCloudPull">Check private backup</button></div><p id="smsSyncState" role="status">Saved locally</p><p>On another computer, connect the same private repository through a Crystal model’s saved-project controls. Check the backup, review the differences and choose what to recover. For offline recovery, download a complete backup and restore its JSON file.</p><div id="smsRecoveryList"></div>');panel.append(syncActions);
   syncActions.append($('smsBackup'),$('smsImport').parentElement);
   renderRecoveryList();
+  recoveryStatus(adapter.vault()?.connected?'Private repository connected. Check the backup before recovering or uploading.':'Local only. Connect a private repository to use cross-device backup.');
   $('smsCloudPush').onclick=()=>syncStudio(false);$('smsCloudPull').onclick=()=>syncStudio(true);
   $('smsSearch').oninput=e=>{search=e.target.value;renderLibraryCards();};$('smsFilter').onchange=e=>{filter=e.target.value;renderLibraryCards();};
   $('smsBrowseModels').onclick=openPicker;$('smsDemo').onclick=demo;$('smsSaveProject').onclick=()=>{saveProjectSnapshot();save();renderLibraryCards();};$('smsBackup').onclick=backup;$('smsImport').onchange=importFile;
@@ -1333,6 +1334,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    if(pull){
     recoveryStatus('Checking and verifying the private backup…');
     const {state:remote,sha}=await connection.pull({acknowledge:false});
+    if(mode!=='library'){recoveryStatus('Private backup verified. Return to the Library and check it again to review.');return;}
     previewRecovery(remote,'Private GitHub backup · manifest v1 · '+sha.slice(0,12),()=>{connection.sha=sha;});
     recoveryStatus('Backup verified. Review the differences before applying.');
    }else{
