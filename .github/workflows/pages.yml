@@ -44,3 +44,7 @@ jobs:
           path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify the live published module tree
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: node tests/pages-public-smoke.mjs "$GITHUB_SHA"
