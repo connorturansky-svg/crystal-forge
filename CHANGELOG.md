@@ -1,5 +1,9 @@
 # Crystal Forge — Changelog
 
+## v0.16.0-dev.35.11 — Choose a global Crystal tip shape
+
+- Choose rounded, blunt or flat Crystal tips while retaining the existing radius control for curved tips.
+
 ## v0.16.0-dev.35.10 — Validate direct shaped socket placement
 
 - Place a shaped socket on eligible native model surfaces and verify its opening and stock before saving.
