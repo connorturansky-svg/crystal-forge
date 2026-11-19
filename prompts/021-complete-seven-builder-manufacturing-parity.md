@@ -7,13 +7,41 @@
 **Authoritative software tracker:** [Issue #79](https://github.com/connorturansky-svg/crystal-forge/issues/79). **Do not create another parity issue.**  
 **Reference:** [WT-020 full final release brief](./020-final-software-parity-release.md), pinned at `f9c248fc6933da3d0451f5168e4eab830b5af6fe`; [WT-019 approved brief](./019-true-studio-model-parity.md) pinned at `10cdb618b0a0a0f09affbd4cdcab3d2c45525045`.
 
+## OWNER CLARIFICATION — THE DEFINITION OF PARITY (AUTHORITATIVE, TAKES PRIORITY)
+
+**The knob with one pixel and two tabs was ONLY AN EXAMPLE, not the feature target, priority model, or a privileged exception.** The user wants the **same comprehensive Crystal Cluster Build toolkit on all seven builders**. This section overrides any later phrasing describing the knob as the single “gold-standard”, the “minimum compulsory scenario”, or a unique release gate. **All seven model families have equal priority and identical mandatory shared-tool acceptance.**
+
+### Parity means real functional tools, not matched menus
+
+For every family — **Crystal Clusters; Tactile Tiles; Gears; Waves; Buttons & Control Caps; Characters; Pebbles/Pods** — a user should be able to start with ANY normally supported solid design, then use the same shared Design/Build/Library/Print Centre operations that work for Crystals:
+
+1. **Pixels:** create/select measured/custom LED profiles; automatically or manually place one or multiple fitting sockets from the actual model in 3D; choose the intended physical face/entry; click/select/drag/rotate/edit/delete; preview true geometry and cut verified socket bores/retaining details, with P1–Pn order and independent wiring controls.
+2. **External tabs/ears/flanges:** add **positive 3D material outward from the design**, attached to an eligible physical edge/face or to a purposeful separate backing/component; select/reposition/rotate/resize, choose style/count/symmetry and true fixing-hole sizes. These are **not** the existing negative-only mounting through-bores, decorative overlays or separate loose floating ears.
+3. **Mounting holes:** independently add and precisely position through-holes, countersink/counterbore/seat where safe, custom diameter and depth, in existing stock OR in the outward tabs; preserve the Crystal's available mounting options, including compatible tab, hole, plate or attachment patterns where these are part of its existing Build toolkit.
+4. **Cable routing and optical access:** choose/display P1–Pn arrows and wire paths, 25/50/100/custom pitch, smooth routes, input/output and tail, and optionally cut physically viable cable channels; show actual obstructions, overlength, missing stock and unsafe thin-wall conditions. Preserve meaningful optical/cutaway inspection.
+5. **Shared interaction and persistence:** identical control semantics, coherent positioning across transformed/rotated models, undo/redo, profiles, save/reload, Library, multiple tabs, JSON backup/restore and correct active model/print job.
+6. **Full manufacturing:** prepare up-to-date printable solids with ALL accepted pixels, tabs, holes and channels included, check geometry and export STL/3MF, separately downloadable Cura profile and production ZIP for the selected job and settings.
+
+**The scope is the whole shared Crystal hardware toolset** (not just one pixel + two mounts). Codex must inventory the Crystal Cluster Build interface and its actual geometry/manufacturing features first, extract a **named shared capability contract**, and implement the applicable identical operation for each other family. Preserve richer Crystal-specific geometric/optical controls; don't delete, hide or water down Crystal's functionality to manufacture parity. Family-specific design controls stay individual, but all common hardware tools are consistently available and fully functional.
+
+### Geometry restrictions are per individual MODEL/PLACEMENT, NOT per builder family
+
+- For a particular **thin wall, hollow pod, fragile gear tooth, curved unsupported face, shaft, void, floating tab, insufficient wall/edge clearance, moving component, inaccessible cable or incompatible printer**: the tool must assess the selected parameters and location **before committing or exporting**, show an actionable inline/viewport explanation (e.g. *“Mounting tab cannot attach here: only 1.2 mm of supporting wall; requires 3 mm. Increase wall thickness, choose this stronger edge, or enable a separate backing plate.”*), highlight invalid region and **leave previously valid edits intact**.
+- Offer safe recovery: move feature to thicker stock, increase thickness/size, choose another attachment edge, add a user-approved connected reinforcing boss/backing, or attach to a registered stationary mount component. No surprise material fill, no silently moved fitting to the opposite face and no false “ready to print” signal.
+- **A family must never lose the Pixel, External Tabs, Mounting Holes or Print tools simply because its default shape is too thin.** Controls remain present and explain compatibility; at least one representative fixture in **every family** must actually accept EACH core feature and export it. Specific unsafe **placements** may legitimately be blocked after meaningful validation.
+- “Not applicable”, a disabled button with no explanation, a placeholder shape, a source-only data entry, a mocked unit fixture or separate manually modelled tab unrelated to Build **does not count as parity**. If an adapter is missing, implement it.
+
+### Equal release blockers: seven required full end-to-end acceptance fixtures
+
+Each of the **seven families independently** needs at least one verified, complete product journey that includes: change the design; add manually selected P1 and another LED fitting with actual cutter; add **at least two real external positive tabs** or registered physical mount structures; add at least two real fixing holes (including through tabs where selected); edit/reposition all of them; show truthful serial wiring; save/reload/backup; prepare and inspect actual Manifold solid; download the matching STL, 3MF, standalone Cura profile and ZIP. Verify actual browser interactions, geometry and persisted source. **No single knob success, no single Crystal success, and no average score across families may substitute for 7/7.**
+
+The rotary knob remains a **useful representative acceptance example only**; other family tests are **equally compulsory and equally important**. There must be a family-by-family matrix and recorded proof for all named tools. **Do not call WT-021 complete until every family passes the shared toolkit on an eligible model AND invalid thin/unsupported placements are correctly flagged.** Do not interpret this clarification as a request to build extra specialized knob tools instead of the common infrastructure.
+
 ## 0. Exact user intent: this is a WORKING APP, not a partial UI
 
-The owner explicitly expects to be able to:
+The owner expects to open **ANY of the seven model families**, use the **full shared hardware toolset established by Crystal Clusters**, add/edit pixels, real external mounting tabs AND independent mounting holes, and make a genuinely printable STL/3MF with a downloadable Cura profile. A rotary knob with a pixel and two tabs is **only one illustrative example**; it is not the centre of scope, nor does it count as parity if the other six families are incomplete.
 
-> Open **Buttons & Control Caps**, create a **rotary knob**, **place a pixel on the knob at a chosen supported physical surface**, **add and position external mounting tabs/ears/flanges with fixing holes**, **prepare and download a physically corresponding STL/3MF** and **download an appropriate Cura profile** — then perform the same **shared hardware, manipulation, saving, and printing workflow on ALL SEVEN model families**.
-
-This is the **minimum compulsory end-to-end scenario**, not an illustrative nice-to-have. **An internal through-hole in the existing model is NOT an external mounting tab.** Do not close the task by demonstrating only M1 holes, a visual tab marker, auto-place on the underside instead of the selected face, a bare STL without the mount, or a link to a Cura profile that cannot be generated.
+**All seven** complete comparable end-to-end scenarios are mandatory. The knob example alone is insufficient. **An internal through-hole in the existing model is NOT an external mounting tab.** Do not close the task by demonstrating only M1 holes, a visual tab marker, auto-place on the underside instead of the selected face, a bare STL without the mount, or a link to a Cura profile that cannot be generated.
 
 **Deliver user-facing working code** with real Three.js interactions, real Manifold geometry, genuine saved project data, actual exports, and tests. **Do not stop at a plan, audit, checklist, documentation change, proof-of-concept or test-only PR.** Do not downgrade this requirement to “physically blocked” simply because the adapter cannot do it today: build the missing positive-geometry backing, mounting-interface or attachment system first where safe.
 
@@ -78,7 +106,7 @@ Keep three clearly named behaviours separate:
 
 Selectable side/top/bottom/underside geometry and object-space/world-space transforms must be preserved in raycast hit, attachment transform, inspector and export. Reject unsupported directions with an explicit explanation and alternate mode **instead of silently turning a side tab into an underside hole**.
 
-### 3.2 The KNOB example is the compulsory gold-standard fixture
+### 3.2 The KNOB is one representative fixture among SEVEN equally mandatory fixtures
 
 Create a **Rotary knob** in Buttons & Control Caps (use a realistic solid/backed knob variant or a correctly separated enclosure if the selected moving dial cannot carry fixed tabs).
 
@@ -89,7 +117,7 @@ Create a **Rotary knob** in Buttons & Control Caps (use a realistic solid/backed
 5. Where a rotary knob is a **moving part**, don't misleadingly fuse stationary external fixing ears to the rotating actuator. Offer a **fixed backing/enclosure/flange as a separate printable component** (or a clearly designated stationary cap variant) with measured motion/shaft clearances and explicitly registered assembly relative to the moving knob. If the user expressly chooses integrated tabs for a nonrotating decorative knob, a connected single-body option may be valid. Build the necessary fixed component, don't silently deem this whole family “not supported”.
 6. Save/reload source, view top/bottom/front, inspect a transparent cutaway, prepare print, then **download the STL(s), a valid 3MF, Cura .curaprofile / documented fallback and full ZIP**. Test actual archive contents and **measure geometry**: tab material, hole diameters, original vs extended bounds, cutter volume, connected component count or assembly roles and their relative transforms.
 
-The knob end-to-end test is **P0 release-blocking**. Add a real browser journey with clicks and downloads and a real Manifold/fabrication fixture; no mocked cutters, screenshots-only or source-string assertions.
+**Every family** end-to-end test is **P0 release-blocking**, including but not limited to this knob example. Add a real browser journey with clicks and downloads and a real Manifold/fabrication fixture; no mocked cutters, screenshots-only or source-string assertions.
 
 ### 3.3 Apply this mount system to all seven, appropriately
 
@@ -160,7 +188,7 @@ Statuses: `P` tested/proved; `L` limited; `M` missing; `B` truly physically bloc
 8. At desktop and phone widths, verify actual enabled controls, pointer focus/camera and no console errors.
 
 Plus focused top-priority fixtures:
-- **Control Caps rotary knob** with integrated or fixed stationary mounting assembly and two external M3 tabs, P1 and complete export: **gold-standard release-blocking fixture**.
+- **Control Caps rotary knob** with integrated or fixed stationary mounting assembly and two external M3 tabs, P1 and complete export: **one equally important fixture among seven**.
 - **Owner's openwork Gear** with four P markers, blocked routing explained, honest exported bore-only shape; separate **solid Gear** actual routed example.
 - **Crystal** complete regression including optical/base/vault/root, richest editing, physical pixel seats/mount and dual-exports.
 - **Imported SVG and valid/invalid STL/OBJ**, true geometry/preview-only and round-trip.
@@ -182,9 +210,9 @@ No browser test mocking `window.__sensoryStudio` counts as a real click path whe
 
 **You must DO the work and TEST it, not just draft a plan.** The release candidate must support this exact owner walk-through:
 
-**Open app → new Rotary Knob → configure size/grip → Build → choose pixel profile → double-click the visible, supported knob face → place, edit and see P1 → Add external mounting tabs, position TWO tabs and their holes (integrated or fixed backing as physically appropriate) → verify actual positive/negative geometry in cutaway → save/reopen → Print Centre → prepare real mesh → download STL, 3MF, Cura profile and production ZIP → inspect actual tab and pixel features inside the files.**
+**For each of the SEVEN builders independently:** Open app → create that model family → edit its unique design parameters → Build → choose a pixel profile → add and edit multiple physical pixels on valid chosen model surfaces → add, place and edit real connected external tabs/ears or separate registered backing → add/edit independent holes and fixing holes in tabs → inspect physical routing/cutaway → save/reopen → Print Centre → prepare real model → download STL, 3MF, Cura profile and production ZIP → inspect actual geometry in those files.
 
-Repeat the same class of flow with all six other families. Unsupported individual geometry must have an actual workable in-family alternative. Maintain equal shared controls and preserve family-specific tools.
+The knob happens to be one of the seven example models, **not the defining goal or sole gold-standard**. Test and demonstrate this workflow with all seven. Unsupported individual geometry must have an actual workable in-family alternative. Maintain equal shared controls and preserve family-specific tools.
 
 **Final report must include:** latest `main` SHA; all draft PR URLs/heads, exact tested CI, 7×feature acceptance matrix and artifacts, detailed knob fixture and real manufactured dimensions, openwork Gear evidence, standalone Cura output verification, print/export downloads, post-merge Pages SHA if approved, known physical/functional restrictions and explicit owner merge order.
 
@@ -192,4 +220,4 @@ Repeat the same class of flow with all six other families. Unsupported individua
 
 ### Codex short instruction (implementation, not an audit)
 
-**Implement WT-021 as the missing final parity contract on top of the current tested main/WT-020 stack.** Complete shared 3D hardware placement, genuine external tabs/ears/flanges and mounting bores, truthful wiring, Design/Library/Print, real STL/3MF + standalone Cura exports across **all seven families**, with the **rotary knob P1 + two external mounting tabs + downloadable STL/Cura** as the mandatory end-to-end test. Fix every P0/P1 defect, run exact-head browser and manufacturing acceptance, produce merge-ready draft PRs, leave owner merges/deployment untouched, and verify the live Pages site after owner-approved integration. Keep everything under #79 and preserve #10/#51 and contributor-owned work. Do not stop at planning.
+**Implement WT-021 as the missing final parity contract on top of the current tested main/WT-020 stack.** Complete shared 3D hardware placement, genuine external tabs/ears/flanges and mounting bores, truthful wiring, Design/Library/Print, real STL/3MF + standalone Cura exports across **all seven families**, with **each of the SEVEN builders separately demonstrating multiple pixel fittings + real external tabs + independent mounting holes + downloadable STL/3MF/Cura** as equal mandatory end-to-end tests (the knob is just one illustrative fixture). Fix every P0/P1 defect, run exact-head browser and manufacturing acceptance, produce merge-ready draft PRs, leave owner merges/deployment untouched, and verify the live Pages site after owner-approved integration. Keep everything under #79 and preserve #10/#51 and contributor-owned work. Do not stop at planning.
