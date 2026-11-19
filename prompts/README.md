@@ -6,6 +6,12 @@ This folder is the GitHub-backed source of truth for **future approved Codex dev
 
 **Do not treat a file's presence as permission to implement it.** The user's explicit go-ahead, an agreed scope, and a particular version of that file are required.
 
+## Current owner direction — 19 November 2026
+
+**WT-018 is the next repository-wide consolidation and parity brief:** [Repository Consolidation, Backlog Closure and Seven-Builder Parity](./018-repository-consolidation-and-parity.md). It is **saved on planning/prompts for deliberate Codex dispatch**, not implemented merely by appearing here. The goal is to reconcile stacked PR history (#66, #68–#70), retire truly completed/duplicate backlog entries with evidence, preserve external/held work, and raise all seven model builders to consistent shared-tool parity (especially double-click hardware placement, direct 3D editing and real visible cable routing). GitHub merge labels do not establish that a stack's changes landed on main. Recheck live commit ancestry before acting.
+
+The older 18 November priority and 015–017 status text below is **historical** pending the WT-018 audit; do not read it as a live statement that those features remain unimplemented.
+
 ## Owner priorities and approved combined next phase (18 November 2026)
 
 The owner ranked **creative model catalogue expansion** and **shared pixel routing across suitable models** as **HIGH**; seven other tracks MEDIUM, five LOW (including modular splitting), and four UNDECIDED (including SVG integration). [Full owner priority list and final combined choice](./OWNER_PRIORITY_REVIEW_2026-11-18.md).
@@ -33,6 +39,7 @@ The owner ranked **creative model catalogue expansion** and **shared pixel routi
 | 015 | [Library collections, favourites and reusable templates](./015-library-collections-templates.md) | **OWNER-APPROVED OVERNIGHT PHASE A**, first independent draft PR; [Issue #58](https://github.com/connorturansky-svg/crystal-forge/issues/58) | **c855fe2f04ee69cbb8a2dfd90384bfacee3133c0** | Not started; draft PR A → main |
 | 016 | [Safe private sync, conflict preview and recovery](./016-safe-cross-device-sync.md) | **OWNER-APPROVED OVERNIGHT PHASE B**, sequential **only after WT-015 green draft**; [Issue #59](https://github.com/connorturansky-svg/crystal-forge/issues/59) | **c855fe2f04ee69cbb8a2dfd90384bfacee3133c0** | Not started; stacked draft PR B → WT-015 branch |
 | 017 | [Seven-family Build pixel fitting](./017-seven-family-pixel-build.md) | **OWNER-AUTHORISED IMPLEMENTATION**; [Issue #63](https://github.com/connorturansky-svg/crystal-forge/issues/63) | **Immutable SHA pinned in Issue #63** | One draft PR → main; not merged |
+| 018 | [Repository Consolidation, Backlog Closure and Seven-Builder Parity](./018-repository-consolidation-and-parity.md) | **OWNER-REQUESTED · GitHub prompt ready for Codex dispatch; implementation NOT started**. Audit live main/PR stacks, close evidenced stale backlog and restore seven-family UX/Build parity | **Planning revision pinned at this index commit; verify before dispatch** | Separate reviewable draft PR(s); no merge/deploy |
 | — | New implementation briefs will be added here after user review | — | — | — |
 
 Create the first entry when we save an approved brief. Past requirements and ongoing Codex sessions are **not** silently reissued or marked complete by this setup.
