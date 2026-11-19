@@ -6,7 +6,7 @@ concurrency:
 
 on:
   pull_request:
-    branches: [main, feat/verified-tile-gear-routing, feat/backed-family-cable-routing]
+    branches: [main, feat/verified-tile-gear-routing, feat/backed-family-cable-routing, feat/studio-svg-artwork-import]
   push:
     branches: [main]
     paths:

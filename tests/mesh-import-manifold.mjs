@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import Module from 'manifold-3d';
+import {importedMeshRecipe,readMeshFile,MAX_MESH_BYTES} from '../studio-mesh-import.js';
+import {applyBuildModules,importedMeshGenerator} from '../studio-catalogue.js';
+import {findPixelPosition} from '../studio-pixel-builder.js';
+import {prepareRecipe} from '../studio-geometry.js';
+import {exportMaterialBodies} from '../studio-material-export.js';
+
+const points=[[0,0,0],[40,0,0],[0,40,0],[0,0,24]],faces=[[0,2,1],[0,1,3],[1,2,3],[2,0,3]];
+const bytes=text=>new TextEncoder().encode(text).buffer;
+const obj=(selected=faces)=>bytes(points.map(p=>'v '+p.join(' ')).join('\n')+'\n'+selected.map(f=>'f '+f.map(i=>i+1).join(' ')).join('\n'));
+const ascii=bytes('solid fixture\n'+faces.map(face=>'facet normal 0 0 0\nouter loop\n'+face.map(i=>'vertex '+points[i].join(' ')).join('\n')+'\nendloop\nendfacet').join('\n')+'\nendsolid fixture');
+const binary=new ArrayBuffer(84+50*faces.length),view=new DataView(binary);
+view.setUint32(80,faces.length,true);
+faces.forEach((face,index)=>face.forEach((id,i)=>points[id].forEach((n,j)=>view.setFloat32(96+index*50+i*12+j*4,n,true))));
+const wasm=await Module();wasm.setup();
+for(const [name,buffer] of [['facet.stl',ascii],['solid.stl',binary],['mesh.obj',obj()]]){
+ const source=readMeshFile(name,buffer),parameters={source,unit:'mm',up:'Z',scale:1.2,rotation:30,x:4,z:3};
+ const restored=JSON.parse(JSON.stringify(parameters));
+ const recipe=importedMeshGenerator.recipe(restored);
+ assert.deepEqual(recipe.bounds,importedMeshGenerator.recipe(parameters).bounds);
+ assert(Math.abs(recipe.bounds.height-28.8)<1e-9);
+ const build={pixelBacking:true,pixelBuilderVersion:1};
+ const stock=applyBuildModules(recipe,build,importedMeshGenerator.capabilities);
+ const fitting=findPixelPosition(stock,[],{id:'seed',bodyDiameter:5});
+ assert(fitting);
+ const before=prepareRecipe(THREE,wasm,stock);
+ const after=prepareRecipe(THREE,wasm,applyBuildModules(recipe,{...build,pixelHoles:[{...fitting,checked:true}]},importedMeshGenerator.capabilities));
+ assert(before.bodies[0].volume>after.bodies[0].volume);
+ const output=exportMaterialBodies(after);
+ assert.equal(output.stls.length,1);
+ assert(output.threeMF.length>100);
+}
+const open=readMeshFile('open.obj',obj(faces.slice(0,3)));
+assert.match(importedMeshRecipe(open,{previewOnly:true}).meshIssue,/open/);
+assert.throws(()=>applyBuildModules(importedMeshGenerator.recipe({source:open})),/Preview only/);
+assert.throws(()=>readMeshFile('too-large.stl',new ArrayBuffer(MAX_MESH_BYTES+1)),/4 MiB/);
+assert.throws(()=>readMeshFile('malformed.obj',bytes('v 1 2 3\nf 1 2 3')),/missing vertex/);
+assert.throws(()=>readMeshFile('bad.stl',bytes('solid fixture\nendsolid')),/non-empty/);
+const openBinary=binary.slice(0,84+50*3);
+new DataView(openBinary).setUint32(80,3,true);
+assert.match(importedMeshRecipe(readMeshFile('open.stl',openBinary),{previewOnly:true}).meshIssue,/open/);
+console.log('ASCII STL, binary STL and OBJ preview, validated fitting cuts and manufacturing exports passed.');
