@@ -1,3 +1,14 @@
+## Current direction
+
+Main includes seven native builders, the shared Print Centre, measured profiles, Library organisation, recovery and qualified Tile/Gear routing. WT-018 drafts restore cross-tab protection, extend verified fixture routing, stage SVG and STL/OBJ and add native double-click pixel placement. Use the [integration ledger](BACKLOG_TRIAGE.md) for merge order and deployed status, and [shared Builder acceptance](MODEL_BUILDER_PARITY.md) for remaining work.
+
+1. Review and integrate the draft stack with current-base CI.
+2. Finish shared mounting, continuous placement, keyboard/touch and all-family real-pointer coverage.
+3. Confirm physical route seating, native and import export/lifecycle gates, Cura and physical samples under #10.
+4. Keep modular assembly #51 on hold.
+
+## Historical roadmap entries
+
 ## Imported STL/OBJ models
 
 New model → Import 3D model accepts binary and standard facet-per-line ASCII STL and triangulated OBJ. The dialog previews the bed footprint and confirms units, source up-axis, scale, rotation and position. Records retain normalized indexed source geometry and transforms. Open, degenerate, inconsistently wound and disconnected meshes can be viewed as preview-only, while production requires closed topology and final Manifold validation. A verified explicit backing supports fittings on suitable closed imported solids. Limits are 4 MiB, 30,000 triangles and 500 mm extents. OBJ material files are ignored; no external resources are fetched.

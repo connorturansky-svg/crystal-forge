@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## WT-018 review candidate
+
+Use the [integration ledger](BACKLOG_TRIAGE.md) for exact GitHub refs, owner gates and issue dispositions. The [Builder matrix](MODEL_BUILDER_PARITY.md) distinguishes partial parity from verified acceptance.
+
 ## STL and OBJ in Studio
 
 New model → Import 3D model accepts binary and standard facet-per-line ASCII STL and triangulated OBJ. The dialog previews the bed footprint and confirms units, source up-axis, scale, rotation and position. Records retain normalized indexed source geometry and transforms. Open, degenerate, inconsistently wound and disconnected meshes can be viewed as preview-only, while production requires closed topology and final Manifold validation. A verified explicit backing supports fittings on suitable closed imported solids. Limits are 4 MiB, 30,000 triangles and 500 mm extents. OBJ material files are ignored; no external resources are fetched.

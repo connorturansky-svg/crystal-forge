@@ -209,6 +209,14 @@ for(const recipe of [tileRoute,gearRoute]){
 }
 const curveBuild={pixelHoles:[checked('left',-15),checked('right',15,2)],pixelBuilderVersion:1,serialRouting:serial};
 const curvePlan=applyBuildModules(tileRoute,curveBuild).nativeRouting;
+const guideBuild={...curveBuild,serialRouting:{...serial,enabled:false}};
+const guideRecipe=applyBuildModules(tileRoute,guideBuild,{},{preview:true});
+const boreOnly=applyBuildModules(tileRoute,guideBuild);
+assert.equal(guideRecipe.nativeRouting.enabled,false);
+assert.deepEqual(guideRecipe.nativeRouting.links,curvePlan.links);
+assert.deepEqual(guideRecipe.nativeRouting.cutters,[]);
+assert.deepEqual(guideRecipe.negative,boreOnly.negative);
+assert.equal(boreOnly.nativeRouting.links.length,0);
 assert(curvePlan.links[1].path.length>2);
 const shortTail=applyBuildModules(tileRoute,{...curveBuild,serialRouting:{...serial,inTail:5,outTail:100}}, {},{preview:true}).nativeRouting;
 assert.match(shortTail.links[0].reason,/Cable budget/);assert.equal(shortTail.links.at(-1).reason,'');

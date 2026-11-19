@@ -537,7 +537,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(remaining.size)output.push(details('Fine adjustments','Adjust the seed or other generator settings.',[...remaining].map(field=>control(field,model.parameters)).join('')));
   return (family?control(family,model.parameters):'')+output.join('');
  }
- const hiddenNativeRoutes=new Set();
+ const nativeGuideChoices=new Map();
  const selectedPixels=new Map(),pixelMessages=new Map(),pixelProfileChoices=new Map();
  // Newly saved measured profiles are shared across all families, but never
  // silently alter dimensions on existing fittings.
@@ -557,7 +557,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  function refreshPixelMarkers(model){
   if(model.generator.typeId==='crystals')return;
   for(const guide of cache.get(model.id)?.group?.children||[])if(guide.userData.nativeRoute)
-   guide.visible=stage==='build'&&!hiddenNativeRoutes.has(model.id);
+   guide.visible=stage==='build'&&(nativeGuideChoices.get(model.id)??!!model.build.serialRouting?.enabled);
   for(const marker of pixelMarkers(model)){
    marker.visible=stage==='build';
    marker.material.color.setHex(marker.userData.pixelId===selectedPixels.get(model.id)?0x48e4f1:0xffbe47);
@@ -862,17 +862,19 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   };
   const note=document.createElement('p');
   note.setAttribute('role','status');
-  note.textContent=plan.reason?(!settings.enabled?'Bore-only — '+plan.reason:plan.reason):settings.enabled?'Channels ready for preparation.':'Opt in to cut 3.2 mm wide, 1.8 mm deep underside channels.';
+  note.textContent=plan.reason?(!settings.enabled?'Bore-only — '+plan.reason:plan.reason):settings.enabled?'Channels ready for preparation.':'Guide only until Cut serial channels is enabled.';
   block.append(note);
   block.insertAdjacentHTML('beforeend','<label><input type="checkbox" data-native-route'+(settings.enabled?' checked':'')+
    (model.link||(!settings.enabled&&plan.reason)?' disabled':'')+'> Cut serial channels</label>');
   block.querySelector('[data-native-route]').onchange=e=>change({enabled:e.target.checked});
-  if(!settings.enabled)return;
+  const guide=document.createElement('label'),show=document.createElement('input');
+  show.type='checkbox';show.dataset.nativePreview='';show.checked=nativeGuideChoices.get(model.id)??settings.enabled;
+  show.onchange=()=>{nativeGuideChoices.set(model.id,show.checked);refreshPixelMarkers(model);};
+  guide.append(show,' Show routes and arrows');block.append(guide);
   block.insertAdjacentHTML('beforeend','<label>Physical pixel pitch<select data-native-pitch'+disabled+
    '><option value="25">25 mm</option><option value="50">50 mm</option><option value="100">100 mm</option><option value="custom">Custom</option></select></label>'+
    '<label>IN tail limit (mm)<input data-native-in-tail type="number" min="5" max="250" value="'+esc(settings.inTail)+'"'+disabled+'></label>'+
-   '<label>OUT tail limit (mm)<input data-native-out-tail type="number" min="5" max="250" value="'+esc(settings.outTail)+'"'+disabled+'></label>'+
-   '<label><input data-native-preview type="checkbox"'+(hiddenNativeRoutes.has(model.id)?'':' checked')+'> Show routes and arrows</label>');
+   '<label>OUT tail limit (mm)<input data-native-out-tail type="number" min="5" max="250" value="'+esc(settings.outTail)+'"'+disabled+'></label>');
   const pitch=block.querySelector('[data-native-pitch]');
   pitch.value=settings.customPitch||![25,50,100].includes(settings.pitch)?'custom':settings.pitch;
   pitch.onchange=()=>change(pitch.value==='custom'?{customPitch:true}:{pitch:Number(pitch.value),customPitch:false});
@@ -886,10 +888,6 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    pitch.parentElement.insertAdjacentHTML('afterend','<label>Custom pitch (mm)<input data-native-custom type="number" min="5" max="250" value="'+esc(settings.pitch)+'"'+disabled+'></label>');
    bindNumber(block.querySelector('[data-native-custom]'),'pitch');
   }
-  block.querySelector('[data-native-preview]').onchange=e=>{
-   if(e.target.checked)hiddenNativeRoutes.delete(model.id);else hiddenNativeRoutes.add(model.id);
-   refreshPixelMarkers(model);
-  };
   for(const link of plan.links){
    const line=document.createElement('p');
    line.textContent=link.label+(Number.isFinite(link.measure)?' · '+link.measure.toFixed(1)+' / '+link.budget+' mm':'')+(link.reason?' · '+link.reason:'');

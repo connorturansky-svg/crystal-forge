@@ -522,10 +522,10 @@ export function applyBuildModules(recipe,build={},capabilities={}, {preview=fals
    if(reason)throw Error('P'+(index+1)+': '+reason);
   }
  }
- const routing=planNativePixelString(r,build);
+ const routing=planNativePixelString(r,build,{guide:preview&&!!build.pixelHoles?.length});
  if(routing.enabled&&!routing.ready&&!preview)throw Error(routing.reason);
  addPixelHoleCuts(r,build.pixelHoles);
- if(routing.ready){
+ if(routing.enabled&&routing.ready){
   r.negative.push(...routing.cutters);
   r.warnings.push('Serial grooves are underside-open. Check cable seating and roof layers in Cura and on a physical print.');
  }

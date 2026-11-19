@@ -1,5 +1,7 @@
 # Crystal Forge / Sensory Model Studio
 
+The current review status, main baseline and owner review sequence are in the [WT-018 integration ledger](docs/BACKLOG_TRIAGE.md). See [seven-builder acceptance](docs/MODEL_BUILDER_PARITY.md) for shared-tool coverage and the remaining checks.
+
 ## Current milestone
 
 Sensory Model Studio contains seven model families and a shared Print Centre. The stability draft targets joystick STL export and production release metadata. See the [acceptance record](docs/SENSORY_MODEL_STUDIO_V016_ACCEPTANCE.md) for verification and remaining work.
