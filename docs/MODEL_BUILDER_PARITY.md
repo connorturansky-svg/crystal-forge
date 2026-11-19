@@ -28,3 +28,5 @@ The native Show routes and arrows control is independent of Cut serial channels.
 ## WT019-05 · Gear placement and routing
 
 The main-targeted integration preserves the checked #82 and #83 source history. The native picker shares the Build mode gate and carries the selected top or underside opening into preview marks. Mesh bores still cut through both faces and native cable channels remain underside-only. The browser suite covers bottom-view Gear double-click and guide visibility with cutting off. The existing openwork check confirms the planner explains why unbacked voids block cutting. Mark L until exact-head verification, including physical validation tracked separately in #10.
+
+WT019-06 extends real viewport double-click coverage to the six native fixtures, including an explicit rejection case where the clicked face is unsupported. Existing Crystal tests remain separate. This is partial coverage: it does not certify on-face retainers, builds with unsupported backs, all-family print/reload, mounts or Studio-wide parity.

@@ -776,6 +776,31 @@ try{
   assert(await serial.locator('[data-native-route]').isDisabled());
  }
 
+ // WT-019: use actual model-camera input at a known solid location on
+ // each native fixture. Restore the auto seed on an unsupported face.
+ const checkNativeDoubleClick=async (type,palette,hole)=>{
+  await page.locator('[data-view=top]').click();
+  await page.waitForTimeout(500);
+  await palette.getByRole('button',{name:'Remove P1',exact:true}).click();
+  const screen=await page.evaluate(({x,z})=>window.__sensoryStudio.fittingPointScreen(x,z,'top'),hole);
+  assert(screen,type+' projects the solid face at the fitted point');
+  await page.mouse.dblclick(screen.x,screen.y);
+  await fittingActions.waitFor();
+  const add=fittingActions.getByRole('button',{name:'Add pixel',exact:true});
+  if(await add.isDisabled()){
+   assert.match(await fittingActions.innerText(),/vertical through-bore/,type+' explains unsupported surface');
+   await page.keyboard.press('Escape');
+   assert.equal((await getHoles()).length,0);
+   await palette.getByRole('button',{name:'Add pixel automatically',exact:true}).click();
+  }else{
+   await add.click();
+   const [placed]=await getHoles();
+   assert.equal(placed.entryFace,'top',type+' retains the clicked face');
+   assert.equal(placed.diameter,hole.diameter,type+' retains the chosen profile');
+   assert(Math.hypot(placed.x-hole.x,placed.z-hole.z)<1,type+' follows the raycast point');
+  }
+  await shot('wt019-native-'+type);
+ };
  // WT-017: measured profiles are available before placement and reused on
  // multiple families. The existing A-G dimensional editor remains canonical.
  await page.evaluate(()=>window.__sensoryStudio.addModel('waves',{flowStyle:'Parallel',dualMaterial:false},'Pixel profile source'));
@@ -792,6 +817,7 @@ try{
  await wavePalette.getByRole('button',{name:'Add pixel automatically',exact:true}).click();
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles[0].diameter),4.5);
  await shot('wt017-pixel-profile-build');
+ await checkNativeDoubleClick('waves',wavePalette,(await getHoles())[0]);
  const nativeFamilies=[
   ['tactile-tiles',{dualMaterial:false},false],
   ['gears',{mode:'Decorative',wheelStyle:'Rounded lobes',webStyle:'Solid',bore:0,spokes:0,dualMaterial:false},false],
@@ -812,6 +838,7 @@ try{
   assert.equal(saved.length,1,type+' accepted a measured fitting');
   assert.equal(saved[0].diameter,4.5,type+' reused named profile');
   assert(await pal.locator('[data-native-route]').count(),type+' shows routing availability');
+  await checkNativeDoubleClick(type,pal,saved[0]);
  }
  await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',null,'WT017 Crystals'));
  await page.locator('.sms-workspace-nav [data-tab=build]').click();

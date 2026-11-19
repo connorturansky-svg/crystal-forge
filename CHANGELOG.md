@@ -1,5 +1,9 @@
 # Crystal Forge — Changelog
 
+## v0.16.0-dev.32 — Exercise native fitting interactions across model families
+
+- Add browser acceptance for shared model-surface placement and measured profiles.
+
 ## v0.16.0-dev.31 — Keep native pixel markers on the selected face
 
 - Preserve the chosen through-bore opening and show available cable guides without enabling cutters.
