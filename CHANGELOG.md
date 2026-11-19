@@ -1,5 +1,11 @@
 # Crystal Forge — Changelog
 
+## v0.16.0-dev.34.1 — Repair published Studio startup
+
+- Publish all versioned JavaScript modules and nested SVG importer files to GitHub Pages, fixing a missing import that prevented the 3D editor loading.
+- Block incomplete Pages releases with a nested-module dependency check.
+- Offer data-preserving startup diagnostics and the genuine legacy Crystal fallback when a browser cannot initialise.
+
 ## v0.16.0-dev.34 — Native camera and wiring feedback
 
 - Centre native camera presets on the active solid.
