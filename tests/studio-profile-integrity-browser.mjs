@@ -109,7 +109,7 @@ try{
   await destination.getByText('Recovery complete',{exact:false}).waitFor();
   const recovered=await destination.evaluate(key=>{
    const library=JSON.parse(localStorage.getItem(key)||'[]');
-   const studio=JSON.parse(localStorage.getItem('sensory-model-studio-v1')||'null');
+   const studio=JSON.parse(localStorage.getItem('sensory-model-studio-workspace-v1')||'null');
    return {library,studio};
   },profileKey);
   assert(recovered.library.some(p=>p.id===accepted.hole.profileId&&p.name==='Protected measured Seed'),
