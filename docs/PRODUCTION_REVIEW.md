@@ -10,6 +10,7 @@ Check out the candidate PR head from GitHub. From its root, run `python -m http.
 2. Open Build, create a measured pixel profile, and place a fitting on a verified solid area. Try the same profile on a second family. For an eligible Tile or decorative Gear, enable serial channels and check P1, direction and cable-length feedback. A bore-only model should keep its fitting actions.
 3. Save a project in Library and download a complete backup. Review the JSON file, cancel once and then recover a copy. Open it explicitly from Saved Projects. A private GitHub connection is optional.
 4. From Print Centre, prepare a job with matching printer, nozzle and material. Compare the prepared X, Y and Z values to the production-pack manifest. Import the 3MF into Cura and compare its size in millimetres. If using the STL parts, import them together to preserve the common origin.
+   Cura may load a 3MF at the front corner of the bed. Right-click the imported model or assembly and choose **Center Selected**. Two-material 3MF exports contain one assembly with both bodies in their original relative positions. Check the dimensions in **Prepare** and confirm both bodies appear in **Preview**. Cura 5.13 showed a larger extent in Preview for the test fixture even though both toolpaths stayed on the plate.
 
 ## Evidence and remaining acceptance
 

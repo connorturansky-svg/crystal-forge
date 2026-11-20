@@ -1,9 +1,12 @@
 # WT-021 overnight checkpoint
 
-[PR #102](https://github.com/connorturansky-svg/crystal-forge/pull/102) merged as `3326ac9`. [Follow-up PR #103](https://github.com/connorturansky-svg/crystal-forge/pull/103) covers print size and Crystal wiring. [Current PR checks](https://github.com/connorturansky-svg/crystal-forge/pull/103/checks)
+[PR #102](https://github.com/connorturansky-svg/crystal-forge/pull/102) merged as `3326ac9`. [PR #103](https://github.com/connorturansky-svg/crystal-forge/pull/103) merged print sizes and Crystal wiring controls. [PR #104](https://github.com/connorturansky-svg/crystal-forge/pull/104) merged optional support-free pixel shoulders and is deployed at `7d746d3`.
 
+- Cura Desktop 5.13 imported PLA profiles for both target printers. An offline Ultimaker 3 Extended slice verified separate toolpaths for both exported material bodies. Physical and Desktop dual-extruder checks remain open.
 - Print Centre shows dimensions for each STL in a two-material job. Crystal Build supports dragging both cable openings and treating cable lengths as warnings. Local Chromium moved both endpoints, rejected invalid drops, reloaded them, and independently measured both exports against the prepared dimensions. Re-enabling strict lengths invalidated both old downloads.
 - Next, measure the owner’s sample STL and compare its axis extents with the matching saved model revision. The original sample is pending.
+- Local follow-up moved Render actual model onto the Build viewport and shows preparation errors in the inspector. A conical gumdrop fixture needed 30.88 mm of stock. The profile-based base control raised the model to 31 mm, and preparation passed. A fresh Truncated blade fan exported STL and 3MF on the public release. The exact saved revision 398 remains unavailable.
+- Library shows built-in templates separately from saved models. New Cogs start in Design with clean fittings. A browser regression saved a named edited copy and reopened a fresh template with stock geometry. Crystal wire previews stop rendering on other builders.
 
 ## Owner experiment checkpoint
 
@@ -182,3 +185,9 @@
 
 - Build checks the actual Manifold solid before saving an automatic counterbore or countersink. The guard protects 1 mm around the recess and 1.6 mm behind it, and detects nearby cuts that remove that stock.
 - The catalogue suite rejected thin and interrupted fixtures and kept the measured solid case. Chromium rejected a thin Wave countersink without changing the accepted control, Build settings or revision. Next add independently placed recessed mounts.
+
+- Wave routing accepts somewhat steeper relief within a 6% surface slope. Test exports preserve the full cable channel at the new limit. Full unified Chromium passed the new relief fixture through save, reload, preparation and both downloads.
+
+- The combined local release candidate b71f0b9 includes the merged accessibility and recovery changes. All ten browser suites and six fabrication suites passed, along with static and release checks. GitHub CI remains pending.
+
+- Selected Crystal tip edits passed both print format checks through edit, undo and redo. Profile data integrity and UX-03 are tracked in the current work notes.

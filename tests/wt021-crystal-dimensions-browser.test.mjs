@@ -49,12 +49,17 @@ try{
  const model=()=>page.evaluate(()=>({id:window.__sensoryStudio.currentModel.id,revision:window.__sensoryStudio.currentModel.revision}));
  const readDimensions=async locator=>(await locator.innerText()).match(/\d+(?:\.\d+)?(?= (?:×|x|mm))/g).slice(0,3).map(Number);
  const dimensions=page.locator('#smsModelDimensions');
+ const viewportRender=page.locator('.viewarea').getByRole('button',{name:'Render actual model',exact:true});
  await dimensions.filter({hasText:'Design preview'}).waitFor();
+ await viewportRender.waitFor({state:'hidden'});
  const initial=await model(),design=await readDimensions(dimensions);
  await page.locator('.sms-workspace-nav [data-tab=build]').click();
  const build=await readDimensions(dimensions);
  assert.deepEqual(design,build);
- await page.getByRole('button',{name:'Render actual model',exact:true}).click();
+ await page.setViewportSize({width:390,height:844});
+ await viewportRender.click({trial:true});
+ await page.setViewportSize({width:1440,height:1000});
+ await viewportRender.click();
  const inspector=page.locator('#smsLightInspector');
  await inspector.getByText('Prepared manufacturing mesh').waitFor({timeout:120000});
  const prepared=await readDimensions(dimensions.filter({hasText:'Prepared'}));
@@ -62,6 +67,7 @@ try{
  assert.equal(revision.id,initial.id);
  await inspector.getByRole('button',{name:'Close inspection'}).click();
  await page.locator('.sms-workspace-nav [data-tab=print]').click();
+ await viewportRender.waitFor({state:'hidden'});
  const job=page.locator('#smsJobs article');
  assert.equal(await job.count(),1,await page.locator('#smsJobs').innerText());
  await job.getByText('Prepared',{exact:true}).waitFor({timeout:5000});
@@ -70,7 +76,8 @@ try{
   const [file]=await Promise.all([page.waitForEvent('download'),job.locator(selector).click()]);
   return readFile(await file.path());
  };
- const stl=bounds(stlPoints(await download('[data-job-stl]')));
+ const initialStlPoints=stlPoints(await download('[data-job-stl]'));
+ const stl=bounds(initialStlPoints);
  const xml=modelXml(await download('[data-job-3mf]'));
  assert.match(xml,/<model unit="millimeter"/);
  assert.match(xml,/<item objectid="2" transform="1 0 0 0 1 0 0 0 1 0 0 0"/);
@@ -83,6 +90,54 @@ try{
  assert.deepEqual(print,rounded);
  assert.deepEqual(await model(),revision);
  console.log('WT-021 Crystal dimensional evidence:',JSON.stringify({initial,revision,design,build,prepared,print,stl,mf}));
+ const openDesign=()=>page.locator('.sms-workspace-nav [data-tab=design]').click();
+ const openPrint=()=>page.locator('.sms-workspace-nav [data-tab=print]').click();
+ const prepareTipRevision=async()=>{
+  await openPrint();
+  await job.getByText('Stale',{exact:true}).waitFor();
+  assert(await job.locator('[data-job-stl]').isDisabled());
+  assert(await job.locator('[data-job-3mf]').isDisabled());
+  await job.locator('[data-job-prepare]').click();
+  await job.getByText('Prepared',{exact:true}).waitFor({timeout:120000});
+  return {
+   stl:stlPoints(await download('[data-job-stl]')),
+   mf:[...modelXml(await download('[data-job-3mf]')).matchAll(/<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"/g)]
+    .map(match=>match.slice(1).map(Number))
+  };
+ };
+ const crystalState=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')));
+ const expandParents=locator=>locator.evaluate(element=>{
+  for(let ancestor=element.parentElement;ancestor;ancestor=ancestor.parentElement)
+   if(ancestor.tagName==='DETAILS')ancestor.open=true;
+ });
+ await openDesign();
+ const selected=page.locator('#objectTree [data-id]').first();
+ await expandParents(selected);
+ await selected.click();
+ const selectedId=await selected.getAttribute('data-id');
+ const tip=page.locator('[data-state=tipRound]');
+ await expandParents(tip);
+ const originalState=await crystalState();
+ const beforeTip={stl:initialStlPoints,mf:[...xml.matchAll(/<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"/g)].map(match=>match.slice(1).map(Number))};
+ await tip.evaluate(input=>{input.value='4.5';input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));});
+ await page.waitForFunction(id=>JSON.parse(localStorage.getItem('crystal-forge-v3')).crystals
+  .some(crystal=>crystal.id===id&&crystal.shape?.tipRound>4),selectedId);
+ const editedState=await crystalState();
+ assert.equal(editedState.settings.tipRound,originalState.settings.tipRound);
+ assert.deepEqual(editedState.crystals.filter(crystal=>crystal.id!==selectedId),
+  originalState.crystals.filter(crystal=>crystal.id!==selectedId));
+ const editedTip=await prepareTipRevision();
+ assert.notDeepEqual(editedTip.stl,beforeTip.stl);
+ assert.notDeepEqual(editedTip.mf,beforeTip.mf);
+ await openDesign();
+ await page.locator('#smsGlobalUndo').click();
+ assert.deepEqual((await crystalState()).crystals,originalState.crystals);
+ assert.deepEqual(await prepareTipRevision(),beforeTip);
+ await openDesign();
+ await page.locator('#smsGlobalRedo').click();
+ assert.deepEqual((await crystalState()).crystals,editedState.crystals);
+ assert.deepEqual(await prepareTipRevision(),editedTip);
+ console.log('WT-021 selected Crystal tip edit, undo and redo match both prepared print formats');
  await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{
   seed:42,count:5,width:94,baseHeight:35,baseWidth:18,cutSockets:true,lightingMode:'single',socketConical:true
  },'WT021 physical fitting'));
@@ -108,6 +163,20 @@ try{
  await toggle.uncheck();
  assert.equal(await fit.innerText(),'');
  console.log('WT-021 Crystal physical fitting preview toggled in Build');
+ const baseHeight=page.locator('.sms-palette').getByRole('slider',{name:'Base height',exact:true});
+ await baseHeight.evaluate(input=>{
+  input.value='25';
+  input.dispatchEvent(new Event('input',{bubbles:true}));
+  input.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ await viewportRender.click();
+ await inspector.getByRole('status').filter({hasText:/Conical pixel socket needs \d+\.\d+ mm of stock/}).waitFor({timeout:120000});
+ await page.locator('.sms-palette').getByRole('button',{name:'Fit base to pixel sockets',exact:true}).click();
+ const fittedHeight=Number(await baseHeight.inputValue());
+ assert.equal(fittedHeight,31,'Pointed gumdrop socket needs a taller base than the previous maximum');
+ await viewportRender.click();
+ await inspector.getByText('Prepared manufacturing mesh').waitFor({timeout:120000});
+ await inspector.getByRole('button',{name:'Close inspection'}).click();
  await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{
   seed:42,count:5,width:94,baseType:'integrated',baseStyle:'Square',baseHeight:24,baseWidth:32,baseDome:0,
   cutSockets:true,lightingMode:'multi',pixelPlacement:'manual',manualPixelHoles:[],pixelProfileId:'seed',
@@ -224,6 +293,31 @@ try{
  await page.getByRole('button',{name:'Render actual model',exact:true}).click();
  await inspector.getByText('Prepared manufacturing mesh').waitFor({timeout:120000});
  await inspector.getByLabel('Cut section').check();
+ await inspector.getByLabel('Section axis').selectOption('X');
+ const sectionX=await inspector.getByRole('slider').evaluate(slider=>{
+  slider.value='0';
+  slider.dispatchEvent(new Event('input',{bubbles:true}));
+  return Number(slider.value);
+ });
+ assert(Math.abs(sectionX)<.1,'Inspection plane crosses the routed band');
+ const section=await page.evaluate(async x=>{
+  const {Mesh}=await import('three');
+  const prior=Mesh.prototype.onBeforeRender;
+  return new Promise((resolve,reject)=>{
+   const timer=setTimeout(()=>{
+    Mesh.prototype.onBeforeRender=prior;
+    reject(Error('Crystal prepared cutaway did not render'));
+   },5000);
+   Mesh.prototype.onBeforeRender=function(renderer,scene,camera,geometry,material,...rest){
+    prior.call(this,renderer,scene,camera,geometry,material,...rest);
+    const plane=material.clippingPlanes?.[0];
+    if(plane?.normal.x!==1||Math.abs(plane.constant+x)>.0001)return;
+    clearTimeout(timer);
+    Mesh.prototype.onBeforeRender=prior;
+    resolve({vertices:Array.from(geometry.attributes.position.array),indices:Array.from(geometry.index.array)});
+   };
+  });
+ },sectionX);
  await inspector.getByRole('button',{name:'Close inspection'}).click();
  await page.locator('.sms-workspace-nav [data-tab=print]').click();
  const crystalJob=page.locator('#smsJobs article').filter({hasText:'WT021 full Crystal'});
@@ -241,6 +335,19 @@ try{
  const indexed=new THREE.BufferGeometry();
  indexed.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
  indexed.setIndex(indices);
+ const visibleSection=new THREE.BufferGeometry();
+ const printVertices=[];
+ for(let i=0;i<section.vertices.length;i+=3)
+  printVertices.push(section.vertices[i],-section.vertices[i+2],section.vertices[i+1]);
+ visibleSection.setAttribute('position',new THREE.Float32BufferAttribute(printVertices,3));
+ visibleSection.setIndex(section.indices);
+ const sectionMaterial=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});
+ const sectionMesh=new THREE.Mesh(visibleSection,sectionMaterial);
+ const sectionWall=direction=>new THREE.Raycaster(new THREE.Vector3(sectionX,0,1),
+  new THREE.Vector3(0,direction,0)).intersectObject(sectionMesh)[0]?.point.y;
+ const viewedWalls=[sectionWall(-1),sectionWall(1)];
+ assert(viewedWalls.every(Number.isFinite));
+ visibleSection.dispose();sectionMaterial.dispose();
  for(const [format,geometry] of [['STL',new STLLoader().parse(Uint8Array.from(crystalSTL.bytes).buffer)],['3MF',indexed]]){
   const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});
   const mesh=new THREE.Mesh(geometry,material);
@@ -249,9 +356,11 @@ try{
   const bore=[calibrated.x,-calibrated.z,4];
   const left=hit(bore,[0,-1,0]),right=hit(bore,[0,1,0]);
   assert(left&&right&&Math.abs(left.distanceTo(right)-5.4)<.04,format+' calibrated Crystal bore');
-  const route=[0,0,1];
+  const route=[sectionX,0,1];
   const startWall=hit(route,[0,-1,0]),endWall=hit(route,[0,1,0]);
   assert(startWall&&endWall&&Math.abs(startWall.distanceTo(endWall)-3.2)<.04,format+' routed width survives the fit change');
+  for(const [i,wall] of [startWall,endWall].entries())
+   assert(Math.abs(wall.y-viewedWalls[i])<.01,format+' matches the route wall at the selected X plane');
   for(const hole of [...hardware.mounts,...hardware.tabHoles])
    assert.equal(hit([hole.x,-hole.z,-1],[0,0,1]),undefined,format+' Crystal through-holes are open');
   for(const hole of hardware.tabHoles){
@@ -369,6 +478,7 @@ try{
    cutSockets:false,lightingMode:'none',wireChannels:false,mount:'None',mountPlacement:'auto',mountSpacing:34,manualEdgeTabs:null,tabCount:2,tabHolesPerTab:1
   },name),name);
   const build=page.locator('.sms-workspace-nav [data-tab=build]'),print=page.locator('.sms-workspace-nav [data-tab=print]');
+  await page.locator('#advancedBtn').click();
   const preset=page.locator('[data-state=mount]'),job=page.locator('#smsJobs article').filter({hasText:name});
   for(const [type,diameter,depth] of [['Magnet inserts',10.2,3.2],['Threaded insert M3',4.2,6]]){
    await build.click();
@@ -471,14 +581,17 @@ try{
     const b=polygon[(i+1)%polygon.length];
     return [.2,.4,.6,.8].map(t=>({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t}));
    }).filter(p=>Math.hypot(p.x-old.x,p.z-old.z)>6);
-   const target=candidates.find(edgePoint=>solvePixelMove(crystals,parameters,{edgeKind:kind,edgePoint}).valid);
+   const target=candidates.find(({x,z})=>[[0,0],[.4,0],[-.4,0],[0,.4],[0,-.4]].every(([dx,dz])=>
+    solvePixelMove(crystals,parameters,{edgeKind:kind,edgePoint:{x:x+dx,z:z+dz}}).valid));
    assert(target,'a valid '+kind+' opening can move along the perimeter');
    const to=await onBase(target.x,target.z,.8),from=await marker.boundingBox();
    await page.mouse.move(from.x+from.width/2,from.y+from.height/2);
    await page.mouse.down();
    await page.mouse.move(to.x,to.y,{steps:4});
    await page.mouse.up();
-   await page.locator('#status').filter({hasText:'Moved '+kind+' perimeter opening'}).waitFor();
+   await page.locator('#status').filter({hasText:'Moved '+kind+' perimeter opening'}).waitFor({timeout:8000}).catch(async error=>{
+    throw Error('Crystal '+kind+' opening did not move: '+await page.locator('#status').innerText(),{cause:error});
+   });
    const moved=await crystal();
    assert(Math.hypot(moved.parameters[prefix+'X']-target.x,moved.parameters[prefix+'Z']-target.z)<1);
    assert.deepEqual(moved.parameters.manualPixelHoles.map(({x,z})=>[x,z]),parameters.manualPixelHoles.map(({x,z})=>[x,z]));
@@ -526,5 +639,31 @@ try{
   assert(await routedJob.locator('[data-job-stl]').isDisabled());
   assert(await routedJob.locator('[data-job-3mf]').isDisabled());
   console.log('WT-021 moved cable openings persist and both exports match the prepared dimensions');
+  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.waitForFunction(()=>window.__crystalForgePlacementMetrics().routeGuidesVisible);
+  const template=page.getByRole('button',{name:'New Cogs & Gears from template',exact:true});
+  await page.locator('#smsLibrary').click();
+  await template.click();
+  await page.waitForFunction(()=>!window.__crystalForgePlacementMetrics().routeGuidesVisible);
+  const firstCog=await crystal();
+  assert.equal(firstCog.generator.typeId,'gears');
+  assert.equal(firstCog.build.pixelHoles?.length??0,0);
+  await page.locator('.sms-palette [data-palette-key=diameter]').press('ArrowRight');
+  const editedCog=await crystal();
+  assert(editedCog.parameters.diameter>firstCog.parameters.diameter);
+  page.once('dialog',dialog=>dialog.accept('Cog: Connors new one'));
+  await page.getByRole('button',{name:'Save as new model…',exact:true}).click();
+  await page.locator('#smsLibrary').click();
+  const savedCog=page.locator('#smsSavedModels article').filter({hasText:'Cog: Connors new one'});
+  await savedCog.waitFor();
+  await template.click();
+  const freshCog=await crystal();
+  assert.notEqual(freshCog.id,firstCog.id);
+  assert.deepEqual(freshCog.parameters,firstCog.parameters);
+  assert.deepEqual(freshCog.build,firstCog.build);
+  await page.locator('#smsLibrary').click();
+  await savedCog.getByRole('button',{name:'Independent copy'}).click();
+  assert.deepEqual((await crystal()).parameters,editedCog.parameters);
+  console.log('WT-021 Library templates start fresh and saved variants preserve their edits');
  }
 }finally{await browser.close();}

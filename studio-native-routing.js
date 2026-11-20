@@ -154,7 +154,8 @@ function waveRouteSurface(recipe,holes){
  return holes.every(hole=>{
   const normal=hole.surface?.normal;
   return hole.socketProfile&&normal&&Math.abs(hole.surface.y-waveHeight(wave,hole.x,hole.z))<.01&&
-   normal[1]>.999;
+   // A shallow socket tilt still allows the upward-open groove to join its ports.
+   normal[1]>.998;
  })?wave:null;
 }
 
@@ -192,6 +193,9 @@ function frontRouteExtrude(part,front){
 export function nativeRouteEligibility(recipe,build){
  const holes=build.pixelHoles||[];
  const topY=topRouteHeight(recipe,holes),front=frontRouteFace(recipe,holes),wave=waveRouteSurface(recipe,holes);
+ const waveSlopeLimit=recipe.serialSupport?.waveSlopeLimit;
+ if(waveSlopeLimit&&holes.length&&holes.every(hole=>hole.socketProfile&&hole.surface?.normal[1]>.5))
+  return 'Wave relief is too steep for surface cable grooves. Reduce Wave height or Wave count until the surface slope is '+Math.round(waveSlopeLimit*100)+'% or less.';
  if(holes.some(hole=>hole.socketProfile&&hole.surface)&&topY===null&&!front&&!wave)
   return 'Physical grooves require a shared flat underside or an eligible planar top, Tile wall or gentle Wave surface. Move the sockets to the same supported face.';
  if(wave&&build.serialRouting?.vaulted)

@@ -31,11 +31,13 @@ for(const pattern of ['grass','wool','river','mineral','rain','dots']){
  }
  const files=unzipStored(exported.threeMF);
  const model=new TextDecoder().decode(files.get('3D/3dmodel.model'));
- assert.equal((model.match(/<object /g)||[]).length,2);
- assert.equal((model.match(/<item /g)||[]).length,2);
+ assert.equal((model.match(/<object /g)||[]).length,3);
+ assert.match(model,/<object id="4" type="model"><components><component objectid="2"\/><component objectid="3"\/><\/components><\/object>/);
+ assert.match(model,/<build><item objectid="4" transform="1 0 0 0 1 0 0 0 1 0 0 0"\/><\/build>/);
  assert(model.includes('Tile &amp; relief'));
  const metadata=JSON.parse(new TextDecoder().decode(files.get('Metadata/material-roles.json')));
  assert.deepEqual(metadata.materials.map(m=>[m.role,m.requestedExtruder]),[['primary',0],['secondary',1]]);
+ assert.deepEqual(metadata.materials.map(m=>m.objectId),[2,3]);
  assert.equal(metadata.curaExtruderAssignmentVerified,false);
  assert.throws(()=>exportMaterialBodies(result,{extruders:{primary:0,secondary:0}}));
  assert.equal(result.bodies.length,2);

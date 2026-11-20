@@ -84,6 +84,8 @@ body.sms-unified .layout{display:grid;flex:1;min-height:0;height:auto;position:r
 .sms-edge[aria-disabled=true]{cursor:default}
 .sms-centre{grid-column:3;grid-row:1;display:grid;grid-template-rows:minmax(0,1fr);position:relative;min-width:0;min-height:0}
 .sms-centre .viewarea{height:auto;min-height:0;overflow:hidden}
+.sms-centre .viewtools{z-index:5}
+.sms-render-model{pointer-events:auto;box-shadow:0 4px 12px #07102050}
 .sms-unified:not([data-studio-view=model]) .sms-centre>.viewarea{visibility:hidden}
 .sms-unified:not([data-studio-view=model]) .sms-palette{display:none}
 .sms-unified[data-studio-view=home] :is(.sms-tools,.sms-settings){visibility:hidden}

@@ -190,14 +190,19 @@ export const waveGenerator=define('waves','Waves & Organic Forms','Organic',[
  const segments=48,mesh=heightField(p.width,p.depth,top,segments);
  const count=segments+1,stepX=p.width/segments,stepZ=p.depth/segments;
  const heights=Array.from({length:count*count},(_,i)=>mesh.points[i*3+1]);
- // The cutter and stock guards can follow both axes on gentle relief.
- const gentle=heights.every((height,i)=>(i%count===segments||Math.abs(heights[i+1]-height)<=stepX*.025)&&
-  (i>=segments*count||Math.abs(heights[i+count]-height)<=stepZ*.025));
+ // Bound the slope on both triangles of each routing surface cell.
+ const maxRouteSlope=.06;
+ const gentle=heights.every((height,i)=>{
+  if(i%count===segments||i>=segments*count)return true;
+  const right=heights[i+1],back=heights[i+count],opposite=heights[i+count+1];
+  return Math.hypot((right-height)/stepX,(back-height)/stepZ)<=maxRouteSlope&&
+   Math.hypot((opposite-back)/stepX,(opposite-right)/stepZ)<=maxRouteSlope;
+ });
  const wave=gentle?{width:p.width,depth:p.depth,segments,heights}:null;
  const w = p.width / 2, d = p.depth / 2;
  const pixelBoreSupport = {outline:[[-w,-d],[w,-d],[w,d],[-w,d]],minThickness:p.thickness};
  const material=p.flowStyle==='Parallel'?{secondary:[box([p.width,.8,p.depth],[0,.4,0])]}:{secondary:[],materialSplitHeight:.8,materialSplitRole:'top'};
- return {positive:[{kind:'mesh',mesh}],...material,pixelBoreSupport,serialSupport:{outline:pixelBoreSupport.outline,thickness:p.thickness,wave},negative:[],bounds:{width:p.width,depth:p.depth,height:p.thickness+p.amplitude},warnings:['Review the wave slopes in Cura; the flat underside is the intended bed face.']};
+ return {positive:[{kind:'mesh',mesh}],...material,pixelBoreSupport,serialSupport:{outline:pixelBoreSupport.outline,thickness:p.thickness,wave,waveSlopeLimit:gentle?null:maxRouteSlope},negative:[],bounds:{width:p.width,depth:p.depth,height:p.thickness+p.amplitude},warnings:['Review the wave slopes in Cura; the flat underside is the intended bed face.']};
 });
 function raisedControlSymbol(symbol,width,surface,offset=0){
  const h=2.4,y=surface, size=width*.34;
@@ -585,6 +590,7 @@ export function applyBuildModules(recipe,build={},capabilities={}, {preview=fals
    r.serialSupport.topOutline=upper.outline;
    r.serialSupport.topThickness=upper.thickness;
   }
+  if(upper?.waveSlopeLimit)r.serialSupport.waveSlopeLimit=upper.waveSlopeLimit;
   if(upper?.front)r.serialSupport.front={...upper.front,backingHeight:thickness};
   r.bounds={...b,width:b.width+spread*2,depth:b.depth+spread*2,height:Math.max(b.height,thickness)};
   r.warnings.push('Expanded fitting backing was explicitly enabled. Inspect underside openings, material joins and support requirements in Cura and on a printed sample.');

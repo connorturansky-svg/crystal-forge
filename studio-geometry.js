@@ -216,7 +216,8 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
     if(hold(total.intersect(opening)).volume()>.05)
      warn(seat.pixelHole+' has an obstructed insertion opening. Choose an exposed face.');
    }
-   if(envelope.volume()-hold(total.intersect(envelope)).volume()>.05)
+   const missingStockVolume=Math.max(0,envelope.volume()-hold(total.intersect(envelope)).volume());
+   if(missingStockVolume>.05)
     warn(seat.pixelHole+' needs '+(seat.surface?'continuous stock on its installation face':'continuous underside stock')+', including a 2.8 mm roof beyond the socket. Increase thickness or move the fitting.');
    if(inspectFittings){
     const bore=socket(seat),negative=bore.solid;
@@ -225,7 +226,7 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
     if(positive.status()!=='NoError'||negative.status()!=='NoError')throw Error('Invalid physical fitting preview.');
     const wireOverlap=wireSolid?hold(positive.intersect(wireSolid)).volume():0;
     previews.push({wireOverlap,pixelId:seat.pixelId,positive:positive.getMesh(),negative:negative.getMesh(),
-     insertionDepth:bore.usableBodyDepth,nominalRoofAllowance:bore.remainingWall,
+     insertionDepth:bore.usableBodyDepth,nominalRoofAllowance:bore.remainingWall,missingStockVolume,
      exposedVolume:hold(positive.subtract(total)).volume(),
      collisionVolume:hold(hold(positive.intersect(total)).subtract(negative)).volume(),warnings});
    }
