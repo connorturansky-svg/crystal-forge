@@ -238,6 +238,12 @@ body.theme-light .cloud-sync-panel summary{color:#142d44}
 <div class="control"><label>Rounded tip radius <output data-out="tipRound"></output></label><input data-state="tipRound" type="range" min="1.5" max="8" step=".25"><p class="note">Actual rounded cap radius (mm). Larger values form a broader, smooth end, not a flat or pointed tip. For children, verify the printed surface physically; this control alone is not a safety certification.</p></div>
 <div class="control"><label>Additional shoulder rounding <output data-out="shoulderRound"></output></label><input data-state="shoulderRound" type="range" min="0" max="2" step=".1"></div>
 <div class="control"><label>Corner smoothness <output data-out="roundSteps"></output></label><input data-state="roundSteps" type="range" min="2" max="8" step="1"></div>
+<div class="divider"></div>
+<div class="control"><label><input data-state="edgeFinishEnabled" type="checkbox"> Finish exterior edges</label><p class="note">Real mesh rounding/chamfering (mm), not just shader smoothing. Fittings, cable channels and fixings retain their original cutters. Inspect the finished STL in Cura.</p></div>
+<div class="control"><label>Edge finish style <select data-state="edgeFinishStyle"><option>Rounded</option><option>Chamfer</option></select></label></div>
+<div class="control"><label>Edge group <select data-state="edgeFinishScope"><option>All exterior</option><option>Top edges</option><option>Side edges</option><option>Bottom edges</option></select></label></div>
+<div class="control"><label>Edge amount <output data-out="edgeFinishAmount"></output></label><input data-state="edgeFinishAmount" type="range" min=".1" max="4" step=".1"></div>
+<div class="control"><label>Edge smoothness steps <output data-out="edgeFinishSteps"></output></label><input data-state="edgeFinishSteps" type="range" min="1" max="3" step="1"></div>
 </div></div></div>
 <div class="card teal advanced-only"><div class="cardtitle"><span class="symbol">⌖</span> Selection & editing</div><div class="cardbody"><p class="note">Select crystals in the viewport or object tree. Use G / R / S, or toolbar buttons, for coloured XYZ gizmos. Snapping is optional.</p>
 <div class="buttonrow"><button id="duplicateBtn">Duplicate</button><button id="deleteBtn">Delete</button><button id="lockBtn">Lock / unlock</button></div>
