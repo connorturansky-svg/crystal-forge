@@ -1,0 +1,52 @@
+name: Seven-builder edge finishing
+concurrency:
+  group: crystal-edge-finish-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+on:
+  pull_request:
+    branches: [main, 'fix/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  manifold:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned manufacturing dependencies
+        run: npm install --prefer-offline --no-audit --no-fund
+      - name: Real Manifold and STL/3MF geometry
+        run: node tests/edge-finishing.test.mjs
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser dependencies
+        run: npm install --prefer-offline --no-audit --no-fund
+      - name: Use system Chrome or Playwright Chromium
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v chromium)" >> "$GITHUB_ENV"
+          else
+            timeout 180s npx playwright install chromium
+          fi
+      - name: Start a local Studio HTTP server
+        run: |
+          python3 -m http.server 4321 >/tmp/edge-finish-server.log 2>&1 &
+          sleep 2
+      - name: Interact with the seven real Design editors
+        run: node tests/edge-finishing-browser.mjs

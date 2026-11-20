@@ -3,6 +3,7 @@ export const relevantManufacturingKeys=[
  'wireAllowOverLength','wireEntryX','wireEntryZ','wireOutputX','wireOutputZ','wireInputEnabled','wireOutputEnabled',
  'count','height','width','crystalSize','widthRandomness','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix','familyWeights','bottomScale','topScale',
  'cornerRadius','shoulderRound','tipFlat','tipRound','tipStyle','tipLength','roundSteps',
+ 'edgeFinishEnabled','edgeFinishStyle','edgeFinishScope','edgeFinishAmount','edgeFinishSteps',
  'baseType','baseHeight','baseDome','baseEdgeRadius','baseProfile','domeFalloff','sideWall','baseWidth','baseStyle','undersideAccess','baseVault','vaultSupportPitch','wallThickness','lightPorts','lightPortDiameter','lightPortReach','lightingMode','pixelCount','pixelDiameter',
  'pixelFit','pixelRetentionLip','socketConical','socketSupportFreeShoulders','socketShoulderAngle','pixelProfileId','pixelProfiles','wireChannels','wireExit','wireMode','wirePairSpacing','wireWidth','wireDepth','wireVaulted','wireSlack','pixelStringSpacing','wireMinBendRadius','wireInputTailLength','wireOutputTailLength','cutSockets','hollowCrystals','targetedLightPaths','lightBoreDiameter','lightReach','pixelPlacement','manualPixelHoles','mountPlacement','manualMountHoles','overhang','printer','printerX','printerY','printerZ','mount','mountHoleDiameter','mountHoleDepth','mountSpacing','manualEdgeTabs','tabCount','tabHolesPerTab','tabHoleDiameter','tabThickness','tabWall'
 ];

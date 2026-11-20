@@ -1,5 +1,12 @@
 # AI handover — read immediately after AGENTS.md
 
+## Universal edge finishing — PR #117 release candidate (20 Nov 2026)
+- The owner merged Crystal convex-tip fix #116 into `main` at `87471f9`. PR #117 now targets `main` directly, and branch `feat/universal-edge-finishing-20261120` contains that merge without changing the verified positive-geometry feature tree. The PR has no code conflicts and is awaiting exact-head CI and owner merge approval.
+- `studio-edge-finish.js` changes genuine positive mesh geometry. Native model controls save `build.edgeFinish`, Crystal controls save shape settings. The shared recipeGeometry path feeds preview and fabrication; hardware negative cutters are deliberately unchanged.
+- Edge groups are All exterior, Top, Side, Bottom; individual edge picking is not implemented. Amount is a bounded approximate mesh displacement, not a constant-radius CAD fillet or collision-certified operation.
+- Release version `v0.16.0-dev.35.23` follows the merged #116 `dev.35.22`. Require latest-head static, full Manifold fabrication, focused seven-builder Chromium/Manifold + STL/3MF and full Chromium smoke before recommending merge. Inspect Cura wall, fitting-clearance, print orientation and physical samples separately.
+- PR #118 remains an independent subsequent change to precision editors (`dev.35.24`) and must only merge after PR #117.
+
 ## Crystal tip convexity (independent draft — 20 Nov 2026)
 - PR #116 branch `fix/crystal-tip-monotone-20261120` has been reconciled with merged #114 at main `f0555d0` without changing Crystal geometry. It bounds the rounded spherical tip to actual shoulder headroom and replaces the inverted last-ring fallback.
 - Existing Crystal settings and geometry are retained, with new all-family mesh, Manifold and browser regressions. Exact-head CI on the integrated commit is required before owner merge; Cura and tactile-print verification remain separate.

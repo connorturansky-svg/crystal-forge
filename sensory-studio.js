@@ -12,6 +12,7 @@ import {createModel,addModel,findModel,openTab,closeTab,reorderTabs,duplicateMod
  queueModel,beginPreparation,finishPreparation,cancelPreparation,canExport,resolveJobPrinter,movePrintJob,invalidatePrintJob,saveLibraryRevision,
  insertLibraryModel,availableLinkedUpdate,acceptLinkedUpdate,breakLink,modelFingerprint,validateProject,WORKSPACE_KEY,newId} from './studio-documents.js';
 import {makeCatalogue,applyBuildModules,generators} from './studio-catalogue.js';
+import {normaliseEdgeFinish,EDGE_FINISH_STYLES,EDGE_FINISH_SCOPES} from './studio-edge-finish.js';
 import {previewRecipe,disposeGroup,nativeFittingPreviews} from './studio-geometry.js';
 import {loadManifold} from './fabrication-v1.js';
 import {exportMaterialBodies,preparedDimensionsMm} from './studio-material-export.js';
@@ -2106,6 +2107,61 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
      controls.append(group);
     }
    }
+  }
+  // One Design tool for all seven builders, built on each family's existing
+  // parametric source. Real positive edges change in BOTH preview and print.
+  if(!build){
+   const crystal=family.typeId==='crystals';
+   const readCrystal=key=>{
+    const node=document.querySelector('[data-state="'+key+'"]');
+    return node?.type==='checkbox'?node.checked:node?.type==='range'?Number(node.value):node?.value;
+   };
+   const settings=crystal
+    ?normaliseEdgeFinish({enabled:!!readCrystal('edgeFinishEnabled'),
+      style:readCrystal('edgeFinishStyle'),scope:readCrystal('edgeFinishScope'),
+      amountMm:readCrystal('edgeFinishAmount'),steps:readCrystal('edgeFinishSteps')})
+    :normaliseEdgeFinish(model.build.edgeFinish);
+   const section=document.createElement('fieldset');section.className='sms-edge-finishing';
+   section.setAttribute('aria-label','Edge finishing');
+   const legend=document.createElement('legend');legend.textContent='Edge finishing';
+   const help=document.createElement('p');help.className='sms-descriptor';
+   help.textContent='Round or chamfer real outside edges. Sharp internal cuts for LEDs, wiring and fixings are preserved. Confirm wall thickness and fit in Cura.';
+   section.append(legend,help);
+   const applyFinish=(key,value)=>{
+    if(crystal){
+     const mapped={enabled:'edgeFinishEnabled',style:'edgeFinishStyle',scope:'edgeFinishScope',
+      amountMm:'edgeFinishAmount',steps:'edgeFinishSteps'}[key];
+     const node=document.querySelector('[data-state="'+mapped+'"]');
+     if(!node)return false;
+     if(node.type==='checkbox')node.checked=!!value;else node.value=value;
+     node.dispatchEvent(new Event('input',{bubbles:true}));
+     node.dispatchEvent(new Event('change',{bubbles:true}));
+     renderPalette();return true;
+    }
+    const next=normaliseEdgeFinish({...settings,[key]:value});
+    if(!commit({build:{...model.build,edgeFinish:next}}))return false;
+    renderEditor();renderPalette();return true;
+   };
+   const toggleLabel=document.createElement('label');
+   const toggle=document.createElement('input');toggle.type='checkbox';toggle.dataset.edgeFinish='enabled';
+   toggle.checked=settings.enabled;toggle.disabled=!!model.link;
+   toggle.onchange=()=>{if(!applyFinish('enabled',toggle.checked))toggle.checked=settings.enabled;};
+   toggleLabel.append(toggle,' Finish exterior edges');section.append(toggleLabel);
+   const option=(label,name,current,choices)=>{
+    const wrapper=document.createElement('label'),select=document.createElement('select');
+    select.dataset.edgeFinish=name;wrapper.append(label,select);
+    for(const choice of choices)select.add(new Option(choice,choice));
+    select.value=current;select.disabled=!!model.link;
+    select.onchange=()=>{if(!applyFinish(name,select.value))select.value=current;};
+    section.append(wrapper);
+   };
+   option('Finish style','style',settings.style,EDGE_FINISH_STYLES);
+   option('Edge group','scope',settings.scope,EDGE_FINISH_SCOPES);
+   visualRange(section,{key:'edge-finish-amount',label:'Edge amount',min:.1,max:4,step:.1,unit:'mm'},
+    settings.amountMm,value=>applyFinish('amountMm',Number(value)),!!model.link);
+   visualRange(section,{key:'edge-finish-steps',label:'Roundness steps',min:1,max:3,step:1},
+    settings.steps,value=>applyFinish('steps',Number(value)),!!model.link);
+   controls.append(section);
   }
   shell.searchSettings();
  }

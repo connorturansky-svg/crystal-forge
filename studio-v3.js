@@ -48,6 +48,7 @@ const defaults={
   title:'Untitled cluster',batchSelectionIds:[],count:16,height:155,width:130,crystalSize:1,widthRandomness:0,studioBrightness:.85,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
   familyMix:'Quartz',familyWeights:{Quartz:1,Shard:1,Blade:1,Cubic:1,'Double terminated':1,Fantasy:1},bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,tipStyle:'Rounded',
   tipFlat:.25,tipLength:.27,roundSteps:3,
+  edgeFinishEnabled:false,edgeFinishStyle:'Rounded',edgeFinishScope:'All exterior',edgeFinishAmount:0.8,edgeFinishSteps:2,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
   wireAllowOverLength:false,
   showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,socketConical:false,socketSupportFreeShoulders:false,socketShoulderAngle:45,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,autoBedSplit:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',pixelStringSpacing:50,pixelSnapMaxMove:5,wireMinBendRadius:5,wireInputTailLength:0,wireOutputTailLength:0,wireDirectionArrows:true,wireShowLengths:true,wirePairSpacing:7,wireWidth:3,wireDepth:2,wireVaulted:false,wireSlack:0,manualEdgeTabs:null,edgeManualMounts:false,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
@@ -116,14 +117,14 @@ function restore(str){
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
- if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','wirePairSpacing','lightPortDiameter','lightBoreDiameter','lightReach','splitPinDiameter','splitPinDepth','splitPinClearance','plateThickness','wireDepth'].includes(k))return Number(v).toFixed(['pixelFit','pixelRetentionLip','splitPinClearance'].includes(k)?2:1)+' mm';
+ if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','edgeFinishAmount','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','wirePairSpacing','lightPortDiameter','lightBoreDiameter','lightReach','splitPinDiameter','splitPinDepth','splitPinClearance','plateThickness','wireDepth'].includes(k))return Number(v).toFixed(['pixelFit','pixelRetentionLip','splitPinClearance'].includes(k)?2:1)+' mm';
  if(k==='crystalSize'||k==='studioBrightness')return Math.round(Number(v)*100)+'%';
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
  if(['mountHoleDiameter','mountHoleDepth','mountSpacing','mountPlateThickness','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
  if(k==='curaQuality')return v+'%';if(k==='lightPortReach')return v+'%';if(k==='hardwareSnapStep')return Number(v).toFixed(1)+' mm';if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang'||k==='socketShoulderAngle')return v+'°';return String(v);
 }
-const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
+const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps','edgeFinishEnabled','edgeFinishStyle','edgeFinishScope','edgeFinishAmount','edgeFinishSteps']);
 function selectedCrystal(){return crystals.find(c=>c.id===selectedId)||null}
 function shapeValue(c,k){
  if(!c)return s[k];

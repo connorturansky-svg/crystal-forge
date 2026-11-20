@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.23 — Shared real-geometry edge finishing
+- Finish exterior edges in all seven Design builders with Rounded and Chamfer modes, top/side/bottom groups, amount and smoothness controls.
+- Preview and Manifold/STL/3MF preparation modify positive mesh geometry while preserving pixel sockets, wire channels and mounting cutters.
+- Existing saved models remain unchanged unless enabled. The amount is an approximate maximum displacement, not a certified CAD fillet radius; check physical walls and clearances.
+- Add seven-builder Chromium and Manifold/export regressions. Real Cura and printed-part checks remain separate.
+
 ## v0.16.0-dev.35.22 — Keep narrow Crystal tips convex
 - Prevent rounded Crystal poles folding below a shoulder ring on short, slim or heavily rounded spikes.
 - Limit spherical cap radius to the physically available headroom; retain real geometry, per-crystal overrides, and faceted sides.

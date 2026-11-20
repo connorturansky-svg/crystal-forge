@@ -1,4 +1,5 @@
 import {socketShoulderRise} from './pixel-profiles.js';
+import {normaliseEdgeFinish} from './studio-edge-finish.js';
 import {importedMeshRecipe} from './studio-mesh-import.js';
 import {buildSvgExtrusionRecipe} from './svg-import/index.js';
 import {planNativePixelString} from './studio-native-routing.js';
@@ -618,6 +619,15 @@ export function applyBuildModules(recipe,build={},capabilities={}, {preview=fals
    :'Serial grooves are underside-open. Check cable seating and roof layers in Cura and on a physical print.');
  }
  addBackingTabs(r,build,routing);
+ // Edit only positive stock. The authoritative negative pixel, channel and
+ // mounting cutters are subtracted afterwards at their original dimensions.
+ const edgeFinish=normaliseEdgeFinish(build.edgeFinish);
+ if(edgeFinish.enabled){
+  r.edgeFinish=edgeFinish;
+  for(const role of ['positive','secondary'])
+   r[role]=r[role].map(part=>({...part,edgeFinish}));
+  r.warnings.push('Exterior edge finishing is geometric, but minimum wall thickness and physical fit must still be checked in Cura.');
+ }
  r.nativeRouting=routing;
  return r;
 }
