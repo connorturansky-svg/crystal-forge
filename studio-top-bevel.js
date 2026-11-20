@@ -14,6 +14,16 @@ function triangleNormal(a,b,c){
  const n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
  const size=Math.hypot(...n);return size>EPS?n.map(x=>x/size):[0,0,0];
 }
+function hasSubprecisionTriangles(solid){
+ const mesh=solid.getMesh(),v=mesh.vertProperties,t=mesh.triVerts,stride=mesh.numProp;
+ for(let i=0;i<t.length;i+=3){
+  const a=t[i]*stride,b=t[i+1]*stride,c=t[i+2]*stride;
+  const ux=v[b]-v[a],uy=v[b+1]-v[a+1],uz=v[b+2]-v[a+2];
+  const vx=v[c]-v[a],vy=v[c+1]-v[a+1],vz=v[c+2]-v[a+2];
+  if(Math.hypot(uy*vz-uz*vy,uz*vx-ux*vz,ux*vy-uy*vx)<1e-12)return true;
+ }
+ return false;
+}
 function positiveRims(solid){
  const mesh=solid.getMesh(),vertices=[],triangles=[],normals=[],edges=new Map();
  const raw=mesh.vertProperties;
@@ -82,14 +92,14 @@ export function bevelTopSolid(wasm,solid,settings){
     result.delete();
     throw Error('Top chamfer would damage this model. Reduce amount or leave finishing off.');
    }
-   // Boolean intersections at dense involute teeth can leave sub-pixel
-   // sliver triangles after STL float32 conversion. Simplify only the
-   // positive chamfered stock (BEFORE any precise pixel/wire/mount cuts).
+   // Only repair source meshes whose float32 triangles are actually
+   // degenerate. A simple box must NOT be rounded away by global cleanup.
+   if(!hasSubprecisionTriangles(result))return result;
    const raw=result.asOriginal();
    try{
     const cleaned=raw.simplify(Math.min(.04,amount*.08));
     if(cleaned.status()!=='NoError'||cleaned.isEmpty()||
-       Math.abs(cleaned.volume()-result.volume())>Math.max(.05,result.volume()*.0001)){
+       Math.abs(cleaned.volume()-result.volume())>Math.max(.8,result.volume()*.001)){
      cleaned.delete();result.delete();
      throw Error('Top chamfer cleanup changed the real solid. Reduce the amount.');
     }
