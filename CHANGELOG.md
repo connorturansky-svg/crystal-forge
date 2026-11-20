@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.25 — Subtractive top-rim chamfers instead of surface crinkles
+- Retire #117's triangle-midpoint warping on openwork Gear surfaces. Cut a measured 45-degree chamfer into exposed flat upper edges rather than displacing decorative surface triangles.
+- Bevel outer top rims, spoke windows, shaft-bore mouths and raised planar upper edges. Preserve flat undersides, internal bore dimensions below the lead-in and exact separate pixel, wire and mount cutters.
+- Default to a small 0.5 mm top-only chamfer. Legacy broad Rounded / All exterior choices use the safer top-only operation; nonplanar ridges remain untouched pending a verified feature-edge algorithm.
+- Add 12-tooth, five-spoke, 8 mm bore Gear regression; run full Manifold, STL/3MF and Chromium checks before deployment. Inspect Cura and a physical touch/fit print. See issue #119.
+
 ## v0.16.0-dev.35.23 — Shared real-geometry edge finishing
 - Finish exterior edges in all seven Design builders with Rounded and Chamfer modes, top/side/bottom groups, amount and smoothness controls.
 - Preview and Manifold/STL/3MF preparation modify positive mesh geometry while preserving pixel sockets, wire channels and mounting cutters.

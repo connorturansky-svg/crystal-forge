@@ -1,5 +1,11 @@
 # AI handover — read immediately after AGENTS.md
 
+## P0 regression #119 — top touch-safe bevel corrective draft (20 Nov 2026)
+- After #117 merged, the owner showed crinkled surface geometry on an openwork Gear. A Manifold-green result is insufficient: triangulation surface warps are visually and physically unacceptable.
+- Branch `fix/top-touch-safe-chamfers-20261120` replaces arbitrary triangle-midpoint displacements with a measured, subtractive 45° chamfer on top-facing planar boundary edges. Include exterior, spoke-window, shaft-bore and raised upper detail rims; leave underside and separate negative pixel, wire and fixing cutters unchanged.
+- Keep the native profile/roof and convex Crystal tip fixes. Previously selected broad Rounded / All exterior modes safely resolve to this top chamfer; nonplanar sharp ridges are left unchanged until there is a rigorously tested edge algorithm.
+- New release `dev.35.25` must be reconciled after #118 exact-value `dev.35.24` before owner merge. Run exact-head static, Manifold, browser, seven-family and format-section checks; verify Cura and physical fit. Issue #119 remains open until every builder can genuinely meet touch-safe bevel expectations.
+
 ## Universal edge finishing — PR #117 release candidate (20 Nov 2026)
 - The owner merged Crystal convex-tip fix #116 into `main` at `87471f9`. PR #117 now targets `main` directly, and branch `feat/universal-edge-finishing-20261120` contains that merge without changing the verified positive-geometry feature tree. The PR has no code conflicts and is awaiting exact-head CI and owner merge approval.
 - `studio-edge-finish.js` changes genuine positive mesh geometry. Native model controls save `build.edgeFinish`, Crystal controls save shape settings. The shared recipeGeometry path feeds preview and fabrication; hardware negative cutters are deliberately unchanged.

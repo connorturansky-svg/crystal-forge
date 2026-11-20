@@ -1,7 +1,7 @@
 import {tileWallPosition} from './studio-native-routing.js';
 import {putSocket} from './fabrication-v1.js';
 import {socketShoulderRise} from './pixel-profiles.js';
-import {finishEdgeGeometry} from './studio-edge-finish.js';
+import {bevelTopSolid,previewTopChamfer} from './studio-top-bevel.js';
 import {makePixelReplicaRecipe} from './pixel-replica.js';
 /* Shared solid recipes. Preview components may overlap; only prepareRecipe
  * Boolean results may reach manufacturing exporters. Units mm; Y-up. */
@@ -49,9 +49,8 @@ export function recipeGeometry(THREE, part) {
  if(part.rotation)geometry.rotateX(part.rotation[0]),geometry.rotateY(part.rotation[1]),geometry.rotateZ(part.rotation[2]);
  if(part.position)geometry.translate(...part.position);
  if(part.edgeFinish?.enabled){
-  const holes=part.kind==='extrude'?(part.holes||[]).map(loop=>loop.map(([x,z])=>
-   [x+(part.position?.[0]||0),z+(part.position?.[2]||0)])):[];
-  geometry=finishEdgeGeometry(THREE,geometry,{...part.edgeFinish,protectLoops:holes});
+  const preview=previewTopChamfer(THREE,part);
+  if(preview){geometry.dispose();geometry=preview;}
  }
  geometry.computeVertexNormals();return geometry;
 }
@@ -190,38 +189,17 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
     solid=hold(solid.rotate([-90,0,0]));
     if(part.rotation)solid=hold(solid.rotate(part.rotation.map(angle=>angle*180/Math.PI)));
     if(part.position)solid=hold(solid.translate(part.position));
-    if(!part.edgeFinish?.enabled)return solid;
-    // Finish the authoritative solid triangles, not Three.js's visual
-    // extrusion triangulation. Preserve holes by excluding their rims.
-    const input=solid.getMesh(),raw=input.vertProperties,source=new THREE.BufferGeometry();
-    const xyz=new Float32Array(input.triVerts.length?input.numVert*3:0);
-    for(let i=0;i<input.numVert;i++)
-     for(let axis=0;axis<3;axis++)xyz[3*i+axis]=raw[i*input.numProp+axis];
-    source.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
-    source.setIndex(Array.from(input.triVerts));
-    const holes=(part.holes||[]).map(loop=>loop.map(([x,z])=>
-     [x+(part.position?.[0]||0),z+(part.position?.[2]||0)]));
-    const finished=finishEdgeGeometry(THREE,source,{...part.edgeFinish,protectLoops:holes});
-    try{
-     const vertices=new Float32Array(finished.getAttribute('position').array);
-     const triangles=finished.index?new Uint32Array(finished.index.array):
-      Uint32Array.from({length:vertices.length/3},(_,i)=>i);
-     const mesh=new wasm.Mesh({numProp:3,vertProperties:vertices,triVerts:triangles});mesh.merge();
-     const result=hold(new wasm.Manifold(mesh));
-     if(result.status()!=='NoError'||result.isEmpty())
-      throw Error('The selected edge amount folds an extruded surface. Reduce the edge amount or choose another group.');
-     return result;
-    }finally{finished.dispose();}
+    return part.edgeFinish?.enabled?hold(bevelTopSolid(wasm,solid,part.edgeFinish)):solid;
    }finally{section.delete();}
   }
-  const geometry=recipeGeometry(THREE,part);
+  const geometry=recipeGeometry(THREE,part.edgeFinish?.enabled?{...part,edgeFinish:undefined}:part);
   try{
    const positions=new Float32Array(geometry.attributes.position.array);
    const indices=geometry.index?new Uint32Array(geometry.index.array):Uint32Array.from({length:positions.length/3},(_,i)=>i);
    const input=new wasm.Mesh({numProp:3,vertProperties:positions,triVerts:indices});input.merge();
    const solid=hold(new wasm.Manifold(input));
    if(solid.status()!=='NoError'||solid.isEmpty())throw Error('A source component is not a valid closed solid.');
-   return solid;
+   return part.edgeFinish?.enabled?hold(bevelTopSolid(wasm,solid,part.edgeFinish)):solid;
   }finally{geometry.dispose();}
  };
  const union=parts=>{if(!parts.length)throw Error('No model body.');let result=convert(parts[0]);for(const part of parts.slice(1))result=hold(result.add(convert(part)));return result;};

@@ -2125,7 +2125,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    section.setAttribute('aria-label','Edge finishing');
    const legend=document.createElement('legend');legend.textContent='Edge finishing';
    const help=document.createElement('p');help.className='sms-descriptor';
-   help.textContent='Round or chamfer real outside edges. Sharp internal cuts for LEDs, wiring and fixings are preserved. Confirm wall thickness and fit in Cura.';
+   help.textContent='Apply a small 45° chamfer to exposed flat upper rims, including spoke windows and shaft holes. Undersides and separate pixel/wiring/fixing cutters stay unchanged; nonplanar ridges are left alone. Check Cura.';
    section.append(legend,help);
    const applyFinish=(key,value)=>{
     if(crystal){
@@ -2146,7 +2146,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const toggle=document.createElement('input');toggle.type='checkbox';toggle.dataset.edgeFinish='enabled';
    toggle.checked=settings.enabled;toggle.disabled=!!model.link;
    toggle.onchange=()=>{if(!applyFinish('enabled',toggle.checked))toggle.checked=settings.enabled;};
-   toggleLabel.append(toggle,' Finish exterior edges');section.append(toggleLabel);
+   toggleLabel.append(toggle,' Bevel touchable top edges');section.append(toggleLabel);
    const option=(label,name,current,choices)=>{
     const wrapper=document.createElement('label'),select=document.createElement('select');
     select.dataset.edgeFinish=name;wrapper.append(label,select);
@@ -2155,12 +2155,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     select.onchange=()=>{if(!applyFinish(name,select.value))select.value=current;};
     section.append(wrapper);
    };
-   option('Finish style','style',settings.style,EDGE_FINISH_STYLES);
-   option('Edge group','scope',settings.scope,EDGE_FINISH_SCOPES);
    visualRange(section,{key:'edge-finish-amount',label:'Edge amount',min:.1,max:4,step:.1,unit:'mm'},
     settings.amountMm,value=>applyFinish('amountMm',Number(value)),!!model.link);
-   visualRange(section,{key:'edge-finish-steps',label:'Roundness steps',min:1,max:3,step:1},
-    settings.steps,value=>applyFinish('steps',Number(value)),!!model.link);
    controls.append(section);
   }
   shell.searchSettings();
