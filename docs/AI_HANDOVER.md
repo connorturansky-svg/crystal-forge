@@ -1,5 +1,10 @@
 # AI handover — read immediately after AGENTS.md
 
+## Crystal tip convexity (independent draft — 20 Nov 2026)
+- New fix branch `fix/crystal-tip-monotone-20261120` starts from main `3b1d402`. It bounds the rounded spherical tip to actual shoulder headroom and replaces the inverted last-ring fallback.
+- Existing Crystal settings and geometry are retained, with new all-family mesh, Manifold and browser regressions. A green exact-head CI run and real Cura inspection are required before merge.
+- Follow-up universal edge finishing is separate; do not confuse it with socket Support-Free Shoulders or PR #101's tip style choices.
+
 ## Independent documentation and QA
 
 - [Coordination issue #105](https://github.com/connorturansky-svg/crystal-forge/issues/105) tracks live claims, review branches and exact-head evidence for Jordan's separate work.
