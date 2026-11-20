@@ -13,14 +13,17 @@ on:
       - 'tests/**'
       - 'package.json'
       - '.github/workflows/browser-tests.yml'
+      - '**/*.js'
+      - '*.css'
+      - '**/*.css'
+      - '**/*.html'
+      - '**/*.svg'
+      - '**/*.wasm'
+      - 'svg-import/**'
+      - 'package-lock.json'
+      - '.github/workflows/pages.yml'
   pull_request:
     branches: [main, feat/verified-tile-gear-routing, feat/backed-family-cable-routing, feat/studio-svg-artwork-import, 'wt018/**', 'wt019/**']
-    paths:
-      - '*.js'
-      - 'index.html'
-      - 'tests/**'
-      - 'package.json'
-      - '.github/workflows/browser-tests.yml'
   workflow_dispatch:
 permissions:
   contents: read
