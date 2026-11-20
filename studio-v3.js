@@ -31,6 +31,7 @@ import {manufacturingFingerprint} from './manufacturing-fingerprint.js';
 import {saveNamedProject,listSavedProjects,loadNamedProject,deleteNamedProject} from './project-library.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile,resolveSocketProfile,socketShoulderRise} from './pixel-profiles.js';
+import {planPixelProfileSave,planPixelProfileDelete} from './studio-profile-safety.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
 import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
 import {adviseCuraForModel} from './cura-model-advisor.js';
@@ -81,7 +82,7 @@ function mergePixelLibrary(){
    const value=normalisePixelProfile(p);
    if(value.id.startsWith('custom-'))map.set(value.id,value);
   }
-  s.pixelProfiles=[...map.values()].slice(0,30);
+  s.pixelProfiles=[...map.values()];
  }catch(e){s.pixelProfiles=Array.isArray(s.pixelProfiles)?s.pixelProfiles:[]}
 }
 mergePixelLibrary();
@@ -93,7 +94,7 @@ function readPixelFitProfiles(){
   const profile=normalisePixelProfile(item);
   if(profile.id.startsWith('custom-'))profiles.set(profile.id,profile);
  }
- return [...profiles.values()].slice(-30);
+ return [...profiles.values()];
 }
 if(!crystals.length)crystals=generateFormation(s);
 const history=[];let historyIndex=-1;
@@ -1306,28 +1307,55 @@ function savePixelProfileFromEditor(applySocketFit=false){
  if(applySocketFit){
   try{applyLinked=studioBridge?.planPixelProfileClearance(p)??applyLinked;}
   catch(error){$('pixelSocketStatus').textContent=error.message;return;}
-  s.pixelClearanceByProfile={...s.pixelClearanceByProfile,[p.id]:socketFitFromEditor()};s.fitCalibration=null;
  }
- const library=readPixelFitProfiles().filter(item=>item.id!==p.id);
- if(library.length>=30){$('pixelSocketStatus').textContent='The profile library is full (30 custom profiles). Export a backup before removing a profile.';return;}
- s.pixelProfiles=[...library,p];
+ // Commit the calibrated library first. A quota/security failure must never
+ // leave the editor reporting success or mutate the active model and fit.
+ let library;
+ try{
+  library=planPixelProfileSave(readPixelFitProfiles(),p);
+  const serialized=JSON.stringify(library);
+  localStorage.setItem(pixelLibraryKey,serialized);
+  if(localStorage.getItem(pixelLibraryKey)!==serialized)throw Error('Browser storage did not retain the profile library.');
+ }catch(error){
+  $('pixelSocketStatus').textContent='Profile not saved. '+error.message;
+  return;
+ }
+ if(applySocketFit){
+  s.pixelClearanceByProfile={...s.pixelClearanceByProfile,[p.id]:socketFitFromEditor()};
+  s.fitCalibration=null;
+ }
+ s.pixelProfiles=library;
  s.pixelProfileId=p.id;s.pixelDiameter=p.bodyDiameter;
- try{localStorage.setItem(pixelLibraryKey,JSON.stringify(s.pixelProfiles))}
- catch(e){console.warn('Pixel library not writable',e)}
  closePixelEditor();syncForm();rebuild();snapshot();
  applyLinked();
+ studioBridge?.onPixelProfileLibraryChange?.(library);
  document.dispatchEvent(new CustomEvent('studio-pixel-profile-saved',{detail:{profileId:p.id}}));
  setStatus('Custom pixel profile saved: '+p.name+'. Prepare print mesh again.');
 }
 $('savePixelProfileBtn').onclick=()=>savePixelProfileFromEditor();
 $('applyPixelSocketFit').onclick=()=>savePixelProfileFromEditor(true);
 $('deletePixelProfileBtn').onclick=()=>{
- const id=s.pixelProfileId;
- if(!id.startsWith('custom-')){alert('Built-in presets cannot be deleted.');return}
- s.pixelProfiles=(s.pixelProfiles||[]).filter(p=>p.id!==id);
- s.pixelProfileId='gumdrop';s.pixelDiameter=PIXEL_PRESETS[0].bodyDiameter;
- try{localStorage.setItem(pixelLibraryKey,JSON.stringify(s.pixelProfiles))}catch(e){}
- closePixelEditor();syncForm();rebuild();snapshot();
+ const id=editingPixelProfileId;
+ if(!id?.startsWith('custom-')){
+  $('pixelSocketStatus').textContent='Choose an existing custom profile before deleting.';return;
+ }
+ const library=readPixelFitProfiles(),profile=library.find(p=>p.id===id);
+ if(!profile){$('pixelSocketStatus').textContent='Selected custom profile is unavailable; no data changed.';return;}
+ if(s.pixelProfileId===id||studioBridge?.pixelProfileReferenced?.(id)){
+  $('pixelSocketStatus').textContent='This profile is in use by a model or saved revision. Switch to a different profile and preserve a backup before deletion.';return;
+ }
+ if(!confirm('Permanently delete the measured profile "'+profile.name+'" ('+id+')? This cannot be undone.'))return;
+ let next;
+ try{
+  next=planPixelProfileDelete(library,id);
+  const serialized=JSON.stringify(next);
+  localStorage.setItem(pixelLibraryKey,serialized);
+  if(localStorage.getItem(pixelLibraryKey)!==serialized)throw Error('Browser storage did not retain the changed library.');
+ }catch(error){$('pixelSocketStatus').textContent='Profile not deleted. '+error.message;return;}
+ s.pixelProfiles=next;
+ closePixelEditor();syncForm();snapshot();
+ studioBridge?.onPixelProfileLibraryChange?.(next);
+ setStatus('Removed the selected custom profile: '+profile.name+'.');
 };
 document.addEventListener('keydown',e=>{
  if(!$('pixelProfileOverlay').hidden&&e.key==='Escape'){
@@ -1822,9 +1850,18 @@ if(studioBootstrap&&!new URLSearchParams(location.search).has('legacy'))studioBr
  savePixelFitProfile:profile=>{
   const p=normalisePixelProfile(profile);
   if(!p.id.startsWith('custom-')||!p.measuredFit)throw Error('Enter a measured custom profile.');
-  const next=[...readPixelFitProfiles().filter(item=>item.id!==p.id),p].slice(-30);
-  localStorage.setItem(pixelLibraryKey,JSON.stringify(next));
-  return clone(p);
+  const next=planPixelProfileSave(readPixelFitProfiles(),p);
+  const before=localStorage.getItem(pixelLibraryKey);
+  const after=JSON.stringify(next);
+  localStorage.setItem(pixelLibraryKey,after);
+  if(localStorage.getItem(pixelLibraryKey)!==after)throw Error('Browser storage did not retain the measured profile.');
+  // Called only if the matching model commit fails. Do not overwrite another
+  // tab's later save while rolling back the proposed calibration.
+  return ()=>{
+   if(localStorage.getItem(pixelLibraryKey)!==after)return;
+   if(before===null)localStorage.removeItem(pixelLibraryKey);
+   else localStorage.setItem(pixelLibraryKey,before);
+  };
  },
  pixelFitCoupon:async (fitting,{kind='strip',format='stl'}={})=>{
   const legacy=typeof fitting==='number';
