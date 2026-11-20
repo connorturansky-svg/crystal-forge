@@ -2480,10 +2480,22 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     assertWorkspaceVersion(localStorage,savedWorkspace);
     const key=RECOVERY_PREFIX+Date.now()+'-'+newId();
     if(JSON.stringify(candidate)!==initial){
-     commitRecovery(localStorage,state,candidate,key,savedWorkspace);
+     let restoreProfileLibrary;
+     try{
+      // The browser library must be durable before any recovered model can
+      // reference the restored custom IDs. A failed workspace write rolls it back.
+      if(candidate.pixelProfiles)restoreProfileLibrary=adapter.installPixelProfileLibrary?.(candidate.pixelProfiles);
+      commitRecovery(localStorage,state,candidate,key,savedWorkspace);
+     }catch(error){
+      try{restoreProfileLibrary?.();}catch(rollbackError){
+       throw Error('Recovery needs attention: '+rollbackError.message+'. Original backup unchanged.',{cause:error});
+      }
+      throw error;
+     }
      savedWorkspace=JSON.stringify(candidate);
      clearTimeout(saveTimer);dirty=false;$('smsSaveState').textContent='Saved locally';
-     for(const field of ['library','savedProjects','organisation','legacyTemplates'])state[field]=candidate[field];
+     for(const field of ['library','savedProjects','organisation','legacyTemplates','pixelProfiles'])
+      if(candidate[field]!==undefined)state[field]=candidate[field];
     }
     if(choice.selection==='all')acknowledge();
     dialog.close();if(mode==='library'){renderLibraryCards();renderRecoveryList();}
@@ -2507,7 +2519,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     recoveryStatus('Backup verified. Review the differences before applying.');
    }else{
     if(!confirm('Upload this workspace to the connected private backup repository?'))return;
-    captureCrystal();validateArchive(state);saveImmediately();
+    captureCrystal();state.pixelProfiles=copy(adapter.pixelFitProfiles?.()||state.pixelProfiles||[]);
+    validateArchive(state);saveImmediately();
     recoveryStatus('Uploading immutable assets, then committing the manifest…');
     const result=await connection.push(state);
     recoveryStatus('Backup saved · '+result.uploaded+' new assets · manifest '+result.sha.slice(0,12));
@@ -2794,7 +2807,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    adapter.download(new Blob([zipProfileEntries(entries)],{type:'application/zip'}),stem+'.zip');
   }catch(error){adapter.status(error.message);if($('smsPrintStatus'))$('smsPrintStatus').textContent=error.message;}
  }
- function backup(){captureCrystal();adapter.download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'wonder-trunks-studio-backup.json');}
+ function backup(){
+  captureCrystal();state.pixelProfiles=copy(adapter.pixelFitProfiles?.()||state.pixelProfiles||[]);
+  validateArchive(state);
+  adapter.download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'wonder-trunks-studio-backup.json');
+ }
  function replaceProject(saved){
   for(const worker of workers.values())worker.terminate();workers.clear();prepared.clear();histories.clear();
   for(const c of cache.values())if(c.group)disposeGroup(c.group);else adapter.release(c);cache.clear();
