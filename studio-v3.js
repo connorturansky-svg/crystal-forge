@@ -1848,6 +1848,30 @@ if(studioBootstrap&&!new URLSearchParams(location.search).has('legacy'))studioBr
  },
  pixelFitProfiles:()=>readPixelFitProfiles(),
  notifyPixelProfileLibrary:()=>studioBridge?.onPixelProfileLibraryChange?.(readPixelFitProfiles()),
+ installPixelProfileLibrary:profiles=>{
+  if(!Array.isArray(profiles))throw Error('Recovered measured profile library is invalid.');
+  const next=profiles.map(normalisePixelProfile),ids=new Set(next.map(p=>p.id));
+  if(ids.size!==next.length||next.some(p=>!p.id.startsWith('custom-')))
+   throw Error('Recovered measured profiles contain duplicate or unsupported identities.');
+  const desired=new Map(next.map(p=>[p.id,p]));
+  for(const profile of readPixelFitProfiles()){
+   if(!desired.has(profile.id)||JSON.stringify(desired.get(profile.id))!==JSON.stringify(profile))
+    throw Error('Measured profiles changed while recovering. Export a new backup and review the current library before retrying.');
+  }
+  const before=localStorage.getItem(pixelLibraryKey),previous=clone(s.pixelProfiles||[]);
+  const after=JSON.stringify(next);
+  localStorage.setItem(pixelLibraryKey,after);
+  if(localStorage.getItem(pixelLibraryKey)!==after)
+   throw Error('Browser storage did not retain recovered measured profiles.');
+  s.pixelProfiles=clone(next);syncForm();
+  return ()=>{
+   if(localStorage.getItem(pixelLibraryKey)!==after)
+    throw Error('Another tab updated measured profiles during recovery rollback.');
+   if(before===null)localStorage.removeItem(pixelLibraryKey);
+   else localStorage.setItem(pixelLibraryKey,before);
+   s.pixelProfiles=previous;syncForm();
+  };
+ },
  savePixelFitProfile:profile=>{
   const p=normalisePixelProfile(profile);
   if(!p.id.startsWith('custom-')||!p.measuredFit)throw Error('Enter a measured custom profile.');
