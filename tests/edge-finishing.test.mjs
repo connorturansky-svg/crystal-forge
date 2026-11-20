@@ -48,8 +48,8 @@ for(const generator of generators){
 for(const family of ['Quartz','Shard','Blade','Cubic','Double terminated','Fantasy']){
  const crystal=crystalGeometry(THREE,{id:'tip-'+family,family,h:85,r:8},
   {bottomScale:1,topScale:.4,tipRound:5,tipLength:.24,cornerRadius:.5,shoulderRound:1,
-   roundSteps:3,tipStyle:'Rounded',edgeFinishEnabled:true,edgeFinishStyle:'Chamfer',
-   edgeFinishScope:'Top edges',edgeFinishAmount:.4,edgeFinishSteps:1});
+   roundSteps:3,tipStyle:'Rounded',edgeFinishEnabled:true,edgeFinishStyle:'Rounded',
+   edgeFinishScope:'Top edges',edgeFinishAmount:.4,edgeFinishSteps:2});
  const arr=new Float32Array(crystal.getAttribute('position').array);
  const tri=new Uint32Array(crystal.index?.array||Array.from({length:arr.length/3},(_,i)=>i));
  const mesh=new wasm.Mesh({numProp:3,vertProperties:arr,triVerts:tri});mesh.merge();
