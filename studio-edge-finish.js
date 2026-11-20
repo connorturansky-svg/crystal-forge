@@ -106,6 +106,9 @@ function firstPass(mesh,options){
   const degrees=Math.acos(Math.max(-1,Math.min(1,dot(n0,n1))))*180/Math.PI;
   if(degrees<27||dot(cross(n0,n1),direction)<=1e-8*distance)continue;
   const mid=p.map((v,i)=>(v+q[i])/2);
+  // Crystal's pre-rounded pole is already the intended convex crown. It must
+  // stay the highest point even when nearby ridge edges are finished.
+  if(options.protectTopPole&&(p[1]>=bounds[1]-1e-4||q[1]>=bounds[1]-1e-4))continue;
   if(!inScope(options.scope,mid,direction,bounds))continue;
   if([mid,p,q].some(point=>nearProtectedLoop(point,options.protectLoops,Math.max(.2,options.amountMm*2))))continue;
   const offsetDirection=unit(n0.map((v,i)=>-(v+n1[i])));
