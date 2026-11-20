@@ -16,6 +16,7 @@ import {previewRecipe,disposeGroup,nativeFittingPreviews} from './studio-geometr
 import {loadManifold} from './fabrication-v1.js';
 import {exportMaterialBodies,preparedDimensionsMm} from './studio-material-export.js';
 import {installExactValueEditors} from './exact-value-editors.js';
+import {renderPrecisionRange} from './native-precision-controls.js';
 import {createToolFinder} from './studio-tool-finder.js';
 import {createCuraProfile,zipProfileEntries,curaFallbackText,calculateCuraSettings} from './cura-profiles.js';
 import {StudioVault} from './studio-vault.js';
@@ -1963,7 +1964,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const id=part.value,offset=model.build.partOffsets?.[id]||[0,0,0];
    for(const [axis,label] of ['Left / right','Lift','Front / back'].entries()){
     const key='part-offset-'+axis;
-    visualRange(region,{key,label,min:axis===1?0:-50,max:50,step:.1,unit:'mm'},offset[axis],value=>{
+    visualRange(region,{key,label,min:axis===1?0:-50,max:50,step:.1,unit:'mm',default:0},offset[axis],value=>{
      const next=[...offset];next[axis]=Number(value);
      if(!applyPartOffset(model,id,next))return false;
      shell.palette.querySelector('[data-palette-key="'+key+'"]')?.focus({preventScroll:true});
@@ -1982,7 +1983,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     addAction('Add pixel',$('placePixelBtn'));
     const baseHeight=document.querySelector('[data-state=baseHeight]');
     visualRange(controls,{key:'crystal-base-height',label:'Base height',min:Number(baseHeight.min),
-     max:Number(baseHeight.max),step:Number(baseHeight.step),unit:'mm'},Number(baseHeight.value),value=>{
+     max:Number(baseHeight.max),step:Number(baseHeight.step),unit:'mm',default:Number(adapter.formationDefaults().baseHeight)},Number(baseHeight.value),value=>{
      baseHeight.value=value;
      baseHeight.dispatchEvent(new Event('input',{bubbles:true}));
      baseHeight.dispatchEvent(new Event('change',{bubbles:true}));
@@ -2012,7 +2013,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     controls.append(shoulderLabel);
     if(shoulderSetting.checked){
      const angle=document.querySelector('[data-state="socketShoulderAngle"]');
-     visualRange(controls,{key:'socketShoulderAngle',label:'Shoulder angle from horizontal',min:30,max:60,step:1,unit:'°'},angle.value,value=>{
+     visualRange(controls,{key:'socketShoulderAngle',label:'Shoulder angle from horizontal',min:30,max:60,step:1,unit:'°',default:45},angle.value,value=>{
       angle.value=value;
       angle.dispatchEvent(new Event('input',{bubbles:true}));angle.dispatchEvent(new Event('change',{bubbles:true}));
      },!!model.link);
@@ -2026,7 +2027,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   }else if(model.generator.typeId==='crystals'){
    for(const [key,label] of [['count','Crystal count'],['spacing','Crystal spacing'],['width','Cluster width']]){
     const original=document.querySelector('input[data-state="'+key+'"]');
-    if(original)visualRange(controls,{key,label,min:original.min,max:original.max,step:original.step},original.value,value=>{
+    if(original)visualRange(controls,{key,label,min:original.min,max:original.max,step:original.step,default:adapter.formationDefaults()[key]},original.value,value=>{
      original.value=value;original.dispatchEvent(new Event('input',{bubbles:true}));original.dispatchEvent(new Event('change',{bubbles:true}));
     },!!model.link);
    }
@@ -2086,15 +2087,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   shell.searchSettings();
  }
  function visualRange(root,field,value,apply,disabled){
-  const label=document.createElement('label'),caption=document.createElement('span'),out=document.createElement('output');
-  caption.textContent=field.label;
-  const input=document.createElement('input');input.type='range';input.dataset.paletteKey=field.key;
-  for(const key of ['min','max','step'])input[key]=field[key]??.1;
-  input.value=value;input.disabled=disabled;input.setAttribute('aria-label',field.label);
-  const update=()=>{out.textContent=input.value+(field.unit?' '+field.unit:'');};
-  input.oninput=update;
-  input.onchange=()=>{if(apply(input.value)===false){input.value=value;update();}};
-  update();label.append(caption,out,input);root.append(label);
+  return renderPrecisionRange(root,field,value,apply,disabled);
  }
  function renderEditor(){
   if(mode!=='model'||!active())return;const model=active(),g=registry.get(model.generator.typeId);
