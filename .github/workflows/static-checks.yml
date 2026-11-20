@@ -45,7 +45,21 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           RELEASE_BASE: ${{ github.event.pull_request.base.sha }}
-        run: node tests/release-metadata.mjs "$RELEASE_BASE"
+        run: |
+          # Workflow, docs and test-only PRs do not represent a new product release.
+          # They still validate current changelog/version/What's New parity.
+          version_required=0
+          while IFS= read -r changed; do
+            case "$changed" in
+              .github/workflows/*|docs/*|tests/*|prompts/*|AGENTS.md|CONTRIBUTING.md|README.md) ;;
+              *) version_required=1; break ;;
+            esac
+          done < <(git diff --name-only "$RELEASE_BASE" HEAD)
+          if [ "$version_required" -eq 1 ]; then
+            node tests/release-metadata.mjs "$RELEASE_BASE"
+          else
+            node tests/release-metadata.mjs
+          fi
       - name: Verify release metadata
         if: github.event_name != 'pull_request'
         run: node tests/release-metadata.mjs
