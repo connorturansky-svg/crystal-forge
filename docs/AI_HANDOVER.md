@@ -1,5 +1,11 @@
 # AI handover — read immediately after AGENTS.md
 
+## Universal edge finishing — independent stacked draft (20 Nov 2026)
+- Branch `feat/universal-edge-finishing-20261120` follows the tip-fix branch `fix/crystal-tip-monotone-20261120`. Review/merge the tip PR first, then retarget the feature PR to main.
+- `studio-edge-finish.js` changes genuine positive mesh geometry. Native model controls save `build.edgeFinish`, Crystal controls save shape settings. The shared recipeGeometry path feeds preview and fabrication; hardware negative cutters are deliberately unchanged.
+- Edges are selectable in groups (All exterior, Top, Side, Bottom), not individually. The amount is a bounded approximate mesh displacement, not a constant-radius CAD fillet or collision-certified operation.
+- Run exact-head seven-family Chromium, Manifold and STL/3MF checks, then inspect Cura layer walls, functional fittings, print orientations and physical samples separately.
+
 ## Crystal tip convexity (independent draft — 20 Nov 2026)
 - New fix branch `fix/crystal-tip-monotone-20261120` starts from main `3b1d402`. It bounds the rounded spherical tip to actual shoulder headroom and replaces the inverted last-ring fallback.
 - Existing Crystal settings and geometry are retained, with new all-family mesh, Manifold and browser regressions. A green exact-head CI run and real Cura inspection are required before merge.
