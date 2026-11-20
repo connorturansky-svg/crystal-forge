@@ -75,7 +75,7 @@ The user approved the full seven-generator expansion, global Print Centre, local
 
 In **Build → Pixel fittings**, enable **Support-Free Shoulders** for a Crystal socket or a native shaped socket on a flat underside. Crystal applies the setting to all of its sockets and the native builders save it per fitting. Choose **30–60° from horizontal** (default **45°**). The taper starts at the original flange depth. The bore, optional retention ridge and existing roof profile rise by the taper height, preserving their dimensions. The flange and wire cuts keep their original dimensions and positions. Plain bores, profiles without a flange step, and older projects with the setting off retain their existing geometry.
 
-Use the physical fitting overlay and print preparation to inspect the taper. The model needs enough continuous stock to leave at least 2.8 mm above the raised cutter. Increase the stock or turn the option off if preparation rejects the socket. Inspect the intended base-down orientation and remaining overhangs in Cura and test the seating on a print.
+Use the physical fitting overlay and print preparation to inspect the taper. The model needs enough continuous stock to leave at least 2.8 mm vertically above the raised cutter and 1 mm around its shaped perimeter; preparation must follow the actual narrowing roof and flange rather than demanding a full flange-width column above the tip. Increase the stock, move the specific pixel or turn the option off if preparation still rejects the socket. Inspect the intended base-down orientation and remaining overhangs in Cura and test the seating on a print.
 
 ## F08 — Automatic and manual hardware placement
 
