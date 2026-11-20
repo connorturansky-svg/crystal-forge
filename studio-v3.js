@@ -1847,6 +1847,7 @@ if(studioBootstrap&&!new URLSearchParams(location.search).has('legacy'))studioBr
   mergePixelLibrary();syncForm();setStatus('Pixel profile library imported. Conflicting profiles were saved as copies.');
  },
  pixelFitProfiles:()=>readPixelFitProfiles(),
+ notifyPixelProfileLibrary:()=>studioBridge?.onPixelProfileLibraryChange?.(readPixelFitProfiles()),
  savePixelFitProfile:profile=>{
   const p=normalisePixelProfile(profile);
   if(!p.id.startsWith('custom-')||!p.measuredFit)throw Error('Enter a measured custom profile.');
