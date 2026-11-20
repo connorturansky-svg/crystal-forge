@@ -1,33 +1,26 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
-import {finishEdgeGeometry,normaliseEdgeFinish} from '../studio-edge-finish.js';
+import {normaliseEdgeFinish} from '../studio-edge-finish.js';
 import {generators,applyBuildModules} from '../studio-catalogue.js';
-import {recipeGeometry,prepareRecipe} from '../studio-geometry.js';
+import {prepareRecipe} from '../studio-geometry.js';
 import {crystalGeometry} from '../geometry-v3.js';
 import {exportMaterialBodies} from '../studio-material-export.js';
 const wasm=await Module();wasm.setup();
-const config={enabled:true,style:'Chamfer',scope:'All exterior',amountMm:.7,steps:1};
+const config={enabled:true,style:'Chamfer',scope:'Top edges',amountMm:.5,steps:1};
 assert.throws(()=>normaliseEdgeFinish({...config,scope:'Unsupported'}),/edge group/i);
 assert.throws(()=>normaliseEdgeFinish({...config,amountMm:100}),/between/i);
 assert.equal(normaliseEdgeFinish().enabled,false);
 {
- const part={kind:'box',size:[30,18,24]};
- const plain=recipeGeometry(THREE,part);
- const bevel=recipeGeometry(THREE,{...part,edgeFinish:config});
- assert(bevel.index.count>plain.index.count,'A bevel must add actual surface vertices/triangles');
- const rounded=recipeGeometry(THREE,{...part,edgeFinish:{...config,style:'Rounded',steps:2}});
- assert(rounded.index.count>bevel.index.count,'Rounded mode adds geometric subdivisions');
- for(const geometry of [plain,bevel,rounded]){
-  const verts=new Float32Array(geometry.getAttribute('position').array);
-  const indices=new Uint32Array(geometry.index?.array||Array.from({length:verts.length/3},(_,i)=>i));
-  const mesh=new wasm.Mesh({numProp:3,vertProperties:verts,triVerts:indices});mesh.merge();
-  const solid=new wasm.Manifold(mesh);
-  try{assert.equal(solid.status(),'NoError','Smoothed cube remains a valid closed Manifold');
-   assert(solid.volume()>1000,'Smoothed cube preserves its material body');}finally{solid.delete();}
-  geometry.dispose();
- }
+ const part={kind:'box',size:[30,18,24]},bevelPart={...part,edgeFinish:config};
+ const baseline=prepareRecipe(THREE,wasm,{positive:[part],negative:[],secondary:[]});
+ const beveled=prepareRecipe(THREE,wasm,{positive:[bevelPart],negative:[],secondary:[]});
+ assert(beveled.bodies[0].volume<baseline.bodies[0].volume-1,
+  'A safe top chamfer removes material rather than warping mesh vertices');
+ assert(beveled.bodies[0].mesh.triVerts.length>baseline.bodies[0].mesh.triVerts.length,
+  'Top chamfer must add true sloped faces rather than merely changing shading');
 }
+
 for(const generator of generators){
  const settings={...generator.defaultParameters,dualMaterial:false};
  // Stable, uncomplicated starting point for each family.
@@ -44,6 +37,94 @@ for(const generator of generators){
  assert(exported.stls[0].bytes.length>84&&exported.threeMF.length>100,
   generator.typeId+' exports finished STL and 3MF');
  console.log(generator.typeId+' edge finish: Manifold and STL/3MF OK');
+}
+// User-reported crinkle regression: 68.5 mm openwork Gear, 12 teeth,
+// five spoke windows and an 8 mm shaft bore. Check actual *removed material*
+// stays in the upper 0.5 mm and includes outer, spoke AND shaft-bore rims.
+{
+ const gear=generators.find(g=>g.typeId==='gears');
+ const params={...gear.defaultParameters,diameter:68.5,thickness:8,teeth:12,
+  spokes:5,bore:8,webStyle:'Legacy',reliefStyle:'None'};
+ const originalRecipe=gear.recipe(params);
+ const untouched=prepareRecipe(THREE,wasm,applyBuildModules(originalRecipe,{},gear.capabilities));
+ const modified=prepareRecipe(THREE,wasm,applyBuildModules(originalRecipe,{edgeFinish:config},gear.capabilities));
+ // Consecutive planes expose midpoint distortion even if the result is manifold.
+ const mesh=modified.bodies[0].mesh;
+ const triangles=[];
+ let chamferFaces=0;
+ for(let i=0;i<mesh.triVerts.length;i+=3){
+  const points=Array.from(mesh.triVerts.slice(i,i+3),id=>Array.from(mesh.vertProperties.slice(id*3,id*3+3)));
+  const heights=points.map(p=>p[1]);
+  assert(heights.every(y=>[0,7.5,8].some(level=>Math.abs(y-level)<1e-6)),'Gear surfaces occupy only the bottom, bevel shoulder and top planes');
+  if(Math.min(...heights)===7.5&&Math.max(...heights)===8){
+   const [a,b,c]=points.map(point=>new THREE.Vector3(...point));
+   const normal=b.sub(a).cross(c.sub(a)).normalize();
+   assert(Math.abs(normal.y-Math.SQRT1_2)<5e-5,'Every sloped face on the gear is a 45-degree top chamfer');
+   chamferFaces++;
+  }
+  triangles.push(points.flatMap(([x,y,z])=>[x,-z,y]));
+ }
+ assert(chamferFaces>0,'The model has real sloped chamfer faces');
+ const {stls:[{bytes}],threeMF}=exportMaterialBodies(modified,{name:'openwork-gear'});
+ const stl=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+ assert.equal(stl.getUint32(80,true),triangles.length);
+ const modelXML=new TextDecoder().decode(threeMF);
+ const xmlVertices=Array.from(modelXML.matchAll(/<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"\/>/g),match=>match.slice(1).map(Number));
+ const xmlTriangles=Array.from(modelXML.matchAll(/<triangle v1="(\d+)" v2="(\d+)" v3="(\d+)"\/>/g),
+  match=>match.slice(1).flatMap(index=>xmlVertices[Number(index)]));
+ assert.equal(xmlTriangles.length,triangles.length,'3MF retains every validated face');
+ for(const [i,triangle] of triangles.entries())for(const [j,value] of triangle.entries()){
+  assert(stl.getFloat32(96+50*i+4*j,true)===value,'STL matches the prepared geometry');
+  assert(xmlTriangles[i][j]===value,'3MF matches the prepared geometry');
+ }
+ const body=entry=>{
+  const mesh=entry.mesh;
+  const m=new wasm.Mesh({numProp:3,vertProperties:new Float32Array(mesh.vertProperties),
+   triVerts:new Uint32Array(mesh.triVerts)});m.merge();
+  return new wasm.Manifold(m);
+ };
+ const before=body(untouched.bodies[0]),after=body(modified.bodies[0]);
+ try{
+  assert.equal(before.status(),'NoError');assert.equal(after.status(),'NoError');
+  assert(after.volume()<before.volume()-0.5,'Gear has a real material-removing chamfer');
+  const removed=before.subtract(after);
+  try{
+   const limit=removed.boundingBox();
+   assert(limit.min[1]>=7.45,'All removed Gear stock is within the upper 0.55 mm; underside and flat stock unmodified');
+   const mask=(radius)=>wasm.Manifold.cylinder(1.1,radius,radius,96).rotate([-90,0,0]).translate([0,7.2,0]);
+   const nearBore=mask(5).subtract(mask(3));
+   const nearWindows=mask(22).subtract(mask(12));
+   const nearOutside=mask(35).subtract(mask(31));
+   try{
+    assert(removed.intersect(nearBore).volume()>.005,'Central bore mouth receives top bevel');
+    assert(removed.intersect(nearWindows).volume()>.005,'Spoke window mouths receive top bevel');
+    assert(removed.intersect(nearOutside).volume()>.005,'Outer Gear contour receives top bevel');
+   }finally{nearBore.delete();nearWindows.delete();nearOutside.delete();}
+  }finally{removed.delete();}
+ }finally{before.delete();after.delete();}
+}
+{
+ const gear=generators.find(g=>g.typeId==='gears');
+ const settings={...gear.defaultParameters,diameter:68.5,teeth:12,spokes:5,bore:8,
+  reliefStyle:'Hub collar',dualMaterial:true};
+ const recipe=gear.recipe(settings);
+ const baseline=prepareRecipe(THREE,wasm,applyBuildModules(recipe,{},gear.capabilities));
+ const finished=prepareRecipe(THREE,wasm,applyBuildModules(recipe,{edgeFinish:config},gear.capabilities));
+ assert.equal(finished.bodies.length,2);
+ const topMesh=finished.bodies[1].mesh;
+ const heights=Array.from(topMesh.vertProperties).filter((_,i)=>i%topMesh.numProp===1);
+ assert(heights.includes(settings.thickness+settings.reliefHeight-.5),'Raised hub has its own half-millimetre chamfer shoulder');
+ assert(finished.bodies[1].volume<baseline.bodies[1].volume-1);
+ assert.equal(exportMaterialBodies(finished,{name:'raised-hub'}).stls.length,2);
+}
+{
+ const part={kind:'box',size:[.8,4,12]};
+ const recipe={positive:[part],negative:[],secondary:[]};
+ const baseline=prepareRecipe(THREE,wasm,recipe);
+ const narrow=prepareRecipe(THREE,wasm,{...recipe,edgeFinish:config});
+ assert.deepEqual(narrow.bodies[0].mesh.vertProperties,baseline.bodies[0].mesh.vertProperties);
+ assert.deepEqual(narrow.bodies[0].mesh.triVerts,baseline.bodies[0].mesh.triVerts);
+ assert(narrow.report.warnings.some(message=>message.startsWith('No top rim')));
 }
 for(const family of ['Quartz','Shard','Blade','Cubic','Double terminated','Fantasy']){
  const crystal=crystalGeometry(THREE,{id:'tip-'+family,family,h:85,r:8},

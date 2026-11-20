@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.25 — Clean 45° top chamfers
+- Replace triangle warping with flat caps and continuous 45° chamfer faces. The default width is 0.5 mm.
+- Chamfer supported outer rims, spoke windows, bore mouths and raised planar details. Keep the bore below its lead-in and preserve underside geometry and hardware cuts.
+- Legacy finishing settings use the top chamfer. Contours that cannot accommodate the inset and nonplanar rims keep their original shape.
+- Native builders show the prepared chamfer mesh in the viewport. Crystal uses Render actual model to inspect prepared geometry.
+
 ## v0.16.0-dev.35.24 — Type exact Design values and reset individual controls
 - Contextual Design sliders now allow directly typing decimals into the displayed value, with Enter to apply and Escape to cancel. Invalid numbers keep the last saved model unchanged.
 - Every compatible contextual numeric control includes an independent Reset button for its model default; it does not overwrite styling, other dimensions, pixel fittings or existing model settings.

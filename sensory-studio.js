@@ -12,8 +12,8 @@ import {createModel,addModel,findModel,openTab,closeTab,reorderTabs,duplicateMod
  queueModel,beginPreparation,finishPreparation,cancelPreparation,canExport,resolveJobPrinter,movePrintJob,invalidatePrintJob,saveLibraryRevision,
  insertLibraryModel,availableLinkedUpdate,acceptLinkedUpdate,breakLink,modelFingerprint,validateProject,WORKSPACE_KEY,newId} from './studio-documents.js';
 import {makeCatalogue,applyBuildModules,generators} from './studio-catalogue.js';
-import {normaliseEdgeFinish,EDGE_FINISH_STYLES,EDGE_FINISH_SCOPES,EDGE_FINISH_DEFAULTS} from './studio-edge-finish.js';
-import {previewRecipe,disposeGroup,nativeFittingPreviews} from './studio-geometry.js';
+import {normaliseEdgeFinish,EDGE_FINISH_DEFAULTS} from './studio-edge-finish.js';
+import {previewRecipe,disposeGroup,nativeFittingPreviews,prepareRecipe} from './studio-geometry.js';
 import {loadManifold} from './fabrication-v1.js';
 import {exportMaterialBodies,preparedDimensionsMm} from './studio-material-export.js';
 import {installExactValueEditors} from './exact-value-editors.js';
@@ -466,12 +466,40 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const recipe=applyBuildModules(generator.recipe(model.parameters),model.build,generator.capabilities,{preview:true});
    const group=previewRecipe(THREE,recipe,[model.materials.primary?.colour||0x88bbff,model.materials.secondary?.colour||0xffcf70]);previewBuilds++;c={kind:'generic',group,fingerprint,view:c?.view,routing:recipe.nativeRouting,recipe};cache.set(model.id,c);
    model.thumbnail=thumbnail(group);
+   if(recipe.edgeFinish?.enabled)refreshChamferPreview(model,c);
   }
   scene.add(c.group);
   if(c.view){camera.position.fromArray(c.view.camera);orbit.target.fromArray(c.view.target);camera.lookAt(orbit.target);}
   else frame(c.group);
-  adapter.status('Ready — '+generator.displayName+'. Preview is editable geometry; prepare the print job before exporting.');
+  adapter.status(c.chamferStatus||'Ready — '+generator.displayName+'. Preview is editable geometry; prepare the print job before exporting.');
   refreshNativeFittingPreview(model);
+ }
+ async function refreshChamferPreview(model,c){
+  const report=message=>{
+   c.chamferStatus=message;
+   if(active()?.id===model.id&&mode==='model')adapter.status(message);
+  };
+  report('Preparing the chamfer preview…');
+  try{
+   const wasm=await loadManifold();
+   if(cache.get(model.id)!==c)return;
+   const generator=registry.get(model.generator.typeId);
+   const recipe=applyBuildModules(generator.recipe(model.parameters),model.build,generator.capabilities);
+   const result=prepareRecipe(THREE,wasm,recipe);
+   const surfaces=result.bodies.map(({role,mesh})=>{
+    const colour=role==='primary'?(model.materials.primary?.colour||0x88bbff):(model.materials.secondary?.colour||0xffcf70);
+    const surface=new THREE.Mesh(nativeFitMesh(mesh),new THREE.MeshStandardMaterial({color:colour,roughness:.55}));
+    surface.userData.materialRole=role;
+    surface.userData.chamferPreview=true;
+    return surface;
+   });
+   for(const child of c.group.children)if(child.isMesh&&!child.userData.previewOnly)child.visible=false;
+   c.group.add(...surfaces);
+   model.thumbnail=thumbnail(c.group);
+   report(result.report.warnings.find(message=>/^(No top rim|Some top rims|Top chamfer skipped)/.test(message))||'Showing prepared chamfer geometry.');
+  }catch(error){
+   if(cache.get(model.id)===c)report('Chamfer preview unavailable. '+error.message);
+  }
  }
  // Build-only physical overlays derive their solids from the exact same
  // Manifold cutter and placement transform as the manufacturing worker.
@@ -2126,7 +2154,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    section.setAttribute('aria-label','Edge finishing');
    const legend=document.createElement('legend');legend.textContent='Edge finishing';
    const help=document.createElement('p');help.className='sms-descriptor';
-   help.textContent='Round or chamfer real outside edges. Sharp internal cuts for LEDs, wiring and fixings are preserved. Confirm wall thickness and fit in Cura.';
+   help.textContent='Apply a small 45° chamfer to exposed flat upper rims, including spoke windows and shaft holes. Undersides and separate pixel/wiring/fixing cutters stay unchanged; nonplanar ridges are left alone. Check Cura.';
    section.append(legend,help);
    const applyFinish=(key,value)=>{
     if(crystal){
@@ -2147,21 +2175,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const toggle=document.createElement('input');toggle.type='checkbox';toggle.dataset.edgeFinish='enabled';
    toggle.checked=settings.enabled;toggle.disabled=!!model.link;
    toggle.onchange=()=>{if(!applyFinish('enabled',toggle.checked))toggle.checked=settings.enabled;};
-   toggleLabel.append(toggle,' Finish exterior edges');section.append(toggleLabel);
-   const option=(label,name,current,choices)=>{
-    const wrapper=document.createElement('label'),select=document.createElement('select');
-    select.dataset.edgeFinish=name;wrapper.append(label,select);
-    for(const choice of choices)select.add(new Option(choice,choice));
-    select.value=current;select.disabled=!!model.link;
-    select.onchange=()=>{if(!applyFinish(name,select.value))select.value=current;};
-    section.append(wrapper);
-   };
-   option('Finish style','style',settings.style,EDGE_FINISH_STYLES);
-   option('Edge group','scope',settings.scope,EDGE_FINISH_SCOPES);
+   toggleLabel.append(toggle,' Bevel touchable top edges');section.append(toggleLabel);
    visualRange(section,{key:'edge-finish-amount',label:'Edge amount',min:.1,max:4,step:.1,unit:'mm',default:EDGE_FINISH_DEFAULTS.amountMm},
     settings.amountMm,value=>applyFinish('amountMm',Number(value)),!!model.link);
-   visualRange(section,{key:'edge-finish-steps',label:'Roundness steps',min:1,max:3,step:1,default:EDGE_FINISH_DEFAULTS.steps},
-    settings.steps,value=>applyFinish('steps',Number(value)),!!model.link);
    controls.append(section);
   }
   shell.searchSettings();

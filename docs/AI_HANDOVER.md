@@ -1,10 +1,10 @@
 # AI handover — read immediately after AGENTS.md
 
-## Universal edge finishing — #117 merged (20 Nov 2026)
-- PR #116 (Crystal convex tips) and PR #117 (seven-builder real geometry-based edge finishing) are now merged into `main`. The owner merged #117 at main `70ca92d`, which preserves #116 and prior measured-profile/socket roof safety changes.
-- `studio-edge-finish.js` changes genuine positive mesh geometry. Native controls save `build.edgeFinish`, Crystal shape controls save their settings, and hardware cutters remain separate. It provides All exterior, Top, Side and Bottom edge groups, but not individual-edge selection or a guaranteed constant-radius CAD fillet.
-- PR #118 adds typeable contextual Design numbers, validation, per-control Reset and exact edge amount/steps. It follows #117 at `v0.16.0-dev.35.24`. Require successful static, Manifold, seven-builder edge, native precision, pixel-profile recovery and full Chromium CI on the updated #118 exact head before owner merge.
-- Inspect wall thickness, functional fitting clearance, Cura slicing and physical samples separately. Software tests do not certify printed mechanical safety.
+## Top chamfer repair — PR #120
+- The #117 midpoint displacement left crinkles on flat Gear faces. The initial corrective draft subtracted overlapping individual wedges, which created degenerate STL triangles.
+- Walk exposed planar boundaries on the assembled stock. Inset each supported loop by the chamfer width and triangulate the cap and bevel as separate surfaces. Leave lower stock and the separate negative hardware cutters intact.
+- Native viewport geometry, STL, and 3MF use the same preparation path when the chamfer is enabled. Crystal uses Render actual model for the prepared result and retains its component-based editing view.
+- Release dev.35.25 follows merged #118 (dev.35.24) and preserves its exact numeric entry and independent reset. Check Cura layers and physical fit separately.
 
 ## Crystal tip convexity (independent draft — 20 Nov 2026)
 - PR #116 branch `fix/crystal-tip-monotone-20261120` has been reconciled with merged #114 at main `f0555d0` without changing Crystal geometry. It bounds the rounded spherical tip to actual shoulder headroom and replaces the inverted last-ring fallback.

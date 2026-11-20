@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
 const browser=await chromium.launch({headless:true,
  executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
@@ -17,8 +18,10 @@ try{
   const toggle=page.locator('.sms-palette [data-edge-finish=enabled]');
   await toggle.waitFor({state:'visible'});
   await toggle.check();
-  await page.locator('.sms-palette [data-edge-finish=style]').selectOption('Chamfer');
-  await page.locator('.sms-palette [data-edge-finish=scope]').selectOption('Top edges');
+  assert.equal(await page.locator('.sms-palette [data-edge-finish=style]').count(),0,
+   'Only the tested top-facing chamfer should be offered, not the former crinkling mode');
+  assert.equal(await page.locator('.sms-palette [data-edge-finish=scope]').count(),0,
+   'Unverified all-surface selection must not be advertised');
   const amount=page.locator('.sms-palette [data-palette-key=edge-finish-amount]');
   await amount.evaluate(element=>{element.value='0.6';element.dispatchEvent(new Event('change',{bubbles:true}));});
   if(family==='crystals'){
@@ -32,7 +35,7 @@ try{
     finish:window.__sensoryStudio.currentModel.build.edgeFinish
    }));
    assert.equal(saved.type,family);
-   assert.deepEqual(saved.finish,{enabled:true,style:'Chamfer',scope:'Top edges',amountMm:.6,steps:2});
+   assert.deepEqual(saved.finish,{enabled:true,style:'Chamfer',scope:'Top edges',amountMm:.6,steps:1});
   }
   assert(await page.locator('canvas').count()>0,family+' 3D viewport remains active');
   console.log(family+' live edge controls and persisted model passed');
@@ -41,6 +44,14 @@ try{
  await page.waitForFunction(()=>window.__sensoryStudio);
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.edgeFinish?.amountMm),.6,
   'Edge finishing persists on reload');
+ await page.evaluate(()=>window.__sensoryStudio.addModel('gears',{
+  diameter:68.5,teeth:12,spokes:5,bore:8,webStyle:'Legacy',reliefStyle:'None'
+ },'Openwork Gear chamfer'));
+ await page.locator('.sms-workspace-nav [data-tab=design]').click();
+ await page.locator('.sms-palette [data-edge-finish=enabled]').check();
+ await page.getByText('Showing prepared chamfer geometry.',{exact:true}).waitFor();
+ await fs.mkdir('qa',{recursive:true});
+ await page.screenshot({path:'qa/openwork-gear-chamfer.png'});
  assert.deepEqual(errors,[],'No uncaught Chromium errors');
  console.log('All seven Design palettes, model settings and reload passed');
 }finally{await browser.close();}
