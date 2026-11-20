@@ -3,13 +3,13 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'scripts/retain-pages-releases.mjs'
+      - 'tests/helpers/retain-pages-releases.mjs'
       - 'tests/pages-release-continuity-browser.mjs'
       - '.github/workflows/qa-release-continuity.yml'
   push:
     branches: [main]
     paths:
-      - 'scripts/retain-pages-releases.mjs'
+      - 'tests/helpers/retain-pages-releases.mjs'
       - 'tests/pages-release-continuity-browser.mjs'
       - '.github/workflows/qa-release-continuity.yml'
   workflow_dispatch:
