@@ -2,6 +2,7 @@
  * All dimensions are millimetres. Components are closed, but overlapping
  * crystal/base shells are NOT a validated Boolean union (see UI warnings).
  */
+import {finishEdgeGeometry,crystalEdgeFinish} from './studio-edge-finish.js';
 const TAU=Math.PI*2,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function seeded(seed){let x=(Number(seed)|0)||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}}
 export const families=['Quartz','Shard','Blade','Cubic','Double terminated','Fantasy'];
@@ -163,12 +164,18 @@ export function crystalGeometry(THREE,c,s){
   const slope=top/Math.max(1,tipH);
   const requested=Math.max(.3,Number(shape.tipRound??3))*(shape.tipStyle==='Blunt'?2:1);
   const maximal=Math.max(.3,tipH*slope*Math.sqrt(1+slope*slope)*.83);
-  const capRadius=Math.min(requested,maximal);
+  // The shoulder may consume part of the tip on very narrow / short crystals.
+  // Bound the spherical tangent by the *actual* last shoulder ring. Without
+  // this bound the legacy fallback placed a ring near height while the pole
+  // remained BELOW it, producing an inverted / concave top.
+  const shoulderY=rings[rings.length-1][0][1];
+  const headroom=Math.max(.04,height-shoulderY-.06);
+  const fittedRadius=headroom*slope*Math.sqrt(1+slope*slope);
+  const capRadius=Math.max(.0001,Math.min(requested,maximal,fittedRadius));
   const tangentR=capRadius/Math.sqrt(1+slope*slope);
   const centreY=height-capRadius*Math.sqrt(1+slope*slope)/slope;
   const tangentY=centreY+capRadius*slope/Math.sqrt(1+slope*slope);
-  // Remove the neck if a very small crystal would otherwise reverse order.
-  const shoulderY=rings[rings.length-1][0][1];
+  // Fit the tangent above the shoulder, never invert the tip pole.
   if(tangentY>shoulderY+.015){
     add(tangentY,tangentR);
     const startAngle=Math.atan2(tangentR,tangentY-centreY);
@@ -177,20 +184,22 @@ export function crystalGeometry(THREE,c,s){
       const phi=startAngle*(1-k/capSteps);
       add(centreY+capRadius*Math.cos(phi),Math.max(.0005,capRadius*Math.sin(phi)));
     }
+    apexY=centreY+capRadius;
   }else{
-    // Tiny crystals retain a compact rounded apex: do not add a sharp cone.
-    add(Math.max(shoulderY+.1,height-.6),Math.min(top*.4,capRadius*.65));
+    // Defensive degenerate-input fallback: the last ring stays below the
+    // pole. Never use a sphere centre calculated below an added upper ring.
+    const rise=Math.max(.15,height-shoulderY);
+    add(shoulderY+rise*.5,Math.max(.0005,Math.min(top*.4,capRadius*.65)));
+    apexY=shoulderY+rise;
   }
-  // Final pole: triangular fans close a curved cap without making a flat
-  // polygon at the very top. A tangent dome has zero radial width here.
-  apexY=centreY+capRadius;
+  // Final pole: a triangle fan closes the curved cap without a flat top.
  }
  const n=rings[0].length;
  for(let r=0;r<rings.length-1;r++)for(let i=0;i<n;i++){const j=(i+1)%n;quad(rings[r][i],rings[r+1][i],rings[r+1][j],rings[r][j])}
  const base=rings[0],cap=rings[rings.length-1];
  const baseC=[0,0,0],tipC=[0,apexY,0];
  for(let i=0;i<n;i++){const j=(i+1)%n;emit(baseC,base[i],base[j]);emit(tipC,cap[j],cap[i])}
- return meshFromTriangles(THREE,a);
+ return finishEdgeGeometry(THREE,meshFromTriangles(THREE,a),{...crystalEdgeFinish(shape),protectTopPole:true});
 }
 function hull(points){
  const pts=points.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
@@ -396,7 +405,7 @@ export function baseGeometry(THREE,cs,s){
   const bottomCenter=[c[0],0,c[1]];
   for(let i=0;i<length;i++)emit(bottomCenter,bottom[i],bottom[(i+1)%length]);
  }
- return meshFromTriangles(THREE,a);
+ return finishEdgeGeometry(THREE,meshFromTriangles(THREE,a),crystalEdgeFinish(s));
 }
 export function exportSTL(THREE,objects,filename='crystal-forge.stl'){
  const list=[],t=new THREE.Vector3();

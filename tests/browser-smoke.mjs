@@ -63,6 +63,25 @@ try{
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.tipStyle==='Flat');
  await tipStyle.selectOption('Rounded');
  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings?.tipStyle==='Rounded');
+ // Reproduce the formerly inverted cap through actual Design controls.
+ for(const [key,value] of [['topScale','0.15'],['shoulderRound','2'],['tipLength','0.10'],['tipRound','8']])
+  await page.locator('[data-state="'+key+'"]').evaluate((el,v)=>{el.value=v;el.dispatchEvent(new Event('input',{bubbles:true}))},value);
+ await page.waitForFunction(()=>{
+  const s=JSON.parse(localStorage.getItem('crystal-forge-v3')||'{}').settings;
+  return s?.topScale===.15&&s?.shoulderRound===2&&s?.tipLength===.1&&s?.tipRound===8;
+ });
+ const tipResult=await page.evaluate(async()=>{
+  const THREE=await import('three');
+  const {crystalGeometry}=await import('./geometry-'+'v3.js');
+  const s=JSON.parse(localStorage.getItem('crystal-forge-v3')).settings;
+  const g=crystalGeometry(THREE,{id:'browser-regression',family:'Quartz',h:80,r:5},s);
+  const p=g.getAttribute('position').array,pole=p[p.length-8];
+  let ring=-Infinity;
+  for(let i=0;i<p.length;i+=3)
+   if(Math.hypot(p[i],p[i+2])>1e-5)ring=Math.max(ring,p[i+1]);
+  g.dispose();return {pole,ring};
+ });
+ assert(tipResult.pole>tipResult.ring,'Design control updates never invert the printed crystal tip '+JSON.stringify(tipResult));
  await page.locator('#shapePresetSelect').selectOption('Classic Quartz');
  await page.locator('#applyShapePresetBtn').click();
  await page.locator('[data-tool="translate"]').click();

@@ -31,6 +31,7 @@ import {manufacturingFingerprint} from './manufacturing-fingerprint.js';
 import {saveNamedProject,listSavedProjects,loadNamedProject,deleteNamedProject} from './project-library.js';
 import {installTooltips,describeControl} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile,resolveSocketProfile,socketShoulderRise} from './pixel-profiles.js';
+import {planPixelProfileSave,planPixelProfileDelete} from './studio-profile-safety.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
 import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
 import {adviseCuraForModel} from './cura-model-advisor.js';
@@ -47,6 +48,7 @@ const defaults={
   title:'Untitled cluster',batchSelectionIds:[],count:16,height:155,width:130,crystalSize:1,widthRandomness:0,studioBrightness:.85,seed:42,pattern:'Central Spire',spacing:42,leanMode:'Organic / natural',leanAmount:35,angleRandomness:32,
   familyMix:'Quartz',familyWeights:{Quartz:1,Shard:1,Blade:1,Cubic:1,'Double terminated':1,Fantasy:1},bottomScale:1,topScale:.80,cornerRadius:.7,shoulderRound:0,tipRound:3.5,tipStyle:'Rounded',
   tipFlat:.25,tipLength:.27,roundSteps:3,
+  edgeFinishEnabled:false,edgeFinishStyle:'Rounded',edgeFinishScope:'All exterior',edgeFinishAmount:0.8,edgeFinishSteps:2,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
   wireAllowOverLength:false,
   showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,socketConical:false,socketSupportFreeShoulders:false,socketShoulderAngle:45,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,autoBedSplit:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',pixelStringSpacing:50,pixelSnapMaxMove:5,wireMinBendRadius:5,wireInputTailLength:0,wireOutputTailLength:0,wireDirectionArrows:true,wireShowLengths:true,wirePairSpacing:7,wireWidth:3,wireDepth:2,wireVaulted:false,wireSlack:0,manualEdgeTabs:null,edgeManualMounts:false,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
@@ -81,7 +83,7 @@ function mergePixelLibrary(){
    const value=normalisePixelProfile(p);
    if(value.id.startsWith('custom-'))map.set(value.id,value);
   }
-  s.pixelProfiles=[...map.values()].slice(0,30);
+  s.pixelProfiles=[...map.values()];
  }catch(e){s.pixelProfiles=Array.isArray(s.pixelProfiles)?s.pixelProfiles:[]}
 }
 mergePixelLibrary();
@@ -93,7 +95,7 @@ function readPixelFitProfiles(){
   const profile=normalisePixelProfile(item);
   if(profile.id.startsWith('custom-'))profiles.set(profile.id,profile);
  }
- return [...profiles.values()].slice(-30);
+ return [...profiles.values()];
 }
 if(!crystals.length)crystals=generateFormation(s);
 const history=[];let historyIndex=-1;
@@ -115,14 +117,14 @@ function restore(str){
 }
 function undo(delta){const next=historyIndex+delta;if(next<0||next>=history.length)return;historyIndex=next;restore(history[next])}
 function format(k,v){
- if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','wirePairSpacing','lightPortDiameter','lightBoreDiameter','lightReach','splitPinDiameter','splitPinDepth','splitPinClearance','plateThickness','wireDepth'].includes(k))return Number(v).toFixed(['pixelFit','pixelRetentionLip','splitPinClearance'].includes(k)?2:1)+' mm';
+ if(['height','width','cornerRadius','shoulderRound','tipFlat','tipRound','edgeFinishAmount','baseHeight','baseDome','baseEdgeRadius','baseWidth','wallThickness','pixelDiameter','pixelFit','pixelRetentionLip','wireWidth','wirePairSpacing','lightPortDiameter','lightBoreDiameter','lightReach','splitPinDiameter','splitPinDepth','splitPinClearance','plateThickness','wireDepth'].includes(k))return Number(v).toFixed(['pixelFit','pixelRetentionLip','splitPinClearance'].includes(k)?2:1)+' mm';
  if(k==='crystalSize'||k==='studioBrightness')return Math.round(Number(v)*100)+'%';
   if(['bottomScale','topScale'].includes(k)){const d=Math.round((Number(v)-1)*100);return (d>0?'+':'')+d+'%'}
   if(k==='tipLength')return Math.round(v*100)+'%';
  if(['mountHoleDiameter','mountHoleDepth','mountSpacing','mountPlateThickness','tabHoleDiameter','tabThickness','tabWall'].includes(k))return Number(v).toFixed(1)+' mm';
  if(k==='curaQuality')return v+'%';if(k==='lightPortReach')return v+'%';if(k==='hardwareSnapStep')return Number(v).toFixed(1)+' mm';if(k==='wireSlack')return v+'%';if(k==='sideWall')return v+'%';if(k==='domeFalloff')return Number(v).toFixed(1);if(k==='vaultSupportPitch')return v+' mm';if(k==='splitX')return v+' mm';if(['spacing','angleRandomness','leanAmount','widthRandomness'].includes(k))return v+'%';if(k==='overhang'||k==='socketShoulderAngle')return v+'°';return String(v);
 }
-const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps']);
+const shapeKeys=new Set(['familyMix','bottomScale','topScale','cornerRadius','tipLength','tipFlat','tipRound','shoulderRound','roundSteps','edgeFinishEnabled','edgeFinishStyle','edgeFinishScope','edgeFinishAmount','edgeFinishSteps']);
 function selectedCrystal(){return crystals.find(c=>c.id===selectedId)||null}
 function shapeValue(c,k){
  if(!c)return s[k];
@@ -542,7 +544,7 @@ async function updateLEDs(){
     messages.push('P'+(index+1)+' · insertion '+preview.insertionDepth.toFixed(2)+' mm · centre roof '+preview.remainingRoof.toFixed(2)+' mm · '+preview.exposedVolume.toFixed(2)+' mm³ outside base · '+preview.collisionVolume.toFixed(2)+' mm³ interfering with base');
    }catch(error){messages.push('P'+(index+1)+' · '+error.message);}
   });
-  report(messages.join(' | ')||'No accepted pixel sockets to preview.');
+  report(messages.length?messages.join(' | ')+' · Yellow shows the physical pixel; blue shows the socket cut. Preparation protects the curved/pointed roof only. Exposed pixel-body volume is an advisory, not a stock-check failure.':'No accepted pixel sockets to preview.');
  }catch(error){if(request===fittingPreviewRequest)report(error.message);}
 }
 
@@ -1183,8 +1185,9 @@ $('pixelProfileDiagram').addEventListener('click',e=>{
  if(field&&PIXEL_DIMENSIONS.some(dim=>dim.field===field))$(field).focus();
 });
 function closePixelEditor(){$('pixelProfileOverlay').hidden=true;$('editPixelProfileBtn').focus()}
-let editingPixelProfileId=null,routedCouponRetention,profileCouponShoulderAngle;
-function openPixelProfileEditor(id,duplicate=false,fit){
+let editingPixelProfileId=null,editingPixelProfileOrigin='crystal',routedCouponRetention,profileCouponShoulderAngle;
+function openPixelProfileEditor(id,duplicate=false,fit,origin='crystal'){
+ editingPixelProfileOrigin=origin==='native'?'native':'crystal';
  const profiles=allPixelProfiles({pixelProfiles:readPixelFitProfiles()});
  const savedProfile=profiles.find(profile=>profile.id===id);
  const p=fit?.measurements?{...savedProfile,...fit.measurements,id}:savedProfile;
@@ -1306,28 +1309,62 @@ function savePixelProfileFromEditor(applySocketFit=false){
  if(applySocketFit){
   try{applyLinked=studioBridge?.planPixelProfileClearance(p)??applyLinked;}
   catch(error){$('pixelSocketStatus').textContent=error.message;return;}
-  s.pixelClearanceByProfile={...s.pixelClearanceByProfile,[p.id]:socketFitFromEditor()};s.fitCalibration=null;
  }
- const library=readPixelFitProfiles().filter(item=>item.id!==p.id);
- if(library.length>=30){$('pixelSocketStatus').textContent='The profile library is full (30 custom profiles). Export a backup before removing a profile.';return;}
- s.pixelProfiles=[...library,p];
- s.pixelProfileId=p.id;s.pixelDiameter=p.bodyDiameter;
- try{localStorage.setItem(pixelLibraryKey,JSON.stringify(s.pixelProfiles))}
- catch(e){console.warn('Pixel library not writable',e)}
- closePixelEditor();syncForm();rebuild();snapshot();
+ // Commit the calibrated library first. A quota/security failure must never
+ // leave the editor reporting success or mutate the active model and fit.
+ let library;
+ try{
+  library=planPixelProfileSave(readPixelFitProfiles(),p);
+  const serialized=JSON.stringify(library);
+  localStorage.setItem(pixelLibraryKey,serialized);
+  if(localStorage.getItem(pixelLibraryKey)!==serialized)throw Error('Browser storage did not retain the profile library.');
+ }catch(error){
+  $('pixelSocketStatus').textContent='Profile not saved. '+error.message;
+  return;
+ }
+ const fromCrystal=editingPixelProfileOrigin==='crystal';
+ if(applySocketFit&&fromCrystal){
+  s.pixelClearanceByProfile={...s.pixelClearanceByProfile,[p.id]:socketFitFromEditor()};
+  s.fitCalibration=null;
+ }
+ s.pixelProfiles=library;
+ // A reusable profile edited from another model must never silently switch
+ // Crystal's independently selected pixel/profile diameter or fit.
+ if(fromCrystal){s.pixelProfileId=p.id;s.pixelDiameter=p.bodyDiameter;}
+ closePixelEditor();syncForm();
+ if(fromCrystal){rebuild();snapshot();}
  applyLinked();
- document.dispatchEvent(new CustomEvent('studio-pixel-profile-saved',{detail:{profileId:p.id}}));
+ studioBridge?.onPixelProfileLibraryChange?.(library);
+ document.dispatchEvent(new CustomEvent('studio-pixel-profile-saved',{
+  detail:{profileId:p.id,origin:editingPixelProfileOrigin}
+ }));
  setStatus('Custom pixel profile saved: '+p.name+'. Prepare print mesh again.');
 }
 $('savePixelProfileBtn').onclick=()=>savePixelProfileFromEditor();
 $('applyPixelSocketFit').onclick=()=>savePixelProfileFromEditor(true);
 $('deletePixelProfileBtn').onclick=()=>{
- const id=s.pixelProfileId;
- if(!id.startsWith('custom-')){alert('Built-in presets cannot be deleted.');return}
- s.pixelProfiles=(s.pixelProfiles||[]).filter(p=>p.id!==id);
- s.pixelProfileId='gumdrop';s.pixelDiameter=PIXEL_PRESETS[0].bodyDiameter;
- try{localStorage.setItem(pixelLibraryKey,JSON.stringify(s.pixelProfiles))}catch(e){}
- closePixelEditor();syncForm();rebuild();snapshot();
+ const id=editingPixelProfileId;
+ if(!id?.startsWith('custom-')){
+  $('pixelSocketStatus').textContent='Choose an existing custom profile before deleting.';return;
+ }
+ const library=readPixelFitProfiles(),profile=library.find(p=>p.id===id);
+ if(!profile){$('pixelSocketStatus').textContent='Selected custom profile is unavailable; no data changed.';return;}
+ if(s.pixelProfileId===id||studioBridge?.pixelProfileReferenced?.(id)){
+  $('pixelSocketStatus').textContent='This profile is in use by a model or saved revision. Switch to a different profile and preserve a backup before deletion.';return;
+ }
+ if(!confirm('Permanently delete the measured profile "'+profile.name+'" ('+id+')? This cannot be undone.'))return;
+ let next;
+ try{
+  next=planPixelProfileDelete(library,id);
+  const serialized=JSON.stringify(next);
+  localStorage.setItem(pixelLibraryKey,serialized);
+  if(localStorage.getItem(pixelLibraryKey)!==serialized)throw Error('Browser storage did not retain the changed library.');
+ }catch(error){$('pixelSocketStatus').textContent='Profile not deleted. '+error.message;return;}
+ s.pixelProfiles=next;
+ closePixelEditor();syncForm();
+ if(editingPixelProfileOrigin==='crystal')snapshot();
+ studioBridge?.onPixelProfileLibraryChange?.(next);
+ setStatus('Removed the selected custom profile: '+profile.name+'.');
 };
 document.addEventListener('keydown',e=>{
  if(!$('pixelProfileOverlay').hidden&&e.key==='Escape'){
@@ -1794,7 +1831,7 @@ if(studioBootstrap&&!new URLSearchParams(location.search).has('legacy'))studioBr
  },
  updateCrystalPixel:(id,fields)=>hardwareUI.updatePixel(id,fields),
  removeCrystalPixel:()=>hardwareUI.removeSelectedPixel(),
- openPixelProfileEditor,
+ openPixelProfileEditor:(id,duplicate=false,fit,origin='native')=>openPixelProfileEditor(id,duplicate,fit,origin),
  activeCrystalPixelProfile:()=>s.pixelProfileId,
  selectCrystalPixelProfile:id=>{
   if(!applyCrystalPixelProfile(id))return;
@@ -1816,15 +1853,50 @@ if(studioBootstrap&&!new URLSearchParams(location.search).has('legacy'))studioBr
   }
   if(next.length>30)throw Error('Import would exceed 30 custom profiles. Existing profiles were preserved.');
   localStorage.setItem(pixelLibraryKey,JSON.stringify(next));
-  mergePixelLibrary();syncForm();setStatus('Pixel profile library imported. Conflicting profiles were saved as copies.');
+  mergePixelLibrary();syncForm();studioBridge?.onPixelProfileLibraryChange?.(readPixelFitProfiles());
+  setStatus('Pixel profile library imported. Conflicting profiles were saved as copies.');
  },
  pixelFitProfiles:()=>readPixelFitProfiles(),
+ notifyPixelProfileLibrary:()=>studioBridge?.onPixelProfileLibraryChange?.(readPixelFitProfiles()),
+ installPixelProfileLibrary:profiles=>{
+  if(!Array.isArray(profiles))throw Error('Recovered measured profile library is invalid.');
+  const next=profiles.map(normalisePixelProfile),ids=new Set(next.map(p=>p.id));
+  if(ids.size!==next.length||next.some(p=>!p.id.startsWith('custom-')))
+   throw Error('Recovered measured profiles contain duplicate or unsupported identities.');
+  const desired=new Map(next.map(p=>[p.id,p]));
+  for(const profile of readPixelFitProfiles()){
+   if(!desired.has(profile.id)||JSON.stringify(desired.get(profile.id))!==JSON.stringify(profile))
+    throw Error('Measured profiles changed while recovering. Export a new backup and review the current library before retrying.');
+  }
+  const before=localStorage.getItem(pixelLibraryKey),previous=clone(s.pixelProfiles||[]);
+  const after=JSON.stringify(next);
+  localStorage.setItem(pixelLibraryKey,after);
+  if(localStorage.getItem(pixelLibraryKey)!==after)
+   throw Error('Browser storage did not retain recovered measured profiles.');
+  s.pixelProfiles=clone(next);syncForm();
+  return ()=>{
+   if(localStorage.getItem(pixelLibraryKey)!==after)
+    throw Error('Another tab updated measured profiles during recovery rollback.');
+   if(before===null)localStorage.removeItem(pixelLibraryKey);
+   else localStorage.setItem(pixelLibraryKey,before);
+   s.pixelProfiles=previous;syncForm();
+  };
+ },
  savePixelFitProfile:profile=>{
   const p=normalisePixelProfile(profile);
   if(!p.id.startsWith('custom-')||!p.measuredFit)throw Error('Enter a measured custom profile.');
-  const next=[...readPixelFitProfiles().filter(item=>item.id!==p.id),p].slice(-30);
-  localStorage.setItem(pixelLibraryKey,JSON.stringify(next));
-  return clone(p);
+  const next=planPixelProfileSave(readPixelFitProfiles(),p);
+  const before=localStorage.getItem(pixelLibraryKey);
+  const after=JSON.stringify(next);
+  localStorage.setItem(pixelLibraryKey,after);
+  if(localStorage.getItem(pixelLibraryKey)!==after)throw Error('Browser storage did not retain the measured profile.');
+  // Called only if the matching model commit fails. Do not overwrite another
+  // tab's later save while rolling back the proposed calibration.
+  return ()=>{
+   if(localStorage.getItem(pixelLibraryKey)!==after)return;
+   if(before===null)localStorage.removeItem(pixelLibraryKey);
+   else localStorage.setItem(pixelLibraryKey,before);
+  };
  },
  pixelFitCoupon:async (fitting,{kind='strip',format='stl'}={})=>{
   const legacy=typeof fitting==='number';

@@ -23,7 +23,7 @@ export function normalisePixelProfile(p){
   wireDepth:clamp(Number(p?.wireDepth??2)||0,0,8)};
 }
 export function allPixelProfiles(s){
- return [...PIXEL_PRESETS,...(Array.isArray(s?.pixelProfiles)?s.pixelProfiles.slice(0,30).map(normalisePixelProfile).filter(p=>!PIXEL_PRESETS.some(q=>q.id===p.id)):[])];
+ return [...PIXEL_PRESETS,...(Array.isArray(s?.pixelProfiles)?s.pixelProfiles.map(normalisePixelProfile).filter(p=>!PIXEL_PRESETS.some(q=>q.id===p.id)):[])];
 }
 export function resolvePixelProfile(s,clearanceOverride){
  const p=allPixelProfiles(s).find(p=>p.id===s?.pixelProfileId)||PIXEL_PRESETS[0];

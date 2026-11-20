@@ -1,5 +1,16 @@
 # AI handover — read immediately after AGENTS.md
 
+## Universal edge finishing — independent stacked draft (20 Nov 2026)
+- Branch `feat/universal-edge-finishing-20261120` follows the tip-fix branch `fix/crystal-tip-monotone-20261120`. PR #117 remains stacked on #116; do not merge it ahead of #116. Reconcile and retarget to main after #116 merges.
+- `studio-edge-finish.js` changes genuine positive mesh geometry. Native model controls save `build.edgeFinish`, Crystal controls save shape settings. The shared recipeGeometry path feeds preview and fabrication; hardware negative cutters are deliberately unchanged.
+- Edges are selectable in groups (All exterior, Top, Side, Bottom), not individually. The amount is a bounded approximate mesh displacement, not a constant-radius CAD fillet or collision-certified operation.
+- After merging current #116 head `4eec400`, rerun exact-head seven-family Chromium, Manifold and STL/3MF checks. Inspect Cura layer walls, functional fittings, print orientations and physical samples separately.
+
+## Crystal tip convexity (independent draft — 20 Nov 2026)
+- PR #116 branch `fix/crystal-tip-monotone-20261120` has been reconciled with merged #114 at main `f0555d0` without changing Crystal geometry. It bounds the rounded spherical tip to actual shoulder headroom and replaces the inverted last-ring fallback.
+- Existing Crystal settings and geometry are retained, with new all-family mesh, Manifold and browser regressions. Exact-head CI on the integrated commit is required before owner merge; Cura and tactile-print verification remain separate.
+- Follow-up universal edge finishing is separate; do not confuse it with socket Support-Free Shoulders or PR #101's tip style choices.
+
 ## Independent documentation and QA
 
 - [Coordination issue #105](https://github.com/connorturansky-svg/crystal-forge/issues/105) tracks live claims, review branches and exact-head evidence for Jordan's separate work.
@@ -41,6 +52,8 @@ The native planner identifies the numbered fitting that fails the diameter or ed
 Print Centre and production packs use the same bounding dimensions of the prepared mesh in its exported, Z-up frame. See [production review](PRODUCTION_REVIEW.md) for test scope, walkthrough and physical checks.
 
 ## Support-Free Pixel Shoulders
+
+Crystal's preparation previously required an entire flange-width cylinder of stock up to the highest socket roof, incorrectly rejecting valid placements under sloped/domed bases. Owner clarified the physical yellow pixel barrel — including its translucent upper part — is *not* the area requiring full-height protective stock. Draft `fix/crystal-tapered-socket-stock-envelope` now checks **only the blue curved/pointed internal cap**, leaving 2.8 mm vertical roof and a 1 mm cap-rim margin. It does not require solid stock all along the yellow insertion barrel. The preview still reports exposed pixel volume (advisory, potentially relevant to retention/strength). Regression fixtures test both curved and pointed roofs, genuinely thin roofs and cap-rims, and valid caps with exposed barrels. Exact-head CI, Cura sections and physical testing remain required before merging.
 
 Crystal uses global socket settings and native shaped underside fittings use per-fitting settings. The shared Manifold cutter raises the shaft, optional retention ridge and original roof by the taper rise. Keep the flange start plane and wire cuts fixed. The native recipe, Crystal fitting overlay and shaped test samples use the same cutter. The fabrication tests section the taper and the unchanged flange and bore in both export formats. Physical slicing and fit remain a separate check.
 

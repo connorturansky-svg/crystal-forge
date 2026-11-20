@@ -334,3 +334,5 @@
 - Full unified Chromium passed the layered Character fit edit, undo, redo and stale-download checks. Fresh STL and 3MF both measure the redone 5.60 mm bore.
 
 - Crystal browser suite passed the selected tip edit, undo and redo with independently decoded STL and 3MF. Verified latest main at eea22c6 before publishing the integration candidate.
+
+- **20 Nov 2026, post-#110 handover:** Owner merged #110 as `5732e33`; all three exact-head engineering suites passed on its reviewed head. After Codex credits ran out, independent continuation opened draft #113 from merged main. New `studio-profile-safety.js` refuses 31st custom profile without eviction; native measured fitting stores calibration before committing the model, catches asynchronous quota errors; shared editor deletion uses the actual edited ID and checks references. Complete Studio JSON and optional private-vault profile assets now support merged conflict-safe restoration. Added pure unit, vault mock and real isolated two-browser Chromium regressions. **Evidence pending GitHub exact-head CI; not merge-approved.**

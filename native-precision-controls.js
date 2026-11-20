@@ -1,7 +1,7 @@
 // Numeric controls in the contextual Studio palette. The legacy Precision
 // settings use exact-value-editors.js; this shared renderer closes the gap for
 // all native Design sliders and the compatible Crystal palette controls.
-const integerKeys=new Set(['seed','count','teeth','spokes','facets','gripCount','roundSteps','pixelCount']);
+const integerKeys=new Set(['seed','count','teeth','spokes','facets','gripCount','roundSteps','pixelCount','edge-finish-steps']);
 export function parsePrecisionNumber(text,field){
  if(!String(text).trim())return {error:'Enter a number.'};
  const value=Number(text),min=Number(field.min),max=Number(field.max);

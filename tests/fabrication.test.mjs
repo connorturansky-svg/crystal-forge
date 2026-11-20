@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import Module from 'manifold-3d';
 import {exportMaterialBodies} from '../studio-material-export.js';
 import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,baseProfileHeight,baseEdgeHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
-import {setThreeInstance,prepareFabrication,putSocket,probeLightPassageSegment,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,splitPreparedMeshGrid,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
+import {setThreeInstance,prepareFabrication,putSocket,socketRoofStockEnvelope,probeLightPassageSegment,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,splitPreparedMeshGrid,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
 import {planBedAwareSplit} from '../bed-split.js';
@@ -67,6 +67,45 @@ const wasm=await Module();wasm.setup();
  }finally{for(const solid of owned)solid.delete();}
 }
 
+// The preview's yellow body is not itself a mandatory full-length cylinder
+// of printable stock. Require stock only around the actual blue roof/cap.
+{
+ const profile=resolvePixelProfile({pixelProfileId:'gumdrop',pixelDiameter:12,pixelFit:.15});
+ const owned=[],hold=solid=>(owned.push(solid),solid);
+ const position={x:0,z:0,radius:profile.maxDiameter/2};
+ try{
+  for(const conical of [false,true]){
+   const cutter=putSocket(wasm,hold,position,position.radius,40,-3,profile,
+    {conical,shoulderAngle:45,includeLocalWireRelief:false});
+   const envelope=hold(socketRoofStockEnvelope(wasm,position,profile,cutter,{conical}));
+   const bounds=envelope.boundingBox();
+   assert(bounds.min[1]>=cutter.shaftEnd-.001,
+    'Only the curved/pointed cap is included; no lower insertion barrel stock');
+   assert(bounds.max[1]>=cutter.tipY+2.79,
+    'Both cap profiles preserve at least 2.8 mm vertical overhead protection');
+   const capOnlyStock=hold(wasm.Manifold.cylinder(
+    bounds.max[1]-bounds.min[1]+1,9,9,48).rotate([-90,0,0])
+    .translate([0,bounds.min[1]-.5,0]));
+   const missing=hold(envelope.subtract(capOnlyStock)).volume();
+   assert(missing<.05,'Cap entirely protected without any material around the lower pixel body');
+   const oldCylinder=hold(wasm.Manifold.cylinder(cutter.tipY+2.8,position.radius+1,
+    position.radius+1,48).rotate([-90,0,0]));
+   assert(hold(oldCylinder.subtract(capOnlyStock)).volume()>50,
+    'Old full-height envelope wrongly rejected the same valid cap');
+   const thinRim=hold(wasm.Manifold.cylinder(bounds.max[1]+1,
+    profile.boreDiameter/2,profile.boreDiameter/2,48).rotate([-90,0,0]));
+   assert(hold(envelope.subtract(thinRim)).volume()>1,
+    'Missing protective material at the cap perimeter is still detected');
+   const thinRoof=hold(wasm.Manifold.cylinder(cutter.tipY+1.5,
+    9,9,48).rotate([-90,0,0]));
+   assert(hold(envelope.subtract(thinRoof)).volume()>1,
+    'A roof with less than 2.8 mm material is still detected');
+  }
+ }finally{for(const solid of owned)solid.delete();}
+ console.log('Crystal roof-only stock: exposed pixel barrel allowed; curved/pointed roofs protected');
+}
+
+
 {
  const block=wasm.Manifold.cube([10,10,10]);
  const opening=wasm.Manifold.cylinder(12,1,1).rotate([-90,0,0]).translate([5,-1,5]);
@@ -92,6 +131,36 @@ function geometryEdges(g,precision=1e4){
  }
  return {open:[...edges.values()].filter(x=>x!==2).length,triangles:p.length/9};
 }
+// Regression: a narrow cap must not fold back below its last shoulder ring.
+for(const family of ['Quartz','Shard','Blade','Cubic','Double terminated','Fantasy']){
+ for(const topScale of [.15,.25,.8,2]){
+  const config={bottomScale:1,topScale,tipLength:.10,tipRound:8,tipStyle:'Rounded',
+   cornerRadius:.7,shoulderRound:2,roundSteps:3};
+  const g=crystalGeometry(THREE,{id:'tip-regression',family,h:80,r:5},config);
+  const vertices=g.getAttribute('position').array;
+  // The last emitted fan has the tip pole as its first vertex.
+  const poleY=vertices[vertices.length-8];
+  let tallestRing=-Infinity;
+  for(let i=0;i<vertices.length;i+=3)
+   if(Math.hypot(vertices[i],vertices[i+2])>1e-5)tallestRing=Math.max(tallestRing,vertices[i+1]);
+  assert(poleY>tallestRing+1e-4,
+   family+' top '+topScale+' has an inverted pole: '+poleY+' <= '+tallestRing);
+  assert.equal(geometryEdges(g).open,0,'No missing triangles at '+family+' tip');
+  if(topScale===.15){
+   const mesh=new wasm.Mesh({numProp:3,vertProperties:new Float32Array(vertices),
+    triVerts:Uint32Array.from({length:vertices.length/3},(_,i)=>i)});
+   mesh.merge();
+   const solid=new wasm.Manifold(mesh);
+   try{
+    assert.equal(solid.status(),'NoError',family+' narrow tip is a valid Manifold');
+    assert(solid.volume()>0,'Narrow tip has positive printable volume');
+   }finally{solid.delete();}
+  }
+  g.dispose();
+ }
+}
+console.log('All six Crystal families: monotone rounded tips, closed mesh and narrow-tip Manifold passed');
+
 // PR4: geometry stays closed through all hill/plinth modes.
 for(const baseProfile of ['Flat plinth','Plinth + dome','Full dome / hill']){
  for(const sideWall of [0,50,100]){

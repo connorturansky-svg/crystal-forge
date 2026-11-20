@@ -75,7 +75,7 @@ The user approved the full seven-generator expansion, global Print Centre, local
 
 In **Build → Pixel fittings**, enable **Support-Free Shoulders** for a Crystal socket or a native shaped socket on a flat underside. Crystal applies the setting to all of its sockets and the native builders save it per fitting. Choose **30–60° from horizontal** (default **45°**). The taper starts at the original flange depth. The bore, optional retention ridge and existing roof profile rise by the taper height, preserving their dimensions. The flange and wire cuts keep their original dimensions and positions. Plain bores, profiles without a flange step, and older projects with the setting off retain their existing geometry.
 
-Use the physical fitting overlay and print preparation to inspect the taper. The model needs enough continuous stock to leave at least 2.8 mm above the raised cutter. Increase the stock or turn the option off if preparation rejects the socket. Inspect the intended base-down orientation and remaining overhangs in Cura and test the seating on a print.
+Use the physical fitting overlay and print preparation to inspect the taper. Crystal preparation checks 2.8 mm of continuous vertical protection above the **curved or pointed roof** and a conservative 1 mm cap-rim margin. It must not demand a solid column surrounding the entire yellow physical pixel insertion body. The preview reports pixel exposure separately rather than blocking on it; exposure can still affect retention, sealing and strength. The measured socket cutter is unchanged. Move a failing cap into thicker material or increase the base where the roof is genuinely unprotected. Inspect the intended base-down orientation and remaining overhangs in Cura and test physical seating.
 
 ## F08 — Automatic and manual hardware placement
 
@@ -261,3 +261,10 @@ A binary ZIP bundles the *current validated prepared STL*, editable JSON, Cura c
 - Persist last printed coupon and applied fit in editable project JSON; do not silently alter individual nominal pixel dimensions.
 - Preserve source privacy choices: original source is rights-reserved, but public repositories and browser JS remain inspectable.
 
+## Shared exterior edge finishing — all seven model builders (20 Nov 2026)
+
+**Intent:** An optional geometric edge finish is offered in Design for Crystal Clusters, Tactile Tiles, Gears, Waves, Caps, Characters and Light Pods. Users can choose rounded or chamfered edges on All exterior / Top / Side / Bottom edge groups, with a maximum offset of 0.1–4 mm and geometric subdivision levels 1–3. Existing models remain unchanged until enabled.
+
+**Data and implementation:** For Crystals, the legacy `edgeFinishEnabled`, `edgeFinishStyle`, `edgeFinishScope`, `edgeFinishAmount`, `edgeFinishSteps` shape settings and per-crystal overrides flow through `geometry-v3.js`. For the other six builders, the standard `model.build.edgeFinish` persists in project/library JSON, participates in the manufacturing fingerprint and can be undone. `studio-edge-finish.js` changes actual positive mesh triangles through `studio-geometry.js`, before Manifold subtracts the original hardware cutters. The same finished positives are used for interactive preview and prepared STL/3MF.
+
+**Safety and limits:** Finishing applies to convex hard edges of the selected group where geometry is suitable; concave channels and blind socket walls are not deliberately smoothed. The amount is a bounded, approximate mesh offset — not a mathematically constant-radius CAD fillet. Per-individual-edge selection, collision-free shrinking, wall-thickness certification and support-free manufacturing are not yet implemented. Closed/manifold geometry, routed cable paths, remaining material, sockets and fasteners require real Manifold, Cura layer-view and test-print checks before production.
