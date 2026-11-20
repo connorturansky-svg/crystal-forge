@@ -221,6 +221,56 @@ export function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile,{includeLo
   capRise:conical?bodyRadius:capRise,remainingWall:roofY-tipY,profileId:p.id,retentionLip:lip,
   requestedBodyDepth,usableBodyDepth:Math.max(0,conical?requestedBodyDepth+shoulderRise:tipY),shoulderRise,wireReliefDepth:relievedDepth};
 }
+// A shaped socket needs stock around its *actual* narrowing cutter, not a
+// full flange-width cylinder all the way to the roof. The latter rejects
+// valid sockets beneath domed Crystal bases even when the measured
+// perimeter web and vertical 2.8 mm roof are present.
+// This is a conservative software envelope, NOT a printed strength rating.
+export function socketStockEnvelope(wasm,pos,profile,bore,{conical=false}={}){
+ const sideWall=1,roofWall=2.8,segments=48;
+ const flangeRadius=Math.max(Number(pos.radius)||0,profile.maxDiameter/2)+sideWall;
+ const bodyRadius=Math.max(.8,profile.boreDiameter/2);
+ const flangeY=Math.max(0,Number(profile.flangeHeight)||0);
+ const shoulderY=flangeY+Math.max(0,bore.shoulderRise||0);
+ const rings=[];
+ const push=(y,r)=>{if(!Number.isFinite(y)||!Number.isFinite(r)||r<=0)throw Error('Invalid socket stock envelope dimensions.');
+  const last=rings.at(-1);if(last&&Math.abs(last[0]-y)<1e-7&&Math.abs(last[1]-r)<1e-7)return;
+  if(last&&y<last[0]-1e-7)throw Error('Socket stock envelope sections are out of order.');
+  rings.push([y,r]);
+ };
+ push(0,flangeRadius);
+ push(flangeY,flangeRadius);
+ push(shoulderY,bodyRadius+sideWall);
+ // Raising the shaft and cap boundary checks a real vertical roof allowance
+ // across the entire socket. The upper protective shape narrows with its cap.
+ push(bore.shaftEnd+roofWall,bodyRadius+sideWall);
+ if(conical)push(bore.tipY+roofWall,sideWall);
+ else for(let step=1;step<=20;step++){
+  const angle=step*Math.PI/40;
+  push(bore.shaftEnd+roofWall+bore.capRise*Math.sin(angle),bodyRadius*Math.cos(angle)+sideWall);
+ }
+ const vertices=[],triangles=[];
+ for(const [y,r] of rings)for(let side=0;side<segments;side++){
+  const angle=2*Math.PI*side/segments;
+  vertices.push(pos.x+r*Math.cos(angle),y,pos.z+r*Math.sin(angle));
+ }
+ const bottom=vertices.length/3,top=bottom+1,last=(rings.length-1)*segments;
+ vertices.push(pos.x,0,pos.z,pos.x,rings.at(-1)[0],pos.z);
+ for(let side=0;side<segments;side++){
+  const next=(side+1)%segments;
+  triangles.push(bottom,side,next,top,last+next,last+side);
+  for(let ring=0;ring<rings.length-1;ring++){
+   const a=ring*segments+side,b=ring*segments+next,c=a+segments,d=b+segments;
+   triangles.push(a,c,b,b,c,d);
+  }
+ }
+ const mesh=new wasm.Mesh({numProp:3,vertProperties:new Float32Array(vertices),triVerts:new Uint32Array(triangles)});
+ mesh.merge();
+ const stock=new wasm.Manifold(mesh);
+ assertSolid(stock,'Socket minimum-stock envelope');
+ return stock;
+}
+
 export function crystalFittingPreview(wasm,positiveMesh,baseMesh,pos,roof,profile,settings){
  const owned=[],hold=solid=>(owned.push(solid),solid);
  try{
@@ -537,7 +587,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
   let socketsCut=0,mountingHolesCut=0,ventCuts=0,socketCeilings=[],wireChannelsCut=0;
   if(hardware.sockets.length){
    const cutters=[];
-   for(const pos of hardware.sockets){
+   for(const [index,pos] of hardware.sockets.entries()){
     const roof=baseSurfaceHeight(crystals,s,pos.x,pos.z);
     const profile=resolveSocketProfile(s,pos);
     const bore=putSocket(wasm,hold,pos,pos.radius,roof,-3,profile,{
@@ -551,12 +601,14 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
       includeLocalWireRelief:!s.wireChannels&&s.wireMode!=='string'
      });
     if(s.socketConical||bore.shoulderRise){
-     const stockRadius=Math.max(pos.radius,profile.maxDiameter/2)+1;
-     const envelope=hold(wasm.Manifold.cylinder(bore.tipY+2.8,stockRadius,stockRadius,32)
-      .rotate([-90,0,0]).translate([pos.x,0,pos.z]));
+     const envelope=hold(socketStockEnvelope(wasm,pos,profile,bore,{conical:s.socketConical===true}));
      const available=hold(combined.intersect(envelope));
-     if(envelope.volume()-available.volume()>.05)
-      throw Error((bore.shoulderRise?'Tapered pixel shoulder':'Conical pixel socket')+' lacks continuous surrounding stock. Move the pixel or increase base thickness.');
+     const missing=envelope.volume()-available.volume();
+     if(missing>.05)
+      throw Error('Pixel P'+(index+1)+' at X '+pos.x.toFixed(1)+', Z '+pos.z.toFixed(1)+
+       ' mm: '+(bore.shoulderRise?'tapered shoulder':'conical roof')+
+       ' lacks local stock (1 mm around the fitting and 2.8 mm above the roof; '+
+       missing.toFixed(2)+' mm³ missing). Move this pixel into thicker material or increase base thickness.');
     }
     cutters.push(bore.solid);
     socketCeilings.push({x:pos.x,z:pos.z,roofY:bore.roofY,tipY:bore.tipY,
