@@ -2,6 +2,7 @@
  * All dimensions are millimetres. Components are closed, but overlapping
  * crystal/base shells are NOT a validated Boolean union (see UI warnings).
  */
+import {finishEdgeGeometry,crystalEdgeFinish} from './studio-edge-finish.js';
 const TAU=Math.PI*2,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function seeded(seed){let x=(Number(seed)|0)||1;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}}
 export const families=['Quartz','Shard','Blade','Cubic','Double terminated','Fantasy'];
@@ -198,7 +199,7 @@ export function crystalGeometry(THREE,c,s){
  const base=rings[0],cap=rings[rings.length-1];
  const baseC=[0,0,0],tipC=[0,apexY,0];
  for(let i=0;i<n;i++){const j=(i+1)%n;emit(baseC,base[i],base[j]);emit(tipC,cap[j],cap[i])}
- return meshFromTriangles(THREE,a);
+ return finishEdgeGeometry(THREE,meshFromTriangles(THREE,a),crystalEdgeFinish(shape));
 }
 function hull(points){
  const pts=points.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
@@ -404,7 +405,7 @@ export function baseGeometry(THREE,cs,s){
   const bottomCenter=[c[0],0,c[1]];
   for(let i=0;i<length;i++)emit(bottomCenter,bottom[i],bottom[(i+1)%length]);
  }
- return meshFromTriangles(THREE,a);
+ return finishEdgeGeometry(THREE,meshFromTriangles(THREE,a),crystalEdgeFinish(s));
 }
 export function exportSTL(THREE,objects,filename='crystal-forge.stl'){
  const list=[],t=new THREE.Vector3();
