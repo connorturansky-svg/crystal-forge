@@ -187,3 +187,5 @@
 - The catalogue suite rejected thin and interrupted fixtures and kept the measured solid case. Chromium rejected a thin Wave countersink without changing the accepted control, Build settings or revision. Next add independently placed recessed mounts.
 
 - Wave routing accepts somewhat steeper relief within a 6% surface slope. Test exports preserve the full cable channel at the new limit. Full unified Chromium passed the new relief fixture through save, reload, preparation and both downloads.
+
+- The combined local release candidate b71f0b9 includes the merged accessibility and recovery changes. All ten browser suites and six fabrication suites passed, along with static and release checks. GitHub CI remains pending.

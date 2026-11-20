@@ -18,7 +18,7 @@ The [completion register](WT021_COMPLETION_REGISTER.md) records all 24 acceptanc
 | PAR-02 | Exercise remaining native edit combinations with exact undo, reload preservation and stale-download invalidation. |
 | PAR-04 | Confirm direct extruder assignment in the imported 3MF with both tools enabled in Cura Desktop. Desktop accepted PLA profiles on both target printer definitions. Offline CuraEngine emitted separate toolpaths for the extracted primary and secondary bodies. Record physical fit and print evidence under [#10](https://github.com/connorturansky-svg/crystal-forge/issues/10). |
 
-The latest archived full unified Chromium run passed at `4100daa`. The full Manifold catalogue suite passed at `3189f0f`, including independent 18 mm depth and 5.15 mm bore measurements from both Tile exports. These runs cover local evidence. The acceptance gate still requires CI on the published candidate head.
+Local candidate `b71f0b9` passed release metadata, all static checks, all ten browser suites and all six fabrication suites. GitHub CI on a published candidate remains open.
 
 ## Resume
 

@@ -12,7 +12,7 @@
 
 - **Target:** Measure the original Crystal sample STL when it arrives and compare its extents with the matching project revision. Reproduce the preparation failure with the saved Truncated blade fan revision 398 if available. A fresh copy prepared and exported both formats on deployed `7d746d3`.
 - **Checkpoint:** all seven browser fixtures have local Design-to-download evidence. Crystal supports manual through-holes with edge tabs. Rotary Caps explicitly distinguish moving from stationary. The Features and What’s New catalogue passed local navigation, state, layout and keyboard tests.
-- **Next test:** Check remaining PAR-02 native edit combinations, starting with edit, undo and redo of a prepared non-Crystal fitting, followed by download invalidation and dimension checks. FIT-03 now has tested perpendicular Tile and raised Wave routes.
+- **Next test:** Verify the remaining native edit combinations, starting with a prepared Cap whose fitted socket is edited, undone and redone. The equivalent prepared Pod calibration already passed. Local candidate `b71f0b9` passed static, browser and fabrication suites.
 - **Then:** continue FIT-03 and PAR-02 from the completion register. Keep physical validation under #10 and verify CI once the follow-up has a confirmed PR destination.
 
 ## Resume instruction
