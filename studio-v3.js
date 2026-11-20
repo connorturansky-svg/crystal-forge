@@ -1184,8 +1184,9 @@ $('pixelProfileDiagram').addEventListener('click',e=>{
  if(field&&PIXEL_DIMENSIONS.some(dim=>dim.field===field))$(field).focus();
 });
 function closePixelEditor(){$('pixelProfileOverlay').hidden=true;$('editPixelProfileBtn').focus()}
-let editingPixelProfileId=null,routedCouponRetention,profileCouponShoulderAngle;
-function openPixelProfileEditor(id,duplicate=false,fit){
+let editingPixelProfileId=null,editingPixelProfileOrigin='crystal',routedCouponRetention,profileCouponShoulderAngle;
+function openPixelProfileEditor(id,duplicate=false,fit,origin='crystal'){
+ editingPixelProfileOrigin=origin==='native'?'native':'crystal';
  const profiles=allPixelProfiles({pixelProfiles:readPixelFitProfiles()});
  const savedProfile=profiles.find(profile=>profile.id===id);
  const p=fit?.measurements?{...savedProfile,...fit.measurements,id}:savedProfile;
@@ -1320,16 +1321,22 @@ function savePixelProfileFromEditor(applySocketFit=false){
   $('pixelSocketStatus').textContent='Profile not saved. '+error.message;
   return;
  }
- if(applySocketFit){
+ const fromCrystal=editingPixelProfileOrigin==='crystal';
+ if(applySocketFit&&fromCrystal){
   s.pixelClearanceByProfile={...s.pixelClearanceByProfile,[p.id]:socketFitFromEditor()};
   s.fitCalibration=null;
  }
  s.pixelProfiles=library;
- s.pixelProfileId=p.id;s.pixelDiameter=p.bodyDiameter;
- closePixelEditor();syncForm();rebuild();snapshot();
+ // A reusable profile edited from another model must never silently switch
+ // Crystal's independently selected pixel/profile diameter or fit.
+ if(fromCrystal){s.pixelProfileId=p.id;s.pixelDiameter=p.bodyDiameter;}
+ closePixelEditor();syncForm();
+ if(fromCrystal){rebuild();snapshot();}
  applyLinked();
  studioBridge?.onPixelProfileLibraryChange?.(library);
- document.dispatchEvent(new CustomEvent('studio-pixel-profile-saved',{detail:{profileId:p.id}}));
+ document.dispatchEvent(new CustomEvent('studio-pixel-profile-saved',{
+  detail:{profileId:p.id,origin:editingPixelProfileOrigin}
+ }));
  setStatus('Custom pixel profile saved: '+p.name+'. Prepare print mesh again.');
 }
 $('savePixelProfileBtn').onclick=()=>savePixelProfileFromEditor();
@@ -1353,7 +1360,8 @@ $('deletePixelProfileBtn').onclick=()=>{
   if(localStorage.getItem(pixelLibraryKey)!==serialized)throw Error('Browser storage did not retain the changed library.');
  }catch(error){$('pixelSocketStatus').textContent='Profile not deleted. '+error.message;return;}
  s.pixelProfiles=next;
- closePixelEditor();syncForm();snapshot();
+ closePixelEditor();syncForm();
+ if(editingPixelProfileOrigin==='crystal')snapshot();
  studioBridge?.onPixelProfileLibraryChange?.(next);
  setStatus('Removed the selected custom profile: '+profile.name+'.');
 };
@@ -1822,7 +1830,7 @@ if(studioBootstrap&&!new URLSearchParams(location.search).has('legacy'))studioBr
  },
  updateCrystalPixel:(id,fields)=>hardwareUI.updatePixel(id,fields),
  removeCrystalPixel:()=>hardwareUI.removeSelectedPixel(),
- openPixelProfileEditor,
+ openPixelProfileEditor:(id,duplicate=false,fit)=>openPixelProfileEditor(id,duplicate,fit,'native'),
  activeCrystalPixelProfile:()=>s.pixelProfileId,
  selectCrystalPixelProfile:id=>{
   if(!applyCrystalPixelProfile(id))return;
