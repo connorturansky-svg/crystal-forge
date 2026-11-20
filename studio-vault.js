@@ -16,6 +16,9 @@ export async function packStudioVault(state){
  const manifest={schemaVersion:1,project:await project(state.project),
   library:await Promise.all(state.library.map(async record=>({id:record.id,versions:await Promise.all(record.versions.map(async version=>({revision:version.revision,model:await model(version.model)})))}))),
   savedProjects:await Promise.all((state.savedProjects||[]).map(project)),legacyTemplates:await add(state.legacyTemplates||[])};
+ // Optional for backwards-compatible v1 manifests. New Studio snapshots
+ // include the complete reusable measured-profile library as hashed content.
+ if(state.pixelProfiles!==undefined)manifest.pixelProfiles=await add(state.pixelProfiles);
  if(state.organisation!==undefined)manifest.organisation=await add(readOrganisation(state.organisation));
  return {manifest,assets};
 }
@@ -27,7 +30,8 @@ export async function unpackStudioVault(manifest,readAsset){
  async function project(hash){const value=await read(hash);value.models=await Promise.all(value.models.map(model));return validateProject(value);}
  return {schemaVersion:1,organisation:readOrganisation(manifest.organisation?await read(manifest.organisation):undefined),project:await project(manifest.project),
   library:await Promise.all(manifest.library.map(async record=>({id:record.id,versions:await Promise.all(record.versions.map(async version=>({revision:version.revision,model:await model(version.model)})))}))),
-  savedProjects:await Promise.all(manifest.savedProjects.map(project)),legacyTemplates:await read(manifest.legacyTemplates)};
+  savedProjects:await Promise.all(manifest.savedProjects.map(project)),legacyTemplates:await read(manifest.legacyTemplates),
+  ...(manifest.pixelProfiles?{pixelProfiles:await read(manifest.pixelProfiles)}:{})};
 }
 export class StudioVault {
  constructor(client){this.client=client;this.sha=null;this.busy=false;}

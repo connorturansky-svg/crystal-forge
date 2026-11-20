@@ -1,5 +1,7 @@
 # WT-021 overnight checkpoint
 
+**Latest 20 Nov handover:** #110 merged as `5732e33`. Independent continuation is [draft #113](https://github.com/connorturansky-svg/crystal-forge/pull/113), focusing on P0 measured-profile preservation and complete backup/vault recovery. New code and exact browser tests are in the draft; PR-head CI still required. PRs #111 and #112 are separate release-QA gates. All physical printer validation remains #10.
+
 [PR #102](https://github.com/connorturansky-svg/crystal-forge/pull/102) merged as `3326ac9`. [PR #103](https://github.com/connorturansky-svg/crystal-forge/pull/103) merged print sizes and Crystal wiring controls. [PR #104](https://github.com/connorturansky-svg/crystal-forge/pull/104) merged optional support-free pixel shoulders and is deployed at `7d746d3`.
 
 - Cura Desktop 5.13 imported PLA profiles for both target printers. An offline Ultimaker 3 Extended slice verified separate toolpaths for both exported material bodies. Physical and Desktop dual-extruder checks remain open.
