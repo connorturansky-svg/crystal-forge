@@ -46,12 +46,12 @@ export function recipeGeometry(THREE, part) {
   geometry.rotateX(-Math.PI/2);
  } else throw Error('Unsupported solid primitive: '+part.kind);
  if(part.kind==='sphere')geometry.scale(...part.radii);
- if(part.rotation)geometry.rotateX(part.rotation[0]),geometry.rotateY(part.rotation[1]),geometry.rotateZ(part.rotation[2]);
- if(part.position)geometry.translate(...part.position);
  if(part.edgeFinish?.enabled){
   const preview=previewTopChamfer(THREE,part);
   if(preview){geometry.dispose();geometry=preview;}
  }
+ if(part.rotation)geometry.rotateX(part.rotation[0]),geometry.rotateY(part.rotation[1]),geometry.rotateZ(part.rotation[2]);
+ if(part.position)geometry.translate(...part.position);
  geometry.computeVertexNormals();return geometry;
 }
 export function previewRecipe(THREE, recipe, colours=[0x88bbff,0xffcf70]) {
