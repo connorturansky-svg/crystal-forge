@@ -1,0 +1,93 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {chromium} from 'playwright';
+
+const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
+ args:['--no-sandbox','--disable-dev-shm-usage']});
+const errors=[];
+try{
+ const page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true});
+ page.on('pageerror',error=>errors.push(error.message));
+ await page.goto(process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321/');
+ await page.waitForFunction(()=>window.__sensoryStudio);
+ // Use the actual physical placement and shaped Seed fitting workflow.
+ await page.evaluate(()=>window.__sensoryStudio.addModel('tactile-tiles',{
+  width:90,depth:90,thickness:20,outline:'square',relief:2,pattern:'terraces',dualMaterial:false
+ },'Profile integrity Tile'));
+ await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('[data-view=bottom]').click();
+ await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
+ const palette=page.locator('.sms-palette');
+ await palette.locator('[data-fit-profile=seed]').click();
+ await palette.getByRole('button',{name:'Place shaped socket in 3D'}).click();
+ const target=await page.evaluate(()=>window.__sensoryStudio.fittingPointScreen(0,0,'underside'));
+ assert(target,'Tile seed fit target must be visible');
+ await page.mouse.click(target.x,target.y);
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles?.length===1,null,{timeout:60000});
+ await page.keyboard.press('Escape');
+ await palette.getByRole('button',{name:'P1',exact:true}).click();
+ const model=()=>page.evaluate(()=>JSON.stringify(window.__sensoryStudio.currentModel));
+ const profileKey='crystal-forge-pixel-library';
+ const previous=await model();
+ // Seed AFTER Studio initializes: startup merging otherwise hides profile loss.
+ const initial=await page.evaluate(key=>{
+  const profiles=Array.from({length:30},(_,i)=>({
+   id:'custom-qa-'+i,name:'QA seed '+i,kind:'seed',bodyDiameter:5,bodyHeight:9,
+   flangeDiameter:5,flangeHeight:0,capHeight:1,wireWidth:2,wireDepth:1.5,
+   measuredFit:{bodyDiameter:5,printedBoreDiameter:5.3}
+  }));
+  const text=JSON.stringify(profiles);localStorage.setItem(key,text);return text;
+ },profileKey);
+ const openCalibration=async()=>{
+  await palette.getByText('Record measured fit',{exact:true}).click();
+  const form=palette.locator('[data-fit-calibration]');
+  await form.locator('[name=profileName]').fill('Protected measured Seed');
+  await form.locator('[name=printedBoreDiameter]').fill('5.5');
+  return form;
+ };
+ let form=await openCalibration();
+ await form.getByRole('button',{name:'Save measured fit'}).click();
+ await palette.locator('[data-pixel-status]').filter({hasText:/library is full/i}).waitFor({timeout:30000});
+ assert.equal(await model(),previous,'31st calibration cannot mutate the fitted model');
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),profileKey),initial,'31st save cannot overwrite older profiles');
+ // Now make one slot, then simulate an exact Storage write failure.
+ const space=await page.evaluate(key=>{
+  const profiles=JSON.parse(localStorage.getItem(key));profiles.pop();
+  const value=JSON.stringify(profiles);localStorage.setItem(key,value);return value;
+ },profileKey);
+ await page.evaluate(()=>{
+  const old=Storage.prototype.setItem;
+  Storage.prototype.setItem=function(key,value){
+   if(key==='crystal-forge-pixel-library')throw new DOMException('Storage full','QuotaExceededError');
+   return old.call(this,key,value);
+  };
+  window.__restoreProfileWrite=()=>{Storage.prototype.setItem=old;};
+ });
+ form=await openCalibration();
+ await form.getByRole('button',{name:'Save measured fit'}).click();
+ await palette.locator('[data-pixel-status]').filter({hasText:/not saved.*storage full/i}).waitFor({timeout:30000});
+ assert.equal(await model(),previous,'Quota failure cannot commit a broken custom ID');
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),profileKey),space,'Quota failure preserves exact previous library bytes');
+ assert.deepEqual(errors,[],'Asynchronous storage failure must not emit an uncaught window error');
+ await page.evaluate(()=>window.__restoreProfileWrite());
+ // Retry succeeds and both model reference and durable profile appear.
+ form=await openCalibration();
+ await form.getByRole('button',{name:'Save measured fit'}).click();
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles[0].profileId?.startsWith('custom-'),null,{timeout:60000});
+ const accepted=await page.evaluate(key=>{
+  const hole=window.__sensoryStudio.currentModel.build.pixelHoles[0];
+  const profiles=JSON.parse(localStorage.getItem(key));
+  return {hole,profiles};
+ },profileKey);
+ assert(accepted.profiles.some(p=>p.id===accepted.hole.profileId&&p.name==='Protected measured Seed'));
+ assert.equal(accepted.hole.clearance,.5);
+ assert.equal(accepted.profiles.length,30);
+ assert(accepted.profiles.some(p=>p.id==='custom-qa-0'),'First measured profile must survive');
+ await page.locator('#smsLibrary').click();
+ const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#smsBackup').click()]);
+ const data=JSON.parse(await readFile(await download.path(),'utf8'));
+ assert(data.pixelProfiles?.some(p=>p.id===accepted.hole.profileId&&p.name==='Protected measured Seed'),
+  'Complete Studio JSON backup must include the newly calibrated reusable profile');
+ assert.deepEqual(errors,[],'No uncaught errors after measured profile retry and backup');
+ console.log('Profile integrity Chromium PASS: capacity refusal, quota rollback, async worker save, successful retry and JSON backup.');
+}finally{await browser.close();}
