@@ -58,16 +58,27 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
-## v0.16.0-dev.35.22 — Shared real-geometry edge finishing
+## v0.16.0-dev.35.23 — Shared real-geometry edge finishing
 - Finish exterior edges in all seven Design builders with Rounded and Chamfer modes, top/side/bottom groups, amount and smoothness controls.
 - Preview and Manifold/STL/3MF preparation modify positive mesh geometry while preserving pixel sockets, wire channels and mounting cutters.
 - Existing saved models remain unchanged unless enabled. The amount is an approximate maximum displacement, not a certified CAD fillet radius; check physical walls and clearances.
 - Add seven-builder Chromium and Manifold/export regressions. Real Cura and printed-part checks remain separate.
 
-## v0.16.0-dev.35.21 — Keep narrow Crystal tips convex
+## v0.16.0-dev.35.22 — Keep narrow Crystal tips convex
 - Prevent rounded Crystal poles folding below a shoulder ring on short, slim or heavily rounded spikes.
 - Limit spherical cap radius to the physically available headroom; retain real geometry, per-crystal overrides, and faceted sides.
 - Test all six Crystal silhouettes, real Manifold closure and Chromium shape edits. Cura and physical touch/strength checks remain separate.
+
+## v0.16.0-dev.35.21 — Protect only the actual Crystal pixel socket roof
+
+- Crystal conical and tapered sockets now protect only the curved or pointed internal roof (2.8 mm overhead and 1 mm rim), not the entire yellow pixel insertion barrel. Exposed barrel sides remain visible as advisory fitting data, while genuine thin-cap failures name the pixel, X/Z location and missing stock volume. This is software screening, not physical print verification.
+
+## v0.16.0-dev.35.20 — Preserve measured pixel profiles
+- Saving a 31st custom measured profile refuses the edit instead of silently deleting an older calibration.
+- Failed browser storage writes keep the previous fitting and measured profile library intact, with a visible error and safe retry.
+- Pixel-profile deletion targets the profile actually being edited and refuses profiles still referenced by existing model or Library records.
+- Complete Studio JSON and private backup manifests include reusable measured profiles for cross-computer recovery.
+- Recovery preserves locally calibrated profiles, makes independent copies of conflicting IDs and checks storage before accepting restored references.
 
 ## v0.16.0-dev.35.19 — Render the prepared model from the viewport
 - Use Render actual model directly from the Build viewport.

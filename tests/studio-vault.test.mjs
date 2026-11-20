@@ -95,3 +95,38 @@ const staleKey=RECOVERY_PREFIX+'124-stale';
 assert.throws(()=>commitRecovery(storage,local,recovered.candidate,staleKey,original),/Another tab saved/);
 assert.equal(data.get(WORKSPACE_KEY),later);
 assert(!data.has(staleKey));
+
+const measured={id:'custom-backup-seed',name:'Measured backup Seed',kind:'seed',
+ bodyDiameter:5,bodyHeight:9,flangeDiameter:5,flangeHeight:0,capHeight:1,
+ wireWidth:2,wireDepth:1.5,measuredFit:{bodyDiameter:5,printedBoreDiameter:5.5}};
+const backupWithProfile={...structuredClone(state),pixelProfiles:[measured]};
+const privatePack=await packStudioVault(backupWithProfile);
+assert.equal(typeof privatePack.manifest.pixelProfiles,'string','Studio vault must reference an immutable profile library asset');
+const privateRestored=await unpackStudioVault(privatePack.manifest,hash=>privatePack.assets.get(hash));
+assert.deepEqual(privateRestored.pixelProfiles,[measured],'Private-vault round-trip must retain A–G profile and measured fit');
+await vault.push(backupWithProfile);
+assert.deepEqual((await vault.pull()).pixelProfiles,[measured],'Private restore must expose measured profiles');
+const blank=structuredClone(state);
+blank.pixelProfiles=[];
+const restoredProfiles=await reconcileArchive(blank,backupWithProfile);
+assert.deepEqual(restoredProfiles.candidate.pixelProfiles,[measured],'Complete JSON backup reconciliation must restore custom profiles');
+
+const conflictingLocal=structuredClone(blank),conflictingRemote=structuredClone(backupWithProfile);
+conflictingLocal.pixelProfiles=[{...measured,name:'Older independently calibrated seed',measuredFit:{bodyDiameter:5,printedBoreDiameter:5.4}}];
+conflictingRemote.project.models[0].build.activePixelProfileId=measured.id;
+conflictingRemote.project.models[0].build.pixelHoles=[{id:'pixel-recovery',profileId:measured.id,socketProfile:{...measured}}];
+const beforeConflict=JSON.stringify(conflictingLocal);
+const combined=await reconcileArchive(conflictingLocal,conflictingRemote);
+assert.equal(JSON.stringify(conflictingLocal),beforeConflict,'Conflicting local measurements must never be changed');
+assert.equal(combined.candidate.pixelProfiles.length,2,'Keep both conflicting calibrations');
+const rescued=combined.candidate.pixelProfiles.find(profile=>profile.id!==measured.id);
+assert.match(rescued.id,/^custom-recovered-/);
+assert.equal(rescued.measuredFit.printedBoreDiameter,5.5);
+const restoredProject=combined.candidate.savedProjects.find(p=>p.title.startsWith('Recovered Crystal Forge')||
+ p.models.some(model=>model.build?.activePixelProfileId===rescued.id));
+assert(restoredProject,'Recovered project must be available in the Library');
+const restoredModel=restoredProject.models[0];
+assert.equal(restoredModel.build.activePixelProfileId,rescued.id);
+assert.equal(restoredModel.build.pixelHoles[0].profileId,rescued.id);
+assert.equal(restoredModel.build.pixelHoles[0].socketProfile.id,rescued.id);
+console.log('Studio measured-profile JSON/vault round-trips and conflicting-ID non-destructive recovery passed.');

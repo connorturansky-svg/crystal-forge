@@ -1,0 +1,57 @@
+name: QA release continuity (old editor tabs)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/helpers/retain-pages-releases.mjs'
+      - 'tests/pages-release-continuity-browser.mjs'
+      - '.github/workflows/qa-release-continuity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/helpers/retain-pages-releases.mjs'
+      - 'tests/pages-release-continuity-browser.mjs'
+      - '.github/workflows/qa-release-continuity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-release-continuity-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  old-tab-continuity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser dependencies
+        timeout-minutes: 6
+        run: |
+          npm_config_fetch_retries=1 npm_config_fetch_timeout=40000 \
+            npm install --prefer-offline --no-audit --no-fund --no-progress
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v chromium)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Exercise old-tab worker after simulated A-to-B deployment
+        timeout-minutes: 5
+        run: |
+          mkdir -p qa
+          set -o pipefail
+          node tests/pages-release-continuity-browser.mjs 2>&1 | tee qa/pages-release-continuity.log
+      - name: Preserve focused evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-r03-release-continuity
+          path: qa/pages-release-continuity.log
+          if-no-files-found: warn

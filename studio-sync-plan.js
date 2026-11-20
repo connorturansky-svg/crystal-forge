@@ -1,6 +1,7 @@
 import {canonical,validateProject,validateModel,WORKSPACE_KEY} from './studio-documents.js';
 import {assetHash} from './studio-vault.js';
 import {readOrganisation,mergeOrganisation} from './studio-organisation.js';
+import {normalisePixelProfile} from './pixel-profiles.js';
 
 const copy=structuredClone;
 const keyFor=project=>project.snapshotId||project.id;
@@ -24,6 +25,16 @@ export function validateArchive(input){
  }
  readOrganisation(input.organisation);
  if(input.legacyTemplates!==undefined&&!Array.isArray(input.legacyTemplates))throw Error('Invalid legacy templates.');
+ if(input.pixelProfiles!==undefined){
+  if(!Array.isArray(input.pixelProfiles))throw Error('Invalid measured pixel profile library.');
+  const ids=new Set();
+  for(const raw of input.pixelProfiles){
+   if(typeof raw?.id!=='string'||!raw.id.startsWith('custom-')||ids.has(raw.id)||
+      normalisePixelProfile(raw).id!==raw.id)
+    throw Error('Invalid or duplicate measured pixel profile in the backup.');
+   ids.add(raw.id);
+  }
+ }
  return input;
 }
 
@@ -63,6 +74,46 @@ export async function reconcileArchive(local,source,{mode='merge',selection='all
  validateArchive(local);validateArchive(source);
  if(!['merge','copies'].includes(mode))throw Error('Choose a recovery strategy.');
  const candidate=copy(local),remote=copy(source),refs=new Map();
+ // Keep current measured profiles, copy conflicting remote IDs and rewire only
+ // imported objects. Never replace a local calibrated profile by ID alone.
+ if(candidate.pixelProfiles!==undefined||remote.pixelProfiles!==undefined){
+  candidate.pixelProfiles??=[];
+  const known=new Map(candidate.pixelProfiles.map(p=>[p.id,p]));
+  const remapped=new Map();
+  for(const value of remote.pixelProfiles||[]){
+   const existing=known.get(value.id);
+   if(existing&&canonical(existing)===canonical(value))continue;
+   let incoming=value;
+   if(existing){
+    const id='custom-recovered-'+(await assetHash(value)).slice(0,32);
+    incoming={...value,id,name:(value.name+' (recovered copy)').slice(0,70)};
+    remapped.set(value.id,id);
+    const collision=known.get(id);
+    if(collision&&canonical(collision)!==canonical(incoming))
+     throw Error('A different recovered pixel profile already uses this identity. Export a backup before retrying.');
+   }
+   if(!known.has(incoming.id)){candidate.pixelProfiles.push(incoming);known.set(incoming.id,incoming);}
+  }
+  if(remapped.size){
+   const rename=id=>remapped.get(id)||id;
+   const changeModel=model=>{
+    if(model.build?.activePixelProfileId)model.build.activePixelProfileId=rename(model.build.activePixelProfileId);
+    for(const hole of model.build?.pixelHoles||[]){
+     if(hole.profileId)hole.profileId=rename(hole.profileId);
+     if(hole.socketProfile?.id)hole.socketProfile.id=rename(hole.socketProfile.id);
+    }
+    if(model.generator?.typeId==='crystals'){
+     const settings=model.parameters||{};
+     if(settings.pixelProfileId)settings.pixelProfileId=rename(settings.pixelProfileId);
+     for(const hole of settings.manualPixelHoles||[])if(hole.profileId)hole.profileId=rename(hole.profileId);
+     for(const profile of settings.pixelProfiles||[])if(profile.id)profile.id=rename(profile.id);
+    }
+   };
+   for(const model of remote.project.models)changeModel(model);
+   for(const saved of remote.savedProjects)for(const model of saved.models)changeModel(model);
+   for(const record of remote.library)for(const version of record.versions)changeModel(version.model);
+  }
+ }
  let importedModels=0,importedProjects=0;
  const [kind,indexValue,revisionValue]=selection.split(':'),index=Number(indexValue);
  const projectList=[remote.project,...remote.savedProjects];
