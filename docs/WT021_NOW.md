@@ -12,7 +12,7 @@
 
 - **Target:** Measure the original Crystal sample STL when it arrives and compare its extents with the matching project revision. Reproduce the preparation failure with the saved Truncated blade fan revision 398 if available. A fresh copy prepared and exported both formats on deployed `7d746d3`.
 - **Checkpoint:** all seven browser fixtures have local Design-to-download evidence. Crystal supports manual through-holes with edge tabs. Rotary Caps explicitly distinguish moving from stationary. The Features and What’s New catalogue passed local navigation, state, layout and keyboard tests.
-- **Next test:** Exercise the same prepared fit edit and print checks on the layered Character. Pod and stationary Cap both passed. Local integrated candidate `b71f0b9` passed all static, browser and fabrication suites.
+- **Next test:** Compare a selected Crystal tip edit and its undo and redo against independently measured print files. Prepared socket edit, undo and redo now pass for the Pod, stationary Cap and layered Character.
 - **Then:** continue FIT-03 and PAR-02 from the completion register. Keep physical validation under #10 and verify CI once the follow-up has a confirmed PR destination.
 
 ## Resume instruction

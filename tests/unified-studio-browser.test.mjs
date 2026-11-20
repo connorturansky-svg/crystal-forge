@@ -2363,7 +2363,7 @@ try{
    }
    material.dispose();geometry.dispose();
   }
-  if(type==='light-pods'||type==='control-caps'){
+  {
    const buildTab=page.locator('.sms-workspace-nav [data-tab=build]');
    const printTab=page.locator('.sms-workspace-nav [data-tab=print]');
    const job=page.locator('#smsJobs article').filter({hasText:name});

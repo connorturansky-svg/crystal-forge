@@ -330,3 +330,5 @@
 - Combined candidate b71f0b9 passed release metadata, all static checks, all ten browser suites and all six fabrication suites locally. The candidate still awaits a confirmed PR destination and exact-head GitHub CI.
 
 - Full unified Chromium passed the prepared stationary Cap calibration edit, undo and redo. Each step staled both downloads, and fresh STL and 3MF after redo measured a 5.60 mm bore.
+
+- Full unified Chromium passed the layered Character fit edit, undo, redo and stale-download checks. Fresh STL and 3MF both measure the redone 5.60 mm bore.
