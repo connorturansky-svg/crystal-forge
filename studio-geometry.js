@@ -48,7 +48,11 @@ export function recipeGeometry(THREE, part) {
  if(part.kind==='sphere')geometry.scale(...part.radii);
  if(part.rotation)geometry.rotateX(part.rotation[0]),geometry.rotateY(part.rotation[1]),geometry.rotateZ(part.rotation[2]);
  if(part.position)geometry.translate(...part.position);
- if(part.edgeFinish?.enabled)geometry=finishEdgeGeometry(THREE,geometry,part.edgeFinish);
+ if(part.edgeFinish?.enabled){
+  const holes=part.kind==='extrude'?(part.holes||[]).map(loop=>loop.map(([x,z])=>
+   [x+(part.position?.[0]||0),z+(part.position?.[2]||0)])):[];
+  geometry=finishEdgeGeometry(THREE,geometry,{...part.edgeFinish,protectLoops:holes});
+ }
  geometry.computeVertexNormals();return geometry;
 }
 export function previewRecipe(THREE, recipe, colours=[0x88bbff,0xffcf70]) {
