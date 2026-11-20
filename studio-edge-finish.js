@@ -27,6 +27,21 @@ export function crystalEdgeFinish(settings){
   amountMm:Number(settings.edgeFinishAmount??EDGE_FINISH_DEFAULTS.amountMm),
   steps:Number(settings.edgeFinishSteps??EDGE_FINISH_DEFAULTS.steps)});
 }
+// Prevent finishing the edge of a hole already present in a positive
+// extruded profile. These may be shaft bores or critical mechanical fits.
+function nearProtectedLoop(point,loops,clearance){
+ if(!Array.isArray(loops)||!loops.length)return false;
+ for(const loop of loops){
+  if(!Array.isArray(loop)||loop.length<3)continue;
+  for(let i=0;i<loop.length;i++){
+   const a=loop[i],b=loop[(i+1)%loop.length];
+   const dx=b[0]-a[0],dz=b[1]-a[1],d=dx*dx+dz*dz;
+   const t=d>1e-12?Math.max(0,Math.min(1,((point[0]-a[0])*dx+(point[2]-a[1])*dz)/d)):0;
+   if(Math.hypot(point[0]-(a[0]+t*dx),point[2]-(a[1]+t*dz))<clearance)return true;
+  }
+ }
+ return false;
+}
 const key=(a,b)=>a<b?a+':'+b:b+':'+a;
 const vec=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
@@ -92,6 +107,7 @@ function firstPass(mesh,options){
   if(degrees<27||dot(cross(n0,n1),direction)<=1e-8*distance)continue;
   const mid=p.map((v,i)=>(v+q[i])/2);
   if(!inScope(options.scope,mid,direction,bounds))continue;
+  if([mid,p,q].some(point=>nearProtectedLoop(point,options.protectLoops,Math.max(.2,options.amountMm*2))))continue;
   const offsetDirection=unit(n0.map((v,i)=>-(v+n1[i])));
   const clearance=Math.min(options.amountMm,distance*.16);
   if(clearance<=1e-5)continue;
