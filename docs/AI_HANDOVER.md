@@ -1,10 +1,10 @@
 # AI handover — read immediately after AGENTS.md
 
-## Universal edge finishing — independent stacked draft (20 Nov 2026)
-- Branch `feat/universal-edge-finishing-20261120` follows the tip-fix branch `fix/crystal-tip-monotone-20261120`. PR #117 remains stacked on #116; do not merge it ahead of #116. Reconcile and retarget to main after #116 merges.
-- `studio-edge-finish.js` changes genuine positive mesh geometry. Native model controls save `build.edgeFinish`, Crystal controls save shape settings. The shared recipeGeometry path feeds preview and fabrication; hardware negative cutters are deliberately unchanged.
-- Edges are selectable in groups (All exterior, Top, Side, Bottom), not individually. The amount is a bounded approximate mesh displacement, not a constant-radius CAD fillet or collision-certified operation.
-- After merging current #116 head `4eec400`, rerun exact-head seven-family Chromium, Manifold and STL/3MF checks. Inspect Cura layer walls, functional fittings, print orientations and physical samples separately.
+## Universal edge finishing — #117 merged (20 Nov 2026)
+- PR #116 (Crystal convex tips) and PR #117 (seven-builder real geometry-based edge finishing) are now merged into `main`. The owner merged #117 at main `70ca92d`, which preserves #116 and prior measured-profile/socket roof safety changes.
+- `studio-edge-finish.js` changes genuine positive mesh geometry. Native controls save `build.edgeFinish`, Crystal shape controls save their settings, and hardware cutters remain separate. It provides All exterior, Top, Side and Bottom edge groups, but not individual-edge selection or a guaranteed constant-radius CAD fillet.
+- PR #118 adds typeable contextual Design numbers, validation, per-control Reset and exact edge amount/steps. It follows #117 at `v0.16.0-dev.35.24`. Require successful static, Manifold, seven-builder edge, native precision, pixel-profile recovery and full Chromium CI on the updated #118 exact head before owner merge.
+- Inspect wall thickness, functional fitting clearance, Cura slicing and physical samples separately. Software tests do not certify printed mechanical safety.
 
 ## Crystal tip convexity (independent draft — 20 Nov 2026)
 - PR #116 branch `fix/crystal-tip-monotone-20261120` has been reconciled with merged #114 at main `f0555d0` without changing Crystal geometry. It bounds the rounded spherical tip to actual shoulder headroom and replaces the inverted last-ring fallback.
