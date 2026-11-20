@@ -724,9 +724,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   };
   label.append(select);field.append(label);
   for(const [title,action] of [
-   ['Create pixel profile',()=>adapter.openPixelProfileEditor(select.value,true)],
-   ['Edit active profile',()=>adapter.openPixelProfileEditor(select.value,false)],
-   ['Duplicate profile',()=>adapter.openPixelProfileEditor(select.value,true)],
+   ['Create pixel profile',()=>adapter.openPixelProfileEditor(select.value,true,undefined,crystal?'crystal':'native')],
+   ['Edit active profile',()=>adapter.openPixelProfileEditor(select.value,false,undefined,crystal?'crystal':'native')],
+   ['Duplicate profile',()=>adapter.openPixelProfileEditor(select.value,true,undefined,crystal?'crystal':'native')],
    ['Export pixel profiles',()=>adapter.exportPixelProfiles()]
   ]){
    const button=document.createElement('button');button.type='button';button.textContent=title;
