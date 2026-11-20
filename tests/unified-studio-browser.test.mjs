@@ -2363,7 +2363,7 @@ try{
    }
    material.dispose();geometry.dispose();
   }
-  if(type==='light-pods'){
+  if(type==='light-pods'||type==='control-caps'){
    const buildTab=page.locator('.sms-workspace-nav [data-tab=build]');
    const printTab=page.locator('.sms-workspace-nav [data-tab=print]');
    const job=page.locator('#smsJobs article').filter({hasText:name});
@@ -2400,7 +2400,7 @@ try{
     const mesh=new THREE.Mesh(geometry,material),origin=new THREE.Vector3(a.x,-a.z,3);
     const width=[-1,1].reduce((sum,sign)=>sum+new THREE.Raycaster(origin,new THREE.Vector3(0,sign,0))
      .intersectObject(mesh)[0].distance,0);
-    assert(Math.abs(width-5.6)<.02,'Redo prepares the edited 5.6 mm Pod socket');
+    assert(Math.abs(width-5.6)<.02,name+' redo prepares the edited 5.6 mm socket');
     geometry.dispose();material.dispose();
    }
   }

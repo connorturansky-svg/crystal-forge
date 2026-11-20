@@ -328,3 +328,5 @@
 - Assembled a local candidate on merged main eea22c6. Preserved both sets of release notes and assigned the WT-021 changes version 0.16.0-dev.35.19. Release metadata and static tests passed. Full fabrication passed on the original follow-up. Combined browser and fabrication runs started.
 
 - Combined candidate b71f0b9 passed release metadata, all static checks, all ten browser suites and all six fabrication suites locally. The candidate still awaits a confirmed PR destination and exact-head GitHub CI.
+
+- Full unified Chromium passed the prepared stationary Cap calibration edit, undo and redo. Each step staled both downloads, and fresh STL and 3MF after redo measured a 5.60 mm bore.
