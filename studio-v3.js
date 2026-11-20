@@ -1844,7 +1844,8 @@ if(studioBootstrap&&!new URLSearchParams(location.search).has('legacy'))studioBr
   }
   if(next.length>30)throw Error('Import would exceed 30 custom profiles. Existing profiles were preserved.');
   localStorage.setItem(pixelLibraryKey,JSON.stringify(next));
-  mergePixelLibrary();syncForm();setStatus('Pixel profile library imported. Conflicting profiles were saved as copies.');
+  mergePixelLibrary();syncForm();studioBridge?.onPixelProfileLibraryChange?.(readPixelFitProfiles());
+  setStatus('Pixel profile library imported. Conflicting profiles were saved as copies.');
  },
  pixelFitProfiles:()=>readPixelFitProfiles(),
  notifyPixelProfileLibrary:()=>studioBridge?.onPixelProfileLibraryChange?.(readPixelFitProfiles()),
