@@ -1830,7 +1830,7 @@ if(studioBootstrap&&!new URLSearchParams(location.search).has('legacy'))studioBr
  },
  updateCrystalPixel:(id,fields)=>hardwareUI.updatePixel(id,fields),
  removeCrystalPixel:()=>hardwareUI.removeSelectedPixel(),
- openPixelProfileEditor:(id,duplicate=false,fit)=>openPixelProfileEditor(id,duplicate,fit,'native'),
+ openPixelProfileEditor:(id,duplicate=false,fit,origin='native')=>openPixelProfileEditor(id,duplicate,fit,origin),
  activeCrystalPixelProfile:()=>s.pixelProfileId,
  selectCrystalPixelProfile:id=>{
   if(!applyCrystalPixelProfile(id))return;
