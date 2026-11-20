@@ -58,6 +58,13 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.20 — Preserve measured pixel profiles
+- Saving a 31st custom measured profile refuses the edit instead of silently deleting an older calibration.
+- Failed browser storage writes keep the previous fitting and measured profile library intact, with a visible error and safe retry.
+- Pixel-profile deletion targets the profile actually being edited and refuses profiles still referenced by existing model or Library records.
+- Complete Studio JSON and private backup manifests include reusable measured profiles for cross-computer recovery.
+- Recovery preserves locally calibrated profiles, makes independent copies of conflicting IDs and checks storage before accepting restored references.
+
 ## v0.16.0-dev.35.19 — Render the prepared model from the viewport
 - Use Render actual model directly from the Build viewport.
 - Build shows preparation errors and can raise a Crystal base above 30 mm to fit taller pixel sockets and their roofs.
