@@ -5,6 +5,21 @@ const browser=await chromium.launch({headless:true,
  executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
  args:['--no-sandbox','--disable-dev-shm-usage']});
 const page=await browser.newPage({viewport:{width:1440,height:950}});
+const raisedFixture={diameter:68.5,teeth:12,spokes:5,bore:8,reliefStyle:'Hub and rim'};
+const name='Raised Gear manufacturing fixture';
+async function openRaisedGear(target){
+ await target.waitForFunction(()=>window.__sensoryStudio);
+ await target.evaluate(({input,name})=>window.__sensoryStudio.addModel('gears',input,name),{input:raisedFixture,name});
+ await target.locator('.sms-workspace-nav [data-tab=design]').click();
+}
+async function prepareRaisedGear(target){
+ await target.locator('.sms-workspace-nav [data-tab=build]').click();
+ await target.locator('#smsSend').click();
+ const job=target.locator('#smsJobs article').filter({hasText:name});
+ await job.locator('[data-job-prepare]').click();
+ await target.waitForFunction(()=>[...document.querySelectorAll('#smsJobs [data-job-stl]')].some(button=>!button.disabled));
+ return job;
+}
 const errors=[];page.on('pageerror',e=>errors.push(e.message));
 try{
  await page.goto(process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321',{waitUntil:'domcontentloaded'});
@@ -52,6 +67,36 @@ try{
  await page.getByText('Showing prepared chamfer geometry.',{exact:true}).waitFor();
  await fs.mkdir('qa',{recursive:true});
  await page.screenshot({path:'qa/openwork-gear-chamfer.png'});
+ if(process.env.CRYSTAL_FORGE_BASELINE_URL){
+  const baseline=await browser.newPage({viewport:{width:1440,height:950}});
+  try{
+   await baseline.goto(process.env.CRYSTAL_FORGE_BASELINE_URL);
+   if((await baseline.locator('.version').innerText()).trim()==='v0.16.0-dev.35.25'){
+    await openRaisedGear(baseline);
+    const badJob=await prepareRaisedGear(baseline);
+    await badJob.locator('[data-job-stl]').click();
+    await baseline.locator('#smsPrintStatus').filter({hasText:'Degenerate material triangle'}).waitFor();
+    await baseline.screenshot({path:'qa/unified-raised-gear-before.png'});
+   }
+  }finally{await baseline.close();}
+ }
+ await openRaisedGear(page);
+ await page.locator('.sms-palette [data-edge-finish=enabled]').check();
+ await page.getByText(/Some top rims kept their original shape/).waitFor();
+ await page.screenshot({path:'qa/unified-raised-gear-after.png'});
+ await page.getByText('Saved locally',{exact:true}).waitFor({state:'attached'});
+ await page.reload();
+ await page.waitForFunction(name=>window.__sensoryStudio?.currentModel?.name===name,name);
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.reliefStyle),'Hub and rim');
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.edgeFinish.enabled),true);
+ const raisedJob=await prepareRaisedGear(page);
+ for(const format of ['stl','3mf']){
+  const [download]=await Promise.all([page.waitForEvent('download'),raisedJob.locator('[data-job-'+format+']').click()]);
+  assert(download.suggestedFilename().endsWith('.'+format));
+  const size=(await fs.stat(await download.path())).size;
+  assert(size>100,format+' contains the exported Gear mesh');
+  await download.saveAs('qa/unified-raised-gear.'+format);
+ }
  assert.deepEqual(errors,[],'No uncaught Chromium errors');
  console.log('All seven Design palettes, model settings and reload passed');
 }finally{await browser.close();}

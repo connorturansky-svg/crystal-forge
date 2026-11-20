@@ -92,3 +92,8 @@ This draft extends the six recipe builders' measured socket cutter to an oriente
 | Pebbles / Light Pods | L, shared oriented cutter; illuminated cavities may block | L, compatible solid backing only | L, placement and routed fabrication exercised separately |
 
 Design and prepared dimensions are shown in the exported X × Y × Z orientation. The Chromium Tile case independently reads binary STL vertices and checks the prepared dimensions. Geometry validation and installed Cura resource checks do not verify physical fit, bridge strength or Cura UI import. Track those physical activities in #10 and the remaining software under #79.
+
+### Raised Gear rim manufacturing
+- Verify the 68.5 mm, 12-tooth Involute Gear with five openings and an 8 mm bore across all four raised details, both material modes and chamfer on/off. Check connected export bodies, the unchanged lower section, and a continuous raised ring.
+- The rail uses inward contour offsets. A disconnected offset is refused with suggestions to reduce tooth count or increase diameter. A top ledge too narrow for the requested chamfer retains its original geometry with a warning.
+- Chromium exercises reopening and manufacturing the raised Gear. Issue #10 retains physical fit, tactile and print acceptance.
