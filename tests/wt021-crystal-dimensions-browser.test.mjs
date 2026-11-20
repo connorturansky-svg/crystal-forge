@@ -76,7 +76,8 @@ try{
   const [file]=await Promise.all([page.waitForEvent('download'),job.locator(selector).click()]);
   return readFile(await file.path());
  };
- const stl=bounds(stlPoints(await download('[data-job-stl]')));
+ const initialStlPoints=stlPoints(await download('[data-job-stl]'));
+ const stl=bounds(initialStlPoints);
  const xml=modelXml(await download('[data-job-3mf]'));
  assert.match(xml,/<model unit="millimeter"/);
  assert.match(xml,/<item objectid="2" transform="1 0 0 0 1 0 0 0 1 0 0 0"/);
@@ -89,6 +90,54 @@ try{
  assert.deepEqual(print,rounded);
  assert.deepEqual(await model(),revision);
  console.log('WT-021 Crystal dimensional evidence:',JSON.stringify({initial,revision,design,build,prepared,print,stl,mf}));
+ const openDesign=()=>page.locator('.sms-workspace-nav [data-tab=design]').click();
+ const openPrint=()=>page.locator('.sms-workspace-nav [data-tab=print]').click();
+ const prepareTipRevision=async()=>{
+  await openPrint();
+  await job.getByText('Stale',{exact:true}).waitFor();
+  assert(await job.locator('[data-job-stl]').isDisabled());
+  assert(await job.locator('[data-job-3mf]').isDisabled());
+  await job.locator('[data-job-prepare]').click();
+  await job.getByText('Prepared',{exact:true}).waitFor({timeout:120000});
+  return {
+   stl:stlPoints(await download('[data-job-stl]')),
+   mf:[...modelXml(await download('[data-job-3mf]')).matchAll(/<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"/g)]
+    .map(match=>match.slice(1).map(Number))
+  };
+ };
+ const crystalState=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')));
+ const expandParents=locator=>locator.evaluate(element=>{
+  for(let ancestor=element.parentElement;ancestor;ancestor=ancestor.parentElement)
+   if(ancestor.tagName==='DETAILS')ancestor.open=true;
+ });
+ await openDesign();
+ const selected=page.locator('#objectTree [data-id]').first();
+ await expandParents(selected);
+ await selected.click();
+ const selectedId=await selected.getAttribute('data-id');
+ const tip=page.locator('[data-state=tipRound]');
+ await expandParents(tip);
+ const originalState=await crystalState();
+ const beforeTip={stl:initialStlPoints,mf:[...xml.matchAll(/<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"/g)].map(match=>match.slice(1).map(Number))};
+ await tip.evaluate(input=>{input.value='4.5';input.dispatchEvent(new Event('input',{bubbles:true}));input.dispatchEvent(new Event('change',{bubbles:true}));});
+ await page.waitForFunction(id=>JSON.parse(localStorage.getItem('crystal-forge-v3')).crystals
+  .some(crystal=>crystal.id===id&&crystal.shape?.tipRound>4),selectedId);
+ const editedState=await crystalState();
+ assert.equal(editedState.settings.tipRound,originalState.settings.tipRound);
+ assert.deepEqual(editedState.crystals.filter(crystal=>crystal.id!==selectedId),
+  originalState.crystals.filter(crystal=>crystal.id!==selectedId));
+ const editedTip=await prepareTipRevision();
+ assert.notDeepEqual(editedTip.stl,beforeTip.stl);
+ assert.notDeepEqual(editedTip.mf,beforeTip.mf);
+ await openDesign();
+ await page.locator('#smsGlobalUndo').click();
+ assert.deepEqual((await crystalState()).crystals,originalState.crystals);
+ assert.deepEqual(await prepareTipRevision(),beforeTip);
+ await openDesign();
+ await page.locator('#smsGlobalRedo').click();
+ assert.deepEqual((await crystalState()).crystals,editedState.crystals);
+ assert.deepEqual(await prepareTipRevision(),editedTip);
+ console.log('WT-021 selected Crystal tip edit, undo and redo match both prepared print formats');
  await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{
   seed:42,count:5,width:94,baseHeight:35,baseWidth:18,cutSockets:true,lightingMode:'single',socketConical:true
  },'WT021 physical fitting'));

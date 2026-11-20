@@ -332,3 +332,5 @@
 - Full unified Chromium passed the prepared stationary Cap calibration edit, undo and redo. Each step staled both downloads, and fresh STL and 3MF after redo measured a 5.60 mm bore.
 
 - Full unified Chromium passed the layered Character fit edit, undo, redo and stale-download checks. Fresh STL and 3MF both measure the redone 5.60 mm bore.
+
+- Crystal browser suite passed the selected tip edit, undo and redo with independently decoded STL and 3MF. Verified latest main at eea22c6 before publishing the integration candidate.

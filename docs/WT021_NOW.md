@@ -18,3 +18,11 @@
 ## Resume instruction
 
 Check branch, working tree, actual remote HEAD and relevant exact-head CI. If this task was completed, move to the next unverified dependency instead of rerunning it. Before interruption **overwrite this pointer** with current tested state/one next command, append a terse `WT021_RUN_LOG.md` checkpoint, and update coordination issue #105. The original PR #102 is merged.
+
+## After publishing the integration draft
+
+Profile integrity takes priority over new authoring features. Reproduce the findings in issue #79 with disposable profiles and two clean browser contexts. Prevent silent eviction at 31 profiles, make failed calibration writes preserve the prior model and profile library, and round-trip custom profiles through complete backups and the private vault. Test quota errors, retry, conflicts and legacy restoration.
+
+## UX-03 advanced part editing
+
+Track separately from WT-021 P0 manufacturing. Add Reset to default size without changing styling or unrelated settings. Add independent width, depth and height controls for a selected additional body, starting with the raised body of a Rotary Control Cap. Add Reset selected body dimensions. Verify preview, undo and redo, save and reload, measured STL and 3MF parity, and rejection of invalid geometry.
