@@ -1,11 +1,10 @@
 # AI handover — read immediately after AGENTS.md
 
-## Universal edge finishing — PR #117 release candidate (20 Nov 2026)
-- The owner merged Crystal convex-tip fix #116 into `main` at `87471f9`. PR #117 now targets `main` directly, and branch `feat/universal-edge-finishing-20261120` contains that merge without changing the verified positive-geometry feature tree. The PR has no code conflicts and is awaiting exact-head CI and owner merge approval.
-- `studio-edge-finish.js` changes genuine positive mesh geometry. Native model controls save `build.edgeFinish`, Crystal controls save shape settings. The shared recipeGeometry path feeds preview and fabrication; hardware negative cutters are deliberately unchanged.
-- Edge groups are All exterior, Top, Side, Bottom; individual edge picking is not implemented. Amount is a bounded approximate mesh displacement, not a constant-radius CAD fillet or collision-certified operation.
-- Release version `v0.16.0-dev.35.23` follows the merged #116 `dev.35.22`. Require latest-head static, full Manifold fabrication, focused seven-builder Chromium/Manifold + STL/3MF and full Chromium smoke before recommending merge. Inspect Cura wall, fitting-clearance, print orientation and physical samples separately.
-- PR #118 remains an independent subsequent change to precision editors (`dev.35.24`) and must only merge after PR #117.
+## Universal edge finishing — #117 merged (20 Nov 2026)
+- PR #116 (Crystal convex tips) and PR #117 (seven-builder real geometry-based edge finishing) are now merged into `main`. The owner merged #117 at main `70ca92d`, which preserves #116 and prior measured-profile/socket roof safety changes.
+- `studio-edge-finish.js` changes genuine positive mesh geometry. Native controls save `build.edgeFinish`, Crystal shape controls save their settings, and hardware cutters remain separate. It provides All exterior, Top, Side and Bottom edge groups, but not individual-edge selection or a guaranteed constant-radius CAD fillet.
+- PR #118 adds typeable contextual Design numbers, validation, per-control Reset and exact edge amount/steps. It follows #117 at `v0.16.0-dev.35.24`. Require successful static, Manifold, seven-builder edge, native precision, pixel-profile recovery and full Chromium CI on the updated #118 exact head before owner merge.
+- Inspect wall thickness, functional fitting clearance, Cura slicing and physical samples separately. Software tests do not certify printed mechanical safety.
 
 ## Crystal tip convexity (independent draft — 20 Nov 2026)
 - PR #116 branch `fix/crystal-tip-monotone-20261120` has been reconciled with merged #114 at main `f0555d0` without changing Crystal geometry. It bounds the rounded spherical tip to actual shoulder headroom and replaces the inverted last-ring fallback.

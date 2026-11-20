@@ -44,6 +44,26 @@ body.sms-workspace .sms-panel-details{background:var(--panel);border-left:3px so
 .sms-context-controls fieldset button{margin:3px}
 .sms-context-controls button[aria-pressed=true]{outline:2px solid var(--teal);font-weight:700}
 
+/* Each contextual numeric control has a keyboard-accessible typed value,
+   real range slider, and independently disabled-at-default Reset action. */
+.sms-context-controls .sms-visual-range{display:grid;grid-template-columns:minmax(0,1fr) auto auto;
+ align-items:center;gap:6px;min-width:0;background:var(--panel);border:1px solid var(--border);
+ border-radius:8px;padding:10px}
+.sms-visual-range-caption{font-weight:700;min-width:0}
+.sms-context-controls .sms-visual-range input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--teal);min-width:0}
+.sms-visual-range .sms-precision-value{background:none;border:0;color:var(--ink);
+ font:inherit;font-weight:700;white-space:nowrap;padding:4px;cursor:text}
+.sms-visual-range .sms-precision-value:hover:not(:disabled){text-decoration:underline}
+.sms-context-controls .sms-visual-range .sms-precision-input{width:100px;max-width:100%;padding:4px;
+ grid-column:2;border:1px solid var(--border);border-radius:5px;color:var(--ink);background:var(--panel2)}
+.sms-visual-range .sms-precision-reset{font-size:12px;padding:5px 7px;white-space:nowrap}
+.sms-visual-range [hidden]{display:none!important}
+.sms-visual-range .sms-precision-error{grid-column:1/-1;color:#e65a60;font-weight:500;line-height:1.4}
+body.theme-light .sms-visual-range .sms-precision-error{color:#ad1935}
+@media(max-width:600px){.sms-context-controls .sms-visual-range{grid-template-columns:minmax(0,1fr) auto auto}
+ .sms-visual-range .sms-precision-value{font-size:14px}
+ .sms-visual-range .sms-precision-reset{padding:4px 6px}}
+
 /* Unified workspace keeps the live editor and camera mounted. */
 body.sms-unified{display:flex;flex-direction:column;height:100dvh;min-height:0;overflow:hidden}
 body.sms-unified .layout{display:grid;flex:1;min-height:0;height:auto;position:relative;

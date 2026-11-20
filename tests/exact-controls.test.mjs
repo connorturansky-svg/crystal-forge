@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {displayedNumber,sliderNumber,validateExactValue} from '../exact-value-editors.js';
 import {describeControl} from '../tooltips.js';
+import {parsePrecisionNumber} from '../native-precision-controls.js';
 assert.equal(displayedNumber('crystalSize',2.4),240);
 assert.equal(sliderNumber('crystalSize',235),2.35);
 assert.equal(sliderNumber('bottomScale',-30),.7);
@@ -13,4 +14,12 @@ const control=id=>({id,dataset:{},matches:()=>true,closest:()=>null,getAttribute
 assert.match(describeControl(control('placeTabBtn'))[1],/bolts or cable ties/);
 assert.match(describeControl(control('resetTabsBtn'))[1],/manually positioned/);
 assert.equal(describeControl(control('unknown-control')),null);
-console.log('Exact values: display units, decimals, bounds and useful action explanations passed.');
+assert.deepEqual(parsePrecisionNumber('68.5',{key:'diameter',min:25,max:180}),{value:68.5});
+assert.deepEqual(parsePrecisionNumber('68.37',{key:'diameter',min:25,max:180}),{value:68.37});
+assert.deepEqual(parsePrecisionNumber('0',{key:'spokes',min:0,max:8}),{value:0});
+assert.deepEqual(parsePrecisionNumber('12',{key:'teeth',min:8,max:80}),{value:12});
+assert.match(parsePrecisionNumber('12.5',{key:'teeth',min:8,max:80}).error,/whole number/);
+assert.match(parsePrecisionNumber('200',{key:'diameter',min:25,max:180}).error,/25 to 180/);
+assert.match(parsePrecisionNumber('',{key:'diameter',min:25,max:180}).error,/Enter a number/);
+assert.match(parsePrecisionNumber('Infinity',{key:'diameter',min:25,max:180}).error,/finite/);
+console.log('Exact values: legacy and native decimal, bounds and integer validation passed.');
