@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.22 — Keep narrow Crystal tips convex
+- Prevent rounded Crystal poles folding below a shoulder ring on short, slim or heavily rounded spikes.
+- Limit spherical cap radius to the physically available headroom; retain real geometry, per-crystal overrides, and faceted sides.
+- Test all six Crystal silhouettes, real Manifold closure and Chromium shape edits. Cura and physical touch/strength checks remain separate.
+
 ## v0.16.0-dev.35.21 — Protect only the actual Crystal pixel socket roof
 
 - Crystal conical and tapered sockets now protect only the curved or pointed internal roof (2.8 mm overhead and 1 mm rim), not the entire yellow pixel insertion barrel. Exposed barrel sides remain visible as advisory fitting data, while genuine thin-cap failures name the pixel, X/Z location and missing stock volume. This is software screening, not physical print verification.

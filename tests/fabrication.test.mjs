@@ -131,6 +131,36 @@ function geometryEdges(g,precision=1e4){
  }
  return {open:[...edges.values()].filter(x=>x!==2).length,triangles:p.length/9};
 }
+// Regression: a narrow cap must not fold back below its last shoulder ring.
+for(const family of ['Quartz','Shard','Blade','Cubic','Double terminated','Fantasy']){
+ for(const topScale of [.15,.25,.8,2]){
+  const config={bottomScale:1,topScale,tipLength:.10,tipRound:8,tipStyle:'Rounded',
+   cornerRadius:.7,shoulderRound:2,roundSteps:3};
+  const g=crystalGeometry(THREE,{id:'tip-regression',family,h:80,r:5},config);
+  const vertices=g.getAttribute('position').array;
+  // The last emitted fan has the tip pole as its first vertex.
+  const poleY=vertices[vertices.length-8];
+  let tallestRing=-Infinity;
+  for(let i=0;i<vertices.length;i+=3)
+   if(Math.hypot(vertices[i],vertices[i+2])>1e-5)tallestRing=Math.max(tallestRing,vertices[i+1]);
+  assert(poleY>tallestRing+1e-4,
+   family+' top '+topScale+' has an inverted pole: '+poleY+' <= '+tallestRing);
+  assert.equal(geometryEdges(g).open,0,'No missing triangles at '+family+' tip');
+  if(topScale===.15){
+   const mesh=new wasm.Mesh({numProp:3,vertProperties:new Float32Array(vertices),
+    triVerts:Uint32Array.from({length:vertices.length/3},(_,i)=>i)});
+   mesh.merge();
+   const solid=new wasm.Manifold(mesh);
+   try{
+    assert.equal(solid.status(),'NoError',family+' narrow tip is a valid Manifold');
+    assert(solid.volume()>0,'Narrow tip has positive printable volume');
+   }finally{solid.delete();}
+  }
+  g.dispose();
+ }
+}
+console.log('All six Crystal families: monotone rounded tips, closed mesh and narrow-tip Manifold passed');
+
 // PR4: geometry stays closed through all hill/plinth modes.
 for(const baseProfile of ['Flat plinth','Plinth + dome','Full dome / hill']){
  for(const sideWall of [0,50,100]){
