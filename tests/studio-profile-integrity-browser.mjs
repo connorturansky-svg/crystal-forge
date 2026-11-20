@@ -90,12 +90,16 @@ try{
   'Complete Studio JSON backup must include the newly calibrated reusable profile');
  // A completely isolated second browser must recover the calibration from the
  // Studio JSON alone: no extra Crystal profile library export is permitted.
+ // Close the original viewport first to reduce concurrent 3D/Chromium resource
+ // pressure on GitHub-hosted runners. Keep the downloaded bytes in memory.
+ await page.close();
  const second=await browser.newContext({viewport:{width:1280,height:900},acceptDownloads:true});
  try{
   const destination=await second.newPage();
   await destination.goto(process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321/');
-  await destination.waitForFunction(()=>window.__sensoryStudio);
-  await destination.locator('#smsLibrary').click();
+  await destination.waitForFunction(()=>window.__sensoryStudio?.showLibrary,null,{timeout:60000});
+  await destination.evaluate(()=>window.__sensoryStudio.showLibrary());
+  await destination.locator('#smsImport').waitFor({state:'attached',timeout:60000});
   await destination.locator('#smsImport').setInputFiles({
    name:'complete-studio-backup.json',mimeType:'application/json',
    buffer:Buffer.from(JSON.stringify(data))
