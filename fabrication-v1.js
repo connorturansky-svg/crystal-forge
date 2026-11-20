@@ -221,33 +221,33 @@ export function putSocket(wasm,hold,pos,radius,roofY,start=-3,profile,{includeLo
   capRise:conical?bodyRadius:capRise,remainingWall:roofY-tipY,profileId:p.id,retentionLip:lip,
   requestedBodyDepth,usableBodyDepth:Math.max(0,conical?requestedBodyDepth+shoulderRise:tipY),shoulderRise,wireReliefDepth:relievedDepth};
 }
-// A shaped socket needs stock around its *actual* narrowing cutter, not a
-// full flange-width cylinder all the way to the roof. The latter rejects
-// valid sockets beneath domed Crystal bases even when the measured
-// perimeter web and vertical 2.8 mm roof are present.
-// This is a conservative software envelope, NOT a printed strength rating.
-export function socketStockEnvelope(wasm,pos,profile,bore,{conical=false}={}){
+// The real socket cutter has two distinct jobs: the open insertion barrel
+// below the roof, and the curved/pointed *blind roof*. A full-length stock
+// envelope rejects intentionally exposed insertion barrels under sculpted
+// bases. Only the cap needs this continuous protective stock check.
+// We still cut the whole measured socket and report exposed physical pixel
+// material in the fitting overlay; none of this certifies printed strength.
+export function socketRoofStockEnvelope(wasm,pos,profile,bore,{conical=false}={}){
  const sideWall=1,roofWall=2.8,segments=48;
- const flangeRadius=Math.max(Number(pos.radius)||0,profile.maxDiameter/2)+sideWall;
  const bodyRadius=Math.max(.8,profile.boreDiameter/2);
- const flangeY=Math.max(0,Number(profile.flangeHeight)||0);
- const shoulderY=flangeY+Math.max(0,bore.shoulderRise||0);
  const rings=[];
- const push=(y,r)=>{if(!Number.isFinite(y)||!Number.isFinite(r)||r<=0)throw Error('Invalid socket stock envelope dimensions.');
-  const last=rings.at(-1);if(last&&Math.abs(last[0]-y)<1e-7&&Math.abs(last[1]-r)<1e-7)return;
-  if(last&&y<last[0]-1e-7)throw Error('Socket stock envelope sections are out of order.');
+ const push=(y,r)=>{
+  if(!Number.isFinite(y)||!Number.isFinite(r)||r<=0)
+   throw Error('Invalid socket roof stock envelope dimensions.');
+  const last=rings.at(-1);
+  if(last&&Math.abs(last[0]-y)<1e-7&&Math.abs(last[1]-r)<1e-7)return;
+  if(last&&y<last[0]-1e-7)throw Error('Socket roof stock envelope sections are out of order.');
   rings.push([y,r]);
  };
- push(0,flangeRadius);
- push(flangeY,flangeRadius);
- push(shoulderY,bodyRadius+sideWall);
- // Raising the shaft and cap boundary checks a real vertical roof allowance
- // across the entire socket. The upper protective shape narrows with its cap.
+ // The cap begins at shaftEnd. The region below it contains the pixel body
+ // and must NOT be mistaken for material required above the blind roof.
+ push(bore.shaftEnd,bodyRadius+sideWall);
  push(bore.shaftEnd+roofWall,bodyRadius+sideWall);
  if(conical)push(bore.tipY+roofWall,sideWall);
  else for(let step=1;step<=20;step++){
   const angle=step*Math.PI/40;
-  push(bore.shaftEnd+roofWall+bore.capRise*Math.sin(angle),bodyRadius*Math.cos(angle)+sideWall);
+  push(bore.shaftEnd+roofWall+bore.capRise*Math.sin(angle),
+   bodyRadius*Math.cos(angle)+sideWall);
  }
  const vertices=[],triangles=[];
  for(const [y,r] of rings)for(let side=0;side<segments;side++){
@@ -255,7 +255,7 @@ export function socketStockEnvelope(wasm,pos,profile,bore,{conical=false}={}){
   vertices.push(pos.x+r*Math.cos(angle),y,pos.z+r*Math.sin(angle));
  }
  const bottom=vertices.length/3,top=bottom+1,last=(rings.length-1)*segments;
- vertices.push(pos.x,0,pos.z,pos.x,rings.at(-1)[0],pos.z);
+ vertices.push(pos.x,bore.shaftEnd,pos.z,pos.x,rings.at(-1)[0],pos.z);
  for(let side=0;side<segments;side++){
   const next=(side+1)%segments;
   triangles.push(bottom,side,next,top,last+next,last+side);
@@ -267,7 +267,7 @@ export function socketStockEnvelope(wasm,pos,profile,bore,{conical=false}={}){
  const mesh=new wasm.Mesh({numProp:3,vertProperties:new Float32Array(vertices),triVerts:new Uint32Array(triangles)});
  mesh.merge();
  const stock=new wasm.Manifold(mesh);
- assertSolid(stock,'Socket minimum-stock envelope');
+ assertSolid(stock,'Socket minimum-roof-stock envelope');
  return stock;
 }
 
@@ -601,13 +601,13 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
       includeLocalWireRelief:!s.wireChannels&&s.wireMode!=='string'
      });
     if(s.socketConical||bore.shoulderRise){
-     const envelope=hold(socketStockEnvelope(wasm,pos,profile,bore,{conical:s.socketConical===true}));
+     const envelope=hold(socketRoofStockEnvelope(wasm,pos,profile,bore,{conical:s.socketConical===true}));
      const available=hold(combined.intersect(envelope));
      const missing=envelope.volume()-available.volume();
      if(missing>.05)
       throw Error('Pixel P'+(index+1)+' at X '+pos.x.toFixed(1)+', Z '+pos.z.toFixed(1)+
        ' mm: '+(bore.shoulderRise?'tapered shoulder':'conical roof')+
-       ' lacks local stock (1 mm around the fitting and 2.8 mm above the roof; '+
+       ' has insufficient material around the curved/pointed roof (1 mm rim and 2.8 mm overhead; '+
        missing.toFixed(2)+' mm³ missing). Move this pixel into thicker material or increase base thickness.');
     }
     cutters.push(bore.solid);
