@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.21 — Keep narrow Crystal tips convex
+- Prevent rounded Crystal poles folding below a shoulder ring on short, slim or heavily rounded spikes.
+- Limit spherical cap radius to the physically available headroom; retain real geometry, per-crystal overrides, and faceted sides.
+- Test all six Crystal silhouettes, real Manifold closure and Chromium shape edits. Cura and physical touch/strength checks remain separate.
+
 ## v0.16.0-dev.35.19 — Render the prepared model from the viewport
 - Use Render actual model directly from the Build viewport.
 - Build shows preparation errors and can raise a Crystal base above 30 mm to fit taller pixel sockets and their roofs.
