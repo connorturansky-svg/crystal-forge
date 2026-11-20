@@ -145,12 +145,14 @@ export const gearGenerator=define('gears','Cogs & Gears','Mechanical',[
  const inlay=decorative&&p.inlayStyle==='Hub ring';
  if(inlay&&p.bore/2>=hubRadius-1.5)throw Error('The hub ring needs more space around the bore.');
  const relief=decorative&&p.reliefStyle!=='None';
+ let collarRadius=0;
  if(relief){
   const overlap=Math.min(.4,p.thickness*.1);
   const height=p.reliefHeight+overlap,y=p.thickness-overlap;
   if(p.reliefStyle!=='Rim rail'){
    const collar=Math.min(p.hub/2,Math.min(...outline.map(([x,z])=>Math.hypot(x,z)))*.4);
    if(collar<=p.bore/2+1.2)throw Error('The raised hub collar needs more space around the bore.');
+   collarRadius=collar;
    positive.push(extrusion(circle(collar),height,[0,y,0],p.bore?[circle(p.bore/2)]:[]));
   }
   if(p.reliefStyle!=='Hub collar'){
@@ -166,7 +168,11 @@ export const gearGenerator=define('gears','Cogs & Gears','Mechanical',[
  const serialReason='Use a solid decorative gear without a shaft bore, fixing holes, openwork or pulley recess.';
  if((creativeWeb||relief)&&!inlay)return {positive,serialSupport,serialReason,secondary:[],negative:[],materialSplitHeight:p.thickness-.8,materialSplitRole:'top',bounds:{width:diameter,depth:diameter,height:p.thickness+(relief?p.reliefHeight:0)},warnings:['Decorative wheel. Check wheel clearances before using moving parts.']};
  const secondary=[extrusion(inlay?circle(hubRadius):outline,.8,[0,p.thickness-.8,0],inlay?(p.bore?[circle(p.bore/2)]:[circle(hubRadius*.55)]):holes)];
- return {positive,secondary,negative:[],serialSupport,serialReason,bounds:{width:diameter,depth:diameter,height:p.thickness+(relief?p.reliefHeight:0)},warnings:['Pinch points and moving parts require guarding and physical checks. Mechanical meshing still requires a mating-gear test.']};
+ // Pass through the raised collar and the existing shaft void. This keeps
+ // the accent attached to its lower band and avoids a coincident bore cutter.
+ const gearInlay=inlay?extrusion(circle(Math.max(hubRadius,collarRadius+.01)),.81+(collarRadius?p.reliefHeight:0),
+  [0,p.thickness-.8,0],p.bore?[]:[circle(hubRadius*.55)]):null;
+ return {positive,secondary,gearInlay,negative:[],serialSupport,serialReason,bounds:{width:diameter,depth:diameter,height:p.thickness+(relief?p.reliefHeight:0)},warnings:['Pinch points and moving parts require guarding and physical checks. Mechanical meshing still requires a mating-gear test.']};
 },{supportsMechanisms:true});
 export const waveGenerator=define('waves','Waves & Organic Forms','Organic',[
  choice('flowStyle','Flow structure','Parallel',['Parallel','Concentric','Vortex','Saddle','Dune']),numeric('width','Length',110,30,200),numeric('depth','Width',65,20,160),numeric('thickness','Minimum base thickness',4,2,15),numeric('amplitude','Wave height',12,1,40),numeric('frequency','Wave count',2,0.5,6,'',.1),numeric('phase','Phase',0,0,360,'degrees'),numeric('direction','Direction',0,0,360,'degrees'),numeric('variation','Organic variation',.25,0,1,'',.05)
@@ -551,6 +557,8 @@ export function applyBuildModules(recipe,build={},capabilities={}, {preview=fals
     const position=part.position||[0,0,0];
     if(!offset)return {...part,partId};
     if(!Array.isArray(offset)||offset.length!==3||!offset.every(value=>Number.isFinite(value)&&Math.abs(value)<=50)||offset[1]<0)throw Error('Part offsets must be within 50 mm. Lift a part above its original position.');
+    if(role==='secondary'&&index===0&&r.gearInlay)
+     r.gearInlay={...r.gearInlay,position:r.gearInlay.position.map((value,axis)=>value+offset[axis])};
     return {...part,partId,position:position.map((value,axis)=>value+offset[axis])};
    });
   }

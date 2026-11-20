@@ -95,5 +95,6 @@ Design and prepared dimensions are shown in the exported X × Y × Z orientation
 
 ### Raised Gear rim manufacturing
 - Verify the 68.5 mm, 12-tooth Involute Gear with five openings and an 8 mm bore across all four raised details, both material modes and chamfer on/off. Check connected export bodies, the unchanged lower section, and a continuous raised ring.
+- The dual-material Hub ring stays connected through the raised collar. Verify its union matches the single-material volume with and without a shaft bore.
 - The rail uses inward contour offsets. A disconnected offset is refused with suggestions to reduce tooth count or increase diameter. A top ledge too narrow for the requested chamfer retains its original geometry with a warning.
 - Chromium exercises reopening and manufacturing the raised Gear. Issue #10 retains physical fit, tactile and print acceptance.

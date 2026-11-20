@@ -195,6 +195,17 @@ for(const generator of generators){
    assert(volume(original)-volume(finished)>40,'A genuine chamfer removes stock on every relief style');
    console.log('68.5 mm raised Gear '+reliefStyle+(dualMaterial?' dual':' single')+': both finish settings export');
   }
+  for(const bore of [0,8])for(const reliefStyle of ['None','Hub collar','Rim rail','Hub and rim']){
+   for(const enabled of [false,true]){
+    const parameters={...input,bore,reliefStyle,dualMaterial:true,inlayStyle:'Hub ring'};
+    const result=prepare(parameters,enabled);
+    const equivalent=prepare({...parameters,dualMaterial:false},enabled);
+    assert.equal(result.bodies.length,2);
+    assert(Math.abs(result.bodies.reduce((volume,body)=>volume+body.volume,0)-equivalent.bodies[0].volume)<.001,
+     'A hub inlay only partitions material');
+    assert.equal(exportMaterialBodies(result,{name:'hub-ring'}).stls.length,2);
+   }
+  }
  }finally{plain.delete();}
 }
 {

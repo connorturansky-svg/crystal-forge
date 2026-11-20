@@ -387,6 +387,9 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    const [above,below]=total.splitByPlane([0,1,0],splitHeight);
    const top=hold(above),bottom=hold(below),face=Boolean(coincidentFace)||recipe.materialSplitRole==='top';
    regions=[{role:'primary',solid:face?bottom:top},{role:'secondary',solid:face?top:bottom}];
+  }else if(recipe.dualMaterial&&recipe.gearInlay){
+   const [accent,body]=total.split(convert(recipe.gearInlay));
+   regions=[{role:'primary',solid:hold(body)},{role:'secondary',solid:hold(accent)}];
   }else if(recipe.dualMaterial&&(recipe.materialBand||recipe.secondary?.length)){
    let secondary=recipe.materialBand?convert(recipe.materialBand):union(recipe.secondary);
    if(recipe.partitioned){
