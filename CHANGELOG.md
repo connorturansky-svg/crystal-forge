@@ -2,6 +2,8 @@
 
 ## Unreleased — WT-021 draft PR #102 (not deployed)
 
+- Crystal conical and tapered pixel sockets now check the measured side and roof stock against the actual narrowing socket profile rather than a full-width vertical cylinder; domed bases are no longer rejected solely because their upper surface narrows. Preparation names the failing pixel, its coordinates and missing stock volume when there is a real clearance failure. This is software screening, not physical print verification.
+
 Only in the draft integration branch; **not a production release**. Owner approval is still required for merge/deployment.
 
 - Crystal’s edge-tab editor shows automatic positions and offers an Add action when the manual list is empty.
