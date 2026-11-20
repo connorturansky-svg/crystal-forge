@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.23 — Type exact Design values and reset individual controls
+- Contextual Design sliders now allow directly typing decimals into the displayed value, with Enter to apply and Escape to cancel. Invalid numbers keep the last saved model unchanged.
+- Every compatible contextual numeric control includes an independent Reset button for its model default; it does not overwrite styling, other dimensions, pixel fittings or existing model settings.
+- Native Gear, Tile, Wave, Cap, Character and Pod precision entry, reset, undo/redo and reload have a focused Chromium regression. Crystal's contextual sliders use the same renderer, while the existing advanced numeric editor remains intact.
+
 ## v0.16.0-dev.35.19 — Render the prepared model from the viewport
 - Use Render actual model directly from the Build viewport.
 - Build shows preparation errors and can raise a Crystal base above 30 mm to fit taller pixel sockets and their roofs.
