@@ -694,7 +694,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  // silently alter dimensions on existing fittings.
  document.addEventListener('studio-pixel-profile-saved',event=>{
   const model=active(),id=event.detail?.profileId;
-  if(!model||!id)return;
+  // Only the model which explicitly opened the shared native editor should
+  // select the newly saved profile; Crystal-only edits must not retarget it.
+  if(!model||!id||event.detail?.origin!=='native')return;
   if(model.generator.typeId!=='crystals'&&!model.link)editModel(project,model.id,{build:{...model.build,activePixelProfileId:id}});
   save();
   if(mode==='model'&&stage==='build'){renderPalette();if(model.generator.typeId!=='crystals')renderEditor();}
