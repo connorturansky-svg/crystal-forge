@@ -199,7 +199,7 @@ export function crystalGeometry(THREE,c,s){
  const base=rings[0],cap=rings[rings.length-1];
  const baseC=[0,0,0],tipC=[0,apexY,0];
  for(let i=0;i<n;i++){const j=(i+1)%n;emit(baseC,base[i],base[j]);emit(tipC,cap[j],cap[i])}
- return finishEdgeGeometry(THREE,meshFromTriangles(THREE,a),crystalEdgeFinish(shape));
+ return finishEdgeGeometry(THREE,meshFromTriangles(THREE,a),{...crystalEdgeFinish(shape),protectTopPole:true});
 }
 function hull(points){
  const pts=points.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
