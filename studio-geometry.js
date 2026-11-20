@@ -178,9 +178,11 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
  };
  const convert=part=>{
   if(part.kind==='pixel-seat')return socket(part).solid;
-  if(part.kind==='extrude'&&!part.edgeFinish?.enabled){
-   // Fabricate from planar contours when unmodified. Edge-finishing uses
-   // the same physically revised surface in preview and Manifold.
+  if(part.kind==='extrude'){
+   // Always use Manifold's robust polygon extrusion, including for Gears
+   // with many fine teeth and functional shaft holes. THREE.ExtrudeGeometry
+   // triangulations are suitable for design preview, but may not be a
+   // manifold manufactured source when welded at tightly packed teeth.
    const contours=[part.outline,...(part.holes||[])].map(loop=>loop.map(([x,z])=>[x,-z]));
    const section=new wasm.CrossSection(contours,'EvenOdd');
    try{
@@ -188,7 +190,28 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
     solid=hold(solid.rotate([-90,0,0]));
     if(part.rotation)solid=hold(solid.rotate(part.rotation.map(angle=>angle*180/Math.PI)));
     if(part.position)solid=hold(solid.translate(part.position));
-    return solid;
+    if(!part.edgeFinish?.enabled)return solid;
+    // Finish the authoritative solid triangles, not Three.js's visual
+    // extrusion triangulation. Preserve holes by excluding their rims.
+    const input=solid.getMesh(),raw=input.vertProperties,source=new THREE.BufferGeometry();
+    const xyz=new Float32Array(input.triVerts.length?input.numVert*3:0);
+    for(let i=0;i<input.numVert;i++)
+     for(let axis=0;axis<3;axis++)xyz[3*i+axis]=raw[i*input.numProp+axis];
+    source.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
+    source.setIndex(Array.from(input.triVerts));
+    const holes=(part.holes||[]).map(loop=>loop.map(([x,z])=>
+     [x+(part.position?.[0]||0),z+(part.position?.[2]||0)]));
+    const finished=finishEdgeGeometry(THREE,source,{...part.edgeFinish,protectLoops:holes});
+    try{
+     const vertices=new Float32Array(finished.getAttribute('position').array);
+     const triangles=finished.index?new Uint32Array(finished.index.array):
+      Uint32Array.from({length:vertices.length/3},(_,i)=>i);
+     const mesh=new wasm.Mesh({numProp:3,vertProperties:vertices,triVerts:triangles});mesh.merge();
+     const result=hold(new wasm.Manifold(mesh));
+     if(result.status()!=='NoError'||result.isEmpty())
+      throw Error('The selected edge amount folds an extruded surface. Reduce the edge amount or choose another group.');
+     return result;
+    }finally{finished.dispose();}
    }finally{section.delete();}
   }
   const geometry=recipeGeometry(THREE,part);
