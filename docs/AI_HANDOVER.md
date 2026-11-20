@@ -42,6 +42,8 @@ Print Centre and production packs use the same bounding dimensions of the prepar
 
 ## Support-Free Pixel Shoulders
 
+Crystal's preparation previously required an entire flange-width cylinder of stock up to the highest socket roof, incorrectly rejecting valid placements under sloped/domed bases. Draft `fix/crystal-tapered-socket-stock-envelope` replaces it with an actual cutter-shaped envelope: 1 mm lateral stock and 2.8 mm vertical roof stock, retaining fails for missing material. A synthetic Manifold regression covers the old false positive and thin side/roof failures. Exact-head CI, Cura sections and physical testing remain required before merging.
+
 Crystal uses global socket settings and native shaped underside fittings use per-fitting settings. The shared Manifold cutter raises the shaft, optional retention ridge and original roof by the taper rise. Keep the flange start plane and wire cuts fixed. The native recipe, Crystal fitting overlay and shaped test samples use the same cutter. The fabrication tests section the taper and the unchanged flange and bore in both export formats. Physical slicing and fit remain a separate check.
 
 ## WT-017 — Consistent Build pixel tools and shared measured profiles
