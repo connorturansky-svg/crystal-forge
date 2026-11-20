@@ -361,6 +361,18 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    if((part.pixelHole||part.mountHole||part.tabHole||part.wireChannel)&&before.volume()-total.volume()<.1)
     throw Error((part.pixelHole||part.mountHole||part.tabHole||part.wireChannel)+' does not cut the model. Move it onto solid material in Build.');
   }
+  if(recipe.edgeFinish?.enabled){
+   // Small edge offsets next to neighbouring gear teeth and overlapping
+   // decorative stock can create float32-sized sliver triangles after union.
+   // Remove only sub-0.005 mm slivers before exporting STL or 3MF.
+   // Manifold guarantees displacement is bounded by the tolerance.
+   const originalVolume=total.volume();
+   const cleaned=hold(hold(total.asOriginal()).simplify(.005));
+   if(cleaned.status()!=='NoError'||cleaned.isEmpty()||
+     Math.abs(cleaned.volume()-originalVolume)>Math.max(.05,originalVolume*.0001))
+    throw Error('Edge finishing cannot preserve this thin feature. Reduce the finishing amount.');
+   total=cleaned;
+  }
   if(total.status()!=='NoError'||total.isEmpty()||total.volume()<=0)throw Error('Manufacturing produced no valid material.');
   let regions=[{role:'primary',solid:total}];
   if(recipe.dualMaterial&&recipe.materialSplitHeight!==undefined){
