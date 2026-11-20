@@ -82,7 +82,19 @@ export function bevelTopSolid(wasm,solid,settings){
     result.delete();
     throw Error('Top chamfer would damage this model. Reduce amount or leave finishing off.');
    }
-   return result;
+   // Boolean intersections at dense involute teeth can leave sub-pixel
+   // sliver triangles after STL float32 conversion. Simplify only the
+   // positive chamfered stock (BEFORE any precise pixel/wire/mount cuts).
+   const raw=result.asOriginal();
+   try{
+    const cleaned=raw.simplify(Math.min(.04,amount*.08));
+    if(cleaned.status()!=='NoError'||cleaned.isEmpty()||
+       Math.abs(cleaned.volume()-result.volume())>Math.max(.05,result.volume()*.0001)){
+     cleaned.delete();result.delete();
+     throw Error('Top chamfer cleanup changed the real solid. Reduce the amount.');
+    }
+    result.delete();return cleaned;
+   }finally{raw.delete();}
   }finally{union.delete();}
  }finally{for(const wedge of wedges)wedge.delete();}
 }
