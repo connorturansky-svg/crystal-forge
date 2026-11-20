@@ -1,0 +1,50 @@
+name: SVG import checks
+
+on:
+  pull_request:
+    paths:
+      - 'svg-import/**'
+      - 'tests/svg-import-*.mjs'
+      - 'tests/fixtures/svg-import/**'
+      - '.github/workflows/svg-import-checks.yml'
+      - 'studio-geometry.js'
+      - 'studio-material-export.js'
+      - 'studio-pixel-builder.js'
+      - 'package.json'
+
+permissions:
+  contents: read
+
+jobs:
+  svg:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: node --test tests/svg-import-engine.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: Exercise standalone browser demo
+        env:
+          CRYSTAL_FORGE_URL: http://127.0.0.1:4321
+          SVG_IMPORT_QA_DIR: svg-import-qa
+        run: |
+          python3 -m http.server 4321 --bind 127.0.0.1 > /tmp/svg-http.log 2>&1 &
+          trap 'kill $!' EXIT
+          for attempt in {1..20}; do
+            if curl -fsS "$CRYSTAL_FORGE_URL/svg-import/demo/" -o /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS "$CRYSTAL_FORGE_URL/svg-import/demo/" -o /dev/null
+          node tests/svg-import-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: svg-import-browser-evidence
+          path: svg-import-qa/
+          if-no-files-found: ignore

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SVG Import Demo · Crystal Forge</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main>
+    <header class="page-head">
+      <a href="../../">Crystal Forge</a>
+      <span>Standalone demo</span>
+    </header>
+    <div class="intro">
+      <h1>SVG import</h1>
+      <p>Turn filled vector artwork into a solid. Inspect the contours, set the extrusion dimensions, and validate the mesh before exporting.</p>
+    </div>
+    <noscript><p class="notice notice-error">Enable JavaScript to load artwork and build the 3D preview.</p></noscript>
+    <div class="workbench">
+      <aside class="controls" aria-label="Import controls">
+        <section aria-labelledby="artwork-heading">
+          <h2 id="artwork-heading">1. Choose artwork</h2>
+          <label for="sample">Sample SVG</label>
+          <select id="sample" disabled>
+            <option value="">Select a sample</option>
+            <option value="rectangle.svg">Rectangle</option>
+            <option value="circle.svg">Circle</option>
+            <option value="clockwork.svg">Clockwork</option>
+            <option value="nested.svg">Nested contours</option>
+            <option value="curves.svg">Curves</option>
+          </select>
+          <label for="file">Or open a local SVG</label>
+          <input type="file" id="file" accept=".svg,image/svg+xml" aria-describedby="file-help" disabled>
+          <p class="help" id="file-help">Use filled paths and shapes. Convert text and strokes to outlines before importing.</p>
+        </section>
+        <section aria-labelledby="dimensions-heading">
+          <h2 id="dimensions-heading">2. Set dimensions</h2>
+          <form id="dimensions" novalidate>
+            <fieldset id="settings" disabled>
+              <legend class="sr-only">Extrusion dimensions</legend>
+              <div class="fields">
+                <label for="width">Width (mm)<input type="number" step="any" min="0.5" max="500" id="width" value="60" required></label>
+                <label for="height">Height (mm)<input type="number" step="any" min="0.5" max="500" id="height" value="60" readonly required></label>
+              </div>
+              <label class="lock"><input type="checkbox" id="lock" checked> Keep aspect ratio</label>
+              <div class="fields">
+                <label for="depth">Depth (mm)<input type="number" step="any" min="0.2" max="100" id="depth" value="5" required></label>
+                <label for="rotation">Rotation (°)<input type="number" step="any" min="-360" max="360" id="rotation" value="0" required></label>
+              </div>
+              <p class="help">Width and height are measured before rotation.</p>
+            </fieldset>
+          </form>
+        </section>
+        <section class="export-controls" aria-labelledby="export-heading">
+          <h2 id="export-heading">3. Validate &amp; export</h2>
+          <div class="actions">
+            <button type="button" class="primary" id="validate" disabled>Validate mesh</button>
+            <button type="button" id="cancel" hidden>Cancel validation</button>
+          </div>
+          <div class="actions downloads">
+            <button type="button" id="stl" disabled>Download STL</button>
+            <button type="button" id="threemf" disabled>Download 3MF</button>
+          </div>
+          <p class="help">Validation checks mesh geometry, not printability.</p>
+          <p id="status" class="notice" role="status">Loading the demo…</p>
+          <p id="error" class="notice notice-error" role="alert" hidden></p>
+        </section>
+      </aside>
+      <div class="inspection">
+        <section class="view-panel" aria-labelledby="preview-heading">
+          <header class="panel-head">
+            <div>
+              <h2 id="preview-heading">Extrusion preview</h2>
+              <p id="orbit-help">Drag to orbit · Scroll or pinch to zoom</p>
+            </div>
+            <div class="actions" role="group" aria-label="Camera views">
+              <button type="button" data-view="reset" disabled>Reset view</button>
+              <button type="button" data-view="top" disabled>Top</button>
+              <button type="button" data-view="bottom" disabled>Underside</button>
+            </div>
+          </header>
+          <div id="viewport" aria-describedby="orbit-help">
+            <p id="preview-message">Loading 3D preview…</p>
+            <p id="geometry-state" hidden></p>
+          </div>
+        </section>
+        <div class="details">
+          <section aria-labelledby="contours-heading">
+            <h2 id="contours-heading">Source contours</h2>
+            <p id="contour-count" class="help">No artwork loaded.</p>
+            <div class="contour-frame">
+              <svg id="contours" role="img" aria-labelledby="contour-title" viewBox="0 0 100 60">
+                <title id="contour-title">No contours loaded</title>
+              </svg>
+            </div>
+            <p id="source-name" class="source" hidden></p>
+          </section>
+          <section aria-labelledby="report-heading">
+            <h2 id="report-heading">Validation report</h2>
+            <p id="report-empty" class="help">Validate the extrusion to see its mesh measurements.</p>
+            <dl id="report" hidden>
+              <dt>Footprint × depth</dt><dd id="extents"></dd>
+              <dt>Volume</dt><dd id="volume"></dd>
+              <dt>Solid parts</dt><dd id="parts"></dd>
+              <dt>Triangles</dt><dd id="triangles"></dd>
+            </dl>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script defer src="./bootstrap.js"></script>
+</body>
+</html>
