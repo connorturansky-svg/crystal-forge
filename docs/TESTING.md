@@ -1,6 +1,26 @@
 # Crystal Forge — verification strategy and commands
 
+## UX-02 keyboard regression checks
+
+With the same local server as `npm run test:browser`, run `node tests/exact-value-accessibility-browser.mjs` and `node tests/studio-tool-finder-browser.mjs`. Browser CI runs both before the existing suite. The finder test uses the real Studio model picker for all seven built-in families, verifies arrow navigation, Escape focus restoration, no-match feedback, and the Cura shortcut (keyboard and emulated touch). It renames and reopens the project in each case and checks that the active family survives reload. It samples light and dark at 390, 768 and 1440 px; screenshots are uploaded with browser CI. This checks shared navigation, not keyboard alternatives for editing 3D geometry.
+
+Run `node tests/studio-help-diagnostics-browser.mjs` to exercise the in-app Help checks, an offline refresh, the exact fields in the downloaded JSON, and a 4.5:1 minimum contrast ratio for the report and recovery links in both themes. This reports local browser capabilities; it does not fetch assets, prove autosave works, or recover from a failed startup. Browser CI also runs this test.
+
+| Workflow | Before UX-02 | After UX-02 | Limits |
+| --- | --- | --- | --- |
+| Tool Finder | Down reached only the first result; Escape from a result did not return to search | Arrow traversal, Escape reset and Cura destination focus tested in all seven builders | Widths/themes are sampled across families, not a full cross-product |
+| Getting started and workspace navigation | Help introduced Studio as a Crystal-only tool | Help describes the shared Design → Build → Print Centre workflow first. Chromium exercises Home, Library, Print, Build and Design with Enter in every builder and checks retained focus and page-level overflow | Does not cover every individual tool or navigation path within those views |
+| Help troubleshooting | Static guidance only | Live browser capability checks, offline feedback and a minimal downloadable report | No asset probe, save test or write to local storage |
+| Print Centre recovery | A generic troubleshooting tip sent you to Print Centre without checking the job | Help checks the current model's job states, opens Print Centre, and focuses Retry when exactly one job can be retried. Chromium blocks the real Wave preparation worker, checks the recovery action at 390, 768 and 1440 px in both themes, restores the worker, retries and verifies a browser-delivered STL | Job results are a snapshot and never enter the JSON report. Prepared status does not establish that the browser saved a file |
+| Rejected exact values | Transient browser validation bubble; a shared key could select a hidden Crystal slider instead of the current builder's slider | The editor uses its own control's range and keeps focus and the previous value on rejection. Chromium checks rejection, correction and reload in all seven builders | Covers numeric range validation, not fabrication constraints |
+| Library backup restore | The global stylesheet hid the file field and removed it from keyboard navigation | A visible native file field opens from the keyboard, and Escape from review returns to it | `node tests/studio-backup-keyboard-browser.mjs` verifies this at 390 px, plus invalid JSON and unchanged active project |
+| SVG and STL/OBJ model import | The same rule hid both import file fields | Both named dialogs expose native file choosers that open with Enter | The same Chromium script checks chooser access and cancellation; no parsing or fabrication behavior changed |
+
 The Studio Chromium suite (`node tests/studio-browser.test.mjs`) checks that shared keyboard help adds to an existing control description and that pressing Escape dismisses the tooltip without removing that description or moving focus.
+
+### Remaining accessibility and recovery verification
+
+The checks above are targeted regressions, not a WCAG 2.2 AA audit or a complete family-by-workflow matrix. Keyboard equivalents for complex canvas operations (including free orbit and point placement on arbitrary 3D faces) are not established. Changes to the shared canvas, profile editor and native Build/Print interactions require coordination with WT-021; this draft does not replace them. Startup and asset-delivery recovery are tracked separately in [PR #90](https://github.com/connorturansky-svg/crystal-forge/pull/90). Screen-reader output should be checked with real assistive technology before claiming conformance; Chromium assertions cover focus and semantics, not what each screen reader speaks.
 
 ## WT-016 backup recovery
 

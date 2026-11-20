@@ -27,6 +27,7 @@ This index groups existing documents by purpose **without moving their original 
 
 ## 3. Manufacturing, print and independent QA
 
+- **New to Studio?** Open the app and choose **Home → New model**. Pick a family, shape it in **Design**, and configure supported fitting options in **Build**. Send it to **Print Centre** and choose **Prepare**; inspect the job message before downloading. The saved project remains editable; the print file is only the prepared snapshot. Use **Help → Troubleshooting** if preparation fails or you cannot find a download.
 - [Back up and recover your Studio workspace](BACKUP_RECOVERY.md) — download a backup, review before restoring, and troubleshoot recovery.
 - [Testing guide](TESTING.md) — local and CI commands, release gates.
 - [Model-builder parity](MODEL_BUILDER_PARITY.md) — cross-family testing context; consult the newer WT-021 register for current acceptance.

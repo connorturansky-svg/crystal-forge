@@ -33,14 +33,28 @@ export function createToolFinder(onPick){
    const title=document.createElement('strong');title.textContent=item.label;
    const details=document.createElement('small');details.textContent=item.description;
    button.append(title,details);
-   button.onclick=()=>{onPick(item.action);input.value='';render();};
+   button.onclick=()=>{
+    onPick(item.action);
+    if(document.activeElement===button&&input.getClientRects().length)input.focus();
+    input.value='';render();
+   };
    list.append(button);
   }
  };
  input.addEventListener('input',render);
  input.addEventListener('keydown',event=>{
-  if(event.key==='Escape'){event.stopPropagation();input.value='';render();}
+  if(event.key==='Escape'&&input.value){
+   event.preventDefault();event.stopPropagation();input.value='';render();
+  }
   if(event.key==='ArrowDown'){const button=list.querySelector('button');if(button){event.preventDefault();button.focus();}}
+ });
+ list.addEventListener('keydown',event=>{
+  if(event.key==='Escape'){
+   event.preventDefault();event.stopPropagation();input.focus();input.value='';render();
+  }else if(event.key==='ArrowUp'||event.key==='ArrowDown'){
+   const next=event.key==='ArrowUp'?event.target.previousElementSibling||input:event.target.nextElementSibling;
+   event.preventDefault();next?.focus();
+  }
  });
  root.append(label,input,status,list);render();
  return root;

@@ -58,6 +58,16 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.18 — Studio keyboard navigation and recovery
+
+- Move between Studio tool search results with the arrow keys. Escape clears the search and returns focus to the search field.
+- Help includes safe troubleshooting steps and a downloadable browser report that excludes projects and account details.
+- Help checks the current model's Print Centre jobs and guides you to retry failed preparation or troubleshoot a missing download.
+- Help introduces the Design, Build and Print Centre workflow for all model families, with Crystal-specific instructions in their own section.
+- Invalid exact-value edits show the accepted range without changing the saved value or moving keyboard focus.
+- Precision editors use the selected builder's own controls when different model families share a setting name.
+- Keyboard-accessible file choosers let you restore a backup or older Crystal project and import SVG, STL or OBJ models.
+
 ## v0.16.0-dev.35.17 — Keyboard tooltip accessibility
 
 - Opening keyboard help preserves each control's existing accessible description. Pressing Escape dismisses the tooltip without removing that description or moving focus.
