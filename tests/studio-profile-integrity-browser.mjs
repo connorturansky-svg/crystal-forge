@@ -88,6 +88,36 @@ try{
  const data=JSON.parse(await readFile(await download.path(),'utf8'));
  assert(data.pixelProfiles?.some(p=>p.id===accepted.hole.profileId&&p.name==='Protected measured Seed'),
   'Complete Studio JSON backup must include the newly calibrated reusable profile');
+ // A completely isolated second browser must recover the calibration from the
+ // Studio JSON alone: no extra Crystal profile library export is permitted.
+ const second=await browser.newContext({viewport:{width:1280,height:900},acceptDownloads:true});
+ try{
+  const destination=await second.newPage();
+  await destination.goto(process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321/');
+  await destination.waitForFunction(()=>window.__sensoryStudio);
+  await destination.locator('#smsLibrary').click();
+  await destination.locator('#smsImport').setInputFiles({
+   name:'complete-studio-backup.json',mimeType:'application/json',
+   buffer:Buffer.from(JSON.stringify(data))
+  });
+  const review=destination.getByRole('dialog',{name:'Review backup'});
+  await review.waitFor();
+  await review.getByLabel('Recovery strategy').selectOption('merge');
+  destination.once('dialog',dialog=>dialog.accept());
+  await review.getByRole('button',{name:'Apply choice'}).click();
+  await review.waitFor({state:'hidden'});
+  await destination.getByText('Recovery complete',{exact:false}).waitFor();
+  const recovered=await destination.evaluate(key=>{
+   const library=JSON.parse(localStorage.getItem(key)||'[]');
+   const studio=JSON.parse(localStorage.getItem('sensory-model-studio-v1')||'null');
+   return {library,studio};
+  },profileKey);
+  assert(recovered.library.some(p=>p.id===accepted.hole.profileId&&p.name==='Protected measured Seed'),
+   'Second browser has exact restored A–G library profile');
+  assert(recovered.studio?.savedProjects.some(project=>project.models.some(model=>
+   model.build?.pixelHoles?.some(hole=>hole.profileId===accepted.hole.profileId))),
+   'Recovered project refers to its intact custom profile');
+ }finally{await second.close();}
  assert.deepEqual(errors,[],'No uncaught errors after measured profile retry and backup');
  console.log('Profile integrity Chromium PASS: capacity refusal, quota rollback, async worker save, successful retry and JSON backup.');
 }finally{await browser.close();}
