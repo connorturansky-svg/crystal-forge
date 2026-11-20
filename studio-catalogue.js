@@ -158,7 +158,8 @@ export const gearGenerator=define('gears','Cogs & Gears','Mechanical',[
    const inner=outline.map(([x,z])=>[x*.94,z*.94]);
    const maxWindow=Math.max(0,...holes.flat().map(([x,z])=>Math.hypot(x,z)));
    if(maxWindow>=Math.min(...inner.map(([x,z])=>Math.hypot(x,z)))-.2)throw Error('The raised rim needs space outside the cutouts. Increase the rim width.');
-   positive.push(extrusion(outer,height,[0,y,0],[inner]));
+   positive.push({...extrusion(outer,height,[0,y,0],[inner]),
+    gearRail:{source:outline,outerInset:radiusOuter*.015,innerInset:radiusOuter*.06}});
   }
  }
  const serialSupport=decorative&&p.webStyle==='Solid'&&p.wheelStyle!=='Pulley'&&!holes.length?{outline,thickness:p.thickness,...(!relief&&!inlay?{topY:p.thickness}:{})}:null;
