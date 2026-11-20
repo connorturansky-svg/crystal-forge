@@ -189,9 +189,7 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
     solid=hold(solid.rotate([-90,0,0]));
     if(part.rotation)solid=hold(solid.rotate(part.rotation.map(angle=>angle*180/Math.PI)));
     if(part.position)solid=hold(solid.translate(part.position));
-    if(!part.edgeFinish?.enabled)return solid;
-    const chamfered=bevelTopSolid(wasm,solid,part.edgeFinish);
-    return chamfered===solid?solid:hold(chamfered);
+    return solid;
    }finally{section.delete();}
   }
   const geometry=recipeGeometry(THREE,part.edgeFinish?.enabled?{...part,edgeFinish:undefined}:part);
@@ -201,15 +199,20 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    const input=new wasm.Mesh({numProp:3,vertProperties:positions,triVerts:indices});input.merge();
    const solid=hold(new wasm.Manifold(input));
    if(solid.status()!=='NoError'||solid.isEmpty())throw Error('A source component is not a valid closed solid.');
-   if(!part.edgeFinish?.enabled)return solid;
-    const chamfered=bevelTopSolid(wasm,solid,part.edgeFinish);
-    return chamfered===solid?solid:hold(chamfered);
+   return solid;
   }finally{geometry.dispose();}
  };
  const union=parts=>{if(!parts.length)throw Error('No model body.');let result=convert(parts[0]);for(const part of parts.slice(1))result=hold(result.add(convert(part)));return result;};
  try{
   onProgress('Joining physical bodies');let total=union(recipe.positive);
   if(recipe.secondary?.length&&!recipe.partitioned)total=hold(total.add(union(recipe.secondary)));
+  // Chamfer the ACTUALLY EXPOSED combined body once. Per-part beveling
+  // causes overlapping decoration to leave near-zero-area STL triangles.
+  const topFinish=recipe.edgeFinish??recipe.positive.find(part=>part.edgeFinish?.enabled)?.edgeFinish;
+  if(topFinish?.enabled){
+   const finished=bevelTopSolid(wasm,total,topFinish);
+   if(finished!==total)total=hold(finished);
+  }
   const seats=(recipe.negative||[]).filter(part=>part.kind==='pixel-seat');
   const previews=[];
   const wireCuts=inspectFittings?(recipe.negative||[]).filter(part=>part.wireChannel).map(convert):[];
