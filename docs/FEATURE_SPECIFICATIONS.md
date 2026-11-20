@@ -261,3 +261,11 @@ A binary ZIP bundles the *current validated prepared STL*, editable JSON, Cura c
 - Persist last printed coupon and applied fit in editable project JSON; do not silently alter individual nominal pixel dimensions.
 - Preserve source privacy choices: original source is rights-reserved, but public repositories and browser JS remain inspectable.
 
+
+## Shared exterior edge finishing — all seven model builders (20 Nov 2026)
+
+**Intent:** An optional geometric edge finish is offered in Design for Crystal Clusters, Tactile Tiles, Gears, Waves, Caps, Characters and Light Pods. Users can choose rounded or chamfered edges on All exterior / Top / Side / Bottom edge groups, with a maximum offset of 0.1–4 mm and geometric subdivision levels 1–3. Existing models remain unchanged until enabled.
+
+**Data and implementation:** For Crystals, the legacy `edgeFinishEnabled`, `edgeFinishStyle`, `edgeFinishScope`, `edgeFinishAmount`, `edgeFinishSteps` shape settings and per-crystal overrides flow through `geometry-v3.js`. For the other six builders, the standard `model.build.edgeFinish` persists in project/library JSON, participates in the manufacturing fingerprint and can be undone. `studio-edge-finish.js` changes actual positive mesh triangles through `studio-geometry.js`, before Manifold subtracts the original hardware cutters. The same finished positives are used for interactive preview and prepared STL/3MF.
+
+**Safety and limits:** Finishing applies to convex hard edges of the selected group where geometry is suitable; concave channels and blind socket walls are not deliberately smoothed. The amount is a bounded, approximate mesh offset — not a mathematically constant-radius CAD fillet. Per-individual-edge selection, collision-free shrinking, wall-thickness certification and support-free manufacturing are not yet implemented. Closed/manifold geometry, routed cable paths, remaining material, sockets and fasteners require real Manifold, Cura layer-view and test-print checks before production.
