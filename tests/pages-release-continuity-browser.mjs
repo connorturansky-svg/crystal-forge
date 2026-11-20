@@ -39,8 +39,9 @@ try{
    const pathname=decodeURIComponent(new URL(req.url,'http://127.0.0.1').pathname);
    const path=resolve(site,'.'+pathname);
    if(path!==site&&!path.startsWith(site+sep)){res.writeHead(403);res.end();return;}
-   const content=await readFile(path===site?join(site,'index.html'):path);
-   const mime={'.js':'text/javascript','.html':'text/html','.css':'text/css'}[extname(path)]||'application/octet-stream';
+   const served=path===site?join(site,'index.html'):path;
+   const content=await readFile(served);
+   const mime={'.js':'text/javascript','.html':'text/html','.css':'text/css'}[extname(served)]||'application/octet-stream';
    res.writeHead(200,{'Content-Type':mime,'Cache-Control':'no-store'});res.end(content);
   }catch(error){res.writeHead(404);res.end('Not Found');}
  });
