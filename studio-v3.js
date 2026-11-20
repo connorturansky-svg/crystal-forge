@@ -542,7 +542,7 @@ async function updateLEDs(){
     messages.push('P'+(index+1)+' · insertion '+preview.insertionDepth.toFixed(2)+' mm · centre roof '+preview.remainingRoof.toFixed(2)+' mm · '+preview.exposedVolume.toFixed(2)+' mm³ outside base · '+preview.collisionVolume.toFixed(2)+' mm³ interfering with base');
    }catch(error){messages.push('P'+(index+1)+' · '+error.message);}
   });
-  report(messages.join(' | ')||'No accepted pixel sockets to preview.');
+  report(messages.length?messages.join(' | ')+' · Yellow shows the physical pixel; blue shows the socket cut. Preparation protects the curved/pointed roof only. Exposed pixel-body volume is an advisory, not a stock-check failure.':'No accepted pixel sockets to preview.');
  }catch(error){if(request===fittingPreviewRequest)report(error.message);}
 }
 
