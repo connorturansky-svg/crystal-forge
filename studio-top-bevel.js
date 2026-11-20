@@ -60,9 +60,12 @@ export function bevelTopSolid(wasm,solid,settings){
    ]]);
    try{
     const extension=Math.min(amount*.3,length*.22);
-    const wedge=crossSection.extrude(length+2*extension)
-     .rotate([0,Math.atan2(dir[0],dir[1])*180/Math.PI,0])
-     .translate([p[0]-dir[0]*extension,0,p[2]-dir[1]*extension]);
+    const extruded=crossSection.extrude(length+2*extension);
+    let rotated,wedge;
+    try{
+     rotated=extruded.rotate([0,Math.atan2(dir[0],dir[1])*180/Math.PI,0]);
+     wedge=rotated.translate([p[0]-dir[0]*extension,0,p[2]-dir[1]*extension]);
+    }finally{rotated?.delete();extruded.delete();}
     if(wedge.status()!=='NoError'||wedge.isEmpty()){wedge.delete();throw Error('Failed to build top chamfer cutter.');}
     wedges.push(wedge);
    }finally{crossSection.delete();}
