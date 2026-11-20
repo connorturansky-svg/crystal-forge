@@ -83,6 +83,33 @@ try{
  assert.equal(accepted.hole.clearance,.5);
  assert.equal(accepted.profiles.length,30);
  assert(accepted.profiles.some(p=>p.id==='custom-qa-0'),'First measured profile must survive');
+ // Source-model isolation: the Crystal editor and a native Tile must maintain
+ // independent selected profile IDs when they share a reusable library.
+ await page.evaluate(()=>{
+  const control=document.querySelector('#pixelProfileSelect');
+  control.value='seed';control.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ await page.waitForFunction(()=>!!document.querySelector('#pixelProfileSelect option[value="custom-qa-0"]'),null,{timeout:45000});
+ await page.evaluate(()=>{
+  const control=document.querySelector('#pixelProfileSelect');
+  control.value='custom-qa-0';control.dispatchEvent(new Event('change',{bubbles:true}));
+ });
+ assert.equal(await page.locator('#pixelProfileSelect').inputValue(),'custom-qa-0',
+  'Crystal selects its own earlier measured profile A');
+ await palette.locator('[data-active-pixel-profile]').selectOption(accepted.hole.profileId);
+ await page.waitForFunction(id=>window.__sensoryStudio.currentModel.build.activePixelProfileId===id,
+  accepted.hole.profileId,{timeout:45000});
+ await palette.getByRole('button',{name:'Edit active profile'}).click();
+ await page.locator('#deletePixelProfileBtn').click();
+ await page.locator('#pixelSocketStatus').filter({hasText:/in use/i}).waitFor();
+ const afterBlockedDelete=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)||'[]'),profileKey);
+ assert(afterBlockedDelete.some(p=>p.id==='custom-qa-0'),'Editing B must not delete unrelated A');
+ assert(afterBlockedDelete.some(p=>p.id===accepted.hole.profileId),'A profile still used by Tile must not be deleted');
+ await page.locator('#savePixelProfileBtn').click();
+ assert.equal(await page.locator('#pixelProfileSelect').inputValue(),'custom-qa-0',
+  'Saving Tile profile B must not silently switch the selected Crystal profile A');
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.activePixelProfileId),
+  accepted.hole.profileId,'Native Tile must retain selected profile B');
  await page.locator('#smsLibrary').click();
  const [download]=await Promise.all([page.waitForEvent('download'),page.locator('#smsBackup').click()]);
  const data=JSON.parse(await readFile(await download.path(),'utf8'));
