@@ -623,6 +623,7 @@ export function applyBuildModules(recipe,build={},capabilities={}, {preview=fals
  // mounting cutters are subtracted afterwards at their original dimensions.
  const edgeFinish=normaliseEdgeFinish(build.edgeFinish);
  if(edgeFinish.enabled){
+  r.edgeFinish=edgeFinish;
   for(const role of ['positive','secondary'])
    r[role]=r[role].map(part=>({...part,edgeFinish}));
   r.warnings.push('Exterior edge finishing is geometric, but minimum wall thickness and physical fit must still be checked in Cura.');
