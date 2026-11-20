@@ -19,6 +19,7 @@ import {installExactValueEditors} from './exact-value-editors.js';
 import {createToolFinder} from './studio-tool-finder.js';
 import {createCuraProfile,zipProfileEntries,curaFallbackText,calculateCuraSettings} from './cura-profiles.js';
 import {StudioVault} from './studio-vault.js';
+import {profileReferencedInModel} from './studio-profile-safety.js';
 import {crystalStartingPoints,crystalStartingPointPreview} from './studio-crystal-presets.js';
 const copy=x=>JSON.parse(JSON.stringify(x));
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -39,6 +40,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  const printSizes=new WeakMap();
  state.savedProjects??=[];
  ensureSnapshotIds(state.savedProjects);
+ // Mirror the full measured library into Studio archives, without truncation.
+ state.pixelProfiles=copy(adapter.pixelFitProfiles?.()||state.pixelProfiles||[]);
  state.organisation=readOrganisation(state.organisation);
  let collectionFilter='',favouritesOnly=false,templatesOnly=false;
  function saveProjectSnapshot(){
@@ -691,7 +694,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  // silently alter dimensions on existing fittings.
  document.addEventListener('studio-pixel-profile-saved',event=>{
   const model=active(),id=event.detail?.profileId;
-  if(!model||!id)return;
+  // Only the model which explicitly opened the shared native editor should
+  // select the newly saved profile; Crystal-only edits must not retarget it.
+  if(!model||!id||event.detail?.origin!=='native')return;
   if(model.generator.typeId!=='crystals'&&!model.link)editModel(project,model.id,{build:{...model.build,activePixelProfileId:id}});
   save();
   if(mode==='model'&&stage==='build'){renderPalette();if(model.generator.typeId!=='crystals')renderEditor();}
@@ -719,9 +724,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   };
   label.append(select);field.append(label);
   for(const [title,action] of [
-   ['Create pixel profile',()=>adapter.openPixelProfileEditor(select.value,true)],
-   ['Edit active profile',()=>adapter.openPixelProfileEditor(select.value,false)],
-   ['Duplicate profile',()=>adapter.openPixelProfileEditor(select.value,true)],
+   ['Create pixel profile',()=>adapter.openPixelProfileEditor(select.value,true,undefined,crystal?'crystal':'native')],
+   ['Edit active profile',()=>adapter.openPixelProfileEditor(select.value,false,undefined,crystal?'crystal':'native')],
+   ['Duplicate profile',()=>adapter.openPixelProfileEditor(select.value,true,undefined,crystal?'crystal':'native')],
    ['Export pixel profiles',()=>adapter.exportPixelProfiles()]
   ]){
    const button=document.createElement('button');button.type='button';button.textContent=title;
@@ -845,7 +850,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     {pending:'Checking the new cable order and openings…'});
   }else save();
  }
- function editPixel(model,index,hole,focus,onSaved){
+ function editPixel(model,index,hole,focus,onSaved,beforeCommit){
   const holes=pixelHoles(model),previous=holes[index];
   if(!previous||model.link)return false;
   const moved=hole.x!==previous.x||hole.z!==previous.z;
@@ -858,9 +863,28 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(issue){pixelStatus(model,pixelPlacementAdvice(model,issue));return false;}
   holes[index]={...hole,checked:true};
   const save=()=>{
-   const saved=savePixels(model,holes,hole.id,focus);
-   if(saved)onSaved?.();
-   return saved;
+   let rollback;
+   try{
+    // Geometry has already been checked. Persist the calibration before the
+    // model can reference its custom ID, including on asynchronous workers.
+    rollback=beforeCommit?.();
+   }catch(error){
+    pixelStatus(model,'Measured profile not saved. '+error.message);
+    return false;
+   }
+   let saved=false;
+   try{saved=savePixels(model,holes,hole.id,focus);}
+   catch(error){
+    try{rollback?.();}catch(recoveryError){pixelStatus(model,'Profile rollback needs attention. '+recoveryError.message);}
+    pixelStatus(model,'Fitting was not committed. '+error.message);
+    return false;
+   }
+   if(!saved){
+    try{rollback?.();}catch(error){pixelStatus(model,'Profile rollback needs attention. '+error.message);}
+    return false;
+   }
+   try{onSaved?.();}catch(error){pixelStatus(model,'Fitting saved, but the profile sync needs attention: '+error.message);}
+   return true;
   };
   const routeRotation=model.build.serialRouting?.enabled&&hole.rotation!==previous.rotation;
   if(hole.socketProfile&&(moved||routeRotation||hole.socketProfile!==previous.socketProfile||
@@ -1807,9 +1831,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     if(!name){editPixel(model,selected,withMeasuredPixelFit(hole,measurement));return;}
     const calibrated=saveablePixelFit(hole,measurement,{name,id:'custom-'+newPixel().id,customProfiles:adapter.pixelFitProfiles()});
     editPixel(model,selected,calibrated.hole,undefined,()=>{
-     adapter.savePixelFitProfile(calibrated.profile);
+     adapter.notifyPixelProfileLibrary?.();
      redrawPixelEditor();pixelStatus(model,'Saved measured fit to the profile library.');
-    });
+    },()=>adapter.savePixelFitProfile(calibrated.profile));
    }catch(error){pixelStatus(model,error.message);}
   };
   bindPixelEditor(root,model,holes,profiles);
@@ -2458,10 +2482,22 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     assertWorkspaceVersion(localStorage,savedWorkspace);
     const key=RECOVERY_PREFIX+Date.now()+'-'+newId();
     if(JSON.stringify(candidate)!==initial){
-     commitRecovery(localStorage,state,candidate,key,savedWorkspace);
+     let restoreProfileLibrary;
+     try{
+      // The browser library must be durable before any recovered model can
+      // reference the restored custom IDs. A failed workspace write rolls it back.
+      if(candidate.pixelProfiles)restoreProfileLibrary=adapter.installPixelProfileLibrary?.(candidate.pixelProfiles);
+      commitRecovery(localStorage,state,candidate,key,savedWorkspace);
+     }catch(error){
+      try{restoreProfileLibrary?.();}catch(rollbackError){
+       throw Error('Recovery needs attention: '+rollbackError.message+'. Original backup unchanged.',{cause:error});
+      }
+      throw error;
+     }
      savedWorkspace=JSON.stringify(candidate);
      clearTimeout(saveTimer);dirty=false;$('smsSaveState').textContent='Saved locally';
-     for(const field of ['library','savedProjects','organisation','legacyTemplates'])state[field]=candidate[field];
+     for(const field of ['library','savedProjects','organisation','legacyTemplates','pixelProfiles'])
+      if(candidate[field]!==undefined)state[field]=candidate[field];
     }
     if(choice.selection==='all')acknowledge();
     dialog.close();if(mode==='library'){renderLibraryCards();renderRecoveryList();}
@@ -2485,7 +2521,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     recoveryStatus('Backup verified. Review the differences before applying.');
    }else{
     if(!confirm('Upload this workspace to the connected private backup repository?'))return;
-    captureCrystal();validateArchive(state);saveImmediately();
+    captureCrystal();state.pixelProfiles=copy(adapter.pixelFitProfiles?.()||state.pixelProfiles||[]);
+    validateArchive(state);saveImmediately();
     recoveryStatus('Uploading immutable assets, then committing the manifest…');
     const result=await connection.push(state);
     recoveryStatus('Backup saved · '+result.uploaded+' new assets · manifest '+result.sha.slice(0,12));
@@ -2772,7 +2809,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    adapter.download(new Blob([zipProfileEntries(entries)],{type:'application/zip'}),stem+'.zip');
   }catch(error){adapter.status(error.message);if($('smsPrintStatus'))$('smsPrintStatus').textContent=error.message;}
  }
- function backup(){captureCrystal();adapter.download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'wonder-trunks-studio-backup.json');}
+ function backup(){
+  captureCrystal();state.pixelProfiles=copy(adapter.pixelFitProfiles?.()||state.pixelProfiles||[]);
+  validateArchive(state);
+  adapter.download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'wonder-trunks-studio-backup.json');
+ }
  function replaceProject(saved){
   for(const worker of workers.values())worker.terminate();workers.clear();prepared.clear();histories.clear();
   for(const c of cache.values())if(c.group)disposeGroup(c.group);else adapter.release(c);cache.clear();
@@ -2861,5 +2902,12 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   else tab?.focus();
  }
  window.__sensoryStudio={project,registry,canOpenFeature,openFeature,get currentModel(){return active();},get mode(){return mode;},switchModel,addModel:add,showLibrary,showPrint,send,prepare,saveImmediately,fittingPointScreen,pixelMarkerScreen:id=>{const marker=pixelMarkers(active()).find(item=>item.userData.pixelId===id);return marker?projectMarker(marker):null;},get cacheSize(){return cache.size;},get metrics(){return {previewBuilds,geometries:renderer.info.memory.geometries,activeWorkers:workers.size};}};
- return {onCrystalChange:captureCrystal,backup,nativeModelBounds,planPixelProfileClearance};
+ return {onCrystalChange:captureCrystal,backup,nativeModelBounds,planPixelProfileClearance,
+  onPixelProfileLibraryChange:profiles=>{state.pixelProfiles=copy(profiles);save();},
+  pixelProfileReferenced:id=>[
+   ...project.models,
+   ...state.savedProjects.flatMap(project=>project.models),
+   ...state.library.flatMap(record=>record.versions.map(version=>version.model))
+  ].some(model=>profileReferencedInModel(model,id))
+ };
 }
