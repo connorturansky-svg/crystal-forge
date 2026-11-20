@@ -1,6 +1,7 @@
 import {tileWallPosition} from './studio-native-routing.js';
 import {putSocket} from './fabrication-v1.js';
 import {socketShoulderRise} from './pixel-profiles.js';
+import {finishEdgeGeometry} from './studio-edge-finish.js';
 import {makePixelReplicaRecipe} from './pixel-replica.js';
 /* Shared solid recipes. Preview components may overlap; only prepareRecipe
  * Boolean results may reach manufacturing exporters. Units mm; Y-up. */
@@ -47,6 +48,7 @@ export function recipeGeometry(THREE, part) {
  if(part.kind==='sphere')geometry.scale(...part.radii);
  if(part.rotation)geometry.rotateX(part.rotation[0]),geometry.rotateY(part.rotation[1]),geometry.rotateZ(part.rotation[2]);
  if(part.position)geometry.translate(...part.position);
+ if(part.edgeFinish?.enabled)geometry=finishEdgeGeometry(THREE,geometry,part.edgeFinish);
  geometry.computeVertexNormals();return geometry;
 }
 export function previewRecipe(THREE, recipe, colours=[0x88bbff,0xffcf70]) {
@@ -172,8 +174,9 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
  };
  const convert=part=>{
   if(part.kind==='pixel-seat')return socket(part).solid;
-  if(part.kind==='extrude'){
-   // Fabricate from the planar contours rather than welding the display triangulation.
+  if(part.kind==='extrude'&&!part.edgeFinish?.enabled){
+   // Fabricate from planar contours when unmodified. Edge-finishing uses
+   // the same physically revised surface in preview and Manifold.
    const contours=[part.outline,...(part.holes||[])].map(loop=>loop.map(([x,z])=>[x,-z]));
    const section=new wasm.CrossSection(contours,'EvenOdd');
    try{
