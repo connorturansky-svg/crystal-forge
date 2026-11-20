@@ -175,6 +175,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  function positionMarkers(){
   const build=isBuild(),rect=renderer.domElement.getBoundingClientRect();
   markerLayer.hidden=!build||!!placing;
+  guides.visible=build&&!getManufacturingVisible();
   movementGuides.visible=build&&!placing&&!getManufacturingVisible();
   if(build&&!placing&&rect.width&&rect.height)for(const {button,p} of markerObjects){
    const pt=new THREE.Vector3(p.x,edgeMarkerHeight,p.z).project(camera);

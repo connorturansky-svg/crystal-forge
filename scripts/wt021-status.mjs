@@ -16,11 +16,10 @@ const dirty = git('status','--porcelain');
 const data = {branch:git('branch','--show-current'),head:git('rev-parse','HEAD'),workingTree:dirty==='unavailable'?'unknown':dirty?'dirty':'clean',changedFiles:dirty==='unavailable'?null:dirty.split('\n').filter(Boolean).length,items:items.length,statuses:counts,next:next||'See docs/WT021_NOW.md'};
 if(process.argv.includes('--json'))console.log(JSON.stringify(data));
 else {
- console.log('WT-021 draft PR #102 — read-only local status');
+ console.log('WT-021 — read-only local status');
  console.log('Branch '+data.branch+' | HEAD '+data.head+' | '+data.workingTree+' ('+data.changedFiles+' changes)');
  console.log('Acceptance '+data.items+' rows '+JSON.stringify(counts));
  console.log('NEXT:\n'+data.next);
- console.log('CI: gh pr checks 102 --repo connorturansky-svg/crystal-forge (if gh is available)');
- if(data.branch!=='wt021/integrated-release')console.log('WARNING: wrong branch; do not push or merge.');
+ console.log('CI: verify the published candidate head. Working branch and PR status are in docs/WT021_NOW.md.');
  if(data.items<24)console.log('WARNING: unexpected register count; inspect source.');
 }
