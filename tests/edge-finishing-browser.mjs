@@ -17,8 +17,10 @@ try{
   const toggle=page.locator('.sms-palette [data-edge-finish=enabled]');
   await toggle.waitFor({state:'visible'});
   await toggle.check();
-  await page.locator('.sms-palette [data-edge-finish=style]').selectOption('Chamfer');
-  await page.locator('.sms-palette [data-edge-finish=scope]').selectOption('Top edges');
+  assert.equal(await page.locator('.sms-palette [data-edge-finish=style]').count(),0,
+   'Only the tested top-facing chamfer should be offered, not the former crinkling mode');
+  assert.equal(await page.locator('.sms-palette [data-edge-finish=scope]').count(),0,
+   'Unverified all-surface selection must not be advertised');
   const amount=page.locator('.sms-palette [data-palette-key=edge-finish-amount]');
   await amount.evaluate(element=>{element.value='0.6';element.dispatchEvent(new Event('change',{bubbles:true}));});
   if(family==='crystals'){
@@ -32,7 +34,7 @@ try{
     finish:window.__sensoryStudio.currentModel.build.edgeFinish
    }));
    assert.equal(saved.type,family);
-   assert.deepEqual(saved.finish,{enabled:true,style:'Chamfer',scope:'Top edges',amountMm:.6,steps:2});
+   assert.deepEqual(saved.finish,{enabled:true,style:'Chamfer',scope:'Top edges',amountMm:.6,steps:1});
   }
   assert(await page.locator('canvas').count()>0,family+' 3D viewport remains active');
   console.log(family+' live edge controls and persisted model passed');
