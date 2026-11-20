@@ -61,7 +61,7 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 ## v0.16.0-dev.35.20 — Make pixel shoulder checks follow shaped stock
 
-- Crystal conical and tapered pixel sockets now check the measured side and roof stock against the actual narrowing socket profile rather than a full-width vertical cylinder; domed bases are no longer rejected solely because their upper surface narrows. Preparation names the failing pixel, its coordinates and missing stock volume when there is a real clearance failure. This is software screening, not physical print verification.
+- Crystal conical and tapered sockets now protect only the curved or pointed internal roof (2.8 mm overhead and 1 mm rim), not the entire yellow pixel insertion barrel. Exposed barrel sides remain visible as advisory fitting data, while genuine thin-cap failures name the pixel, X/Z location and missing stock volume. This is software screening, not physical print verification.
 
 ## v0.16.0-dev.35.19 — Render the prepared model from the viewport
 - Use Render actual model directly from the Build viewport.
