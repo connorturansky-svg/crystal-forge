@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
 const browser=await chromium.launch({headless:true,
  executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
@@ -43,6 +44,14 @@ try{
  await page.waitForFunction(()=>window.__sensoryStudio);
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.edgeFinish?.amountMm),.6,
   'Edge finishing persists on reload');
+ await page.evaluate(()=>window.__sensoryStudio.addModel('gears',{
+  diameter:68.5,teeth:12,spokes:5,bore:8,webStyle:'Legacy',reliefStyle:'None'
+ },'Openwork Gear chamfer'));
+ await page.locator('.sms-workspace-nav [data-tab=design]').click();
+ await page.locator('.sms-palette [data-edge-finish=enabled]').check();
+ await page.getByText('Showing prepared chamfer geometry.',{exact:true}).waitFor();
+ await fs.mkdir('qa',{recursive:true});
+ await page.screenshot({path:'qa/openwork-gear-chamfer.png'});
  assert.deepEqual(errors,[],'No uncaught Chromium errors');
  console.log('All seven Design palettes, model settings and reload passed');
 }finally{await browser.close();}

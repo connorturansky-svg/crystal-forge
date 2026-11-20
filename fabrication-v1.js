@@ -1,3 +1,5 @@
+import {bevelTopSolid} from './studio-top-bevel.js';
+import {crystalEdgeFinish} from './studio-edge-finish.js';
 import {auditLightPassages} from './light-passage-inspection.js';
 /* Crystal Forge manufacturing pipeline v0.4
  * Uses Manifold WASM for robust Boolean unions, cavity subtraction and socket cuts.
@@ -459,6 +461,11 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
    const joined=hold(combined.add(hold(wasm.Manifold.union(tabs))));
    assertSolid(joined,'Semicircular edge fixing tabs');
    combined=joined;
+  }
+  if(s.edgeFinishEnabled){
+   const finished=bevelTopSolid(wasm,combined,crystalEdgeFinish(s),message=>warnings.push(message));
+   if(finished===combined)warnings.push('No top rim could be chamfered safely at this amount. Original geometry kept.');
+   else combined=hold(finished);
   }
   const inspectedPaths=new Map(), inspectionSkips=new Map();
   let hollowed=0,hollowPorts=0,skippedHollowPorts=0;

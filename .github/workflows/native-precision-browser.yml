@@ -1,0 +1,73 @@
+name: Native precision controls browser
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'native-precision-controls.js'
+      - 'sensory-studio.js'
+      - 'sensory-studio.css'
+      - 'tests/native-precision-browser.mjs'
+      - '.github/workflows/native-precision-browser.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'native-precision-controls.js'
+      - 'sensory-studio.js'
+      - 'sensory-studio.css'
+      - 'tests/native-precision-browser.mjs'
+      - '.github/workflows/native-precision-browser.yml'
+  workflow_dispatch:
+concurrency:
+  group: crystal-forge-native-precision-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  native-precision:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies and browser
+        timeout-minutes: 6
+        run: |
+          npm_config_fetch_retries=1 npm_config_fetch_timeout=40000 \
+            npm install --prefer-offline --no-audit --no-fund --no-progress
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v chromium)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Serve exact branch application
+        run: |
+          mkdir -p qa
+          python3 -m http.server 4321 --bind 127.0.0.1 > qa/native-precision-host.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4321/index.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat qa/native-precision-host.log
+          exit 1
+      - name: Test typed measurements and independent resets
+        timeout-minutes: 8
+        run: |
+          set -o pipefail
+          node tests/native-precision-browser.mjs 2>&1 | tee qa/native-precision-browser.log
+      - name: Save browser screenshots and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-precision-evidence
+          path: |
+            qa/native-precision-*.png
+            qa/precision-*.png
+            qa/native-precision-browser.log
+            qa/native-precision-host.log
+          if-no-files-found: warn

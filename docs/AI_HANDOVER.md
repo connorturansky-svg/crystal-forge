@@ -1,17 +1,10 @@
 # AI handover — read immediately after AGENTS.md
 
-## P0 regression #119 — top touch-safe bevel corrective draft (20 Nov 2026)
-- After #117 merged, the owner showed crinkled surface geometry on an openwork Gear. A Manifold-green result is insufficient: triangulation surface warps are visually and physically unacceptable.
-- Branch `fix/top-touch-safe-chamfers-20261120` replaces arbitrary triangle-midpoint displacements with a measured, subtractive 45° chamfer on top-facing planar boundary edges. Include exterior, spoke-window, shaft-bore and raised upper detail rims; leave underside and separate negative pixel, wire and fixing cutters unchanged.
-- Keep the native profile/roof and convex Crystal tip fixes. Previously selected broad Rounded / All exterior modes safely resolve to this top chamfer; nonplanar sharp ridges are left unchanged until there is a rigorously tested edge algorithm.
-- New release `dev.35.25` must be reconciled after #118 exact-value `dev.35.24` before owner merge. Run exact-head static, Manifold, browser, seven-family and format-section checks; verify Cura and physical fit. Issue #119 remains open until every builder can genuinely meet touch-safe bevel expectations.
-
-## Universal edge finishing — PR #117 release candidate (20 Nov 2026)
-- The owner merged Crystal convex-tip fix #116 into `main` at `87471f9`. PR #117 now targets `main` directly, and branch `feat/universal-edge-finishing-20261120` contains that merge without changing the verified positive-geometry feature tree. The PR has no code conflicts and is awaiting exact-head CI and owner merge approval.
-- `studio-edge-finish.js` changes genuine positive mesh geometry. Native model controls save `build.edgeFinish`, Crystal controls save shape settings. The shared recipeGeometry path feeds preview and fabrication; hardware negative cutters are deliberately unchanged.
-- Edge groups are All exterior, Top, Side, Bottom; individual edge picking is not implemented. Amount is a bounded approximate mesh displacement, not a constant-radius CAD fillet or collision-certified operation.
-- Release version `v0.16.0-dev.35.23` follows the merged #116 `dev.35.22`. Require latest-head static, full Manifold fabrication, focused seven-builder Chromium/Manifold + STL/3MF and full Chromium smoke before recommending merge. Inspect Cura wall, fitting-clearance, print orientation and physical samples separately.
-- PR #118 remains an independent subsequent change to precision editors (`dev.35.24`) and must only merge after PR #117.
+## Top chamfer repair — PR #120
+- The #117 midpoint displacement left crinkles on flat Gear faces. The initial corrective draft subtracted overlapping individual wedges, which created degenerate STL triangles.
+- Walk exposed planar boundaries on the assembled stock. Inset each supported loop by the chamfer width and triangulate the cap and bevel as separate surfaces. Leave lower stock and the separate negative hardware cutters intact.
+- Native viewport geometry, STL, and 3MF use the same preparation path when the chamfer is enabled. Crystal uses Render actual model for the prepared result and retains its component-based editing view.
+- Release dev.35.25 follows merged #118 (dev.35.24) and preserves its exact numeric entry and independent reset. Check Cura layers and physical fit separately.
 
 ## Crystal tip convexity (independent draft — 20 Nov 2026)
 - PR #116 branch `fix/crystal-tip-monotone-20261120` has been reconciled with merged #114 at main `f0555d0` without changing Crystal geometry. It bounds the rounded spherical tip to actual shoulder headroom and replaces the inverted last-ring fallback.

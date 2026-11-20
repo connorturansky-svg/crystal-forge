@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
-import {finishEdgeGeometry,normaliseEdgeFinish} from '../studio-edge-finish.js';
+import {normaliseEdgeFinish} from '../studio-edge-finish.js';
 import {generators,applyBuildModules} from '../studio-catalogue.js';
-import {recipeGeometry,prepareRecipe} from '../studio-geometry.js';
+import {prepareRecipe} from '../studio-geometry.js';
 import {crystalGeometry} from '../geometry-v3.js';
 import {exportMaterialBodies} from '../studio-material-export.js';
 const wasm=await Module();wasm.setup();
@@ -13,14 +13,12 @@ assert.throws(()=>normaliseEdgeFinish({...config,amountMm:100}),/between/i);
 assert.equal(normaliseEdgeFinish().enabled,false);
 {
  const part={kind:'box',size:[30,18,24]},bevelPart={...part,edgeFinish:config};
- const plain=recipeGeometry(THREE,part),preview=recipeGeometry(THREE,bevelPart);
- assert(preview.getAttribute('position').count>plain.getAttribute('position').count,
-  'Top chamfer must add true sloped faces rather than merely changing shading');
  const baseline=prepareRecipe(THREE,wasm,{positive:[part],negative:[],secondary:[]});
  const beveled=prepareRecipe(THREE,wasm,{positive:[bevelPart],negative:[],secondary:[]});
  assert(beveled.bodies[0].volume<baseline.bodies[0].volume-1,
   'A safe top chamfer removes material rather than warping mesh vertices');
- plain.dispose();preview.dispose();
+ assert(beveled.bodies[0].mesh.triVerts.length>baseline.bodies[0].mesh.triVerts.length,
+  'Top chamfer must add true sloped faces rather than merely changing shading');
 }
 
 for(const generator of generators){
@@ -50,6 +48,35 @@ for(const generator of generators){
  const originalRecipe=gear.recipe(params);
  const untouched=prepareRecipe(THREE,wasm,applyBuildModules(originalRecipe,{},gear.capabilities));
  const modified=prepareRecipe(THREE,wasm,applyBuildModules(originalRecipe,{edgeFinish:config},gear.capabilities));
+ // Consecutive planes expose midpoint distortion even if the result is manifold.
+ const mesh=modified.bodies[0].mesh;
+ const triangles=[];
+ let chamferFaces=0;
+ for(let i=0;i<mesh.triVerts.length;i+=3){
+  const points=Array.from(mesh.triVerts.slice(i,i+3),id=>Array.from(mesh.vertProperties.slice(id*3,id*3+3)));
+  const heights=points.map(p=>p[1]);
+  assert(heights.every(y=>[0,7.5,8].some(level=>Math.abs(y-level)<1e-6)),'Gear surfaces occupy only the bottom, bevel shoulder and top planes');
+  if(Math.min(...heights)===7.5&&Math.max(...heights)===8){
+   const [a,b,c]=points.map(point=>new THREE.Vector3(...point));
+   const normal=b.sub(a).cross(c.sub(a)).normalize();
+   assert(Math.abs(normal.y-Math.SQRT1_2)<5e-5,'Every sloped face on the gear is a 45-degree top chamfer');
+   chamferFaces++;
+  }
+  triangles.push(points.flatMap(([x,y,z])=>[x,-z,y]));
+ }
+ assert(chamferFaces>0,'The model has real sloped chamfer faces');
+ const {stls:[{bytes}],threeMF}=exportMaterialBodies(modified,{name:'openwork-gear'});
+ const stl=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+ assert.equal(stl.getUint32(80,true),triangles.length);
+ const modelXML=new TextDecoder().decode(threeMF);
+ const xmlVertices=Array.from(modelXML.matchAll(/<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"\/>/g),match=>match.slice(1).map(Number));
+ const xmlTriangles=Array.from(modelXML.matchAll(/<triangle v1="(\d+)" v2="(\d+)" v3="(\d+)"\/>/g),
+  match=>match.slice(1).flatMap(index=>xmlVertices[Number(index)]));
+ assert.equal(xmlTriangles.length,triangles.length,'3MF retains every validated face');
+ for(const [i,triangle] of triangles.entries())for(const [j,value] of triangle.entries()){
+  assert(stl.getFloat32(96+50*i+4*j,true)===value,'STL matches the prepared geometry');
+  assert(xmlTriangles[i][j]===value,'3MF matches the prepared geometry');
+ }
  const body=entry=>{
   const mesh=entry.mesh;
   const m=new wasm.Mesh({numProp:3,vertProperties:new Float32Array(mesh.vertProperties),
@@ -75,6 +102,29 @@ for(const generator of generators){
    }finally{nearBore.delete();nearWindows.delete();nearOutside.delete();}
   }finally{removed.delete();}
  }finally{before.delete();after.delete();}
+}
+{
+ const gear=generators.find(g=>g.typeId==='gears');
+ const settings={...gear.defaultParameters,diameter:68.5,teeth:12,spokes:5,bore:8,
+  reliefStyle:'Hub collar',dualMaterial:true};
+ const recipe=gear.recipe(settings);
+ const baseline=prepareRecipe(THREE,wasm,applyBuildModules(recipe,{},gear.capabilities));
+ const finished=prepareRecipe(THREE,wasm,applyBuildModules(recipe,{edgeFinish:config},gear.capabilities));
+ assert.equal(finished.bodies.length,2);
+ const topMesh=finished.bodies[1].mesh;
+ const heights=Array.from(topMesh.vertProperties).filter((_,i)=>i%topMesh.numProp===1);
+ assert(heights.includes(settings.thickness+settings.reliefHeight-.5),'Raised hub has its own half-millimetre chamfer shoulder');
+ assert(finished.bodies[1].volume<baseline.bodies[1].volume-1);
+ assert.equal(exportMaterialBodies(finished,{name:'raised-hub'}).stls.length,2);
+}
+{
+ const part={kind:'box',size:[.8,4,12]};
+ const recipe={positive:[part],negative:[],secondary:[]};
+ const baseline=prepareRecipe(THREE,wasm,recipe);
+ const narrow=prepareRecipe(THREE,wasm,{...recipe,edgeFinish:config});
+ assert.deepEqual(narrow.bodies[0].mesh.vertProperties,baseline.bodies[0].mesh.vertProperties);
+ assert.deepEqual(narrow.bodies[0].mesh.triVerts,baseline.bodies[0].mesh.triVerts);
+ assert(narrow.report.warnings.some(message=>message.startsWith('No top rim')));
 }
 for(const family of ['Quartz','Shard','Blade','Cubic','Double terminated','Fantasy']){
  const crystal=crystalGeometry(THREE,{id:'tip-'+family,family,h:85,r:8},

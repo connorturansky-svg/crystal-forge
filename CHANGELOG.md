@@ -58,11 +58,16 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
-## v0.16.0-dev.35.25 — Subtractive top-rim chamfers instead of surface crinkles
-- Retire #117's triangle-midpoint warping on openwork Gear surfaces. Cut a measured 45-degree chamfer into exposed flat upper edges rather than displacing decorative surface triangles.
-- Bevel outer top rims, spoke windows, shaft-bore mouths and raised planar upper edges. Preserve flat undersides, internal bore dimensions below the lead-in and exact separate pixel, wire and mount cutters.
-- Default to a small 0.5 mm top-only chamfer. Legacy broad Rounded / All exterior choices use the safer top-only operation; nonplanar ridges remain untouched pending a verified feature-edge algorithm.
-- Add 12-tooth, five-spoke, 8 mm bore Gear regression; run full Manifold, STL/3MF and Chromium checks before deployment. Inspect Cura and a physical touch/fit print. See issue #119.
+## v0.16.0-dev.35.25 — Clean 45° top chamfers
+- Replace triangle warping with flat caps and continuous 45° chamfer faces. The default width is 0.5 mm.
+- Chamfer supported outer rims, spoke windows, bore mouths and raised planar details. Keep the bore below its lead-in and preserve underside geometry and hardware cuts.
+- Legacy finishing settings use the top chamfer. Contours that cannot accommodate the inset and nonplanar rims keep their original shape.
+- Native builders show the prepared chamfer mesh in the viewport. Crystal uses Render actual model to inspect prepared geometry.
+
+## v0.16.0-dev.35.24 — Type exact Design values and reset individual controls
+- Contextual Design sliders now allow directly typing decimals into the displayed value, with Enter to apply and Escape to cancel. Invalid numbers keep the last saved model unchanged.
+- Every compatible contextual numeric control includes an independent Reset button for its model default; it does not overwrite styling, other dimensions, pixel fittings or existing model settings.
+- Native Gear, Tile, Wave, Cap, Character and Pod precision entry, reset, undo/redo and reload have a focused Chromium regression. Crystal's contextual sliders use the same renderer, while the existing advanced numeric editor remains intact.
 
 ## v0.16.0-dev.35.23 — Shared real-geometry edge finishing
 - Finish exterior edges in all seven Design builders with Rounded and Chamfer modes, top/side/bottom groups, amount and smoothness controls.

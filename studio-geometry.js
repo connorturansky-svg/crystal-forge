@@ -1,7 +1,7 @@
 import {tileWallPosition} from './studio-native-routing.js';
 import {putSocket} from './fabrication-v1.js';
 import {socketShoulderRise} from './pixel-profiles.js';
-import {bevelTopSolid,previewTopChamfer} from './studio-top-bevel.js';
+import {bevelTopSolid} from './studio-top-bevel.js';
 import {makePixelReplicaRecipe} from './pixel-replica.js';
 /* Shared solid recipes. Preview components may overlap; only prepareRecipe
  * Boolean results may reach manufacturing exporters. Units mm; Y-up. */
@@ -46,10 +46,6 @@ export function recipeGeometry(THREE, part) {
   geometry.rotateX(-Math.PI/2);
  } else throw Error('Unsupported solid primitive: '+part.kind);
  if(part.kind==='sphere')geometry.scale(...part.radii);
- if(part.edgeFinish?.enabled){
-  const preview=previewTopChamfer(THREE,part);
-  if(preview){geometry.dispose();geometry=preview;}
- }
  if(part.rotation)geometry.rotateX(part.rotation[0]),geometry.rotateY(part.rotation[1]),geometry.rotateZ(part.rotation[2]);
  if(part.position)geometry.translate(...part.position);
  geometry.computeVertexNormals();return geometry;
@@ -192,7 +188,7 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
     return solid;
    }finally{section.delete();}
   }
-  const geometry=recipeGeometry(THREE,part.edgeFinish?.enabled?{...part,edgeFinish:undefined}:part);
+  const geometry=recipeGeometry(THREE,part);
   try{
    const positions=new Float32Array(geometry.attributes.position.array);
    const indices=geometry.index?new Uint32Array(geometry.index.array):Uint32Array.from({length:positions.length/3},(_,i)=>i);
@@ -205,13 +201,29 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
  const union=parts=>{if(!parts.length)throw Error('No model body.');let result=convert(parts[0]);for(const part of parts.slice(1))result=hold(result.add(convert(part)));return result;};
  try{
   onProgress('Joining physical bodies');let total=union(recipe.positive);
-  if(recipe.secondary?.length&&!recipe.partitioned)total=hold(total.add(union(recipe.secondary)));
+  // An inset colour layer with the same profile contributes no exterior
+  // stock. Avoid introducing extra wall vertices at its internal seam.
+  const secondaryStock=(recipe.secondary||[]).filter(part=>!recipe.positive.some(base=>
+   part.kind==='extrude'&&base.kind==='extrude'&&part.outline===base.outline&&part.holes===base.holes&&
+   !part.rotation&&!base.rotation&&part.position&&base.position&&part.position[0]===base.position[0]&&part.position[2]===base.position[2]&&
+   part.position[1]>=base.position[1]&&Math.abs(part.position[1]+part.height-base.position[1]-base.height)<1e-9));
+  if(secondaryStock.length&&!recipe.partitioned)total=hold(total.add(union(secondaryStock)));
   // Chamfer the ACTUALLY EXPOSED combined body once. Per-part beveling
   // causes overlapping decoration to leave near-zero-area STL triangles.
+  const warnings=[...(recipe.warnings||[])];
   const topFinish=recipe.edgeFinish??recipe.positive.find(part=>part.edgeFinish?.enabled)?.edgeFinish;
   if(topFinish?.enabled){
-   const finished=bevelTopSolid(wasm,total,topFinish);
-   if(finished!==total)total=hold(finished);
+   const finished=bevelTopSolid(wasm,total,topFinish,message=>warnings.push(message));
+   if(finished===total)warnings.push('No top rim could be chamfered safely at this amount. Original geometry kept.');
+   else{
+    hold(finished);
+    const touchesHardware=(recipe.negative||[]).some(part=>{
+     const cut=convert(part);
+     return hold(total.intersect(cut)).volume()-hold(finished.intersect(cut)).volume()>1e-5;
+    });
+    if(touchesHardware)warnings.push('Top chamfer skipped to preserve a hardware opening.');
+    else total=finished;
+   }
   }
   const seats=(recipe.negative||[]).filter(part=>part.kind==='pixel-seat');
   const previews=[];
@@ -346,25 +358,15 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    if((part.pixelHole||part.mountHole||part.tabHole||part.wireChannel)&&before.volume()-total.volume()<.1)
     throw Error((part.pixelHole||part.mountHole||part.tabHole||part.wireChannel)+' does not cut the model. Move it onto solid material in Build.');
   }
-  if(recipe.edgeFinish?.enabled){
-   // Small edge offsets next to neighbouring gear teeth and overlapping
-   // decorative stock can create float32-sized sliver triangles after union.
-   // Remove only sub-0.005 mm slivers before exporting STL or 3MF.
-   // Manifold guarantees displacement is bounded by the tolerance.
-   const originalVolume=total.volume();
-   const cleaned=hold(hold(total.asOriginal()).simplify(.005));
-   if(cleaned.status()!=='NoError'||cleaned.isEmpty()||
-     Math.abs(cleaned.volume()-originalVolume)>Math.max(.05,originalVolume*.0001))
-    throw Error('Edge finishing cannot preserve this thin feature. Reduce the finishing amount.');
-   total=cleaned;
-  }
   if(total.status()!=='NoError'||total.isEmpty()||total.volume()<=0)throw Error('Manufacturing produced no valid material.');
   let regions=[{role:'primary',solid:total}];
-  if(recipe.dualMaterial&&recipe.materialSplitHeight!==undefined){
+  const coincidentFace=recipe.positive.length===1&&recipe.secondary?.length===1&&!secondaryStock.length&&!recipe.partitioned?recipe.secondary[0]:null;
+  const splitHeight=recipe.materialSplitHeight??coincidentFace?.position[1];
+  if(recipe.dualMaterial&&splitHeight!==undefined){
    // Split the existing solid once so both bodies use the same interface.
    // Subtracting its Boolean intersection with a band can leave coincident shells.
-   const [above,below]=total.splitByPlane([0,1,0],recipe.materialSplitHeight);
-   const top=hold(above),bottom=hold(below),face=recipe.materialSplitRole==='top';
+   const [above,below]=total.splitByPlane([0,1,0],splitHeight);
+   const top=hold(above),bottom=hold(below),face=Boolean(coincidentFace)||recipe.materialSplitRole==='top';
    regions=[{role:'primary',solid:face?bottom:top},{role:'secondary',solid:face?top:bottom}];
   }else if(recipe.dualMaterial&&(recipe.materialBand||recipe.secondary?.length)){
    let secondary=recipe.materialBand?convert(recipe.materialBand):union(recipe.secondary);
@@ -379,7 +381,7 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    return {role,volume:solid.volume(),mesh:solid.getMesh()};
   });
   if(regions.length===2){const overlap=hold(regions[0].solid.intersect(regions[1].solid));if(overlap.volume()>1e-4)throw Error('Material regions overlap.');}
-  return {report:{ready:true,engine:'Manifold',coordinateFrame:'Y-up',warnings:recipe.warnings||[],...(recipe.nativeRouting?.ready?{nativeRouting:{mode:'serial',channels:recipe.nativeRouting.links.map(({label,measure,budget})=>({label,lengthMm:measure,limitMm:budget}))}}:{})},bodies};
+  return {report:{ready:true,engine:'Manifold',coordinateFrame:'Y-up',warnings,...(recipe.nativeRouting?.ready?{nativeRouting:{mode:'serial',channels:recipe.nativeRouting.links.map(({label,measure,budget})=>({label,lengthMm:measure,limitMm:budget}))}}:{})},bodies};
  }finally{owned.reverse().forEach(solid=>solid.delete());}
 }
 export function circle(radius,segments=64,cx=0,cz=0){return Array.from({length:segments},(_,i)=>[cx+radius*Math.cos(i/segments*Math.PI*2),cz+radius*Math.sin(i/segments*Math.PI*2)]);}
