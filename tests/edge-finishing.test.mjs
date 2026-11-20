@@ -51,6 +51,12 @@ for(const family of ['Quartz','Shard','Blade','Cubic','Double terminated','Fanta
    roundSteps:3,tipStyle:'Rounded',edgeFinishEnabled:true,edgeFinishStyle:'Rounded',
    edgeFinishScope:'Top edges',edgeFinishAmount:.4,edgeFinishSteps:2});
  const arr=new Float32Array(crystal.getAttribute('position').array);
+ let tip=-Infinity,rim=-Infinity;
+ for(let i=0;i<arr.length;i+=3){
+  if(Math.hypot(arr[i],arr[i+2])<1e-5)tip=Math.max(tip,arr[i+1]);
+  else rim=Math.max(rim,arr[i+1]);
+ }
+ assert(tip>rim+1e-4,family+' finished rounded Crystal pole must remain above its uppermost ring');
  const tri=new Uint32Array(crystal.index?.array||Array.from({length:arr.length/3},(_,i)=>i));
  const mesh=new wasm.Mesh({numProp:3,vertProperties:arr,triVerts:tri});mesh.merge();
  const solid=new wasm.Manifold(mesh);
