@@ -19,6 +19,7 @@ import {installExactValueEditors} from './exact-value-editors.js';
 import {createToolFinder} from './studio-tool-finder.js';
 import {createCuraProfile,zipProfileEntries,curaFallbackText,calculateCuraSettings} from './cura-profiles.js';
 import {StudioVault} from './studio-vault.js';
+import {profileReferencedInModel} from './studio-profile-safety.js';
 import {crystalStartingPoints,crystalStartingPointPreview} from './studio-crystal-presets.js';
 const copy=x=>JSON.parse(JSON.stringify(x));
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -39,6 +40,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  const printSizes=new WeakMap();
  state.savedProjects??=[];
  ensureSnapshotIds(state.savedProjects);
+ // Mirror the full measured library into Studio archives, without truncation.
+ state.pixelProfiles=copy(adapter.pixelFitProfiles?.()||state.pixelProfiles||[]);
  state.organisation=readOrganisation(state.organisation);
  let collectionFilter='',favouritesOnly=false,templatesOnly=false;
  function saveProjectSnapshot(){
@@ -845,7 +848,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     {pending:'Checking the new cable order and openings…'});
   }else save();
  }
- function editPixel(model,index,hole,focus,onSaved){
+ function editPixel(model,index,hole,focus,onSaved,beforeCommit){
   const holes=pixelHoles(model),previous=holes[index];
   if(!previous||model.link)return false;
   const moved=hole.x!==previous.x||hole.z!==previous.z;
@@ -858,9 +861,28 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(issue){pixelStatus(model,pixelPlacementAdvice(model,issue));return false;}
   holes[index]={...hole,checked:true};
   const save=()=>{
-   const saved=savePixels(model,holes,hole.id,focus);
-   if(saved)onSaved?.();
-   return saved;
+   let rollback;
+   try{
+    // Geometry has already been checked. Persist the calibration before the
+    // model can reference its custom ID, including on asynchronous workers.
+    rollback=beforeCommit?.();
+   }catch(error){
+    pixelStatus(model,'Measured profile not saved. '+error.message);
+    return false;
+   }
+   let saved=false;
+   try{saved=savePixels(model,holes,hole.id,focus);}
+   catch(error){
+    try{rollback?.();}catch(recoveryError){pixelStatus(model,'Profile rollback needs attention. '+recoveryError.message);}
+    pixelStatus(model,'Fitting was not committed. '+error.message);
+    return false;
+   }
+   if(!saved){
+    try{rollback?.();}catch(error){pixelStatus(model,'Profile rollback needs attention. '+error.message);}
+    return false;
+   }
+   try{onSaved?.();}catch(error){pixelStatus(model,'Fitting saved, but the profile sync needs attention: '+error.message);}
+   return true;
   };
   const routeRotation=model.build.serialRouting?.enabled&&hole.rotation!==previous.rotation;
   if(hole.socketProfile&&(moved||routeRotation||hole.socketProfile!==previous.socketProfile||
@@ -1807,9 +1829,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     if(!name){editPixel(model,selected,withMeasuredPixelFit(hole,measurement));return;}
     const calibrated=saveablePixelFit(hole,measurement,{name,id:'custom-'+newPixel().id,customProfiles:adapter.pixelFitProfiles()});
     editPixel(model,selected,calibrated.hole,undefined,()=>{
-     adapter.savePixelFitProfile(calibrated.profile);
+     adapter.notifyPixelProfileLibrary?.();
      redrawPixelEditor();pixelStatus(model,'Saved measured fit to the profile library.');
-    });
+    },()=>adapter.savePixelFitProfile(calibrated.profile));
    }catch(error){pixelStatus(model,error.message);}
   };
   bindPixelEditor(root,model,holes,profiles);
@@ -2861,5 +2883,12 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   else tab?.focus();
  }
  window.__sensoryStudio={project,registry,canOpenFeature,openFeature,get currentModel(){return active();},get mode(){return mode;},switchModel,addModel:add,showLibrary,showPrint,send,prepare,saveImmediately,fittingPointScreen,pixelMarkerScreen:id=>{const marker=pixelMarkers(active()).find(item=>item.userData.pixelId===id);return marker?projectMarker(marker):null;},get cacheSize(){return cache.size;},get metrics(){return {previewBuilds,geometries:renderer.info.memory.geometries,activeWorkers:workers.size};}};
- return {onCrystalChange:captureCrystal,backup,nativeModelBounds,planPixelProfileClearance};
+ return {onCrystalChange:captureCrystal,backup,nativeModelBounds,planPixelProfileClearance,
+  onPixelProfileLibraryChange:profiles=>{state.pixelProfiles=copy(profiles);save();},
+  pixelProfileReferenced:id=>[
+   ...project.models,
+   ...state.savedProjects.flatMap(project=>project.models),
+   ...state.library.flatMap(record=>record.versions.map(version=>version.model))
+  ].some(model=>profileReferencedInModel(model,id))
+ };
 }
