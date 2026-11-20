@@ -57,7 +57,7 @@ export function bevelTopSolid(wasm,solid,settings){
    const crossSection=new wasm.CrossSection([[
     [-sign*amount,y-2*amount],[-sign*amount,y+amount],
     [sign*2*amount,y+amount]
-   ]]);
+   ]], 'EvenOdd');
    try{
     const extension=Math.min(amount*.3,length*.22);
     const extruded=crossSection.extrude(length+2*extension);
