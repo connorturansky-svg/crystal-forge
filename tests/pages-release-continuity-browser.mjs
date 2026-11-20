@@ -4,7 +4,7 @@ import {mkdir,mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {extname,join,resolve,sep} from 'node:path';
 import {chromium} from 'playwright';
-import {preserveRelease,previousCommits} from '../scripts/retain-pages-releases.mjs';
+import {preserveRelease,previousCommits} from './helpers/retain-pages-releases.mjs';
 
 const older='a'.repeat(40),newer='b'.repeat(40);
 const workspace=await mkdtemp(join(tmpdir(),'crystal-pages-retention-'));
