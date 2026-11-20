@@ -26,7 +26,23 @@ jobs:
       - name: Verify production release
         env:
           RELEASE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
-        run: node tests/release-metadata.mjs "$RELEASE_BASE"
+        run: |
+          # A workflow/test-only change must not invent a new app release.
+          # All changes still check version, changelog and What's New parity.
+          version_required=0
+          if [[ "$RELEASE_BASE" =~ ^[a-fA-F0-9]{40}$ ]] && [[ ! "$RELEASE_BASE" =~ ^0+$ ]]; then
+            while IFS= read -r changed; do
+              case "$changed" in
+                .github/workflows/*|docs/*|tests/*|prompts/*|AGENTS.md|CONTRIBUTING.md|README.md) ;;
+                *) version_required=1; break ;;
+              esac
+            done < <(git diff --name-only "$RELEASE_BASE" HEAD)
+          fi
+          if [ "$version_required" -eq 1 ]; then
+            node tests/release-metadata.mjs "$RELEASE_BASE"
+          else
+            node tests/release-metadata.mjs
+          fi
       - uses: actions/configure-pages@v5
         if: github.event_name == 'push'
         with:
@@ -50,6 +66,45 @@ jobs:
           test -s "$release/vendor/three/build/three.module.js"
           test -s "$release/vendor/manifold/manifold.wasm"
           touch _site/.nojekyll
+      # This is the same _site that will be uploaded to Pages, not a source-tree test host.
+      # Every production push must pass a real packaged-app Chromium journey.
+      - name: Install staged-release browser dependencies
+        timeout-minutes: 6
+        run: |
+          npm_config_fetch_retries=1 npm_config_fetch_timeout=40000 \
+            npm install --prefer-offline --no-audit --no-fund --no-progress
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v chromium)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Serve staged release artifact
+        run: |
+          mkdir -p qa
+          python3 -m http.server 4339 --bind 127.0.0.1 --directory _site > qa/pages-stage.log 2>&1 &
+          for attempt in {1..20}; do
+            if curl -fsS http://127.0.0.1:4339/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat qa/pages-stage.log
+          exit 1
+      - name: Verify staged application, assets, worker and STL in Chromium
+        timeout-minutes: 7
+        env:
+          CRYSTAL_FORGE_URL: http://127.0.0.1:4339/
+          CRYSTAL_FORGE_EXPECTED_RELEASE: ${{ github.sha }}
+        run: node tests/pages-artifact-browser.mjs
+      - name: Preserve staged release smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crystal-forge-pages-staged-smoke
+          path: |
+            qa/pages-artifact-*.png
+            qa/pages-stage.log
+          if-no-files-found: ignore
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name == 'push'
         with:

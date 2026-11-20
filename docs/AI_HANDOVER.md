@@ -1,8 +1,8 @@
 # AI handover — read immediately after AGENTS.md
 
 ## Crystal tip convexity (independent draft — 20 Nov 2026)
-- New fix branch `fix/crystal-tip-monotone-20261120` starts from main `3b1d402`. It bounds the rounded spherical tip to actual shoulder headroom and replaces the inverted last-ring fallback.
-- Existing Crystal settings and geometry are retained, with new all-family mesh, Manifold and browser regressions. A green exact-head CI run and real Cura inspection are required before merge.
+- PR #116 branch `fix/crystal-tip-monotone-20261120` has been reconciled with merged #114 at main `f0555d0` without changing Crystal geometry. It bounds the rounded spherical tip to actual shoulder headroom and replaces the inverted last-ring fallback.
+- Existing Crystal settings and geometry are retained, with new all-family mesh, Manifold and browser regressions. Exact-head CI on the integrated commit is required before owner merge; Cura and tactile-print verification remain separate.
 - Follow-up universal edge finishing is separate; do not confuse it with socket Support-Free Shoulders or PR #101's tip style choices.
 
 ## Independent documentation and QA
@@ -46,6 +46,8 @@ The native planner identifies the numbered fitting that fails the diameter or ed
 Print Centre and production packs use the same bounding dimensions of the prepared mesh in its exported, Z-up frame. See [production review](PRODUCTION_REVIEW.md) for test scope, walkthrough and physical checks.
 
 ## Support-Free Pixel Shoulders
+
+Crystal's preparation previously required an entire flange-width cylinder of stock up to the highest socket roof, incorrectly rejecting valid placements under sloped/domed bases. Owner clarified the physical yellow pixel barrel — including its translucent upper part — is *not* the area requiring full-height protective stock. Draft `fix/crystal-tapered-socket-stock-envelope` now checks **only the blue curved/pointed internal cap**, leaving 2.8 mm vertical roof and a 1 mm cap-rim margin. It does not require solid stock all along the yellow insertion barrel. The preview still reports exposed pixel volume (advisory, potentially relevant to retention/strength). Regression fixtures test both curved and pointed roofs, genuinely thin roofs and cap-rims, and valid caps with exposed barrels. Exact-head CI, Cura sections and physical testing remain required before merging.
 
 Crystal uses global socket settings and native shaped underside fittings use per-fitting settings. The shared Manifold cutter raises the shaft, optional retention ridge and original roof by the taper rise. Keep the flange start plane and wire cuts fixed. The native recipe, Crystal fitting overlay and shaped test samples use the same cutter. The fabrication tests section the taper and the unchanged flange and bore in both export formats. Physical slicing and fit remain a separate check.
 
