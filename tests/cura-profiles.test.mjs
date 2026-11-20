@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import {readdirSync,readFileSync} from 'node:fs';
+import {join} from 'node:path';
 import {calculateCuraSettings,createCuraProfile,CURA_MACHINES,CURA_MATERIALS,CURA_NOZZLES,resolveCuraQualityType} from '../cura-profiles.js';
 
 function inspectZip(bytes){
@@ -72,4 +74,26 @@ assert.match(calculateCuraSettings({machine:'Ultimaker 2+',material:'PETG'}).war
 assert.equal(resolveCuraQualityType('Ultimaker 3 Extended',.4),'normal');
 assert.equal(createCuraProfile({machine:'Ultimaker 2+',nozzle:.8,qualityType:'high'}).qualityType,'high');
 assert.throws(()=>createCuraProfile({qualityType:'not-a-real-quality'}),/quality type/);
-console.log('Cura profile 14 supported machine/nozzle/material combinations, three print intentions and ZIP metadata passed');
+const curaResources=process.env.CRYSTAL_FORGE_CURA_RESOURCES;
+if(curaResources){
+ for(const machine of CURA_MACHINES){
+  const um3=machine==='Ultimaker 3 Extended';
+  const qualityFolder=join(curaResources,'quality',um3?'ultimaker3':'ultimaker2_plus');
+  const shipped=readdirSync(qualityFolder).filter(name=>name.endsWith('.inst.cfg')).map(name=>{
+   const metadata=readFileSync(join(qualityFolder,name),'utf8').split('[values]')[0];
+   return Object.fromEntries([...metadata.matchAll(/^(\w+)[ \t]*=[ \t]*(.+)$/gm)].map(([,key,value])=>[key,value.trim()]));
+  });
+  for(const nozzle of CURA_NOZZLES){
+   if(um3&&nozzle===.6)continue;
+   for(const material of CURA_MATERIALS){
+    const variant=um3?'AA '+nozzle:nozzle+' mm';
+    const qualityType=resolveCuraQualityType(machine,nozzle);
+    const exists=shipped.some(profile=>profile.variant===variant&&profile.material==='generic_'+material.toLowerCase()&&
+     profile.quality_type===qualityType);
+    assert.equal(exists,um3||material==='PLA',machine+' '+variant+' '+material+' '+qualityType+' stock Cura base');
+   }
+  }
+ }
+ console.log('Installed Cura metadata matches 10 stock bases and confirms four UM2+ PETG combinations need manual settings.');
+}
+console.log('Cura profile ZIP metadata verified across 14 generated combinations and three print intentions.');

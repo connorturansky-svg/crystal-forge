@@ -9,7 +9,7 @@ assert.equal(new Set(studioFeatures.map(feature=>feature.id)).size,studioFeature
 assert.equal(studioFeatures.filter(feature=>feature.action==='family').length,7);
 assert(studioFeatures.every(feature=>featureCategories[feature.category]&&feature.title&&feature.description));
 
-const changelog=readFileSync('CHANGELOG.md','utf8');
+const changelog=readFileSync('CHANGELOG.md','utf8').replaceAll('\r\n','\n');
 const html=readFileSync('index.html','utf8');
 const releases=[...changelog.matchAll(/^## v(\d+\.\d+\.\d+(?:-[\w.]+)?) — (.+)$/gm)];
 assert(releases.length,'Add a versioned release heading to CHANGELOG.md.');

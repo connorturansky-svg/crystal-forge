@@ -58,6 +58,16 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.19 — Render the prepared model from the viewport
+- Use Render actual model directly from the Build viewport.
+- Build shows preparation errors and can raise a Crystal base above 30 mm to fit taller pixel sockets and their roofs.
+- Open a fresh model from Library’s built-in templates, or save an edited model under a new name.
+- Crystal wire guides stay with their own builder when switching to a different model.
+- Fitting previews report how much material is missing around a shaped socket.
+- Two-material 3MF exports open as one assembly in Cura, ready to centre together.
+- Print Centre provides manual Cura settings for Ultimaker 2+ PETG jobs.
+- Wave cable grooves follow surface slopes up to 6%. Preparation identifies the controls to adjust when relief is too steep.
+
 ## v0.16.0-dev.35.18 — Studio keyboard navigation and recovery
 
 - Move between Studio tool search results with the arrow keys. Escape clears the search and returns focus to the search field.

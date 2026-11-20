@@ -20,7 +20,7 @@ export function createLightInspector({THREE, scene, camera, prepare, cancel}) {
  const prepareButton=root.querySelector('[data-prepare]'),cancelButton=root.querySelector('[data-cancel]');
  const plane=new THREE.Plane(),bounds=new THREE.Box3();
  const inspectionLayer=21;
- let group,paths,marker,report,activeModel,result,jobState,selected,cameraMask,modelType,lights=[];
+ let group,paths,marker,report,activeModel,result,jobState,jobError,selected,cameraMask,modelType,lights=[];
  const showSection=(reset=false)=>{
   const key=axis.value.toLowerCase(),min=bounds.min[key],max=bounds.max[key];
   if(reset){slider.min=min;slider.max=max;slider.step=.1;slider.value=(min+max)/2;}
@@ -94,7 +94,7 @@ export function createLightInspector({THREE, scene, camera, prepare, cancel}) {
   prepareButton.disabled=jobState==='preparing';
   cancelButton.hidden=jobState!=='preparing';
   prepareButton.textContent=result?'Refresh inspection':'Prepare inspection';
-  status.textContent=jobState==='preparing'?'Preparing the current model…':jobState==='failed'?'Preparation failed. See Print for the error and retry.':!result?'Preview only — prepare first to inspect real cuts.':report?'Prepared manufacturing mesh · '+report.mode+' · software sampling only.':modelType==='light-pods'?'Prepared Light Pod · access geometry visible. Illumination unverified.':'Prepared manufacturing mesh · verified export geometry.';
+  status.textContent=jobState==='preparing'?'Preparing the current model…':jobState==='failed'?(jobError||'Preparation failed. Retry from this panel.'):!result?'Preview only — prepare first to inspect real cuts.':report?'Prepared manufacturing mesh · '+report.mode+' · software sampling only.':modelType==='light-pods'?'Prepared Light Pod · access geometry visible. Illumination unverified.':'Prepared manufacturing mesh · verified export geometry.';
   results.replaceChildren();
   if(report){
    const key=document.createElement('p');key.textContent='Teal: sampled clear. Red: obstructed route trace.';results.append(key);
@@ -128,9 +128,9 @@ export function createLightInspector({THREE, scene, camera, prepare, cancel}) {
   if(!activeModel)return;
   sectionToggle.checked=false;root.open=true;draw();
   if(!result&&jobState!=='preparing')prepare(activeModel);
- },update(model,nextResult,nextState,type){
-  if(model===activeModel&&nextResult===result&&nextState===jobState)return;
+ },update(model,nextResult,nextState,type,nextError){
+  if(model===activeModel&&nextResult===result&&nextState===jobState&&nextError===jobError)return;
   if(model!==activeModel){root.open=false;selected=null;axis.value='X';sectionToggle.checked=true;}
-  activeModel=model;result=nextResult;jobState=nextState;modelType=type;root.hidden=!model;render();
+  activeModel=model;result=nextResult;jobState=nextState;jobError=nextError;modelType=type;root.hidden=!model;render();
  }};
 }

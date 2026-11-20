@@ -294,3 +294,35 @@
 - The full unified Chromium suite passed real overlapping-drag rejection on backed Character, Light Pod and stationary Rotary Cap. FIT-01 is verified. The owner requested an experiment checkpoint. Freeze further feature expansion until a specific draft head has required CI evidence and a current handoff.
 
 - After #102 merged, PR #103 added per-material STL dimensions (`7894c48`), Crystal endpoint dragging (`f368e7a`) and advisory cable lengths (`b0045b2`). Local Chromium confirmed both revised downloads match the prepared bounds and toggling strict lengths invalidates the older files.
+
+- Cura Desktop 5.13 imported the UM3 Extended AA 0.8 mm PLA profile (e601bdc). Offline CuraEngine 5.13 then sliced both decoded 3MF bodies with independent tools across 55 layers. Desktop assignment and physical validation remain open.
+
+- FIT-02 catalogue test passed for perpendicular Tile wall stock. An 18 mm compact fitting has the correct production cutter and rejects a colliding mounting cut. The full gumdrop on the same wall reports missing stock and preparation refuses it.
+
+- Chromium confirmed same-point Tile wall rejection for the full gumdrop and acceptance for the calibrated 18 mm compact profile, with read-only fitting diagnostics and rejection rollback.
+
+- Full unified Chromium suite passed after replacing the exact screen-derived height with a check that the accepted hit is inside the wall. Face normal, profile depth, clearance, measured stock and rejection rollback remain exact checks.
+
+- Full Manifold catalogue suite passed. Independent STL and 3MF probes measured an open 18 mm side socket, 5.15 mm calibrated bore and over 2.8 mm of material behind it.
+
+- Reconciled the handover and status command against GitHub. #102, #103 and #104 are merged. The local candidate awaits a confirmed PR destination. The status command reports 19 verified and five partial acceptance rows.
+
+- FIT-02 full fabrication suite passed for an 11 mm calibrated sloped Wave socket. Preview cutter and manufactured solid agree, and both export formats retain a 5.2 mm bore and more than 2.8 mm of stock behind the seat.
+
+- Full unified Chromium suite passed the calibrated sloped Wave fitting. Real placement retained the 11 mm profile, 0.2 mm clearance and nonvertical normal. The physical preview reported sufficient stock and did not change the saved model.
+
+- FIT-03 full fabrication suite passed a curved Wave cable route with 8 mm body profiles. Both exports retain 5.8 mm channel width, 1.95 mm depth and open inlet and outlet.
+
+- Full unified Chromium suite passed the measured-width Wave route from placement through production download. Both actual files retained 5.8 × 1.95 mm clearance across seven sections and open inlet/outlet.
+
+- Raised Wave routing regression failed under the old slope gates. Bounded slopes up to 6% now prepare an upward-open path. Both complete exports pass seven section checks and both edge openings. Static and Manifold catalogue suites passed.
+
+- Full unified Chromium passed the 6 mm raised Wave fixture through placement, cable routing, save and reload, and STL/3MF download. Both files retain a 3.2 × 1.8 mm channel and clear exterior openings.
+
+- Full unified Chromium passed a Wave relief edit beyond routing limits. It stales both previously prepared downloads and rejects preparation with an actionable message. Undo restores the accepted relief and both export buttons after preparation.
+
+- Updated the Wave route slope diagnostic. Print Centre reports the 6% limit and names Wave height and Wave count as recovery controls. The full Manifold catalogue and unified Chromium suites passed.
+
+- Full unified Chromium passed the prepared Pod fit edit, undo and redo. Each step blocks old downloads until fresh preparation. Both redone meshes measure the 5.60 mm bore.
+
+- Assembled a local candidate on merged main eea22c6. Preserved both sets of release notes and assigned the WT-021 changes version 0.16.0-dev.35.19. Release metadata and static tests passed. Full fabrication passed on the original follow-up. Combined browser and fabrication runs started.

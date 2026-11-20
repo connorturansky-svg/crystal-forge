@@ -215,6 +215,7 @@ for(const id of ['knob','selector']){
 }
 
 
+let perpendicularCompactSeat;
 // FIT-02: Six native families share the production Manifold cutter,
 // its physical positive profile and the same placement transform as Print.
 {
@@ -230,6 +231,19 @@ for(const id of ['knob','selector']){
    // A smaller REAL profile fits this thinner tile. A 22 mm gumdrop
    // must be rejected without additional material and is not pretended to fit.
    profile:{...gumdrop,bodyHeight:14,capHeight:2,flangeHeight:2,retentionLip:0},face:null},
+  {type:'Tile vertical face',family:tileGenerator,params:{pattern:'terraces',outline:'square',
+   width:90,depth:90,thickness:20,relief:2,dualMaterial:false},
+   profile:compact,z:45,face:{y:10,normal:[0,0,1]},cutPosition:[0,10,41]},
+  {type:'Tile perpendicular face, extended profile',family:tileGenerator,
+   params:{pattern:'terraces',outline:'square',width:90,depth:90,
+   thickness:20,relief:2,dualMaterial:false},
+   profile:{...compact,bodyHeight:18},measureExport:true,x:45,face:{y:10,normal:[1,0,0]},
+   cutPosition:[41,10,0]},
+  {type:'Tile perpendicular face, full gumdrop',family:tileGenerator,
+   params:{pattern:'terraces',outline:'square',width:90,depth:90,
+   thickness:20,relief:2,dualMaterial:false},
+   profile:{...gumdrop,retentionLip:0},x:45,face:{y:10,normal:[1,0,0]},
+   rejectStock:true},
   ...[
    [waveGenerator,{flowStyle:'Parallel'}],
    [capGenerator,{controlStyle:'Pushbutton',shaft:0}],
@@ -241,19 +255,33 @@ for(const id of ['knob','selector']){
  for(const fixture of configs){
   const source=fixture.family.recipe(fixture.params);
   assert.equal(source.negative?.length||0,0,fixture.type+' test needs isolated stock');
-  const hole={id:'physical-preview',x:0,z:0,diameter:fixture.profile.bodyDiameter,clearance:.15,
+  const hole={id:'physical-preview',x:fixture.x??0,z:fixture.z??0,diameter:fixture.profile.bodyDiameter,clearance:.15,
    checked:true,rotation:17,entryFace:fixture.face?'top':'underside',profileId:'gumdrop',
    socketProfile:fixture.profile,...(fixture.face?{surface:fixture.face}:{})};
   const recipe=applyBuildModules(source,{pixelBuilderVersion:1,pixelHoles:[hole],
    pixelBacking:fixture.pixelBacking,pixelBackingThickness:10},fixture.family.capabilities);
+  if(fixture.measureExport)perpendicularCompactSeat=recipe;
   const previews=nativeFittingPreviews(THREE,wasm,recipe);
   assert.equal(previews.length,1,fixture.type+' displays one real profile fitting');
   const preview=previews[0];
   assert.equal(preview.pixelId,'physical-preview');
   assert.equal(preview.insertionDepth,fixture.profile.bodyHeight);
+  if(fixture.rejectStock){
+   assert(preview.missingStockVolume>1,fixture.type+' measures missing surrounding stock');
+   assert(preview.warnings.some(warning=>warning.includes('continuous stock on its installation face')));
+   assert.throws(()=>prepareRecipe(THREE,wasm,recipe),/continuous stock on its installation face/);
+   continue;
+  }
   assert.deepEqual(preview.warnings,[]);
   assert.equal(preview.wireOverlap,0);
-  const cutPosition=[0,fixture.face?fixture.face.y-4:4,0];
+  assert(preview.missingStockVolume<=.05,fixture.type+' has the required surrounding stock');
+  if(!fixture.face){
+   const thin={...recipe,positive:[{kind:'box',size:[40,2,40],position:[0,1,0]}],secondary:[]};
+   const [thinPreview]=nativeFittingPreviews(THREE,wasm,thin);
+   assert(thinPreview.missingStockVolume>1,fixture.type+' measures missing stock on a thin body');
+   assert.throws(()=>prepareRecipe(THREE,wasm,thin),/continuous underside stock/);
+  }
+  const cutPosition=fixture.cutPosition??[0,fixture.face?fixture.face.y-4:4,0];
   const routed={...recipe,negative:[...recipe.negative,{kind:'box',size:[4,4,4],position:cutPosition,wireChannel:'test channel'}]};
   assert(nativeFittingPreviews(THREE,wasm,routed)[0].wireOverlap>1);
   const conflicted={...recipe,negative:[...recipe.negative,{kind:'box',size:[4,4,4],position:cutPosition,mountHole:'test adjacent cut'}]};
@@ -276,7 +304,7 @@ for(const id of ['knob','selector']){
     fixture.type+' actual production socket must enclose the full positive pixel; mismatch volume '+missingEnvelope.volume().toFixed(5)+' mm³, positive '+positiveSolid.volume().toFixed(5)+' mm³, cutter '+negativeSolid.volume().toFixed(5)+' mm³');
   }finally{missingEnvelope.delete();expected.delete();positiveSolid.delete();negativeSolid.delete();blankSolid.delete();}
  }
- console.log('FIT-02 six native preview fixtures: real positive envelope and negative cutter match manufactured geometry');
+ console.log('FIT-02 native preview fixtures: real positive envelope and negative cutter match manufactured geometry');
 }
 const checked=(id,x,z=0,rotation=0)=>({id,x,z,rotation,checked:true,diameter:5,clearance:.3,profileId:'seed'});
 const serial={version:1,enabled:true,pitch:50,tail:200};
@@ -442,11 +470,49 @@ disposeGroup(waveSurfaceMesh);
 assert(Math.abs(gentleSeat.surface.normal[0])>.005,'The seat follows the actual sloped face');
 const waveSeatRecipe=hole=>applyBuildModules(gentleWave,{pixelBuilderVersion:1,pixelHoles:[hole]},waveGenerator.capabilities);
 const curvedSeatOnly=waveSeatRecipe(gentleSeat);
-assert.throws(()=>prepareRecipe(THREE,wasm,waveSeatRecipe(convexSeat)),/needs continuous stock on its installation face/);
+const calibratedWaveSeat={...gentleSeat,clearance:.2,
+ socketProfile:{...gentleSeat.socketProfile,bodyHeight:11}};
+const calibratedWaveRecipe=waveSeatRecipe(calibratedWaveSeat);
+const convexSeatRecipe=waveSeatRecipe(convexSeat);
+assert.throws(()=>prepareRecipe(THREE,wasm,convexSeatRecipe),/needs continuous stock on its installation face/);
+{
+ const [preview]=nativeFittingPreviews(THREE,wasm,curvedSeatOnly);
+ const [calibrated]=nativeFittingPreviews(THREE,wasm,calibratedWaveRecipe);
+ assert.equal(calibrated.insertionDepth,11);
+ assert(calibrated.missingStockVolume<=.05&&calibrated.warnings.length===0);
+ const [rejected]=nativeFittingPreviews(THREE,wasm,convexSeatRecipe);
+ assert(preview.missingStockVolume<=.05&&preview.warnings.length===0);
+ assert(rejected.missingStockVolume>.05);
+ assert(rejected.warnings.some(message=>message.includes('continuous stock on its installation face')));
+ const owned=[];
+ const hold=solid=>{owned.push(solid);return solid;};
+ try{
+  const {Manifold}=wasm;
+  const blank=hold(new Manifold(prepareRecipe(THREE,wasm,gentleWave).bodies[0].mesh));
+  for(const [recipe,inspection] of [[curvedSeatOnly,preview],[calibratedWaveRecipe,calibrated]]){
+   const printed=hold(new Manifold(prepareRecipe(THREE,wasm,recipe).bodies[0].mesh));
+   const cutter=hold(new Manifold(inspection.negative));
+   const housing=hold(new Manifold(inspection.positive));
+   const expected=hold(blank.subtract(cutter));
+   assert(hold(expected.subtract(printed)).volume()+hold(printed.subtract(expected)).volume()<.02,
+    'Sloped Wave preview uses the same cutter pose as the prepared mesh');
+   assert(hold(housing.subtract(cutter)).volume()<.02,'The sloped cutter encloses the measured housing');
+  }
+ }finally{
+  for(const solid of owned.reverse())solid.delete();
+ }
+}
 const waveRouteBuild={pixelBuilderVersion:1,pixelHoles:[gentleSeat,secondWaveSeat],serialRouting:serial};
 const curvedWaveRoute=applyBuildModules(gentleWave,waveRouteBuild,waveGenerator.capabilities);
 assert.equal(curvedWaveRoute.nativeRouting.face,'wave');
 assert.equal(prepareRecipe(THREE,wasm,curvedWaveRoute).bodies.length,1);
+const measuredWaveRoute=applyBuildModules(gentleWave,{
+ ...waveRouteBuild,
+ pixelHoles:waveRouteBuild.pixelHoles.map(hole=>({...hole,diameter:8,
+  socketProfile:{...hole.socketProfile,bodyDiameter:8,flangeDiameter:8,wireWidth:5.8,wireDepth:1.95}}))
+},waveGenerator.capabilities);
+assert.equal(measuredWaveRoute.nativeRouting.face,'wave');
+assert.equal(measuredWaveRoute.nativeRouting.channelWidthMm,5.8);
 const waveConflict={...curvedWaveRoute,negative:[...curvedWaveRoute.negative,{kind:'box',size:[2,1,.3],position:[0,15,1.8]}]};
 assert.throws(()=>prepareRecipe(THREE,wasm,waveConflict),/intersects another cut beside the channel/);
 assert.throws(()=>applyBuildModules(gentleWave,{...waveRouteBuild,serialRouting:{...serial,vaulted:true}}),/Turn off the vaulted option for a Wave route/);
@@ -468,8 +534,24 @@ assert.throws(()=>applyBuildModules(biaxialStock,{...waveRouteBuild,pixelHoles:b
  serialRouting:{...biaxialPins,minBendRadius:60}},waveGenerator.capabilities),/Chosen IN edge/);
 const biaxialSections=[-60,-30,0,60].map(x=>[x,waveAt(x,-18).point.y]);
 disposeGroup(biaxialMesh);
+const raisedWaveStock=waveGenerator.recipe({
+ width:160,depth:100,thickness:15,amplitude:6,frequency:.5,variation:0,direction:0
+});
+const raisedWaveMesh=previewRecipe(THREE,raisedWaveStock);
+const raisedWaveHoles=[-40,-20].map((x,index)=>{
+ const {point,face}=new THREE.Raycaster(new THREE.Vector3(x,30,0),new THREE.Vector3(0,-1,0))
+  .intersectObject(raisedWaveMesh.children[0])[0];
+ return {...waveRouteBuild.pixelHoles[index],surface:{y:point.y,normal:face.normal.toArray()}};
+});
+disposeGroup(raisedWaveMesh);
+assert(raisedWaveHoles.some(hole=>hole.surface.normal[1]<.999));
+const raisedWaveRoute=applyBuildModules(raisedWaveStock,{
+ ...waveRouteBuild,pixelHoles:raisedWaveHoles
+},waveGenerator.capabilities);
+assert.equal(raisedWaveRoute.nativeRouting.face,'wave');
+assert.equal(prepareRecipe(THREE,wasm,raisedWaveRoute).bodies.length,1);
 const steepWave=waveGenerator.recipe({width:160,depth:100,thickness:15,amplitude:12,frequency:2,variation:.1,direction:12});
-assert.throws(()=>applyBuildModules(steepWave,{...waveRouteBuild,pixelHoles:biaxialHoles},waveGenerator.capabilities),/same supported face/);
+assert.throws(()=>applyBuildModules(steepWave,{...waveRouteBuild,pixelHoles:biaxialHoles},waveGenerator.capabilities),/Wave relief is too steep.*6% or less/);
 const flatBuild={...curveBuild,pixelHoles:[checked('left',-15),checked('right',15)],serialRouting:serial};
 const automatic=applyBuildModules(flatStock,flatBuild).nativeRouting;
 const pinnedBuild={...flatBuild,serialRouting:{...serial,inEdgePercent:automatic.edgePositions.in-2,outEdgePercent:automatic.edgePositions.out+2}};
@@ -507,6 +589,7 @@ const familyShoulderFixtures=new Map();
 const familyRetainedConeFixtures=new Map();
 const familyWireFitFixtures=new Map();
 const familyWideRouteFixtures=new Map();
+const familyBentRouteFixtures=new Map();
 const familyTabFixtures=new Map();
 const familyPocketFixtures=new Map();
 for(const [family,parameters] of [
@@ -557,6 +640,14 @@ for(const [family,parameters] of [
   const recipe=applyBuildModules(source,{pixelBuilderVersion:1,pixelBacking:true,pixelBackingThickness:10,
    pixelHoles:[-15,15].map((x,i)=>({...checked('wire-fixture-'+i,x),entryFace:'underside',socketProfile:profile})),
    serialRouting:{...serial,channelWidthMm:width}},family.capabilities);
+  if(width===3.2){
+   const {edgePositions}=recipe.nativeRouting;
+   const build={pixelBuilderVersion:1,pixelBacking:true,pixelBackingThickness:10,
+    pixelHoles:[-15,15].map((x,i)=>({...checked('bent-route-'+i,x),entryFace:'underside',socketProfile:profile})),
+    serialRouting:{...serial,inEdgePercent:edgePositions.in-1,outEdgePercent:edgePositions.out+1}};
+   const bent=applyBuildModules(source,build,family.capabilities);
+   familyBentRouteFixtures.set(bent,family.typeId);
+  }
   familyWireFitFixtures.set(recipe,{name:family.typeId,width});
  }
  const variants=[
@@ -626,7 +717,7 @@ for(const [fixture] of fixingFixtures){
  const interrupted={...fixture,negative:[...fixture.negative,{kind:'box',size:[1,2,2],position:[18.5,1,0]}]};
  assert.throws(()=>prepareRecipe(THREE,wasm,interrupted),/too close to another cut/);
 }
-for(const fixture of [...fixingFixtures.keys(),...familyConeFixtures.keys(),...familyShoulderFixtures.keys(),...familyRetainedConeFixtures.keys(),...familyWireFitFixtures.keys(),...familyWideRouteFixtures.keys(),conicalRecipe,conicalCoupon,...familyTabFixtures.keys(),...familyPocketFixtures.keys(),tabRecessRecipe,topRecessRecipe,wideVault,vaultedStock,pinnedVault,topRouted,sideRouted,rearRouted,...perpendicularRoutes,curvedSeatOnly,curvedWaveRoute,biaxialRoute,biaxialPinned,safelyMountedRoute,measuredReplica,...dimensionFixtures.keys()]){
+for(const fixture of [...fixingFixtures.keys(),...familyConeFixtures.keys(),...familyShoulderFixtures.keys(),...familyRetainedConeFixtures.keys(),...familyWireFitFixtures.keys(),...familyWideRouteFixtures.keys(),...familyBentRouteFixtures.keys(),conicalRecipe,conicalCoupon,...familyTabFixtures.keys(),...familyPocketFixtures.keys(),tabRecessRecipe,topRecessRecipe,wideVault,vaultedStock,pinnedVault,topRouted,sideRouted,rearRouted,...perpendicularRoutes,perpendicularCompactSeat,curvedSeatOnly,calibratedWaveRecipe,curvedWaveRoute,measuredWaveRoute,raisedWaveRoute,biaxialRoute,biaxialPinned,safelyMountedRoute,measuredReplica,...dimensionFixtures.keys()]){
  const vaultedNativeFiles=exportMaterialBodies(prepareRecipe(THREE,wasm,fixture));
  const stl=Uint8Array.from(vaultedNativeFiles.stls[0].bytes);
  const stlGeometry=new STLLoader().parse(stl.buffer);
@@ -739,6 +830,20 @@ for(const fixture of [...fixingFixtures.keys(),...familyConeFixtures.keys(),...f
    const portAllowance=Math.abs(links[0].path.at(-1).x+15)+Math.abs(links[2].path[0].x-15);
    assert(Math.abs(links.reduce((sum,link)=>sum+link.measure,0)+portAllowance-(outX-inX))<.01,
     format+' '+name+' published length and port allowances match the open span');
+  }else if(familyBentRouteFixtures.has(fixture)){
+   const name=familyBentRouteFixtures.get(fixture),links=fixture.nativeRouting.links;
+   assert.equal(links.length,3);
+   assert(Math.abs(links[0].path[0].z)>.5&&Math.abs(links[2].path.at(-1).z)>.5);
+   const seats=[{x:-15,z:0},{x:15,z:0}];
+   for(const [i,link] of links.entries()){
+    const points=[...link.path];
+    if(i>0)points.unshift(seats[i-1]);
+    if(i<seats.length)points.push(seats[i]);
+    for(let j=1;j<points.length;j++)
+     assertOpenRun(points[j-1],points[j],.55,name+' '+link.label+' segment '+j);
+   }
+   for(const [edge,direction] of [[links[0].path[0],-1],[links[2].path.at(-1),1]])
+    assertOpenRun({x:edge.x+direction*.2,z:edge.z},{x:edge.x-direction*.2,z:edge.z},.55,name+' exterior opening');
   }else if(familyWireFitFixtures.has(fixture)){
    const {name,width}=familyWireFitFixtures.get(fixture);
    const span=(x,height)=>{
@@ -823,16 +928,25 @@ for(const fixture of [...fixingFixtures.keys(),...familyConeFixtures.keys(),...f
    assert(left&&right&&Math.abs(left.distanceTo(right)-3.4)<.005,format+' calibrated mounting-hole diameter');
    const mountWall=hit([0,-12,1],[0,1,0]),routeWall=hit([0,0,1],[0,-1,0]);
    assert(mountWall&&routeWall&&Math.abs(routeWall.y-mountWall.y-8.7)<.01,format+' continuous material between mounting hole and route');
-  }else if(fixture===curvedSeatOnly){
-   const point=new THREE.Vector3(gentleSeat.x,-gentleSeat.z,gentleSeat.surface.y);
-   const [nx,ny,nz]=gentleSeat.surface.normal;
+  }else if(fixture===perpendicularCompactSeat){
+   const apex=hit([46,0,10],[-1,0,0]);
+   assert(apex&&Math.abs(apex.x-27)<.01,format+' perpendicular socket is open and 18 mm deep');
+   const left=hit([36,0,10],[0,-1,0]),right=hit([36,0,10],[0,1,0]);
+   assert(left&&right&&Math.abs(left.distanceTo(right)-5.15)<.02,
+    format+' perpendicular socket preserves the calibrated bore');
+   const rear=hit([-46,0,10],[1,0,0]);
+   assert(rear&&apex.x-rear.x>2.8,format+' continuous stock behind the perpendicular seat');
+  }else if(fixture===curvedSeatOnly||fixture===calibratedWaveRecipe){
+   const seat=fixture===curvedSeatOnly?gentleSeat:calibratedWaveSeat;
+   const point=new THREE.Vector3(seat.x,-seat.z,seat.surface.y);
+   const [nx,ny,nz]=seat.surface.normal;
    const axis=new THREE.Vector3(nx,-nz,ny);
    const opening=point.clone().addScaledVector(axis,1);
    const apex=hit(opening.toArray(),axis.clone().negate().toArray());
-   assert(apex&&Math.abs(point.distanceTo(apex)-9)<.01,format+' curved face socket depth follows the installed axis');
+   assert(apex&&Math.abs(point.distanceTo(apex)-seat.socketProfile.bodyHeight)<.01,format+' curved face socket depth follows the installed axis');
    const centre=point.clone().addScaledVector(axis,-4).toArray();
    const left=hit(centre,[0,-1,0]),right=hit(centre,[0,1,0]);
-   assert(left&&right&&Math.abs(left.distanceTo(right)-5.3)<.02,format+' curved seat diametral clearance');
+   assert(left&&right&&Math.abs(left.distanceTo(right)-seat.diameter-seat.clearance)<.02,format+' curved seat diametral clearance');
    const rear=hit([apex.x,apex.y,-1],[0,0,1]);
    assert(rear&&apex.z-rear.z>2.8,format+' leaves more than 2.8 mm of actual material behind the seat');
   }else if(fixture===biaxialPinned){
@@ -872,13 +986,28 @@ for(const fixture of [...fixingFixtures.keys(),...familyConeFixtures.keys(),...f
     assert(floor&&Math.abs(floor.z-(height-1.8))<.02,format+' biaxial route follows actual mesh height');
    }
    assert.equal(hit([-81,18,14.5],[1,0,0]),undefined,format+' biaxial route has two clear exterior apertures');
-  }else if(fixture===curvedWaveRoute){
+  }else if(fixture===raisedWaveRoute){
+   for(const x of [-79.99,-60,-30,0,30,60,79.99]){
+    const shoulder=hit([x,3,30],[0,0,-1]),floor=hit([x,0,30],[0,0,-1]);
+    assert(shoulder&&floor&&Math.abs(shoulder.z-floor.z-1.8)<.025,
+     format+' raised Wave channel follows the surface at '+x);
+    const origin=[x,0,floor.z+.85];
+    const left=hit(origin,[0,-1,0]),right=hit(origin,[0,1,0]);
+    assert(left&&right&&Math.abs(right.y-left.y-3.2)<.025,format+' raised Wave channel width at '+x);
+   }
+   for(const sign of [-1,1]){
+    const floor=hit([sign*79.99,0,30],[0,0,-1]);
+    const edge=hit([sign*81,0,floor.z+.85],[-sign,0,0]);
+    assert(!edge||Math.abs(edge.x-sign*80)>.1,format+' raised Wave exterior aperture is open');
+   }
+  }else if(fixture===curvedWaveRoute||fixture===measuredWaveRoute){
+   const [width,depth]=fixture===measuredWaveRoute?[5.8,1.95]:[3.2,1.8];
    for(const x of [-79,-60,-30,0,30,60,79]){
     const origin=[x,0,14.8];
     const left=hit(origin,[0,-1,0]),right=hit(origin,[0,1,0]);
-    assert(left&&right&&Math.abs(right.y-left.y-3.2)<.01,format+' Wave route cross-section width at '+x);
-    const surface=hit([x,3,30],[0,0,-1]),floor=hit([x,0,30],[0,0,-1]);
-    assert(surface&&floor&&Math.abs(surface.z-floor.z-1.8)<.015,format+' Wave route follows actual surface height at '+x);
+    assert(left&&right&&Math.abs(right.y-left.y-width)<.01,format+' Wave route cross-section width at '+x);
+    const surface=hit([x,4,30],[0,0,-1]),floor=hit([x,0,30],[0,0,-1]);
+    assert(surface&&floor&&Math.abs(surface.z-floor.z-depth)<.015,format+' Wave route follows actual surface height at '+x);
     assert(floor.z>2,format+' Wave route leaves material behind the groove');
    }
    assert.equal(hit([-81,0,14.8],[1,0,0]),undefined,format+' continuous Wave route through both exterior apertures');
@@ -1026,6 +1155,22 @@ for(const fixture of [...fixingFixtures.keys(),...familyConeFixtures.keys(),...f
   material.dispose();
  }
  if(fixture===measuredReplica||dimensionFixtures.has(fixture)||fixingFixtures.has(fixture))continue;
+ if(fixture===perpendicularCompactSeat){
+  console.log('WT-021 perpendicular Tile socket STL/3MF: 18 mm depth, 5.15 mm bore');
+  continue;
+ }
+ if(fixture===raisedWaveRoute){
+  console.log('WT-021 raised Wave STL/3MF: open 3.2 mm wide by 1.8 mm deep surface channel');
+  continue;
+ }
+ if(fixture===measuredWaveRoute){
+  console.log('WT-021 measured curved Wave cable passage STL/3MF: 5.8 mm width, 1.95 mm depth and open edges');
+  continue;
+ }
+ if(fixture===calibratedWaveRecipe){
+  console.log('WT-021 calibrated Wave socket STL/3MF: 11 mm depth, 5.2 mm bore');
+  continue;
+ }
  if(fixture===curvedSeatOnly){
   console.log('WT-021 curved Wave seat STL/3MF: 9 mm depth, 5.3 mm diameter, measured stock behind the seat');
   continue;

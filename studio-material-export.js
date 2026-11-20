@@ -75,11 +75,12 @@ export function exportMaterialBodies(prepared, {name='sensory-model', colours=['
   const triangles=Array.from({length:t.length/3},(_,j)=>'<triangle v1="'+t[j*3]+'" v2="'+t[j*3+1]+'" v3="'+t[j*3+2]+'"/>').join('');
   return '<object id="'+(i+2)+'" name="'+escapeXML(body.role)+'" type="model" pid="1" pindex="'+i+'"><mesh><vertices>'+vertices+'</vertices><triangles>'+triangles+'</triangles></mesh></object>';
  }).join('');
+ const assembly=bodies.length===2?'<object id="4" type="model"><components><component objectid="2"/><component objectid="3"/></components></object>':'';
  const model='<?xml version="1.0" encoding="UTF-8"?>'+
   '<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">'+
   '<metadata name="Title">'+escapeXML(name)+'</metadata><metadata name="Description">Prepared material bodies. Confirm extruder assignment in Cura.</metadata>'+
   '<resources><basematerials id="1">'+bodies.map((b,i)=>'<base name="'+b.role+'" displaycolor="'+colours[i]+'"/>').join('')+
-  '</basematerials>'+resources+'</resources><build>'+bodies.map((_,i)=>'<item objectid="'+(i+2)+'" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>').join('')+'</build></model>';
+  '</basematerials>'+resources+assembly+'</resources><build><item objectid="'+(assembly?4:2)+'" transform="1 0 0 0 1 0 0 0 1 0 0 0"/></build></model>';
  const assignments={schemaVersion:1,coordinateFrame:'Z-up',unit:'mm',
   materials:bodies.map((b,i)=>({objectId:i+2,role:b.role,colour:colours[i],requestedExtruder:extruders[b.role]})),
   curaExtruderAssignmentVerified:false};

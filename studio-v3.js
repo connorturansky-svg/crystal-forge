@@ -30,7 +30,7 @@ import {GitHubVault,captureVault,mergeVault} from './github-vault.js';
 import {manufacturingFingerprint} from './manufacturing-fingerprint.js';
 import {saveNamedProject,listSavedProjects,loadNamedProject,deleteNamedProject} from './project-library.js';
 import {installTooltips,describeControl} from './tooltips.js';
-import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile,resolveSocketProfile} from './pixel-profiles.js';
+import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile,resolveSocketProfile,socketShoulderRise} from './pixel-profiles.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
 import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
 import {adviseCuraForModel} from './cura-model-advisor.js';
@@ -196,6 +196,15 @@ function syncFitCalibration(){
  $('fitOverrideToolBtn').hidden=!active;$('resetFitOverrideBtn').hidden=!active;
  if(active)$('fitOverrideToolBtn').textContent='⚙ Fit '+(Number(s.pixelFit)>=0?'+':'')+Number(s.pixelFit).toFixed(2)+' mm';
 }
+function requiredPixelBaseHeight(){
+ const profiles=s.pixelPlacement==='manual'&&s.manualPixelHoles?.length?
+  s.manualPixelHoles.map(pixel=>resolveSocketProfile(s,pixel)):[resolvePixelProfile(s)];
+ const angle=Number(s.socketShoulderAngle);
+ const shoulderAngle=s.socketSupportFreeShoulders?(angle>=30&&angle<=60?angle:45):undefined;
+ const depth=Math.max(...profiles.map(profile=>profile.bodyHeight+2.8+
+  (s.socketConical?Math.max(.8,profile.boreDiameter/2):0)+socketShoulderRise(profile,shoulderAngle)));
+ return Math.ceil(depth*2)/2;
+}
 function syncForm(){
  refreshPixelProfileOptions();
  if(s.lightingMode==='single')s.pixelCount=1;
@@ -223,7 +232,7 @@ function syncForm(){
  if($('wireSpacingPreset'))$('wireSpacingPreset').value=[25,50,100].includes(Number(s.pixelStringSpacing))?String(s.pixelStringSpacing):'custom';
  $('actualHole').textContent=resolvePixelProfile(s).boreDiameter.toFixed(2)+' mm';
  syncFitCalibration();
- $('pixelBaseDepthHint').textContent=s.baseHeight>=resolvePixelProfile(s).bodyHeight+1?'Base accommodates selected nominal LED depth.':'Base is shallower than selected LED housing. Check fit.';
+ $('pixelBaseDepthHint').textContent='Allow at least '+requiredPixelBaseHeight()+' mm at the socket for the selected housing and roof. Preparation checks the surrounding stock.';
  $('projectName').textContent=s.title;
  syncShapeControls();
  $('edgeTabSettings').hidden=s.mount!=='Edge fixing tabs';
@@ -1046,7 +1055,13 @@ document.querySelectorAll('[data-look]').forEach(b=>b.onclick=()=>{
 });
 $('gridBtn').onclick=()=>{grid.visible=!grid.visible;axes.visible=grid.visible; if(s.floatView&&grid.visible){s.floatView=false;$('floatBtn').classList.remove('active');persist()}};
 $('floatBtn').onclick=()=>setFloating(!s.floatView);
-$('fitPixelBaseBtn').onclick=()=>{s.baseHeight=25;syncForm();rebuild();snapshot()};
+$('fitPixelBaseBtn').onclick=()=>{
+ const limit=Number(document.querySelector('[data-state=baseHeight]').max);
+ const required=requiredPixelBaseHeight();
+ if(required>limit){setStatus('This socket needs '+required+' mm. Choose a shorter profile or reduce the socket roof height.');return;}
+ s.baseHeight=Math.max(s.baseHeight,required);
+ rebuild();snapshot();
+};
 $('studioLightBtn').onclick=()=>{s.evenLighting=!s.evenLighting;refreshStudioLighting();persist()};
 $('centreViewBtn').onclick=()=>{
  centreOrbitOnModel();

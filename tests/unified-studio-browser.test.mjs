@@ -711,7 +711,7 @@ try{
   }
   assert.deepEqual(await readBounds(boundsJob.getByText(/^Prepared X/)),updatedBounds);
  }
- async function finishNativeJourney(name,{inspectCurvedRoute=false}={}){
+ async function finishNativeJourney(name,{inspectCurvedRoute=false,inspectSideRoute=false,undersideProbeHeight}={}){
 
   const {parameters,build}=await page.evaluate(()=>window.__sensoryStudio.currentModel);
   const title='WT-021 '+name+' manufacturing journey';
@@ -732,10 +732,13 @@ try{
   await inspection.getByText(/Prepared (?:manufacturing mesh|Light Pod)/).waitFor({timeout:120000});
   const ranges=await sectionRanges(inspection);
   let routeSection;
-  if(inspectCurvedRoute){
+  if(inspectCurvedRoute||inspectSideRoute||undersideProbeHeight!==undefined){
    const [a,b]=build.pixelHoles;
    const {sectionX,viewportMesh}=await renderedXSection(inspection,(a.x+b.x)/2);
-   routeSection={viewportMesh,point:new THREE.Vector3(sectionX,-(a.z+b.z)/2,(a.surface.y+b.surface.y)/2-1)};
+   const height=undersideProbeHeight??((a.surface.y+b.surface.y)/2-1);
+   routeSection={viewportMesh,point:inspectSideRoute?
+    new THREE.Vector3(sectionX,-a.z+.8,(a.surface.y+b.surface.y)/2):
+    new THREE.Vector3(sectionX,-(a.z+b.z)/2,height)};
   }
   await inspection.getByRole('button',{name:'Close inspection'}).click();
   await page.locator('.sms-workspace-nav [data-tab=print]').click();
@@ -764,7 +767,10 @@ try{
    const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});
    const walls=geometry=>{
     const mesh=new THREE.Mesh(geometry,material);
-    return [-1,1].map(sign=>new THREE.Raycaster(point,new THREE.Vector3(0,sign,0)).intersectObject(mesh)[0]?.distance);
+    return [-1,1].map(sign=>{
+     const direction=inspectSideRoute?new THREE.Vector3(0,0,sign):new THREE.Vector3(0,sign,0);
+     return new THREE.Raycaster(point,direction).intersectObject(mesh)[0]?.distance;
+    });
    };
    const expected=walls(viewportMesh);
    assert(expected.every(Number.isFinite));
@@ -791,9 +797,10 @@ try{
  const packedSTL=[...pack.keys()].find(name=>name.endsWith('.stl'));
  assert.deepEqual(directSTL.bytes,pack.get(packedSTL));
  const directCura=await useDownload(tile.locator('[data-job-cura]'));
- const packedCura=[...pack.keys()].find(name=>name.endsWith('.curaprofile'));
- assert.match(directCura.name,/\.curaprofile$/);
- assert.deepEqual(directCura.bytes,pack.get(packedCura));
+ assert.match(directCura.name,/cura-manual-settings\.txt$/);
+ assert.deepEqual(directCura.bytes,pack.get('cura-manual-settings.txt'));
+ assert.match(directCura.bytes.toString(),/infill_sparse_density/);
+ await tile.getByText(/Stock Cura has no Generic PETG profile/).waitFor();
  const manifest=JSON.parse(pack.get('print-job-manifest.json'));
  const preparedTile=(await queue()).find(job=>job.id===tileJob.id);
  const meshXML=threeMF.get('3D/3dmodel.model').toString();
@@ -810,7 +817,7 @@ try{
   schemaVersion:1,modelId:fixture.tile,modelName:queueTileName,generatorType:'tactile-tiles',
   modelRevision:preparedTile.revision,jobId:tileJob.id,preparedRevision:preparedTile.preparedRevision,
   printer:'Ultimaker 2+',nozzleMm:.8,material:'PETG',quality:35,units:'mm',coordinateFrame:'Z-up',
-  dimensionsMm:manifest.dimensionsMm,curaProfile:'included',files:[...pack.keys()]
+  dimensionsMm:manifest.dimensionsMm,curaProfile:'manual-review',files:[...pack.keys()]
  });
  assert.match(printPack.name,/^cafe-weather-[a-z0-9-]+-rev[0-9]+-[0-9a-f]{16}\.zip$/);
  assert(printPack.name.length<85);
@@ -830,7 +837,7 @@ try{
  const inner3MF=[...pack.keys()].find(name=>name.endsWith('.3mf'));
  assert.deepEqual(pack.get(inner3MF),modelFile.bytes);
  const profile=[...pack.keys()].find(name=>name.endsWith('.curaprofile'));
- assert.match(profile,/UM2-Plus_0p8mm_PETG_Q35/);
+ assert.equal(profile,undefined);
  const readme=pack.get('READ-ME.txt').toString();
  for(const line of ['Model: '+queueTileName,'Revision: '+manifest.modelRevision,'Job ID: '+tileJob.id,
   'Printer: Ultimaker 2+','Nozzle: 0.8 mm','Material: PETG','Quality: 35 / 100','The STL files share one origin.','installed Cura'])
@@ -1741,19 +1748,22 @@ try{
   assert.equal(Number(await positionZ.inputValue()),moved.z);
   await page.locator('#smsGlobalUndo').click();
   assert.deepEqual(await getSeat(),moved);
+  await page.locator('#smsGlobalRedo').click();
+  assert.deepEqual(await getSeat(),exactSide,'Redo restores the exact position and normal on the vertical face');
   await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
   await page.reload();
   await page.waitForFunction(()=>window.__sensoryStudio?.currentModel?.build.pixelHoles?.length===1);
-  assert.deepEqual(await getSeat(),moved);
+  assert.deepEqual(await getSeat(),exactSide);
   await page.locator('.sms-workspace-nav [data-tab=build]').click();
   await page.locator('[data-view=front]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   await page.getByRole('button',{name:'Place shaped socket in 3D'}).click();
-  const sideMarker=await page.evaluate(id=>window.__sensoryStudio.pixelMarkerScreen(id),moved.id);
+  const sideMarker=await page.evaluate(id=>window.__sensoryStudio.pixelMarkerScreen(id),exactSide.id);
   await page.mouse.click(sideMarker.x+125,sideMarker.y);
   await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles?.length===2);
   await page.keyboard.press('Escape');
   const sideSerial=page.locator('.sms-palette').getByRole('group',{name:'Serial LED string'});
+  await assertNativeFittingPreview('Tile vertical face',2);
   const enable=sideSerial.locator('[data-native-route]');
   assert(!(await enable.isDisabled()),await sideSerial.innerText());
   await enable.check();
@@ -1795,7 +1805,7 @@ try{
   await calibration.locator('[name=printedBoreDiameter]').fill('5.5');
   await calibration.getByRole('button',{name:'Save measured fit'}).click();
   await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles[0].clearance===.5);
-  const {parameters,build,geometries}=await finishNativeJourney('FIT-01 Tile side');
+  const {parameters,build,geometries}=await finishNativeJourney('FIT-01 Tile side',{inspectSideRoute:true});
   const [a,b]=build.pixelHoles;
   const width=parameters.width+24,depth=parameters.depth+24;
   const tabHoles=[[-width/2+.12*2*(width+depth),depth/2+5.05],[-depth/2,-depth/2-5.05]];
@@ -1817,6 +1827,189 @@ try{
    material.dispose();geometry.dispose();
   }
   await verifyTabRemovalBounds('FIT-01 Tile side',sidePalette);
+ }
+ async function assertNativeFittingPreview(name,count){
+  const palette=page.locator('.sms-palette');
+  const toggle=palette.getByRole('checkbox',{name:'Show physical pixels and socket cutters'});
+  const output=palette.locator('[data-native-fit-preview-status]');
+  const snapshot=()=>page.evaluate(()=>JSON.stringify(window.__sensoryStudio.currentModel));
+  const before=await snapshot();
+  await toggle.check();
+  await output.filter({hasText:'P'+count+' · insertion'}).waitFor({timeout:60000});
+  const message=await output.innerText();
+  const measurements=[...message.matchAll(/P(\d+) · insertion ([\d.]+) mm · nominal cutter roof allowance (-?[\d.]+) mm · ([\d.]+) mm³ outside stock · ([\d.]+) mm³ stock interference; ([\d.]+) mm³ overlap with wire cuts · ([\d.]+) mm³ missing from required surrounding stock/g)];
+  assert.equal(measurements.length,count,name+' reports physical fit for every installed socket');
+  for(const [index,measurement] of measurements.entries()){
+   assert.equal(Number(measurement[1]),index+1);
+   assert(Number(measurement[2])>0,name+' reports a positive insertion depth');
+   assert.equal(Number(measurement[6]),0,name+' has no wire cuts before routing');
+   assert(Number(measurement[7])<=.05,name+' has the required surrounding stock');
+  }
+  await toggle.uncheck();
+  await page.waitForFunction(()=>document.querySelector('[data-native-fit-preview-status]')?.textContent==='');
+  assert.equal(await snapshot(),before,name+' preview is read-only');
+ }
+ // FIT-02: Real placement checks the stock for two profiles on the same perpendicular wall.
+ {
+  await page.evaluate(()=>{
+   const key='crystal-forge-pixel-library';
+   const profiles=JSON.parse(localStorage.getItem(key)||'[]');
+   localStorage.setItem(key,JSON.stringify([...profiles,{
+    id:'custom-tile-wall',name:'Compact 18 mm wall fixture',kind:'gumdrop',
+    bodyDiameter:5,bodyHeight:18,capHeight:1.2,flangeDiameter:6,flangeHeight:1,
+    wireWidth:2,wireDepth:1,retentionLip:0,measuredFit:{bodyDiameter:5,printedBoreDiameter:5.15}
+   }]));
+   window.__sensoryStudio.addModel('tactile-tiles',{
+    width:90,depth:90,thickness:20,outline:'square',relief:2,pattern:'terraces',dualMaterial:false
+   },'FIT-02 Tile perpendicular wall');
+  });
+  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('[data-view=right]').click();
+  await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
+  const palette=page.locator('.sms-palette');
+  const place=palette.getByRole('button',{name:'Place shaped socket in 3D'});
+  const canvas=await page.locator('#viewport canvas').boundingBox();
+  const snapshot=()=>page.evaluate(()=>JSON.stringify(window.__sensoryStudio.currentModel));
+  await palette.locator('[data-fit-profile=gumdrop]').click();
+  const beforeRejected=await snapshot();
+  await place.click();
+  const x=canvas.x+canvas.width/2,y=canvas.y+canvas.height/2+41;
+  await page.mouse.click(x,y);
+  await palette.locator('[data-pixel-status]').filter({hasText:/continuous stock on its installation face/}).waitFor({timeout:60000});
+  assert.equal(await snapshot(),beforeRejected,'Rejected wall fitting leaves the model unchanged');
+  await page.keyboard.press('Escape');
+  await palette.locator('[data-fit-profile=custom-tile-wall]').click();
+  await place.click();
+  await page.mouse.click(x,y);
+  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles?.length===1);
+  await page.keyboard.press('Escape');
+  const socket=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles[0]);
+  assert.deepEqual(socket.surface.normal,[1,0,0]);
+  assert.equal(socket.socketProfile.bodyHeight,18);
+  assert.equal(socket.clearance,.15);
+  assert(socket.surface.y>5&&socket.surface.y<15,'The seat is inside the 20 mm wall height');
+  await assertNativeFittingPreview('Perpendicular Tile compact socket',1);
+ }
+ // FIT-02: Place the calibrated profile on the real sloped Wave surface.
+ {
+  await page.evaluate(()=>{
+   const key='crystal-forge-pixel-library';
+   const profiles=JSON.parse(localStorage.getItem(key)||'[]');
+   localStorage.setItem(key,JSON.stringify([...profiles,{
+    id:'custom-wave-wall',name:'Calibrated 11 mm Wave fixture',kind:'seed',
+    bodyDiameter:5,bodyHeight:11,capHeight:1,flangeDiameter:5,flangeHeight:0,
+    wireWidth:2,wireDepth:1.5,measuredFit:{bodyDiameter:5,printedBoreDiameter:5.2}
+   }]));
+   window.__sensoryStudio.addModel('waves',{
+    width:160,depth:100,thickness:15,amplitude:1,frequency:.5,variation:0,direction:0,dualMaterial:false
+   },'FIT-02 calibrated Wave');
+  });
+  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('[data-view=top]').click();
+  await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
+  const palette=page.locator('.sms-palette');
+  await palette.locator('[data-fit-profile=custom-wave-wall]').click();
+  await palette.getByRole('button',{name:'Place shaped socket in 3D'}).click();
+  const target=await page.evaluate(()=>window.__sensoryStudio.fittingPointScreen(-40,0,'top'));
+  assert(target);
+  await page.mouse.click(target.x,target.y);
+  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles?.length===1);
+  await page.keyboard.press('Escape');
+  const socket=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles[0]);
+  assert.equal(socket.socketProfile.bodyHeight,11);
+  assert.equal(socket.clearance,.2);
+  assert(Math.abs(socket.surface.normal[0])>.005);
+  assert(socket.surface.normal[1]>.95);
+  await assertNativeFittingPreview('Calibrated Wave socket',1);
+ }
+ // FIT-03: Measured wire relief drives both prepared Wave exports.
+ for(const {name,amplitude,width,depth} of [
+  {name:'FIT-03 measured Wave route',amplitude:1,width:5.8,depth:1.95},
+  {name:'FIT-03 raised Wave route',amplitude:6,width:3.2,depth:1.8}
+ ]){
+  await page.evaluate(({name,amplitude,width,depth})=>{
+   const key='crystal-forge-pixel-library';
+   const bodyDiameter=amplitude===6?5:8;
+   const profiles=JSON.parse(localStorage.getItem(key)||'[]');
+   localStorage.setItem(key,JSON.stringify([...profiles,{
+    id:'custom-wave-wire-'+amplitude,name:'Wave cable fixture '+amplitude,kind:'seed',
+    bodyDiameter,bodyHeight:9,capHeight:1,flangeDiameter:bodyDiameter,flangeHeight:0,
+    wireWidth:amplitude===6?2:width,wireDepth:amplitude===6?1.5:depth
+   }]));
+   window.__sensoryStudio.addModel('waves',{
+    width:160,depth:100,thickness:15,amplitude,frequency:.5,variation:0,direction:0,dualMaterial:false
+   },name);
+  },{name,amplitude,width,depth});
+  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('[data-view=top]').click();
+  await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
+  const palette=page.locator('.sms-palette');
+  await palette.locator('[data-fit-profile=custom-wave-wire-'+amplitude+']').click();
+  await palette.getByRole('button',{name:'Place shaped socket in 3D'}).click();
+  for(const [index,x] of [-40,-20].entries()){
+   const point=await page.evaluate(x=>window.__sensoryStudio.fittingPointScreen(x,0,'top'),x);
+   assert(point);
+   await page.mouse.click(point.x,point.y);
+   await page.waitForFunction(count=>window.__sensoryStudio.currentModel.build.pixelHoles?.length===count,index+1);
+  }
+  await page.keyboard.press('Escape');
+  for(const number of [1,2]){
+   await palette.getByRole('button',{name:'P'+number,exact:true}).click();
+   const angle=palette.locator('[data-pixel-field=rotation]');
+   await angle.fill('180');
+   await angle.press('Tab');
+  }
+  const serial=palette.getByRole('group',{name:'Serial LED string'});
+  await serial.locator('[data-native-route]').check();
+  await serial.getByText('Channels ready for preparation.').waitFor();
+  const {geometries}=await finishNativeJourney(name);
+  for(const [format,geometry] of geometries){
+   const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});
+   const mesh=new THREE.Mesh(geometry,material);
+   const hit=(origin,direction)=>new THREE.Raycaster(new THREE.Vector3(...origin),new THREE.Vector3(...direction)).intersectObject(mesh)[0]?.point;
+   for(const x of [-79,-60,-30,0,30,60,79]){
+    const top=hit([x,4,30],[0,0,-1]),floor=hit([x,0,30],[0,0,-1]);
+    assert(top&&floor&&Math.abs(top.z-floor.z-depth)<.025,format+' calibrated Wave channel depth at '+x);
+    const origin=[x,0,floor.z+.85];
+    const left=hit(origin,[0,-1,0]),right=hit(origin,[0,1,0]);
+    assert(left&&right&&Math.abs(right.y-left.y-width)<.025,format+' calibrated Wave channel width at '+x);
+   }
+   for(const sign of [-1,1]){
+    const floor=hit([sign*79.99,0,30],[0,0,-1]);
+    assert(floor);
+    const edge=hit([sign*81,0,floor.z+.85],[-sign,0,0]);
+    assert(!edge||Math.abs(edge.x-sign*80)>.1,format+' clear exterior opening');
+   }
+   geometry.dispose();material.dispose();
+  }
+  if(amplitude===6){
+   const design=page.locator('.sms-workspace-nav [data-tab=design]');
+   const print=page.locator('.sms-workspace-nav [data-tab=print]');
+   const job=page.locator('#smsJobs article').filter({hasText:name});
+   const sockets=()=>page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles);
+   const acceptedSockets=await sockets();
+   await design.click();
+   await page.locator('.sms-palette [data-palette-key=amplitude]').press('ArrowRight');
+   await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.amplitude>6);
+   assert.deepEqual(await sockets(),acceptedSockets,'Editing relief preserves the saved fitting records');
+   await print.click();
+   await job.getByText('Stale',{exact:true}).waitFor();
+   assert(await job.locator('[data-job-stl]').isDisabled());
+   assert(await job.locator('[data-job-3mf]').isDisabled());
+   await job.locator('[data-job-prepare]').click();
+   await job.getByText(/Wave relief is too steep.*Reduce Wave height or Wave count.*6% or less/).waitFor({timeout:120000});
+   assert(await job.locator('[data-job-stl]').isDisabled());
+   assert(await job.locator('[data-job-3mf]').isDisabled());
+   await design.click();
+   await page.locator('#smsGlobalUndo').click();
+   await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.amplitude===6);
+   assert.deepEqual(await sockets(),acceptedSockets);
+   await print.click();
+   await job.locator('[data-job-prepare]').click();
+   await job.getByText('Prepared',{exact:true}).waitFor({timeout:120000});
+   assert(!(await job.locator('[data-job-stl]').isDisabled()));
+   assert(!(await job.locator('[data-job-3mf]').isDisabled()));
+  }
  }
  // FIT-01/FIT-03: confirmed curved Wave seats and a surface-following wired export.
  {
@@ -1840,6 +2033,7 @@ try{
   }
   await page.keyboard.press('Escape');
   const seats=await getSeats();
+  await assertNativeFittingPreview('Curved Wave',seats.length);
   await page.locator('.sms-palette').getByRole('button',{name:'P1',exact:true}).click();
   const dragPoints=await page.evaluate(id=>[
    window.__sensoryStudio.pixelMarkerScreen(id),window.__sensoryStudio.fittingPointScreen(-44,0,'top')
@@ -2074,6 +2268,7 @@ try{
   await page.keyboard.press('Escape');
   const seats=()=>page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles);
   const [,second]=await seats();
+  await assertNativeFittingPreview(name,2);
   assert.equal(second.entryFace,'underside');
   assert.equal(second.socketProfile.bodyHeight,6);
   const beforeRetention=await seats();
@@ -2105,6 +2300,10 @@ try{
   await palette.locator('[data-pixel-status]').getByText(/overlap|clearance|continuous .*stock/i).waitFor();
   assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel),placed,
    name+' refuses the overlapping drag without changing either saved cutter pose');
+  await page.locator('#smsGlobalUndo').click();
+  assert.deepEqual(await seats(),beforeRetention,name+' undo restores both previous socket poses');
+  await page.locator('#smsGlobalRedo').click();
+  assert.deepEqual(await seats(),placed.build.pixelHoles,name+' redo restores both exact socket poses');
   const serial=palette.getByRole('group',{name:'Serial LED string'});
   const route=serial.locator('[data-native-route]');
   assert(!(await route.isDisabled()),await serial.innerText());
@@ -2142,7 +2341,7 @@ try{
   await calibration.locator('[name=printedBoreDiameter]').fill('5.45');
   await calibration.getByRole('button',{name:'Save measured fit'}).click();
   await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles[0].clearance===.45);
-  const {build,geometries}=await finishNativeJourney(name);
+  const {build,geometries}=await finishNativeJourney(name,{undersideProbeHeight:.8});
   const [a,b]=build.pixelHoles;
   const width=designX+24,depth=designY+24;
   const tabX=-width/2+.13*2*(width+depth),tabY=depth/2+5.05;
@@ -2163,6 +2362,47 @@ try{
     assert(Math.abs((hit([x+2.5,y,15],[0,0,-1])?.z??0)-10)<.01,name+' '+format+' connected outward tab is 10 mm thick');
    }
    material.dispose();geometry.dispose();
+  }
+  if(type==='light-pods'){
+   const buildTab=page.locator('.sms-workspace-nav [data-tab=build]');
+   const printTab=page.locator('.sms-workspace-nav [data-tab=print]');
+   const job=page.locator('#smsJobs article').filter({hasText:name});
+   const assertStale=async()=>{
+    await printTab.click();
+    await job.getByText('Stale',{exact:true}).waitFor();
+    assert(await job.locator('[data-job-stl]').isDisabled());
+    assert(await job.locator('[data-job-3mf]').isDisabled());
+    await job.locator('[data-job-prepare]').click();
+    await job.getByText('Prepared',{exact:true}).waitFor({timeout:120000});
+   };
+   await buildTab.click();
+   await palette.getByRole('button',{name:'P1',exact:true}).click();
+   await palette.getByText('Record measured fit',{exact:true}).click();
+   const fit=palette.locator('[data-fit-calibration]');
+   await fit.locator('[name=printedBoreDiameter]').fill('5.6');
+   await fit.getByRole('button',{name:'Save measured fit'}).click();
+   await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles[0].clearance===.6);
+   const edited=await seats();
+   await assertStale();
+   await buildTab.click();
+   await page.locator('#smsGlobalUndo').click();
+   assert.deepEqual(await seats(),build.pixelHoles);
+   await assertStale();
+   await buildTab.click();
+   await page.locator('#smsGlobalRedo').click();
+   assert.deepEqual(await seats(),edited);
+   await assertStale();
+   const stl=await useDownload(job.locator('[data-job-stl]'));
+   const mf=await useDownload(job.locator('[data-job-3mf]'));
+   for(const geometry of [new STLLoader().parse(Uint8Array.from(stl.bytes).buffer),
+    read3MFGeometry(zipEntries(mf.bytes).get('3D/3dmodel.model').toString())]){
+    const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});
+    const mesh=new THREE.Mesh(geometry,material),origin=new THREE.Vector3(a.x,-a.z,3);
+    const width=[-1,1].reduce((sum,sign)=>sum+new THREE.Raycaster(origin,new THREE.Vector3(0,sign,0))
+     .intersectObject(mesh)[0].distance,0);
+    assert(Math.abs(width-5.6)<.02,'Redo prepares the edited 5.6 mm Pod socket');
+    geometry.dispose();material.dispose();
+   }
   }
   await verifyTabRemovalBounds(name,palette);
   const tabJob=page.locator('#smsJobs article').filter({hasText:name});
