@@ -39,8 +39,8 @@ try{
   const text=JSON.stringify(profiles);localStorage.setItem(key,text);return text;
  },profileKey);
  const openCalibration=async()=>{
-  await palette.getByText('Record measured fit',{exact:true}).click();
   const form=palette.locator('[data-fit-calibration]');
+  if(!(await form.isVisible()))await palette.getByText('Record measured fit',{exact:true}).click();
   await form.locator('[name=profileName]').fill('Protected measured Seed');
   await form.locator('[name=printedBoreDiameter]').fill('5.5');
   return form;
