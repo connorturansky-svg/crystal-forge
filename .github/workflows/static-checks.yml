@@ -17,6 +17,15 @@ on:
       - 'docs/**'
       - 'AGENTS.md'
       - '.github/workflows/static-checks.yml'
+      - '**/*.js'
+      - '*.css'
+      - '**/*.css'
+      - '**/*.html'
+      - '**/*.svg'
+      - '**/*.wasm'
+      - 'svg-import/**'
+      - 'package-lock.json'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
   contents: read
