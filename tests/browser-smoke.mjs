@@ -72,7 +72,7 @@ try{
  });
  const tipResult=await page.evaluate(async()=>{
   const THREE=await import('three');
-  const {crystalGeometry}=await import('./geometry-v3.js');
+  const {crystalGeometry}=await import('./geometry-'+'v3.js');
   const s=JSON.parse(localStorage.getItem('crystal-forge-v3')).settings;
   const g=crystalGeometry(THREE,{id:'browser-regression',family:'Quartz',h:80,r:5},s);
   const p=g.getAttribute('position').array,pole=p[p.length-8];
