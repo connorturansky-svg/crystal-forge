@@ -189,7 +189,9 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
     solid=hold(solid.rotate([-90,0,0]));
     if(part.rotation)solid=hold(solid.rotate(part.rotation.map(angle=>angle*180/Math.PI)));
     if(part.position)solid=hold(solid.translate(part.position));
-    return part.edgeFinish?.enabled?hold(bevelTopSolid(wasm,solid,part.edgeFinish)):solid;
+    if(!part.edgeFinish?.enabled)return solid;
+    const chamfered=bevelTopSolid(wasm,solid,part.edgeFinish);
+    return chamfered===solid?solid:hold(chamfered);
    }finally{section.delete();}
   }
   const geometry=recipeGeometry(THREE,part.edgeFinish?.enabled?{...part,edgeFinish:undefined}:part);
@@ -199,7 +201,9 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    const input=new wasm.Mesh({numProp:3,vertProperties:positions,triVerts:indices});input.merge();
    const solid=hold(new wasm.Manifold(input));
    if(solid.status()!=='NoError'||solid.isEmpty())throw Error('A source component is not a valid closed solid.');
-   return part.edgeFinish?.enabled?hold(bevelTopSolid(wasm,solid,part.edgeFinish)):solid;
+   if(!part.edgeFinish?.enabled)return solid;
+    const chamfered=bevelTopSolid(wasm,solid,part.edgeFinish);
+    return chamfered===solid?solid:hold(chamfered);
   }finally{geometry.dispose();}
  };
  const union=parts=>{if(!parts.length)throw Error('No model body.');let result=convert(parts[0]);for(const part of parts.slice(1))result=hold(result.add(convert(part)));return result;};
