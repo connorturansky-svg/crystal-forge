@@ -87,12 +87,12 @@ try{
  // independent selected profile IDs when they share a reusable library.
  await page.evaluate(()=>{
   const control=document.querySelector('#pixelProfileSelect');
-  control.value='seed';control.dispatchEvent(new Event('change',{bubbles:true}));
+  control.value='seed';control.dispatchEvent(new Event('input',{bubbles:true}));
  });
  await page.waitForFunction(()=>!!document.querySelector('#pixelProfileSelect option[value="custom-qa-0"]'),null,{timeout:45000});
  await page.evaluate(()=>{
   const control=document.querySelector('#pixelProfileSelect');
-  control.value='custom-qa-0';control.dispatchEvent(new Event('change',{bubbles:true}));
+  control.value='custom-qa-0';control.dispatchEvent(new Event('input',{bubbles:true}));
  });
  assert.equal(await page.locator('#pixelProfileSelect').inputValue(),'custom-qa-0',
   'Crystal selects its own earlier measured profile A');
