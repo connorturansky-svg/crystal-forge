@@ -2,7 +2,6 @@
 
 ## Unreleased — WT-021 draft PR #102 (not deployed)
 
-- Crystal conical and tapered pixel sockets now check the measured side and roof stock against the actual narrowing socket profile rather than a full-width vertical cylinder; domed bases are no longer rejected solely because their upper surface narrows. Preparation names the failing pixel, its coordinates and missing stock volume when there is a real clearance failure. This is software screening, not physical print verification.
 
 Only in the draft integration branch; **not a production release**. Owner approval is still required for merge/deployment.
 
@@ -59,6 +58,10 @@ Only in the draft integration branch; **not a production release**. Owner approv
 - Archived original Codex briefs and added a token-efficient overnight execution protocol, acceptance register, progress log and recovery pointer in PR #102.
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
+
+## v0.16.0-dev.35.20 — Make pixel shoulder checks follow shaped stock
+
+- Crystal conical and tapered pixel sockets now check the measured side and roof stock against the actual narrowing socket profile rather than a full-width vertical cylinder; domed bases are no longer rejected solely because their upper surface narrows. Preparation names the failing pixel, its coordinates and missing stock volume when there is a real clearance failure. This is software screening, not physical print verification.
 
 ## v0.16.0-dev.35.19 — Render the prepared model from the viewport
 - Use Render actual model directly from the Build viewport.
