@@ -1,5 +1,11 @@
 # AI handover — read immediately after AGENTS.md
 
+## Raised Gear rim manufacturing
+- Baseline main 7827a95 fails STL/3MF export for the 68.5 mm Involute Gear with Rim rail or Hub and rim, in single and dual material and with the chamfer both on and off.
+- Radially scaled outlines coincide at radial tooth flanks. Manufacture the rail from two inward offsets of the original outline, before joining it to the stock. Keep the base outline, bore, spoke windows and hardware cuts.
+- Split the dual-material Hub ring with a single cutter through the raised collar. Keep the shaft void in the original solid and avoid matching its polygon twice.
+- The 16 reported variants, 16 Hub ring cases with and without a bore, and the openwork Crown pass real Manifold and both exports. The raised Hub and rim is 68.5 × 68.5 × 10 mm. Chromium reopens and exports it, and CuraEngine 5.13 slices it into 50 layers at 0.2 mm with supports disabled on the Ultimaker 2+ definition. Physical print acceptance remains in #10.
+
 ## Top chamfer repair — PR #120
 - The #117 midpoint displacement left crinkles on flat Gear faces. The initial corrective draft subtracted overlapping individual wedges, which created degenerate STL triangles.
 - Walk exposed planar boundaries on the assembled stock. Inset each supported loop by the chamfer width and triangulate the cap and bevel as separate surfaces. Leave lower stock and the separate negative hardware cutters intact.

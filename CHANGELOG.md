@@ -58,6 +58,10 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.26 — Raised Gear rim exports
+- Raised Rim rail and Hub and rim Gears use two inward contours to keep the rail attached and prevent degenerate export triangles at tooth flanks.
+- Keep the dual-material Hub ring connected through the raised collar and preserve shaft bores and spoke openings. Preparation explains when a continuous rail cannot fit.
+
 ## v0.16.0-dev.35.25 — Clean 45° top chamfers
 - Replace triangle warping with flat caps and continuous 45° chamfer faces. The default width is 0.5 mm.
 - Chamfer supported outer rims, spoke windows, bore mouths and raised planar details. Keep the bore below its lead-in and preserve underside geometry and hardware cuts.

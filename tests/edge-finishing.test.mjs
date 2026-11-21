@@ -126,6 +126,99 @@ for(const generator of generators){
  assert.deepEqual(narrow.bodies[0].mesh.triVerts,baseline.bodies[0].mesh.triVerts);
  assert(narrow.report.warnings.some(message=>message.startsWith('No top rim')));
 }
+
+{
+ const gear=generators.find(g=>g.typeId==='gears');
+ const input={diameter:68.5,teeth:12,spokes:5,bore:8,thickness:8,reliefHeight:2};
+ const prepare=(parameters,enabled)=>prepareRecipe(THREE,wasm,applyBuildModules(
+  gear.recipe({...gear.defaultParameters,...parameters}),{edgeFinish:{...config,enabled}},gear.capabilities));
+ const section=(bodies,height)=>{
+  let combined=null;
+  try{
+   for(const {mesh} of bodies){
+    const solid=new wasm.Manifold(mesh);
+    assert.equal(solid.status(),'NoError');
+    if(!combined)combined=solid;
+    else{
+     const union=combined.add(solid);
+     combined.delete();solid.delete();combined=union;
+    }
+   }
+   const rotated=combined.rotate([90,0,0]);
+   try{return rotated.slice(height);}finally{rotated.delete();}
+  }finally{combined?.delete();}
+ };
+ const plain=section(prepare(input,false).bodies,4);
+ try{
+  assert.equal(plain.numContour(),7,'One gear perimeter, five openings and a shaft bore');
+  const bore=plain.toPolygons().flat().filter(([x,z])=>Math.hypot(x,z)<5);
+  assert(bore.length>=64);
+  assert(bore.every(([x,z])=>Math.hypot(x,z)>=4*Math.cos(Math.PI/64)-1e-5 && Math.hypot(x,z)<=4+1e-5));
+  for(const reliefStyle of ['None','Hub collar','Rim rail','Hub and rim'])for(const dualMaterial of [false,true]){
+   const parameters={...input,reliefStyle,dualMaterial};
+   const original=prepare(parameters,false), finished=prepare(parameters,true);
+   for(const model of [original,finished]){
+    assert.equal(model.bodies.length,dualMaterial?2:1);
+    const middle=section(model.bodies,4);
+    const extra=middle.subtract(plain),missing=plain.subtract(middle);
+    try{assert(extra.area()+missing.area()<1e-4,'Relief and chamfers preserve the entire lower section');}
+    finally{extra.delete();missing.delete();middle.delete();}
+    const {stls,threeMF}=exportMaterialBodies(model,{name:'raised-gear'});
+    const xml=new TextDecoder().decode(threeMF);
+    assert.equal((xml.match(/<triangle v1=/g)||[]).length,
+     model.bodies.reduce((total,{mesh})=>total+mesh.triVerts.length/3,0));
+    const objects=Array.from(xml.matchAll(/<mesh>(.*?)<\/mesh>/g),match=>match[1]);
+    for(const [i,{bytes}] of stls.entries()){
+     const view=new DataView(bytes.buffer,bytes.byteOffset), mesh=model.bodies[i].mesh;
+     assert.equal(view.getUint32(80,true),mesh.triVerts.length/3);
+     const vertices=Array.from(objects[i].matchAll(/<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"\/>/g),match=>match.slice(1).map(Number));
+     const faces=Array.from(objects[i].matchAll(/<triangle v1="(\d+)" v2="(\d+)" v3="(\d+)"\/>/g),match=>match.slice(1).map(Number));
+     assert.equal(faces.length,mesh.triVerts.length/3);
+     for(const [face,indices] of faces.entries())for(const [corner,id] of indices.entries()){
+      const at=mesh.triVerts[face*3+corner]*mesh.numProp;
+      const expected=[mesh.vertProperties[at],-mesh.vertProperties[at+2],mesh.vertProperties[at+1]];
+      for(const [axis,value] of expected.entries()){
+       assert(vertices[id][axis]===value,'3MF retains the prepared rail surface');
+       assert(view.getFloat32(96+face*50+corner*12+axis*4,true)===value,'STL retains the prepared rail surface');
+      }
+     }
+    }
+    if(reliefStyle.includes('rim')||reliefStyle==='Rim rail'){
+     const rail=section(model.bodies,9);
+     try{
+      assert.equal(rail.numContour(),reliefStyle==='Rim rail'?2:4,'The raised rail is a continuous ring');
+      assert(rail.area()>250,'Raised rail retains printable stock');
+     }finally{rail.delete();}
+    }
+   }
+   const volume=model=>model.bodies.reduce((total,body)=>total+body.volume,0);
+   assert(volume(original)-volume(finished)>40,'A genuine chamfer removes stock on every relief style');
+   console.log('68.5 mm raised Gear '+reliefStyle+(dualMaterial?' dual':' single')+': both finish settings export');
+  }
+  for(const bore of [0,8])for(const reliefStyle of ['None','Hub collar','Rim rail','Hub and rim']){
+   for(const enabled of [false,true]){
+    const parameters={...input,bore,reliefStyle,dualMaterial:true,inlayStyle:'Hub ring'};
+    const result=prepare(parameters,enabled);
+    const equivalent=prepare({...parameters,dualMaterial:false},enabled);
+    assert.equal(result.bodies.length,2);
+    assert(Math.abs(result.bodies.reduce((volume,body)=>volume+body.volume,0)-equivalent.bodies[0].volume)<.001,
+     'A hub inlay only partitions material');
+    assert.equal(exportMaterialBodies(result,{name:'hub-ring'}).stls.length,2);
+   }
+  }
+ }finally{plain.delete();}
+}
+{
+ const gear=generators.find(g=>g.typeId==='gears');
+ const crown=gear.presets.find(p=>p.id==='crown-open');
+ assert(crown);
+ for(const dualMaterial of [false,true])for(const enabled of [false,true]){
+  const recipe=gear.recipe({...gear.defaultParameters,...crown.parameters,dualMaterial});
+  const prepared=prepareRecipe(THREE,wasm,applyBuildModules(recipe,{edgeFinish:{...config,enabled}},gear.capabilities));
+  assert.equal(prepared.bodies.length,dualMaterial?2:1);
+  assert.equal(exportMaterialBodies(prepared,{name:'openwork-crown'}).stls.length,prepared.bodies.length);
+ }
+}
 for(const family of ['Quartz','Shard','Blade','Cubic','Double terminated','Fantasy']){
  const crystal=crystalGeometry(THREE,{id:'tip-'+family,family,h:85,r:8},
   {bottomScale:1,topScale:.4,tipRound:5,tipLength:.24,cornerRadius:.5,shoulderRound:1,

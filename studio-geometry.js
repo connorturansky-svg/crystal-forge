@@ -161,6 +161,25 @@ export function nativeFittingPreviews(THREE,wasm,recipe){
  if(recipe.dualMaterial||recipe.partitioned)throw Error('Shaped fitting preview requires single-material stock.');
  return prepareRecipe(THREE,wasm,recipe,{inspectFittings:true});
 }
+function gearRailSection(wasm,{source,outerInset,innerInset}){
+ // Scaling the outline radially leaves coincident edges on radial tooth
+ // flanks. Constant inward setbacks create two positively separated loops.
+ const profile=new wasm.CrossSection([source.map(([x,z])=>[x,-z])],'EvenOdd');
+ try{
+  const outer=profile.offset(-outerInset,'Miter'),inner=profile.offset(-innerInset,'Miter');
+  try{
+   if(outer.numContour()!==1||inner.numContour()!==1)
+    throw Error('The raised rim needs a continuous band. Try fewer teeth, a larger diameter, or turn off the raised rim.');
+   const ring=outer.subtract(inner);
+   try{
+    const section=ring.simplify(.00001);
+    if(section.numContour()===2)return section;
+    section.delete();
+    throw Error('The raised rim breaks into narrow sections. Try fewer teeth or a larger diameter.');
+   }finally{ring.delete();}
+  }finally{inner.delete();outer.delete();}
+ }finally{profile.delete();}
+}
 export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittings=false}={}){
  const owned=[];const hold=solid=>(owned.push(solid),solid);
  const positionSeat=(solid,seat,rotation=0)=>placeNativeSocketSolid(THREE,wasm,hold,solid,seat,rotation);
@@ -179,7 +198,7 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    // triangulations are suitable for design preview, but may not be a
    // manifold manufactured source when welded at tightly packed teeth.
    const contours=[part.outline,...(part.holes||[])].map(loop=>loop.map(([x,z])=>[x,-z]));
-   const section=new wasm.CrossSection(contours,'EvenOdd');
+   const section=part.gearRail?gearRailSection(wasm,part.gearRail):new wasm.CrossSection(contours,'EvenOdd');
    try{
     let solid=hold(section.extrude(part.height));
     solid=hold(solid.rotate([-90,0,0]));
@@ -368,6 +387,9 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    const [above,below]=total.splitByPlane([0,1,0],splitHeight);
    const top=hold(above),bottom=hold(below),face=Boolean(coincidentFace)||recipe.materialSplitRole==='top';
    regions=[{role:'primary',solid:face?bottom:top},{role:'secondary',solid:face?top:bottom}];
+  }else if(recipe.dualMaterial&&recipe.gearInlay){
+   const [accent,body]=total.split(convert(recipe.gearInlay));
+   regions=[{role:'primary',solid:hold(body)},{role:'secondary',solid:hold(accent)}];
   }else if(recipe.dualMaterial&&(recipe.materialBand||recipe.secondary?.length)){
    let secondary=recipe.materialBand?convert(recipe.materialBand):union(recipe.secondary);
    if(recipe.partitioned){
