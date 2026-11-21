@@ -1,7 +1,7 @@
 # Edge-mouth finishing — engineering prework and exact acceptance
 
 **Status:** test scaffold and **confirmed synthetic reproduction**; no product behavior changes in this branch.
-**Exact-head evidence:** [QA top cut-mouth diagnostics, success at 10f9905](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44842358103). Manifold-prepared synthetic 8 mm through-hole: near-top radius **3.9995 mm**, lower through-bore **3.9977 mm**, derived expansion **0.0017 mm**, identical with positive-stock chamfer OFF and ON. This directly establishes a missing conical lip **for this synthetic later-subtracted cylinder only**, not yet the range of real user-facing hardware placements.
+**Exact-head evidence:** [QA top cut-mouth diagnostics, success at 678c84a](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44842672555). Real Manifold-prepared synthetic 8 mm through-hole: near-top radius **3.9995 mm**, lower through-bore **3.9977 mm**, derived expansion **0.0017 mm**, identical with positive-stock chamfer OFF and ON. **Both independently decoded STL and 3MF** agree at each sampled section, proving missing conical lead-in **for this synthetic later-subtracted cylinder only**, not yet the scope of real user-facing hardware placements.
 **Repository baseline:** merged PR #121, main commit `9f792e1c133ab93cff0fc1ee68d2f23562b40077`.
 **Owner requirement:** remove audience-touchable sharp *top-facing* edges with a small conventional 45-degree chamfer, including relevant openings; **do not** indiscriminately soften functional hardware and underside edges.
 
@@ -10,18 +10,19 @@
 - PR #120 fixed the crinkling introduced by #117. PR #121 fixed zero-area triangles on optional raised Gear rim outlines. Do not regress either.
 - `studio-geometry.js::prepareRecipe` currently calls `bevelTopSolid` **on joined positive material**, before later `recipe.negative` cutters are subtracted. `fabrication-v1.js::prepareFabrication` likewise bevels joined Crystal stock before later LED/mount and light-path work.
 - Existing 12-tooth/68.5 mm/five-spoke/8 mm Gear fixture places spoke windows and centre bore **in its original positive extrusion**. Those rims already participate in the top chamfer; they are *not* a valid example of a later cut.
-- An explicit later-subtracted *top-entry cylinder* now **has a measured sharp upper lip in the independent exported STL**, despite the positive-stock chamfer being enabled. The real 3MF was also exported by the fixture, but its lip was not independently sectioned in this first diagnostic. Real user-facing hardware cut positions may be underside-only and intentionally out of scope; confirm them in Chromium and decoded 3MF before claiming an affected user workflow.
+- An explicit later-subtracted *top-entry cylinder* now **has a measured sharp upper lip in the independent exported STL**, despite the positive-stock chamfer being enabled. The real 3MF was also independently decoded and sectioned and agrees with the STL; the actual real user-facing affected placements remain to be reproduced. Real user-facing hardware cut positions may be underside-only and intentionally out of scope; confirm them in Chromium and decoded 3MF before claiming an affected user workflow.
 - `tests/edge-mouth-baseline-audit.mjs` generates an explicit positive box plus a later negative 8 mm bore. It produces a JSON comparison with chamfer off/on. It is **diagnostic only**: the green workflow confirms the measurement script ran, **not** that the exposed-lip defect is fixed.
-- `tests/helpers/print-section-profile.mjs` parses the *delivered binary STL*, checks degenerate triangles, sections at chosen print-Z planes, and measures a radial annulus in mm. It is independent of internal Manifold mesh reporting.
+- `tests/helpers/print-section-profile.mjs` parses the *delivered binary STL*, checks degenerate triangles, sections at chosen print-Z planes, and measures a radial annulus in mm. It is independent of internal Manifold mesh reporting. The separate `tests/helpers/three-mf-section-profile.mjs` decoder verifies the current uncompressed 3MF ZIP model in millimetres and rejects unsupported transforms or compression rather than guessing.
 
 ### Execute now
 
 ```bash
 node tests/helpers/print-section-profile.test.mjs
+node tests/helpers/three-mf-section-profile.test.mjs
 node tests/edge-mouth-baseline-audit.mjs
 ```
 
-First script exercises the STL helper without a browser or Manifold; second needs repository `npm` dependencies and actual Manifold WASM. It is **not** in the release suite and makes no claim about the physical feel of a part.
+The first two scripts exercise the STL and 3MF decoders without a browser or Manifold; the third needs repository `npm` dependencies and real Manifold WASM. It is **not** in the release suite and makes no claim about the physical feel of a part.
 
 ## Implementation approach (for Codex to evaluate)
 
