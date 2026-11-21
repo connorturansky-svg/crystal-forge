@@ -26,7 +26,7 @@ try{
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.edgeFinish?.enabled===true);
  await page.locator('.sms-workspace-nav [data-tab=build]').click();
  await page.locator('[data-view=top]').click();
- await page.waitForFunction(()=>window.__crystalForgeViewMetrics?.().settled,{timeout:30000}).catch(()=>{});
+ await page.waitForFunction(()=>window.__crystalForgeViewMetrics?.().settled,undefined,{timeout:30000});
  await page.locator('.sms-palette').getByRole('button',{name:'Place mounting hole in 3D'}).click();
  const point=await page.evaluate(()=>window.__sensoryStudio.fittingPointScreen(12,12,'top'));
  assert(point,'A supported top Gear face should be available for native M1 placement');
@@ -51,7 +51,7 @@ try{
  const job=page.locator('#smsJobs article').filter({hasText:name});
  await job.locator('[data-job-prepare]').click();
  await page.waitForFunction(()=>[...document.querySelectorAll('#smsJobs [data-job-stl]')]
-  .some(el=>!el.disabled),{timeout:120000});
+  .some(el=>!el.disabled),undefined,{timeout:120000});
  const downloads={};
  for(const format of ['stl','3mf']){
   const [download]=await Promise.all([page.waitForEvent('download',{timeout:30000}),
