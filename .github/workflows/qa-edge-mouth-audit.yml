@@ -10,6 +10,7 @@ on:
       - 'docs/EDGE_MOUTH_CODEX_PREWORK.md'
       - 'tests/edge-mouth-baseline-audit.mjs'
       - 'tests/edge-mouth-native-mount-audit.mjs'
+      - 'tests/edge-mouth-reference-coupons.mjs'
       - 'studio-geometry.js'
       - 'studio-top-bevel.js'
       - 'studio-material-export.js'
@@ -37,6 +38,7 @@ jobs:
           mkdir -p qa
           node tests/edge-mouth-baseline-audit.mjs | tee qa/edge-mouth-audit.json
           node tests/edge-mouth-native-mount-audit.mjs | tee qa/edge-mouth-native-mount-audit.json
+          node tests/edge-mouth-reference-coupons.mjs | tee qa/edge-mouth-reference-audit.json
       - name: Upload cross-section evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -45,4 +47,6 @@ jobs:
           path: |
             qa/edge-mouth-audit.json
             qa/edge-mouth-native-mount-audit.json
+            qa/edge-mouth-reference-audit.json
+            qa/coupons/*
           if-no-files-found: ignore
