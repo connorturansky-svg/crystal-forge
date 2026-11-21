@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   pages: write
+  deployments: read
   id-token: write
 concurrency:
   group: pages
@@ -66,6 +67,14 @@ jobs:
           test -s "$release/vendor/three/build/three.module.js"
           test -s "$release/vendor/manifold/manifold.wasm"
           touch _site/.nojekyll
+      - name: Retain previously published SHA-scoped assets
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p qa
+          node tests/pages-retain-deployed.test.mjs
+          node scripts/pages-retain-deployed.mjs _site "$GITHUB_SHA" --keep=3 | tee qa/pages-retention.json
+          node tests/pages-retained-stage.test.mjs
       # This is the same _site that will be uploaded to Pages, not a source-tree test host.
       # Every production push must pass a real packaged-app Chromium journey.
       - name: Install staged-release browser dependencies
@@ -104,6 +113,7 @@ jobs:
           path: |
             qa/pages-artifact-*.png
             qa/pages-stage.log
+            qa/pages-retention.json
           if-no-files-found: ignore
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name == 'push'
