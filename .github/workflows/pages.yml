@@ -105,6 +105,11 @@ jobs:
           CRYSTAL_FORGE_URL: http://127.0.0.1:4339/
           CRYSTAL_FORGE_EXPECTED_RELEASE: ${{ github.sha }}
         run: node tests/pages-artifact-browser.mjs
+      - name: Verify actual old and new tabs with SHA-specific manufacturing workers
+        timeout-minutes: 8
+        env:
+          CRYSTAL_FORGE_URL: http://127.0.0.1:4339/
+        run: node tests/pages-retained-real-browser.mjs
       - name: Preserve staged release smoke evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -112,6 +117,7 @@ jobs:
           name: crystal-forge-pages-staged-smoke
           path: |
             qa/pages-artifact-*.png
+            qa/pages-retained-*.png
             qa/pages-stage.log
             qa/pages-retention.json
           if-no-files-found: ignore
