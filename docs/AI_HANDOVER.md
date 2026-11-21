@@ -1,5 +1,15 @@
 # AI handover — read immediately after AGENTS.md
 
+## CURRENT RESTART POINTER — 21 NOVEMBER 2026 (read before historical entries)
+
+**This file contains historical chronological notes, including now-merged branches and superseded milestones.** For any new Codex task, read [CODEX_RESTART_20261121.md](CODEX_RESTART_20261121.md), `AGENTS.md` and the live issue/PR before using older snapshots below.
+
+- Main after owner merge **#124**: `8d19701ac5bd5521140ebe4e1dfcabbedba8c53f`. **#122, #123, #124 are MERGED**, not open draft tasks; all their reusable QA helpers, cross-section tests, first-print plan and Pages retention infrastructure are already on main. Fetch latest GitHub head and exact-head checks every time.
+- Next print-critical Codex work is **a new focused eligible top-facing negative-cut entry chamfer PR** under software #79, not continued QA prework or old PR #102/#113. `docs/EDGE_MOUTH_CODEX_FAST_START.md` gives confirmed real browser M1 dimensions, reference 45° cutter math, and export acceptance. The unchanged sharp-lip diagnostic is a **known software failure even when its observational CI is green**.
+- Owner retains physical/certification responsibilities in #10. Historical open PRs #37/#42/#90/#101 do not belong in this geometry task. Pages historical-file continuity is implemented in merged #124; an owner-run public already-open tab test remains separate from staged browser proof.
+- At the snapshot, newest #124 main static, Manifold and Pages deploy CI were green; full standard browser regression still running. Do not describe an incomplete workflow as passed.
+
+
 ## Raised Gear rim manufacturing
 - Baseline main 7827a95 fails STL/3MF export for the 68.5 mm Involute Gear with Rim rail or Hub and rim, in single and dual material and with the chamfer both on and off.
 - Radially scaled outlines coincide at radial tooth flanks. Manufacture the rail from two inward offsets of the original outline, before joining it to the stock. Keep the base outline, bore, spoke windows and hardware cuts.
