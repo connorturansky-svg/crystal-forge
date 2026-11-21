@@ -7,6 +7,8 @@ on:
       - 'tests/helpers/print-section-profile.test.mjs'
       - 'tests/helpers/three-mf-section-profile.mjs'
       - 'tests/helpers/three-mf-section-profile.test.mjs'
+      - 'tests/helpers/top-entry-lead-in-spec.mjs'
+      - 'tests/helpers/top-entry-lead-in-spec.test.mjs'
       - 'docs/EDGE_MOUTH_CODEX_PREWORK.md'
       - 'tests/edge-mouth-baseline-audit.mjs'
       - 'tests/edge-mouth-native-mount-audit.mjs'
@@ -34,6 +36,7 @@ jobs:
         run: |
           node tests/helpers/print-section-profile.test.mjs
           node tests/helpers/three-mf-section-profile.test.mjs
+          node tests/helpers/top-entry-lead-in-spec.test.mjs
       - name: Capture Manifold cut-mouth baseline (observational, not release acceptance)
         run: |
           mkdir -p qa
