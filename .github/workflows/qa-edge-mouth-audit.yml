@@ -9,6 +9,7 @@ on:
       - 'tests/helpers/three-mf-section-profile.test.mjs'
       - 'docs/EDGE_MOUTH_CODEX_PREWORK.md'
       - 'tests/edge-mouth-baseline-audit.mjs'
+      - 'tests/edge-mouth-native-mount-audit.mjs'
       - 'studio-geometry.js'
       - 'studio-top-bevel.js'
       - 'studio-material-export.js'
@@ -35,10 +36,13 @@ jobs:
         run: |
           mkdir -p qa
           node tests/edge-mouth-baseline-audit.mjs | tee qa/edge-mouth-audit.json
+          node tests/edge-mouth-native-mount-audit.mjs | tee qa/edge-mouth-native-mount-audit.json
       - name: Upload cross-section evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: edge-mouth-section-audit
-          path: qa/edge-mouth-audit.json
+          path: |
+            qa/edge-mouth-audit.json
+            qa/edge-mouth-native-mount-audit.json
           if-no-files-found: ignore
