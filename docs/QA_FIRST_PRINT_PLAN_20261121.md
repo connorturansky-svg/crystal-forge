@@ -4,6 +4,12 @@
 
 **Baseline to record at each test:** exact merged SHA, app version, saved project/JSON SHA, measured pixel profile ID and dimensions, STL/3MF filename, printer, nozzle, material, Cura version, layer height, support/infill/wall settings, photographs and measurements. Do not mix slicer and file revisions. PR #121's 68.5 mm Gear passed software tests and one CuraEngine 5.13 slice; that is not proof of a successful real print.
 
+## Ready-made comparison models
+
+The independent [QA geometry run #44844374416](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44844374416) generated two matching 32 × 32 × 8 mm, 8 mm-bore reference pieces: **sharp reference** and **0.5 mm / 45° lead-in reference**. Download their STL and 3MF pairs, explanatory README and independently decoded sections from [artifact #14682197240](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44844374416/artifacts/14682197240). Both exported formats measured the conical example's bore radius as approximately 4.485 mm at 7.99 mm print Z, 4.247 mm at 7.75 mm, and 4 mm below the half-millimetre lead-in. **This is sample geometry, not a released Studio feature or a completed physical test.**
+
+UltiMaker's [Cura quality/line-width guidance](https://support.ultimaker.com/s/article/1667337576725) recommends widths around the fitted nozzle size, with typical manual tuning within 75–125% of that size. For the 0.4 mm nozzle, begin with the matching installed Cura preset and check the tiny chamfer in actual layer preview; for AA 0.8, test separately because a 0.5 mm lip is smaller than the normal 0.8 mm line width. [UltiMaker confirms the AA 0.8 PLA core is supported on the UM3 series](https://support.ultimaker.com/s/article/1667337611872). Do not silently enlarge the CAD chamfer without validating neighbouring thin walls and fit.
+
 ## Quickest useful sample sequence
 
 | Order / specimen | Printed geometry | Why it matters | Measurements / pass decision |
