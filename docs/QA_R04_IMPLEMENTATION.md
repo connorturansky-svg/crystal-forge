@@ -22,7 +22,7 @@ When the API cannot be queried, the latest deployment SHA is unknown; a warning 
 ## Acceptance and owner review
 
 - [x] Initial draft [Pages run #44844601114](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44844601114) identified last actual Pages success `9f792e1`, staged three old releases, checked 224 JS assets and passed the existing packaged B Chromium model-to-STL smoke. Deployment was skipped on PR as expected.
-- [ ] Review the real historical A + current B staged browser job against the **latest PR head**.
+- [x] Real old A + new B staged browser run [#44845533087](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44845533087) passed: A loaded earlier published SHA `9f792e1`, B loaded new staged SHA, both launched their SHA-specific `studio-model-worker.js`, prepared a Tile and downloaded a 240,084-byte STL. [Evidence artifact #14682916846](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44845533087/artifacts/14682916846). Refresh exact-head CI after future changes.
 - [ ] Review latest-head static, Manifold/fabrication, browser, seven-builder finishing and Pages workflows.
 - [ ] Review artifact size increases. Four Manifold/vendor module trees consume more storage; consider a smaller bounded window if required, **without** assuming every commit actually deployed.
 - [ ] Owner reviews and merges; independently test a **live** old tab before/after the next real Pages deployment. Staged success is not a public deployment certificate.
