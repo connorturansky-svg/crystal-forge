@@ -103,6 +103,6 @@ jobs:
         with:
           name: edge-mouth-build-browser-audit
           path: |
-            qa/top-m1-browser-*
+            qa/top-m1-browser*
             qa/edge-mouth-browser-server.log
           if-no-files-found: ignore
