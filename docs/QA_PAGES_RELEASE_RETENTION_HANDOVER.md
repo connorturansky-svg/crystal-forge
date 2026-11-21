@@ -1,5 +1,7 @@
 # Pages release QA after PR #121 — implementation handover
 
+**SUPERSEDED IMPLEMENTATION STATUS:** Owner merged QA-R04 PR #124 on 21 November 2026 at main `8d19701ac`. Production `.github/workflows/pages.yml` now retains a bounded set of previous successfully deployed asset trees. Do **not** start the proposed integration task in this historical document. Recheck public old-tab continuity separately, as explained in [QA_R04_IMPLEMENTATION.md](QA_R04_IMPLEMENTATION.md).
+
 **Status:** Independent review and acceptance plan only; this branch changes no production workflow or public site. The owner controls merges and deployment.
 
 ## Implementation update (draft PR #124)
