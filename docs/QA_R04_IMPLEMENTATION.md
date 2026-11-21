@@ -1,5 +1,7 @@
 # QA-R04 Pages historical release retention — implementation and limits
 
+**MERGED UPDATE — 21 November 2026:** PR #124 merged into main at `8d19701ac5bd5521140ebe4e1dfcabbedba8c53f`. Main Pages deployment, static and fabrication checks passed. The stronger shared-storage A/B test passed on [QA Pages run #44845991428](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44845991428), with correctly scoped old/new workers and both STL exports. Original draft acceptance checklist below is retained as historical review evidence. Real public already-open-tab continuity across a fresh production deployment remains owner QA, not proven merely by staged CI.
+
 **Status:** draft PR #124; no merge/deployment approved. This follows merged QA-R02 #112 (staged browser gate) and QA-R03 #115 (old tab worker failure and proof helper).
 
 ## The actual loss scenario
