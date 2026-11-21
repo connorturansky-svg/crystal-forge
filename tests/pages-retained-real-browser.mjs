@@ -28,9 +28,12 @@ try{
  oldPage.on('pageerror',error=>errors.push('A '+error.message));
  oldPage.on('response',response=>{if(response.status()>=400)errors.push('A HTTP '+response.status()+' '+response.url());});
  oldPage.on('request',request=>{if(request.url().includes('fabrication-worker.js'))workers.old.push(request.url());});
- await oldPage.route('**/qa-historical-tab.html',route=>
+ // The old tab must use the exact live root URL, not a synthetic /qa path:
+ // applications may resolve navigation/state against location.pathname.
+ await oldPage.route(site,route=>
   route.fulfill({status:200,contentType:'text/html',body:oldHtml}));
- await oldPage.goto(new URL('qa-historical-tab.html',site).href,{waitUntil:'domcontentloaded'});
+ await oldPage.goto(site,{waitUntil:'domcontentloaded'});
+ await oldPage.unroute(site);
  await oldPage.waitForFunction(()=>window.__sensoryStudio,{timeout:45000});
  assert((await oldPage.evaluate(()=>document.baseURI)).includes('/releases/'+old+'/'));
  await oldPage.locator('#smsHomeNew').click();
@@ -47,7 +50,7 @@ try{
  await newPage.locator('#smsHomeNew').click();
  await newPage.locator('#smsPicker [data-generator="tactile-tiles"]').click();
  const run=async(page,sha,label)=>{
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-tab=build]').click({noWaitAfter:true});
   await page.locator('#smsSend').click();
   const prepare=page.locator('#smsJobs [data-job-prepare]').first();
   await prepare.click();
