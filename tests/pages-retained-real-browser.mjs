@@ -27,7 +27,7 @@ try{
  const oldPage=await browser.newPage({acceptDownloads:true,viewport:{width:1280,height:900}});
  oldPage.on('pageerror',error=>errors.push('A '+error.message));
  oldPage.on('response',response=>{if(response.status()>=400)errors.push('A HTTP '+response.status()+' '+response.url());});
- oldPage.on('request',request=>{if(request.url().includes('fabrication-worker.js'))workers.old.push(request.url());});
+ oldPage.on('request',request=>{if(/\/(?:studio-model-worker|fabrication-worker)\.js(?:\?|$)/.test(request.url()))workers.old.push(request.url());});
  // The old tab must use the exact live root URL, not a synthetic /qa path:
  // applications may resolve navigation/state against location.pathname.
  await oldPage.route(site,route=>
@@ -44,7 +44,7 @@ try{
  const newPage=await browser.newPage({acceptDownloads:true,viewport:{width:1280,height:900}});
  newPage.on('pageerror',error=>errors.push('B '+error.message));
  newPage.on('response',response=>{if(response.status()>=400)errors.push('B HTTP '+response.status()+' '+response.url());});
- newPage.on('request',request=>{if(request.url().includes('fabrication-worker.js'))workers.now.push(request.url());});
+ newPage.on('request',request=>{if(/\/(?:studio-model-worker|fabrication-worker)\.js(?:\?|$)/.test(request.url()))workers.now.push(request.url());});
  await newPage.goto(site,{waitUntil:'domcontentloaded'});
  await newPage.waitForFunction(()=>window.__sensoryStudio,{timeout:45000});
  assert((await newPage.evaluate(()=>document.baseURI)).includes('/releases/'+now+'/'));
@@ -52,17 +52,23 @@ try{
  await newPage.locator('#smsPicker [data-generator="tactile-tiles"]').click();
  console.log('Historical Pages QA phase: new version '+now.slice(0,8)+' loaded and Tile created');
  const run=async(page,sha,label)=>{
-  console.log('Historical Pages QA phase: opening Build on '+label+' at '+page.url());
-  // This QA protects worker/module loading rather than pointer actionability;
-  // trigger the actual DOM click handler to avoid a Playwright navigation
-  // heuristic mistaking the historical base URI for a future navigation.
-  await page.locator('.sms-workspace-nav [data-tab=build]')
-   .evaluate(button=>button.click(),undefined,{timeout:15000});
-  console.log('Historical Pages QA phase: sending '+label+' to Print Centre');
-  await page.locator('#smsSend').evaluate(button=>button.click(),undefined,{timeout:15000});
-  const prepare=page.locator('#smsJobs [data-job-prepare]').first();
-  console.log('Historical Pages QA phase: preparing '+label);
-  await prepare.evaluate(button=>button.click(),undefined,{timeout:15000});
+  // A and B deliberately remain open at the same origin. We are testing
+  // immutable Worker paths, not duplicating the existing pointer UX suite.
+  // Use the product's public Studio API to avoid unrelated navigation
+  // settling/large rendering costs while both live editors exist.
+  console.log('Historical Pages QA phase: send and prepare '+label+' at '+page.url());
+  const preparedTicket=await page.evaluate(()=>{
+   const studio=window.__sensoryStudio;
+   if(!studio?.currentModel?.id||typeof studio.send!=='function'||
+      typeof studio.prepare!=='function')throw Error('Public Studio preparation API missing');
+   studio.send(studio.currentModel.id);
+   const job=studio.project.printJobs.find(item=>item.modelId===studio.currentModel.id);
+   if(!job)throw Error('No queued model after Studio.send');
+   studio.prepare(job.id);
+   return {id:job.id,modelId:job.modelId};
+  });
+  assert(preparedTicket.id&&preparedTicket.modelId,label+' prepared the selected model');
+  console.log('Historical Pages QA phase: worker launched for '+label);
   await page.waitForFunction(()=>[...document.querySelectorAll('#smsJobs [data-job-stl]')]
    .some(button=>!button.disabled),undefined,{timeout:90000});
   const [download]=await Promise.all([
@@ -78,10 +84,10 @@ try{
  };
  const a=await run(oldPage,old,'old-a');
  const b=await run(newPage,now,'new-b');
- assert(workers.old.some(url=>url.includes('/releases/'+old+'/fabrication-worker.js')),
-  'Old A must spawn its original immutable SHA worker after B has loaded');
- assert(workers.now.some(url=>url.includes('/releases/'+now+'/fabrication-worker.js')),
-  'New B must spawn its current SHA worker');
+ assert(workers.old.some(url=>url.includes('/releases/'+old+'/studio-model-worker.js')),
+  'Old A must spawn its original immutable SHA model worker after B has loaded');
+ assert(workers.now.some(url=>url.includes('/releases/'+now+'/studio-model-worker.js')),
+  'New B must spawn its current SHA model worker');
  assert.deepEqual(errors,[],'No missing assets or browser exceptions across A and B');
  console.log(JSON.stringify({status:'real staged historical A and current B pass manufacturing',
   previous:a,current:b,oldWorkerRequests:workers.old.length,newWorkerRequests:workers.now.length},null,2));
