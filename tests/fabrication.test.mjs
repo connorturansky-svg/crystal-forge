@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import Module from 'manifold-3d';
 import {exportMaterialBodies} from '../studio-material-export.js';
+import {readBinaryStlTriangles,sliceStlAtZ,radialSectionProfile} from './helpers/print-section-profile.mjs';
+import {readCrystal3MfTriangles} from './helpers/three-mf-section-profile.mjs';
 import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfaceHeight,baseProfileHeight,baseEdgeHeight,crystalRootOffset,crystalOrientation,crystalEndRatios} from '../geometry-v3.js';
 import {setThreeInstance,prepareFabrication,putSocket,socketRoofStockEnvelope,probeLightPassageSegment,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,splitPreparedMeshGrid,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
@@ -797,6 +799,25 @@ const builtTabs=validate('edge-tabs',cfgTabs);
 assert.equal(builtTabs.edgeTabs,plannedTabs.tabs.length,'All planned tabs are fused into mesh');
 assert.equal(builtTabs.mountingHolesCut,plannedTabs.tabHoles.length,'All accepted tab holes are drilled');
 assert.equal(builtTabs.disconnected,1,'Tabs and body remain connected');
+for(const enabled of [false,true]){
+ const s={...cfgTabs,tabHolesPerTab:1,edgeFinishEnabled:enabled,edgeFinishAmount:.5};
+ const {meshes,crystals}=assembly(s);
+ const {report,geometry}=prepareFabrication({wasm,meshes,crystals,settings:s});
+ const {threeMF}=exportMaterialBodies({report:{ready:true,engine:'Manifold',coordinateFrame:'Y-up'},
+  bodies:[{role:'primary',volume:report.volumeMm3,mesh:report.mesh}]});
+ assert.equal(report.disconnected,1);
+ assert.equal(report.socketsCut,builtTabs.socketsCut);
+ const stl=readBinaryStlTriangles(encodeSTL(geometry));
+ geometry.dispose();
+ for(const triangles of [stl,readCrystal3MfTriangles(threeMF)]){
+  const hole=report.hardware.tabHoles[0];
+  for(const [height,radius] of [[hole.depth-.25,hole.radius+(enabled?.25:0)],[hole.depth-1,hole.radius],[.5,hole.radius]]){
+   const section=radialSectionProfile(sliceStlAtZ(triangles,height),
+    {center:[hole.x,-hole.z],minRadius:hole.radius-.1,maxRadius:hole.radius+.6});
+   assert(Math.abs(section?.medianRadius-radius)<.02,'Crystal tab bore section at '+height+' mm');
+  }
+ }
+}
 const vaultCheck=validate('zero-infill-vault',{...settings,count:8,baseHeight:25,baseDome:12,
  baseVault:true,lightPorts:true,vaultSupportPitch:25,cutSockets:true,pixelCount:1,hollowCrystals:false});
 assert(vaultCheck.vault.applied,'Zero-infill base vault is cut in the manufacturing mesh');

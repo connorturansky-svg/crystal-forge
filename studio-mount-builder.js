@@ -60,7 +60,8 @@ export function addManualMountCuts(recipe,build={}){
   const blind=blindMountProfile(mount.profile);
   if(!blind)recipe.negative.push({
    fixingId,kind:'cylinder',radius:mount.diameter/2,height:recipe.bounds.height+12,
-   position:[mount.x,recipe.bounds.height/2,mount.z],...marker
+   position:[mount.x,recipe.bounds.height/2,mount.z],...marker,
+   finishTopMouth:marker.mountEntryFace==='top'&&(mount.profile??mountProfiles[0])===mountProfiles[0]
   });
   if(mount.profile&&mount.profile!==mountProfiles[0]){
    const top=mount.entryFace!=='underside',surfaceY=top?recipe.serialSupport.topY:0;
