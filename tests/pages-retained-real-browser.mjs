@@ -38,6 +38,7 @@ try{
  assert((await oldPage.evaluate(()=>document.baseURI)).includes('/releases/'+old+'/'));
  await oldPage.locator('#smsHomeNew').click();
  await oldPage.locator('#smsPicker [data-generator="tactile-tiles"]').click();
+ console.log('Historical Pages QA phase: old version '+old.slice(0,8)+' loaded and Tile created');
  assert.equal(workers.old.length,0,'Old tab must defer manufacturing-worker startup until first Prepare');
  // B becomes the current published entrypoint while A stays open.
  const newPage=await browser.newPage({acceptDownloads:true,viewport:{width:1280,height:900}});
@@ -49,11 +50,19 @@ try{
  assert((await newPage.evaluate(()=>document.baseURI)).includes('/releases/'+now+'/'));
  await newPage.locator('#smsHomeNew').click();
  await newPage.locator('#smsPicker [data-generator="tactile-tiles"]').click();
+ console.log('Historical Pages QA phase: new version '+now.slice(0,8)+' loaded and Tile created');
  const run=async(page,sha,label)=>{
-  await page.locator('.sms-workspace-nav [data-tab=build]').click({noWaitAfter:true});
-  await page.locator('#smsSend').click();
+  console.log('Historical Pages QA phase: opening Build on '+label+' at '+page.url());
+  // This QA protects worker/module loading rather than pointer actionability;
+  // trigger the actual DOM click handler to avoid a Playwright navigation
+  // heuristic mistaking the historical base URI for a future navigation.
+  await page.locator('.sms-workspace-nav [data-tab=build]')
+   .evaluate(button=>button.click(),undefined,{timeout:15000});
+  console.log('Historical Pages QA phase: sending '+label+' to Print Centre');
+  await page.locator('#smsSend').evaluate(button=>button.click(),undefined,{timeout:15000});
   const prepare=page.locator('#smsJobs [data-job-prepare]').first();
-  await prepare.click();
+  console.log('Historical Pages QA phase: preparing '+label);
+  await prepare.evaluate(button=>button.click(),undefined,{timeout:15000});
   await page.waitForFunction(()=>[...document.querySelectorAll('#smsJobs [data-job-stl]')]
    .some(button=>!button.disabled),undefined,{timeout:90000});
   const [download]=await Promise.all([
