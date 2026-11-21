@@ -1,5 +1,7 @@
 # Next WT-021 software priorities after edge finishing and Gear #121
 
+**LATEST COORDINATION NOTE:** PRs #122 (edge-mouth test suite), #123 (handover/print plan), and #124 (Pages retention) are now **merged** on `main`. Edge-mouth **product geometry is still not fixed**; it is the first Codex manufacturing task in [CODEX_RESTART_20261121.md](CODEX_RESTART_20261121.md). References below to draft/support work describe the historical plan, not active PRs.
+
 **Snapshot from the current main acceptance register at review:** docs/WT021_COMPLETION_REGISTER.md shows these five still PARTIAL entries in its identified DIM/FAB/FIT/CAL/PAR/UX table. The register is an acceptance ledger, **not an exhaustive live defect scanner**. Recheck main and tests before claiming a status.
 
 ## Prioritize by print impact, not feature count
