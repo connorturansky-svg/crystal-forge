@@ -2,6 +2,12 @@
 
 **Status:** Independent review and acceptance plan only; this branch changes no production workflow or public site. The owner controls merges and deployment.
 
+## Implementation update (draft PR #124)
+
+A separate, **unmerged** production integration draft is now available: [QA-R04 #124 — retain last successful and recent Pages assets](https://github.com/connorturansky-svg/crystal-forge/pull/124). Its staged Pages workflow successfully identified the previous successful deployment SHA **9f792e1c**, restored three previous version directories, checked **224 JS modules**, and passed a fresh staged Chromium model-to-STL smoke in [run #44844601114](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44844601114). Static metadata checks were subsequently repaired on the draft branch; use current exact-head CI before any owner decision. This does **not** prove a real live A-open/B-deploy continuity test or guarantee protection outside the retention window.
+
+Do not duplicate this implementation in a second task while #124 is under review. Existing steps below describe the requirements and residual validation gates.
+
 ## Existing evidence and gaps
 
 | Workstream | State | Scope |
