@@ -21,10 +21,13 @@ const oldHtml=html.replace('<head>','<head><base href="./releases/'+old+'/"><met
 const browser=await chromium.launch({headless:true,
  executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
  args:['--no-sandbox','--disable-dev-shm-usage']});
+// Both tabs live in one browser context, sharing the same-origin localStorage
+// and session state as a real person leaving Studio open across deployment.
+const context=await browser.newContext({acceptDownloads:true,viewport:{width:1280,height:900}});
 const errors=[],workers={old:[],now:[]};
 await mkdir('qa',{recursive:true});
 try{
- const oldPage=await browser.newPage({acceptDownloads:true,viewport:{width:1280,height:900}});
+ const oldPage=await context.newPage();
  oldPage.on('pageerror',error=>errors.push('A '+error.message));
  oldPage.on('response',response=>{if(response.status()>=400)errors.push('A HTTP '+response.status()+' '+response.url());});
  oldPage.on('request',request=>{if(/\/(?:studio-model-worker|fabrication-worker)\.js(?:\?|$)/.test(request.url()))workers.old.push(request.url());});
@@ -36,20 +39,18 @@ try{
  await oldPage.unroute(site);
  await oldPage.waitForFunction(()=>window.__sensoryStudio,{timeout:45000});
  assert((await oldPage.evaluate(()=>document.baseURI)).includes('/releases/'+old+'/'));
- await oldPage.locator('#smsHomeNew').click();
- await oldPage.locator('#smsPicker [data-generator="tactile-tiles"]').click();
+ await oldPage.evaluate(()=>window.__sensoryStudio.addModel('tactile-tiles',{},'Retained A Tile'));
  console.log('Historical Pages QA phase: old version '+old.slice(0,8)+' loaded and Tile created');
  assert.equal(workers.old.length,0,'Old tab must defer manufacturing-worker startup until first Prepare');
  // B becomes the current published entrypoint while A stays open.
- const newPage=await browser.newPage({acceptDownloads:true,viewport:{width:1280,height:900}});
+ const newPage=await context.newPage();
  newPage.on('pageerror',error=>errors.push('B '+error.message));
  newPage.on('response',response=>{if(response.status()>=400)errors.push('B HTTP '+response.status()+' '+response.url());});
  newPage.on('request',request=>{if(/\/(?:studio-model-worker|fabrication-worker)\.js(?:\?|$)/.test(request.url()))workers.now.push(request.url());});
  await newPage.goto(site,{waitUntil:'domcontentloaded'});
  await newPage.waitForFunction(()=>window.__sensoryStudio,{timeout:45000});
  assert((await newPage.evaluate(()=>document.baseURI)).includes('/releases/'+now+'/'));
- await newPage.locator('#smsHomeNew').click();
- await newPage.locator('#smsPicker [data-generator="tactile-tiles"]').click();
+ await newPage.evaluate(()=>window.__sensoryStudio.addModel('tactile-tiles',{},'Current B Tile'));
  console.log('Historical Pages QA phase: new version '+now.slice(0,8)+' loaded and Tile created');
  const run=async(page,sha,label)=>{
   // A and B deliberately remain open at the same origin. We are testing
