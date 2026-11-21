@@ -1,28 +1,19 @@
-# WT-021 — Current actionable state (overwrite the pointer, preserve the log)
+# WT-021 — Current actionable state (snapshot; verify remote before coding)
 
-**Read this first on each Codex restart.** Keep ≤45 lines; this is an initial snapshot, not a live status service. Actual head and CI must be fetched.
+**Updated by independent QA on 21 November 2026.** This is a human-readable checkpoint, not live status. Fetch current `origin/main`, open PRs and exact-head checks before work. Preserve durable run logs separately.
 
-- **Current baseline:** #110 merged into `main` at `5732e33` (exact-head static, Chromium and Manifold all passed). P0 profile-data follow-up is now [draft PR #113](https://github.com/connorturansky-svg/crystal-forge/pull/113), branch `wt021/profile-integrity-after-110`; refresh exact final SHA and CI.
-- **Last all-three-workflow-green:** PR #110 exact head `06a632c` (static/Chromium/fabrication). #113 is not yet verified.
-- **Acceptance:** Seven independent family journeys and UX-01 verified at 8083c547b76b5b1df4b547ffccc3ceb6b5765439. Remaining software gates are partial.
-- **Authoritative documents:** [completion register](WT021_COMPLETION_REGISTER.md), [approved full WT-021 brief](../prompts/021-complete-seven-builder-manufacturing-parity.md) and [engineering handover](WT021_CODEX_HANDOFF.md).
-- **Owner constraints:** owner controls final merge/deploy, not routine commits; GitHub development branch is not review-protected. Real Cura and physical proof are tracked under #10, software parity under #79.
+- **Main baseline at review:** `9f792e1c133ab93cff0fc1ee68d2f23562b40077` after merged **PR #121** (raised Gear rim manufacturing repair). Previous #117 edge finishing, #118 numeric values and #120 true 45-degree top chamfer have also merged. The old #102 exclusive-branch instruction and #113 draft-profile task are **completed/historical**: do not work in those branches.
+- **Known print issue:** the top-rim chamfer operates on joined **positive** stock before certain native/Crystal **negative** cutters. The upper lip of a later-cut exposed manual M1 hole remains sharp.
+- **Proven real Build reproduction:** [QA #122](https://github.com/connorturansky-svg/crystal-forge/pull/122) [Chromium run #44844788817](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44844788817) placed M1 by mouse on a solid Gear top with finishing ON, reloaded, prepared and downloaded both STL and 3MF. They independently measured nominal 3.4 mm hole radius **1.6998 mm near mouth** and **1.6992 mm deeper**—only **0.0006 mm expansion**. Synthetic/off-on Manifold repro and printable 45-degree target reference STL/3MF are also in #122.
+- **Fastest next Codex task (when authorised):** read `AGENTS.md`, `docs/AI_HANDOVER.md` on current main, then [`docs/EDGE_MOUTH_CODEX_FAST_START.md` from draft #122](https://github.com/connorturansky-svg/crystal-forge/blob/qa/edge-mouth-prework-20261121/docs/EDGE_MOUTH_CODEX_FAST_START.md). Reuse independent section decoders and `tests/helpers/top-entry-lead-in-spec.mjs` reference math. Implement eligible **top-entry 45° local lead-in** only after exposed-face, stock, collision and function-specific guards; keep underside pixels, retention throats, countersinks, pockets and wiring unchanged. Deliver a **new focused draft PR**, exact-head Manifold, STL/3MF and Chromium evidence. Owner alone merges.
+- **Separate QA branch #123:** [first-print plan and updated instructions](https://github.com/connorturansky-svg/crystal-forge/pull/123) including seven physical reference samples, results CSV, open-PR triage and the next partial-acceptance priorities. No production code changes.
+- **Separate Pages branch #124:** [retention integration](https://github.com/connorturansky-svg/crystal-forge/pull/124) for old open tabs; not a geometry task. Stage-only current/older releases must be checked in CI; owner approves public release.
+- **Remaining WT-021 partial software acceptance** in [the register](WT021_COMPLETION_REGISTER.md): FIT-02 positive/negative hardware preview, FIT-03 real full IN→OUT routing, PAR-02 selected-body editing, PAR-04 actual Cura profile compatibility, and DIM-01's **historical** Crystal dimensional comparison which still needs original owner project/export. Do not reopen verified items without a regression.
+- **Physical sign-off:** [issue #10](https://github.com/connorturansky-svg/crystal-forge/issues/10), **not complete**; required owner Cura layers, actual LED/cable fit, roof, tactile, optical and mounting evidence. Software backlog is [#79](https://github.com/connorturansky-svg/crystal-forge/issues/79), contributor overlap [#105](https://github.com/connorturansky-svg/crystal-forge/issues/105). #51 modular assembly is still on hold.
 
-## Next executable step
+## Resume rules
 
-- **Target:** Verify PR #113 safe measured profile save, 31st-profile refusal, wrong-target deletion prevention, private vault and two-browser complete-backup restoration. Confirm all exact-head CI before merge.
-- **Checkpoint:** all seven browser fixtures have local Design-to-download evidence. Crystal supports manual through-holes with edge tabs. Rotary Caps explicitly distinguish moving from stationary. The Features and What’s New catalogue passed local navigation, state, layout and keyboard tests.
-- **Next test:** Inspect PR #113 browser run failures (if any); reproduce the new Tile quota/retry/restore path and keep all existing Crystal/native tests green. Then resume remaining five partial acceptance rows.
-- **Then:** Restore DIM-01 from the original owner STL/project sample, extend FIT-02/FIT-03/PAR-02; physical Cura/printing remains under #10. UX-03 selected-body dimensions remains separate.
-
-## Resume instruction
-
-Check branch, working tree, actual remote HEAD and relevant exact-head CI. If this task was completed, move to the next unverified dependency instead of rerunning it. Before interruption **overwrite this pointer** with current tested state/one next command, append a terse `WT021_RUN_LOG.md` checkpoint, and update coordination issue #105. The original PR #102 is merged.
-
-## After publishing the integration draft
-
-Profile integrity takes priority over new authoring features. Reproduce the findings in issue #79 with disposable profiles and two clean browser contexts. Prevent silent eviction at 31 profiles, make failed calibration writes preserve the prior model and profile library, and round-trip custom profiles through complete backups and the private vault. Test quota errors, retry, conflicts and legacy restoration.
-
-## UX-03 advanced part editing
-
-Track separately from WT-021 P0 manufacturing. Add Reset to default size without changing styling or unrelated settings. Add independent width, depth and height controls for a selected additional body, starting with the raised body of a Rotary Control Cap. Add Reset selected body dimensions. Verify preview, undo and redo, save and reload, measured STL and 3MF parity, and rejection of invalid geometry.
+1. Fetch latest main SHA and compare all open PRs; never use this snapshot as proof of live state.
+2. Use tested read-only QA helper code from #122 where useful; no automatic merging of QA or product branches.
+3. Preserve latest-head static, real browser, Manifold and STL/3MF evidence; keep changelog + in-app What's New synchronised for actual user-visible product changes.
+4. If interrupted, update this short pointer, the relevant run log, exact PR SHA/CI links and coordination #105 with **one next executable task**. Do not claim Cura/physical safety from CI alone.
