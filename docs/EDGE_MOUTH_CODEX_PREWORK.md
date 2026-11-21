@@ -5,6 +5,11 @@
 **Repository baseline:** merged PR #121, main commit `9f792e1c133ab93cff0fc1ee68d2f23562b40077`.
 **Owner requirement:** remove audience-touchable sharp *top-facing* edges with a small conventional 45-degree chamfer, including relevant openings; **do not** indiscriminately soften functional hardware and underside edges.
 
+## New reproducible real native M1 fixture and target geometry
+
+- **Actual native Build planner:** `tests/edge-mouth-native-mount-audit.mjs` calls `applyBuildModules` with a supported 70 × 40 × 10 mm planar-top solid and manual mounting record M1 (`entryFace:'top'`, `profile:'Through-hole'`, diameter 8 mm), then calls `prepareRecipe` and independently sections both exports. [CI run #44844326485](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44844326485) passed: at print Z=9.75 mm the M1 radius was **3.9996 mm**, at Z=8.75 mm **3.9981 mm**; expansion **0.0015 mm**, **identical with edgeFinish OFF/ON**. The outer stock volume *did* fall with chamfer enabled (27498.7794 to 27471.4461 mm³), establishing that the checkbox was active but left the later-cut top M1 lip sharp. Both decoded STL and 3MF agree. This is a real production Build-planner path; real end-user pointer/keyboard operation remains to be tested in Chromium.
+- **Print-ready reference examples, not production code:** `tests/edge-mouth-reference-coupons.mjs` generates a 32 × 32 × 8 mm flat sample with an 8 mm sharp bore and a matching sample with an explicit **0.5 mm, 45° local conical entry cutter**. [QA run #44844374416](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44844374416) passed and uploaded actual STL+3MF pairs and `reference-section-measurements.json` in [artifact #14682197240](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44844374416/artifacts/14682197240). Lead-in radius was **4.4852 at Z 7.99, 4.2474 at 7.75, 4.0000 at 7.50 and 3.9985 at 6.75 mm**; both export formats matched. This is a tested implementation *example of the desired geometry*, not a proof the real Build toggle is fixed.
+
 ## Evidence boundary and upstream context
 
 - PR #120 fixed the crinkling introduced by #117. PR #121 fixed zero-area triangles on optional raised Gear rim outlines. Do not regress either.
