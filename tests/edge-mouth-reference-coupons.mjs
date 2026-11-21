@@ -11,6 +11,7 @@ import {prepareRecipe} from '../studio-geometry.js';
 import {exportMaterialBodies} from '../studio-material-export.js';
 import {readBinaryStlTriangles,sliceStlAtZ,radialSectionProfile} from './helpers/print-section-profile.mjs';
 import {readCrystal3MfTriangles} from './helpers/three-mf-section-profile.mjs';
+import {topEntryLeadInSpec} from './helpers/top-entry-lead-in-spec.mjs';
 
 const wasm=await Module();wasm.setup();
 const folder='qa/coupons';
@@ -18,7 +19,7 @@ await mkdir(folder,{recursive:true});
 const finish={enabled:true,style:'Chamfer',scope:'Top edges',amountMm:.5,steps:1};
 const stock={kind:'box',size:[32,8,32],position:[0,4,0]};
 const bore={kind:'cylinder',radius:4,height:10,position:[0,4,0]};
-const leadIn={kind:'cylinder',radius:4,topRadius:4.6,height:.6,position:[0,7.8,0]};
+const leadIn=topEntryLeadInSpec({x:0,z:0,surfaceY:8,diameter:8,amountMm:.5});
 const results=[];
 for(const [label,extra] of [['sharp-reference',[]],['45deg-entry-reference',[leadIn]]]){
  const prep=prepareRecipe(THREE,wasm,{positive:[stock],negative:[bore,...extra],secondary:[],edgeFinish:finish});
