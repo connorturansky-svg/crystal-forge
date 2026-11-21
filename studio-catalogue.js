@@ -531,7 +531,7 @@ function addBackingTabs(recipe,build,routing){
   const label='Tab '+(hole.tabIndex+1),fixingId='backing-tab-'+hole.tabIndex;
   if(!mountProfiles.includes(profile))throw Error(label+' needs a supported fixing profile.');
   recipe.negative.push({...cylinder(hole.radius,backing.thickness+2,[hole.x,backing.thickness/2,hole.z]),
-   tabHole:'Tab fixing hole '+(hole.tabIndex+1),fixingId});
+   tabHole:'Tab fixing hole '+(hole.tabIndex+1),fixingId,finishTopMouth:profile===mountProfiles[0]});
   if(profile!==mountProfiles[0])recipe.negative.push(fixingRecessCut({...tab,profile,diameter,x:hole.x,z:hole.z},
    {fixingId,label:label+' recess'}));
  }

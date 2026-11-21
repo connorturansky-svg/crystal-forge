@@ -2,10 +2,13 @@
 
 ## CURRENT RESTART POINTER — 21 NOVEMBER 2026 (read before historical entries)
 
+- The focused hardware-mouth branch starts at main after #125 (`d0f7fdb`). Native top-entry through-mounts and eligible external through-tabs use a local profiled Manifold cutter. Crystal uses the same eligibility check on its external tab through-holes. The existing chamfer amount controls the lead-in.
+- The promoted edge-mouth checks use the merged #122 STL/3MF parsers. Local Chromium measured the 3.4 mm Gear M1 at 1.9489 mm radius 0.25 mm below the top and 1.6995 mm deeper in both exports. The pre-fix measurement at those depths was 1.6998 and 1.6992 mm.
+
 **This file contains historical chronological notes, including now-merged branches and superseded milestones.** For any new Codex task, read [CODEX_RESTART_20261121.md](CODEX_RESTART_20261121.md), `AGENTS.md` and the live issue/PR before using older snapshots below.
 
 - Main after owner merge **#124**: `8d19701ac5bd5521140ebe4e1dfcabbedba8c53f`. **#122, #123, #124 are MERGED**, not open draft tasks; all their reusable QA helpers, cross-section tests, first-print plan and Pages retention infrastructure are already on main. Fetch latest GitHub head and exact-head checks every time.
-- Next print-critical Codex work is **a new focused eligible top-facing negative-cut entry chamfer PR** under software #79, not continued QA prework or old PR #102/#113. `docs/EDGE_MOUTH_CODEX_FAST_START.md` gives confirmed real browser M1 dimensions, reference 45° cutter math, and export acceptance. The unchanged sharp-lip diagnostic is a **known software failure even when its observational CI is green**.
+- The edge-mouth work is tracked under software #79. `docs/EDGE_MOUTH_CODEX_FAST_START.md` records the pre-fix browser measurements and reference 45° cutter math. The promoted regressions now fail if an eligible lip stays sharp.
 - Owner retains physical/certification responsibilities in #10. Historical open PRs #37/#42/#90/#101 do not belong in this geometry task. Pages historical-file continuity is implemented in merged #124; an owner-run public already-open tab test remains separate from staged browser proof.
 - At the snapshot, newest #124 main static, Manifold and Pages deploy CI were green; full standard browser regression still running. Do not describe an incomplete workflow as passed.
 

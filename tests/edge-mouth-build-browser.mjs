@@ -1,6 +1,5 @@
-/* End-to-end exploratory proof. A real pointer places native M1; the browser
- * then saves/reloads, prepares and downloads the STL and 3MF. No runtime code
- * is changed and this is not a passing tactile-safety acceptance test.
+/* A real pointer places native M1. The browser saves/reloads, prepares and
+ * downloads STL and 3MF for independent cross-section measurements.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -8,7 +7,9 @@ import {chromium} from 'playwright';
 import {readBinaryStlTriangles,sliceStlAtZ,radialSectionProfile} from './helpers/print-section-profile.mjs';
 import {readCrystal3MfTriangles} from './helpers/three-mf-section-profile.mjs';
 
+const enabled=!process.argv.includes('--finish-off');
 const name='QA exposed M1 bore in Gear';
+const artifact='qa/top-m1-browser'+(enabled?'':'-off');
 const browser=await chromium.launch({headless:true,
  executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
  args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -22,8 +23,8 @@ try{
   teeth:12,bore:0,thickness:10,reliefStyle:'None',dualMaterial:false
  },name),name);
  await page.locator('.sms-workspace-nav [data-tab=design]').click();
- await page.locator('.sms-palette [data-edge-finish=enabled]').check();
- await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.edgeFinish?.enabled===true);
+ await page.locator('.sms-palette [data-edge-finish=enabled]').setChecked(enabled);
+ await page.waitForFunction(enabled=>Boolean(window.__sensoryStudio.currentModel.build.edgeFinish?.enabled)===enabled,enabled);
  await page.locator('.sms-workspace-nav [data-tab=build]').click();
  await page.locator('[data-view=top]').click();
  await page.waitForFunction(()=>window.__crystalForgeViewMetrics?.().settled,undefined,{timeout:30000});
@@ -37,9 +38,9 @@ try{
   edgeFinish:window.__sensoryStudio.currentModel.build.edgeFinish}));
  assert.equal(before.mount.entryFace,'top');
  assert.equal(before.mount.diameter,3.4);
- assert.equal(before.edgeFinish.enabled,true);
+ assert.equal(Boolean(before.edgeFinish?.enabled),enabled);
  await fs.mkdir('qa',{recursive:true});
- await page.screenshot({path:'qa/top-m1-browser-build.png'});
+ await page.screenshot({path:artifact+'-build.png'});
  await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
  await page.reload();
  await page.waitForFunction(name=>window.__sensoryStudio?.currentModel?.name===name,name);
@@ -59,7 +60,7 @@ try{
   assert.equal(await download.failure(),null);
   const bytes=await fs.readFile(await download.path());
   downloads[format]=bytes;
-  await download.saveAs('qa/top-m1-browser.'+format);
+  await download.saveAs(artifact+'.'+format);
  }
  const check={
   STL:readBinaryStlTriangles(downloads.stl),
@@ -68,21 +69,22 @@ try{
  const results={};
  for(const [format,triangles] of Object.entries(check)){
   const at=z=>radialSectionProfile(sliceStlAtZ(triangles,z),
-   {center:[before.mount.x,-before.mount.z],minRadius:1.45,maxRadius:2.2});
+   {center:[before.mount.x,-before.mount.z],minRadius:1.45,maxRadius:2.25});
   const top=at(9.75),deep=at(8.75);
   assert(top?.matchingSegments>=8&&deep?.matchingSegments>=8,format+' through-hole did not section');
+  for(const [height,radius] of [[9.99,enabled?2.19:1.7],[9.75,enabled?1.95:1.7],[9.5,1.7],[8.75,1.7],[.5,1.7]]){
+   assert(Math.abs(at(height)?.medianRadius-radius)<.015,format+': unexpected M1 radius at '+height);
+  }
   results[format]={nearTopRadiusMm:+top.medianRadius.toFixed(4),
    deepRadiusMm:+deep.medianRadius.toFixed(4),
    expansionMm:+(top.medianRadius-deep.medianRadius).toFixed(4)};
  }
  assert(Math.abs(results.STL.nearTopRadiusMm-results.MF3.nearTopRadiusMm)<.01);
  assert(Math.abs(results.STL.deepRadiusMm-results.MF3.deepRadiusMm)<.01);
- await page.screenshot({path:'qa/top-m1-browser-printed.png'});
+ await page.screenshot({path:artifact+'-printed.png'});
  assert.deepEqual(errors,[],'No uncaught Chromium errors');
  const report={name,realPointerPlacement:true,reloaded:true,downloaded:['STL','3MF'],
-  hole:before.mount,edgeFinishEnabled:true,results,
-  outcome:results.STL.expansionMm>.15?'top-entry-lead-in-observed':'top-entry-sharp-lip-observed',
-  disclaimer:'Diagnostic only: not a tactile-safety or hardware-fit certificate'};
- await fs.writeFile('qa/top-m1-browser-evidence.json',JSON.stringify(report,null,2));
+  hole:before.mount,edgeFinishEnabled:enabled,results};
+ await fs.writeFile(artifact+'-evidence.json',JSON.stringify(report,null,2));
  console.log(JSON.stringify(report,null,2));
 }finally{await browser.close();}

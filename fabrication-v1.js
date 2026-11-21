@@ -1,4 +1,5 @@
 import {bevelTopSolid} from './studio-top-bevel.js';
+import {topEntryChamfer} from './top-entry-chamfer.js';
 import {crystalEdgeFinish} from './studio-edge-finish.js';
 import {auditLightPassages} from './light-passage-inspection.js';
 /* Crystal Forge manufacturing pipeline v0.4
@@ -742,6 +743,21 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
    // main base outline, to accept a bolt or looped cable tie.
    const tabCutters=hardware.tabHoles.map(p=>hold(wasm.Manifold.cylinder(
      p.depth+2,p.radius,p.radius,40).rotate([-90,0,0]).translate([p.x,-1,p.z])));
+   if(s.edgeFinishEnabled){
+    const {amountMm}=crystalEdgeFinish(s);
+    for(const [index,p] of hardware.tabHoles.entries()){
+     const place=solid=>hold(hold(solid.rotate([-90,0,0])).translate([p.x,0,p.z]));
+     const cylinder=(bottom,top,radius)=>place(hold(wasm.Manifold.cylinder(
+       top-bottom,radius,radius,40).translate([0,0,bottom])));
+     const profile=rings=>place(hold(wasm.Manifold.revolve([[
+      [0,rings[0][0]],...rings.map(([height,radius])=>[radius,height]),[0,rings.at(-1)[0]]
+     ]],40)));
+     const cutter=topEntryChamfer({stock:combined,bore:tabCutters[index],radius:p.radius,
+      amount:amountMm,cylinder,profile,hold,otherCuts:tabCutters.filter((_,i)=>i!==index)});
+     if(cutter)tabCutters[index]=cutter;
+     else warnings.push('Edge tab hole '+(index+1)+' mouth chamfer skipped. The opening needs a clear, flat top with more surrounding material.');
+    }
+   }
    const joined=hold(wasm.Manifold.union(tabCutters));
    const opened=hold(combined.subtract(joined));
    assertSolid(opened,'Edge fixing bolt and cable-tie holes');
