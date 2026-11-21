@@ -1,0 +1,39 @@
+name: QA — top cut-mouth geometry diagnostics
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/helpers/print-section-profile.mjs'
+      - 'tests/helpers/print-section-profile.test.mjs'
+      - 'tests/edge-mouth-baseline-audit.mjs'
+      - 'studio-geometry.js'
+      - 'studio-top-bevel.js'
+      - 'studio-material-export.js'
+      - '.github/workflows/qa-edge-mouth-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing repository dependencies
+        run: npm install --prefer-offline --no-audit --no-fund --no-progress
+      - name: Validate independent STL section helper
+        run: node tests/helpers/print-section-profile.test.mjs
+      - name: Capture Manifold cut-mouth baseline (observational, not release acceptance)
+        run: |
+          mkdir -p qa
+          node tests/edge-mouth-baseline-audit.mjs | tee qa/edge-mouth-audit.json
+      - name: Upload cross-section evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-mouth-section-audit
+          path: qa/edge-mouth-audit.json
+          if-no-files-found: ignore
