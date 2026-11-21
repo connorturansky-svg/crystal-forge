@@ -5,6 +5,9 @@ on:
     paths:
       - 'tests/helpers/print-section-profile.mjs'
       - 'tests/helpers/print-section-profile.test.mjs'
+      - 'tests/helpers/three-mf-section-profile.mjs'
+      - 'tests/helpers/three-mf-section-profile.test.mjs'
+      - 'docs/EDGE_MOUTH_CODEX_PREWORK.md'
       - 'tests/edge-mouth-baseline-audit.mjs'
       - 'studio-geometry.js'
       - 'studio-top-bevel.js'
@@ -25,7 +28,9 @@ jobs:
       - name: Install existing repository dependencies
         run: npm install --prefer-offline --no-audit --no-fund --no-progress
       - name: Validate independent STL section helper
-        run: node tests/helpers/print-section-profile.test.mjs
+        run: |
+          node tests/helpers/print-section-profile.test.mjs
+          node tests/helpers/three-mf-section-profile.test.mjs
       - name: Capture Manifold cut-mouth baseline (observational, not release acceptance)
         run: |
           mkdir -p qa
