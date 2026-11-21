@@ -1,8 +1,8 @@
 sample_id,date_utc,operator,model_family,variant,main_sha,app_version,project_json_ref,stl_ref,three_mf_ref,pixel_profile_id,measured_hardware_mm,printer,nozzle_or_core_mm,material,material_dry_state,cura_version,layer_height_mm,line_width_mm,walls,infill_percent,supports_enabled,orientation,measured_bore_mm,measured_lip_mm,measured_wall_mm,led_fit_result,cable_pass_result,tactile_edge_result,roof_support_result,illumination_result,temperature_result,notes,evidence_links,decision
-S1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
-S2,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
-S3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
-S4,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
-S5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
-S6,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
-S7,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
+S1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
+S2,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
+S3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
+S4,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
+S5,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
+S6,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
+S7,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,PENDING
