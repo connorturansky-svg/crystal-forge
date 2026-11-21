@@ -15,11 +15,14 @@
 - Run these in a checkout with installed dependencies:
   - node tests/helpers/print-section-profile.test.mjs
   - node tests/helpers/three-mf-section-profile.test.mjs
+  - node tests/helpers/top-entry-lead-in-spec.test.mjs
   - node tests/edge-mouth-baseline-audit.mjs
   - node tests/edge-mouth-native-mount-audit.mjs
   - node tests/edge-mouth-reference-coupons.mjs
   - node tests/edge-mouth-build-browser.mjs (with Chromium and a server on port 4321)
 - The full test source is in QA PR #122; cherry-pick its commits or reuse its files on the geometry PR **after checking concurrent changes**.
+
+**Reusable reference code is now committed:** `tests/helpers/top-entry-lead-in-spec.mjs` and its unit test define a pure 45° circular entry cutter specification, including a **0.1 mm overshoot above the positive top face** to avoid coplanar Boolean subtraction (as used by the tested reference coupon). `tests/edge-mouth-reference-coupons.mjs` uses this helper and sections both exports. Codex can adapt its exact geometry math but **must** add real eligibility, web/collision, retention and exposed-face guards before importing it into production. It is deliberately not connected to Studio.
 
 ## Minimal implementation target
 
