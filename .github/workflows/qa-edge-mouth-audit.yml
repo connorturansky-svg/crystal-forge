@@ -1,0 +1,97 @@
+name: QA — top cut-mouth geometry diagnostics
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/helpers/print-section-profile.mjs'
+      - 'tests/helpers/print-section-profile.test.mjs'
+      - 'tests/helpers/three-mf-section-profile.mjs'
+      - 'tests/helpers/three-mf-section-profile.test.mjs'
+      - 'tests/helpers/top-entry-lead-in-spec.mjs'
+      - 'tests/helpers/top-entry-lead-in-spec.test.mjs'
+      - 'docs/EDGE_MOUTH_CODEX_PREWORK.md'
+      - 'tests/edge-mouth-baseline-audit.mjs'
+      - 'tests/edge-mouth-native-mount-audit.mjs'
+      - 'tests/edge-mouth-reference-coupons.mjs'
+      - 'tests/edge-mouth-build-browser.mjs'
+      - 'studio-geometry.js'
+      - 'studio-top-bevel.js'
+      - 'studio-material-export.js'
+      - '.github/workflows/qa-edge-mouth-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing repository dependencies
+        run: npm install --prefer-offline --no-audit --no-fund --no-progress
+      - name: Validate independent STL section helper
+        run: |
+          node tests/helpers/print-section-profile.test.mjs
+          node tests/helpers/three-mf-section-profile.test.mjs
+          node tests/helpers/top-entry-lead-in-spec.test.mjs
+      - name: Capture Manifold cut-mouth baseline (observational, not release acceptance)
+        run: |
+          mkdir -p qa
+          node tests/edge-mouth-baseline-audit.mjs | tee qa/edge-mouth-audit.json
+          node tests/edge-mouth-native-mount-audit.mjs | tee qa/edge-mouth-native-mount-audit.json
+          node tests/edge-mouth-reference-coupons.mjs | tee qa/edge-mouth-reference-audit.json
+      - name: Upload cross-section evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-mouth-section-audit
+          path: |
+            qa/edge-mouth-audit.json
+            qa/edge-mouth-native-mount-audit.json
+            qa/edge-mouth-reference-audit.json
+            qa/coupons/*
+          if-no-files-found: ignore
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test dependencies
+        run: |
+          npm install --prefer-offline --no-audit --no-fund --no-progress
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          elif command -v chromium >/dev/null 2>&1; then
+            echo "CRYSTAL_FORGE_BROWSER_EXECUTABLE=$(command -v chromium)" >> "$GITHUB_ENV"
+          else
+            npx playwright install chromium
+          fi
+      - name: Serve actual Studio
+        run: |
+          mkdir -p qa
+          python3 -m http.server 4321 --bind 127.0.0.1 > qa/edge-mouth-browser-server.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:4321/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat qa/edge-mouth-browser-server.log
+          exit 1
+      - name: Browser place top M1, save, reopen and measure STL/3MF
+        timeout-minutes: 8
+        run: node tests/edge-mouth-build-browser.mjs
+      - name: Upload true Build interaction and export evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-mouth-build-browser-audit
+          path: |
+            qa/top-m1-browser-*
+            qa/edge-mouth-browser-server.log
+          if-no-files-found: ignore
