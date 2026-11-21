@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   pages: write
+  deployments: read
   id-token: write
 concurrency:
   group: pages
@@ -33,7 +34,7 @@ jobs:
           if [[ "$RELEASE_BASE" =~ ^[a-fA-F0-9]{40}$ ]] && [[ ! "$RELEASE_BASE" =~ ^0+$ ]]; then
             while IFS= read -r changed; do
               case "$changed" in
-                .github/workflows/*|docs/*|tests/*|prompts/*|AGENTS.md|CONTRIBUTING.md|README.md) ;;
+                .github/workflows/*|docs/*|tests/*|prompts/*|scripts/pages-retain-deployed.mjs|AGENTS.md|CONTRIBUTING.md|README.md) ;;
                 *) version_required=1; break ;;
               esac
             done < <(git diff --name-only "$RELEASE_BASE" HEAD)
@@ -66,6 +67,14 @@ jobs:
           test -s "$release/vendor/three/build/three.module.js"
           test -s "$release/vendor/manifold/manifold.wasm"
           touch _site/.nojekyll
+      - name: Retain previously published SHA-scoped assets
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p qa
+          node tests/pages-retain-deployed.test.mjs
+          node scripts/pages-retain-deployed.mjs _site "$GITHUB_SHA" --keep=3 | tee qa/pages-retention.json
+          node tests/pages-retained-stage.test.mjs
       # This is the same _site that will be uploaded to Pages, not a source-tree test host.
       # Every production push must pass a real packaged-app Chromium journey.
       - name: Install staged-release browser dependencies
@@ -96,6 +105,11 @@ jobs:
           CRYSTAL_FORGE_URL: http://127.0.0.1:4339/
           CRYSTAL_FORGE_EXPECTED_RELEASE: ${{ github.sha }}
         run: node tests/pages-artifact-browser.mjs
+      - name: Verify actual old and new tabs with SHA-specific manufacturing workers
+        timeout-minutes: 8
+        env:
+          CRYSTAL_FORGE_URL: http://127.0.0.1:4339/
+        run: node tests/pages-retained-real-browser.mjs
       - name: Preserve staged release smoke evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -103,7 +117,9 @@ jobs:
           name: crystal-forge-pages-staged-smoke
           path: |
             qa/pages-artifact-*.png
+            qa/pages-retained-*.png
             qa/pages-stage.log
+            qa/pages-retention.json
           if-no-files-found: ignore
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name == 'push'

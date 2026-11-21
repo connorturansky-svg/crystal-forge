@@ -51,7 +51,7 @@ jobs:
           version_required=0
           while IFS= read -r changed; do
             case "$changed" in
-              .github/workflows/*|docs/*|tests/*|prompts/*|AGENTS.md|CONTRIBUTING.md|README.md) ;;
+              .github/workflows/*|docs/*|tests/*|prompts/*|scripts/pages-retain-deployed.mjs|AGENTS.md|CONTRIBUTING.md|README.md) ;;
               *) version_required=1; break ;;
             esac
           done < <(git diff --name-only "$RELEASE_BASE" HEAD)
