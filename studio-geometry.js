@@ -2,6 +2,8 @@ import {tileWallPosition} from './studio-native-routing.js';
 import {putSocket} from './fabrication-v1.js';
 import {socketShoulderRise} from './pixel-profiles.js';
 import {bevelTopSolid} from './studio-top-bevel.js';
+import {topEntryChamfer} from './top-entry-chamfer.js';
+import {normaliseEdgeFinish} from './studio-edge-finish.js';
 import {makePixelReplicaRecipe} from './pixel-replica.js';
 /* Shared solid recipes. Preview components may overlap; only prepareRecipe
  * Boolean results may reach manufacturing exporters. Units mm; Y-up. */
@@ -244,6 +246,28 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
     else total=finished;
    }
   }
+  const negative=recipe.negative||[];
+  const mouthCuts=new Map();
+  const converted=new Map();
+  const rawCut=part=>{
+   if(!converted.has(part))converted.set(part,convert(part));
+   return converted.get(part);
+  };
+  const finish=normaliseEdgeFinish(topFinish);
+  if(finish.enabled)for(const part of negative){
+   if(!part.finishTopMouth)continue;
+   const [x,,z]=part.position;
+   const cylinder=(bottom,top,radius)=>convert({kind:'cylinder',radius,
+    height:top-bottom,position:[x,(top+bottom)/2,z]});
+   const profile=rings=>convert({kind:'ring-solid',rings:rings.map(([y,r])=>[y,r,r]),
+    top:rings.at(-1)[0],position:[x,0,z]});
+   const cutter=topEntryChamfer({stock:total,bore:rawCut(part),radius:part.radius,
+    amount:finish.amountMm,cylinder,profile,hold,
+    otherCuts:negative.filter(other=>other!==part).map(other=>mouthCuts.get(other)??rawCut(other))});
+   if(cutter)mouthCuts.set(part,cutter);
+   else warnings.push((part.mountHole||part.tabHole)+' mouth chamfer skipped. The opening needs a clear, flat top with more surrounding material.');
+  }
+  const manufacturingCut=part=>mouthCuts.get(part)??rawCut(part);
   const seats=(recipe.negative||[]).filter(part=>part.kind==='pixel-seat');
   const previews=[];
   const wireCuts=inspectFittings?(recipe.negative||[]).filter(part=>part.wireChannel).map(convert):[];
@@ -319,7 +343,7 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    const routeFootprint=roofStock?convert({kind:'extrude',outline:front?.modelOutline??roofStock.outline,
     height:front?.wallHeight??surfaceY??(total.boundingBox().max[1]+1)}):null;
    for(const part of recipe.negative){
-    const cut=hold(convert(part).setTolerance(tolerance));
+    const cut=hold(manufacturingCut(part).setTolerance(tolerance));
     if(hold(total.intersect(cut)).volume()<.1)
      throw Error((part.pixelHole||part.mountHole||part.tabHole||part.wireChannel||'Cut')+' does not cut the model.');
     if(routeFootprint&&part.wireChannel&&part.junctionIds){
@@ -373,7 +397,7 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    if(originalVolume-total.volume()<.1)throw Error('Serial channels did not remove material.');
   }else for(const part of recipe.negative||[]){
    const before=total;
-   total=hold(total.subtract(convert(part)));
+   total=hold(total.subtract(manufacturingCut(part)));
    if((part.pixelHole||part.mountHole||part.tabHole||part.wireChannel)&&before.volume()-total.volume()<.1)
     throw Error((part.pixelHole||part.mountHole||part.tabHole||part.wireChannel)+' does not cut the model. Move it onto solid material in Build.');
   }
@@ -393,7 +417,7 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
   }else if(recipe.dualMaterial&&(recipe.materialBand||recipe.secondary?.length)){
    let secondary=recipe.materialBand?convert(recipe.materialBand):union(recipe.secondary);
    if(recipe.partitioned){
-    for(const part of recipe.negative||[])secondary=hold(secondary.subtract(convert(part)));
+    for(const part of recipe.negative||[])secondary=hold(secondary.subtract(manufacturingCut(part)));
    }else secondary=hold(secondary.intersect(total));
    const primary=recipe.partitioned?total:hold(total.subtract(secondary));regions=[{role:'primary',solid:primary},{role:'secondary',solid:secondary}];
   }

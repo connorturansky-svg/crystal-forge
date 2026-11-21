@@ -1,6 +1,4 @@
-/* Research fixture, NOT a release gate: records the geometry of a top-entry
- * bore cut after positive-stock chamfering. A sharp lip is an observation,
- * not an assertion that the planned follow-up fix has already landed.
+/* Measures the chamfer on an eligible synthetic through-hole in both exports.
  * Run: node tests/edge-mouth-baseline-audit.mjs
  */
 import assert from 'node:assert/strict';
@@ -18,7 +16,7 @@ for(const enabled of [false,true]){
   // finishing on the base positive stock. It is not a pixel-fit claim.
   const recipe={
     positive:[{kind:'box',size:[30,8,30],position:[0,4,0]}],
-    negative:[{kind:'cylinder',radius:4,height:10,position:[0,4,0]}],
+    negative:[{kind:'cylinder',radius:4,height:10,position:[0,4,0],finishTopMouth:true}],
     secondary:[],edgeFinish:{...finish,enabled}
   };
   const prepared=prepareRecipe(THREE,wasm,recipe);
@@ -45,6 +43,11 @@ for(const enabled of [false,true]){
     Math.abs(belowLip3.medianRadius-belowLip.medianRadius)<.01,
     'Independently measured STL and 3MF sections must agree');
   assert(Math.abs(belowLip.medianRadius-4)<.12,'The functional through-bore must retain an 8 mm diameter');
+  for(const measure of [sample,sample3]){
+   for(const [height,radius] of [[7.99,enabled?4.49:4],[7.75,enabled?4.25:4],[7.5,4],[6.75,4],[.5,4]]){
+    assert(Math.abs(measure(height)?.medianRadius-radius)<.015,'Unexpected bore radius at print Z '+height);
+   }
+  }
   cases.push({edgeFinishEnabled:enabled,
     topSectionZmm:7.75,deepSectionZmm:6.75,
     topEntryRadiusMm:+nearTop.medianRadius.toFixed(4),
@@ -55,4 +58,23 @@ for(const enabled of [false,true]){
     status:nearTop.medianRadius-belowLip.medianRadius>.15?'lead-in-observed':'sharp-lip-observed',
     warnings:prepared.report.warnings||[]});
 }
-console.log(JSON.stringify({scope:'diagnostic only; not physical verification',cases},null,2));
+console.log(JSON.stringify({scope:'measured manufactured geometry',cases},null,2));
+
+// With finishing enabled, blocked mouths match the same geometry with local
+// mouth finishing disabled. The outer stock finishing stays enabled in both.
+const bore={kind:'cylinder',radius:2,height:12,position:[0,4,0]};
+const stock={kind:'box',size:[20,8,20],position:[0,4,0]};
+for(const [label,positive,negative] of [
+ ['near the edge',[stock],[{...bore,position:[7,4,0]}]],
+ ['thin stock',[{...stock,size:[20,1.25,20]}],[bore]],
+ ['adjacent opening',[stock],[bore,{...bore,position:[4.75,4,0]}]],
+ ['overlapping route',[stock],[bore,{kind:'box',size:[7,1,1],position:[3,7,0],wireChannel:'route'}]],
+ ['another body blocks the approach',[stock,{kind:'box',size:[2,2,2],position:[3,9,0]}],[bore]]
+]){
+ const base={positive,negative,edgeFinish:finish};
+ const expected=prepareRecipe(THREE,wasm,base);
+ const actual=prepareRecipe(THREE,wasm,{...base,negative:[{...negative[0],finishTopMouth:true},...negative.slice(1)]});
+ assert(actual.report.warnings.some(w=>w.includes('mouth chamfer skipped')),label);
+ assert.deepEqual(actual.bodies[0].mesh.triVerts,expected.bodies[0].mesh.triVerts,label);
+ assert.deepEqual(actual.bodies[0].mesh.vertProperties,expected.bodies[0].mesh.vertProperties,label);
+}

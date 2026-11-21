@@ -1,5 +1,7 @@
 # Crystal Forge — verification strategy and commands
 
+Run `node tests/edge-mouth-baseline-audit.mjs` and `node tests/edge-mouth-native-mount-audit.mjs` to verify enabled and disabled through-holes in independently decoded STL and 3MF. These measure the taper, throat, lower bore and underside. The baseline also verifies that thin, crowded and obstructed cuts stay identical when local finishing is requested. The native audit verifies a 0.3 mm lead-in on backed tabs across six builders. `tests/fabrication.test.mjs` measures Crystal through-tabs with finishing on and off. Run `node tests/edge-mouth-build-browser.mjs` and repeat with `--finish-off` against the local editor on port 4321 for real placement, reload, preparation and downloads. The edge-mouth CI workflow uploads the measurements and browser screenshots.
+
 ## Raised Gear regression
 Run `node tests/edge-finishing.test.mjs` for the 16 real Manifold configurations and `node tests/edge-finishing-browser.mjs` for reopening, preparing and downloading both formats. Set `CRYSTAL_FORGE_BASELINE_URL` to the affected main checkout to capture the original export failure alongside the repaired viewport.
 

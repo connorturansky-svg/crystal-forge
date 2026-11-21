@@ -263,6 +263,10 @@ A binary ZIP bundles the *current validated prepared STL*, editable JSON, Cura c
 
 ## Shared exterior edge finishing — all seven model builders (20 Nov 2026)
 
+**Manufactured hardware openings:** Top-edge finishing uses the configured amount (0.5 mm by default) for a 45° lead-in on supported native top-entry through-mounts and plain external tab bores, including Crystal through-tabs. A local stock gauge checks for a flat exposed face and a 1 mm material allowance around and below the lead-in. Crowded, thin or obstructed mouths keep their original profile and receive a preparation warning. Underside entry, pixel fittings, recesses, blind pockets and cable ports retain their functional profiles. Native builders use the same check wherever Build can place an eligible vertical bore.
+
+Check the sliced lip and surrounding walls for the intended nozzle and print settings. A 0.5 mm lead-in can appear in Cura with a 0.4 mm nozzle and suitably fine layers. With a 0.8 mm nozzle, the same detail is narrower than a typical line width and may be lost in the toolpath. Physical fit and touch assessment remain under issue #10.
+
 **Intent:** An optional geometric edge finish is offered in Design for Crystal Clusters, Tactile Tiles, Gears, Waves, Caps, Characters and Light Pods. Users can choose rounded or chamfered edges on All exterior / Top / Side / Bottom edge groups, with a maximum offset of 0.1–4 mm and geometric subdivision levels 1–3. Existing models remain unchanged until enabled.
 
 **Data and implementation:** For Crystals, the legacy `edgeFinishEnabled`, `edgeFinishStyle`, `edgeFinishScope`, `edgeFinishAmount`, `edgeFinishSteps` shape settings and per-crystal overrides flow through `geometry-v3.js`. For the other six builders, the standard `model.build.edgeFinish` persists in project/library JSON, participates in the manufacturing fingerprint and can be undone. `studio-edge-finish.js` changes actual positive mesh triangles through `studio-geometry.js`, before Manifold subtracts the original hardware cutters. The same finished positives are used for interactive preview and prepared STL/3MF.

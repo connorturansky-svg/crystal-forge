@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.27 — Chamfer exposed fixing-hole mouths
+
+- Top-edge finishing adds a 45° lead-in to eligible top-entry through-holes and external tab holes. The existing amount control defaults to 0.5 mm. The bore below the lead-in keeps its original diameter.
+- Preparation skips openings without enough flat surrounding stock or clearance from nearby cuts. Underside fittings, recesses, blind pockets and cable channels keep their specified geometry.
+
 ## v0.16.0-dev.35.26 — Raised Gear rim exports
 - Raised Rim rail and Hub and rim Gears use two inward contours to keep the rail attached and prevent degenerate export triangles at tooth flanks.
 - Keep the dual-material Hub ring connected through the raised collar and preserve shaft bores and spoke openings. Preparation explains when a continuous rail cannot fit.
