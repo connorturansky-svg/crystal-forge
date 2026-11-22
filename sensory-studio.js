@@ -122,13 +122,18 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const focusAfterNavigation=selectors=>{
    requestAnimationFrame(()=>{
     for(const selector of selectors){
-     const element=[...document.querySelectorAll(selector)].find(node=>node.getClientRects().length);
-     if(!element)continue;
-     for(let node=element.parentElement;node;node=node.parentElement)
-      if(node.tagName==='DETAILS')node.open=true;
-     element.scrollIntoView({block:'center',behavior:'smooth'});
-     if(element.matches('button,input,select,[tabindex]'))element.focus({preventScroll:true});
-     return;
+     for(const element of document.querySelectorAll(selector)){
+      if(element.closest('[hidden],[inert]')||element.matches(':disabled'))continue;
+      const opened=[];
+      for(let node=element.parentElement;node;node=node.parentElement){
+       if(node.tagName==='DETAILS'&&!node.open){node.open=true;opened.push(node);}
+      }
+      if(!element.getClientRects().length){for(const section of opened)section.open=false;continue;}
+      if(!element.matches('button,input,select,summary,[tabindex]'))element.tabIndex=-1;
+      element.scrollIntoView({block:'nearest'});
+      element.focus({preventScroll:true});
+      return;
+     }
     }
    });
   };
@@ -1750,6 +1755,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    (model.build.pixelBacking?'<label>Fitting backing thickness (mm)<input type="number" min="3" max="10" step="0.1" data-pixel-backing-thickness value="'+
     esc(model.build.pixelBackingThickness??4)+'"'+disabled+'></label><button type="button" data-reset-pixel-backing-thickness'+disabled+'>Reset backing thickness</button>':'');
   container.append(root);
+  const status=document.createElement('p');status.dataset.pixelStatus='';status.setAttribute('role','status');
+  status.textContent=pixelMessages.get(model.id)||'';root.append(status);
   root.querySelector('[data-pixel-backing]').onchange=event=>{
    if(!commit({build:{...model.build,pixelBacking:event.target.checked}})){
     event.target.checked=!!model.build.pixelBacking;return;
@@ -2117,6 +2124,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    addAction('Place mounting hole',$('placeMountBtn'));
   }else if(build&&model.generator.typeId!=='crystals'&&buildWorkspace==='mounting'){
    renderMountPalette(controls,model);
+   const status=document.createElement('p');status.dataset.pixelStatus='';status.setAttribute('role','status');
+   status.textContent=pixelMessages.get(model.id)||'';controls.append(status);
   }else if(build&&model.generator.typeId!=='crystals'&&buildWorkspace==='wiring'){
    appendNativeRouting(controls,model);
   }else if(build){
