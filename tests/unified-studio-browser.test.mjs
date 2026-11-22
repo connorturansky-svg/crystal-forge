@@ -3223,12 +3223,14 @@ try{
   assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.manualMountHoles.length),2);
   await page.keyboard.press('Escape');
   if(backing){
+   await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
    await palette.locator('[data-fit-profile=seed]').click();
    await palette.getByRole('button',{name:'Place LED fitting in 3D'}).click();
    const led=await page.evaluate(()=>window.__sensoryStudio.fittingPointScreen(0,0,'underside'));
    assert(led);await page.mouse.click(led.x,led.y);
    await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles?.length===1);
    await page.keyboard.press('Escape');
+   await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
    await placementProfile.selectOption('Magnet pocket');
    await place.click();
    const blocked=await page.evaluate(()=>window.__sensoryStudio.fittingPointScreen(6,0,'underside'));
