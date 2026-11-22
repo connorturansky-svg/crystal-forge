@@ -64,6 +64,8 @@ jobs:
         if: github.event_name != 'pull_request'
         run: node tests/release-metadata.mjs
       - name: Syntax, local import and HTML wiring checks
-        run: npm run test:static
+        run: |
+          npm run test:static
+          node tests/studio-tool-search-core.test.mjs
       - name: Test valid contributor tasks and duplicate claim rejection
         run: python3 tests/ai-pr-contract.test.py
