@@ -1,10 +1,10 @@
 # AI handover — read immediately after AGENTS.md
 
-## CURRENT POINTER — WT-022 after merged Milestone A (22 Nov 2026)
+## CURRENT POINTER — WT-022 after merged A/B (22 Nov 2026)
 
-**Read [Current work](PROJECT_STATUS.md) and [Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127) before any older log below.** [PR #128](https://github.com/connorturansky-svg/crystal-forge/pull/128) merged into main at `a6dd812`; its shared line/ring/grid mounting patterns and exact-head QA are in production. Milestone B (separate Pixels, Wiring and Mounting tabs) remains on `feat/wt022-workspaces` at snapshot `d563f02`, awaiting old-browser-test migration, release metadata, full CI and a focused reviewable PR. Preserve the branch; Codex credits are paused at this snapshot. Milestone C real searchable/focusable tool registry is subsequent work. The test-only ranking/fixture preparation is [draft #129](https://github.com/connorturansky-svg/crystal-forge/pull/129); it does **not** alter the app. Independent read-only B QA is in recent #127 comments.
+**Read [Current work](PROJECT_STATUS.md), [Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127) and [repository map](REPOSITORY_MAP.md) before continuing.** #128 mounting patterns and #132 eight workspaces are merged into `main`. #133 search was merged only into the stacked workspace branch; **draft release #134 targets `main`** with the same tested search implementation. #129 preparation is closed as superseded. Do not rebuild B or C, or assume #133's merged badge means search was deployed. The owner authorises merges and physical print acceptance, with #79 software parity and #10 print validation remaining.
 
-**The dated sections below are history, not an instruction to restart #121/#122/#124/#102 or reproduce the already-fixed top mouth chamfer.** Verify live main, PR heads and CI. Only the owner authorises merges and deployment.
+**Everything below is historical dated work**, not instructions to restart the old #102/#121/#122/#124 toolchains. Verify current main, PR bases, and CI.
 
 ## CURRENT RESTART POINTER — 21 NOVEMBER 2026 (read before historical entries)
 

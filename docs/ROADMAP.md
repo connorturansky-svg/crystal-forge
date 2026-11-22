@@ -2,7 +2,7 @@
 
 ## Current status — snapshot 22 November 2026
 
-**Live work pointer:** [Current work](PROJECT_STATUS.md) and [WT-022 #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). [#128 mounting patterns](https://github.com/connorturansky-svg/crystal-forge/pull/128) merged into main at `a6dd812`. The unmerged next milestone is **B — workspace separation**, followed by **C — global tool finding**. [Draft #129](https://github.com/connorturansky-svg/crystal-forge/pull/129) provides C test-only prework but not the completed feature. Recheck current GitHub state before making changes.
+**Live work pointer:** [Current work](PROJECT_STATUS.md) and [WT-022 #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). [#128 mounting patterns](https://github.com/connorturansky-svg/crystal-forge/pull/128) and [#132 eight workspaces](https://github.com/connorturansky-svg/crystal-forge/pull/132) are merged to main. [#133 search](https://github.com/connorturansky-svg/crystal-forge/pull/133) was merged into its feature-branch base; [draft #134](https://github.com/connorturansky-svg/crystal-forge/pull/134) is required to bring C to main. [#129](https://github.com/connorturansky-svg/crystal-forge/pull/129) is closed as superseded. Recheck live GitHub before making changes.
 
 **Everything below "Historical roadmap entries" preserves earlier planning snapshots**, including old "draft"/"current" labels. Do not restart or merge old PRs solely based on historical text.
 

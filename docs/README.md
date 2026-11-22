@@ -8,9 +8,10 @@ This index groups existing documents by purpose **without moving their original 
 | --- | --- |
 | [Current work](PROJECT_STATUS.md) | **Dated active status and credit-efficient resume order**; recheck live GitHub before coding. |
 | [Repository/source map](REPOSITORY_MAP.md) | **Start here to find actual implementation modules, test commands and historical docs.** |
-| [WT-022 Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127) | Current approved B workspace / C search requirements and acceptance, with latest independent QA comments. |
+| [WT-022 Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127) | WT-022 acceptance and latest independent QA comments; B merged, C release correction in #134. |
 | [Merged Milestone A #128](https://github.com/connorturansky-svg/crystal-forge/pull/128) | Real precision mounting patterns on main. |
-| [Draft #129](https://github.com/connorturansky-svg/crystal-forge/pull/129) | **Test-only** C search-ranking preparation; no user-facing search routing yet. |
+| [Merged workspace #132](https://github.com/connorturansky-svg/crystal-forge/pull/132) | Eight workspaces merged into `main`. |
+| [Search release #134](https://github.com/connorturansky-svg/crystal-forge/pull/134) | Draft delivering existing integrated search from #133's stacked branch to `main`; #129 is closed. |
 | [AGENTS.md](../AGENTS.md) and [testing](TESTING.md) | Engineering invariants, safety boundaries, CI gates and exact-head evidence. |
 
 **Historical WT-021 records (not active branches):** [original WT-021 handover](WT021_CODEX_HANDOFF.md), [old live pointer](WT021_NOW.md), [completion register](WT021_COMPLETION_REGISTER.md), [feature catalogue brief](WT021_FEATURE_CATALOGUE_BRIEF.md), [original prompt library](../prompts/START_HERE.md), [overnight summary](WT021_OVERNIGHT_SUMMARY.md). Retain these for acceptance provenance but do not interpret their old "active PR #102" text as instructions. #102 has merged.
