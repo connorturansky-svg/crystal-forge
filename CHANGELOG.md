@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.34 — Recover larger private Studio backups
+
+- Restore and verify larger model assets and Studio manifests through GitHub's authenticated Git Blob API when the Contents API omits inline data.
+- Preserve existing saved projects and private backup revisions if an oversized asset cannot be read.
+
 ## v0.16.0-dev.35.33 — Save and switch projects safely
 
 - Save the outgoing project and open the selected project in one workspace write. A failed save leaves the current project open.
