@@ -59,6 +59,7 @@ const live=new Map([
  ["magnets in a circle","mount-pattern"],["4 mounting holes grid","mount-pattern"],
  ["smooth sharp edges","edge-finish"],["bevel crystal","edge-finish"],
  ["pixel test coupon","pixel-coupon"],["LED sockets","pixel-socket"],["wire IN OUT","wire-ports"],
+ ["Support-Free Shoulders","pixel-shoulders"],["taper socket shoulder","pixel-shoulders"],
  ["fixing ears","fixing-tabs"],["Cura profile","cura"],["STL export","stl"],["beevl crystal","edge-finish"],
  ["download 3MF","3mf"]
 ]);
