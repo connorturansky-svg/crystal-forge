@@ -1,6 +1,8 @@
-# WT-021 — Current actionable state (short pointer, 21 November 2026)
+# WT-021 — historical actionable state (21 November 2026)
 
-**Read [CODEX_RESTART_20261121.md](CODEX_RESTART_20261121.md) for the next engineering objective.** This is an audit snapshot; **fetch current main and exact-head checks each time**.
+> **RETIRED HISTORICAL SNAPSHOT:** the hardware mouth fix #126 and WT-022 A #128, B #132 and C #134 are merged. For the latest assignments use [current project status](PROJECT_STATUS.md) and [software parity Issue #79](https://github.com/connorturansky-svg/crystal-forge/issues/79). This 21 November record remains evidence, not a Codex restart command.
+
+**The linked [21 November restart](CODEX_RESTART_20261121.md) is archived context, not the next engineering objective.** This is an audit snapshot; **fetch current main and exact-head checks each time**.
 
 - **Baseline:** Main after merged #124 = `8d19701ac5bd5521140ebe4e1dfcabbedba8c53f`. **#122, #123 and #124 are all merged.** Previous #102/#113 branches and old #110/#121 snapshots are historic. Pages deployment, static checks and fabrication passed for #124; the long browser suite was still in progress when this pointer was updated. Do not infer it passed.
 - **Immediate P0:** Repair sharp exposed *upper* M1 mounting-hole lip when optional top chamfer is enabled. Real browser pointer → Gear M1 → save/reload → Print Centre → STL/3MF demonstrated nominal 3.4 mm bore top radius **1.6998 mm** vs deep **1.6992 mm**, only **0.0006 mm expansion** despite enabled 0.5 mm chamfer ([proof](https://github.com/connorturansky-svg/crystal-forge/actions/runs/44844788817)). Positive-stock bevel runs before negative hardware cutters. **Do not** conflate green diagnostic CI with a repaired lip.

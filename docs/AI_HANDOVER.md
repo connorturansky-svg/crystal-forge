@@ -1,18 +1,20 @@
 # AI handover — read immediately after AGENTS.md
 
+## CURRENT POINTER — after WT-022 C release (22 November 2026)
+
+**Verified `main`:** `f6e1da1b00bc1aeff2add9bcf0486adf59a91d90`, which merges [WT-022 C release #134](https://github.com/connorturansky-svg/crystal-forge/pull/134). [Pages deployed successfully](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45063828028). Precision mounting #128, eight workspaces #132 and real tool search #134 are merged. The #133 search PR originally targeted the stacked B branch, not `main`; #134 reconciled that release. #129 is closed. Do not recreate those milestones.
+
+**Next focused software task:** [Issue #79 — FIT-02 near-edge sloped Wave fitting](https://github.com/connorturansky-svg/crystal-forge/issues/79), with the [test brief in project status](PROJECT_STATUS.md#next-print-quality-task--fit-02-near-edge-sloped-wave-fitting). The central 11 mm profile/5.2 mm bore case is already covered; investigate the near-perimeter valid/rejected boundary, diagnostics, saved-state rollback, real Manifold cutter and independently sectioned STL/3MF. Physical Cura, insertion, cable and printed fit remain under [#10](https://github.com/connorturansky-svg/crystal-forge/issues/10). Avoid #130 documentation and #131 CI workflow branches during geometry implementation.
+
+**Search architecture:** `studio-tool-registry.js` and `studio-tool-search-core.js` drive `studio-tool-finder.js`; `sensory-studio.js` handles model-dependent navigation, availability and focus. Search the actual live controls, not an invented settings panel. Issue #127 still notes the narrower missing `support-free shoulder` alias/control registry entry; fix separately from FIT-02.
+
+**Older sections below are dated engineering history, not a restart order.** Check current main, open PRs, latest-head CI and the user-approved task before coding. Owner controls all merges and physical acceptance.
+
 ## FIT-02 Wave perimeter
 
 FIT-02 Wave perimeter — Chromium placed the calibrated 11 mm profile on the sloped face, refused Z=49 mm, and preserved the last valid model and revision after an invalid numeric edit. The accepted Z=40 mm edit survived undo, redo and reload. Fresh STL and 3MF sections both measured a 5.200 mm bore, 11.000 mm seating depth, 7.400 mm perimeter stock and 4.147 mm rear stock. The accepted Manifold preview encloses the positive hardware and matches the production subtraction. Physical retention and printer tolerances remain under #10.
 
 The Wave-only preparation repair reuses Manifold simplification when the accepted socket cut produces degenerate export triangles. Review the browser and catalogue regressions on the draft PR before bringing this into main.
-
-## WT-022 C search handover
-
-The global finder ranks the live tool registry in `studio-tool-registry.js` using the matcher prepared in draft #129. Workspace navigation and model-dependent availability are handled by `sensory-studio.js`. Keep the precision settings filter scoped to the current panel. Verify the browser focus route and all real control anchors whenever a tool is moved.
-
-## WT-022 B workspace handover
-
-The existing work in `feat/wt022-workspaces` gives Pixels, Wiring and Mounting separate destinations while preserving the Build editing stage. Verify the focused navigation test alongside the unified and Crystal browser suites. Issue #127 tracks acceptance, and draft #129 contains the ranking prototype for the next milestone.
 
 ## WT-022 A mounting patterns checkpoint
 

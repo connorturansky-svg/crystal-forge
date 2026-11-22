@@ -4,6 +4,10 @@ PR #102 merged as `3326ac9` with the #101 Crystal tip implementation. The owner 
 
 **The 23 original WT-021 acceptance requirements remain intact. UX-01 P1 is an additional owner-approved UI task dated 20 November 2026, making 24 tracked items.** See [UX-01 brief](WT021_FEATURE_CATALOGUE_BRIEF.md).
 
+## WT-022 regression checkpoint
+
+[Exact-head navigation, search, pattern and top-entry export evidence](PROJECT_STATUS.md#wt-022-regression-evidence--22-november-2026) applies to the WT-022 release candidate. FIT-02 stays PARTIAL. The next case pairs the measured sloped Wave profile with near-perimeter stock and compares the accepted cutter and both exports. Physical validation stays under #10.
+
 Statuses: MISSING, PARTIAL, IMPLEMENTED, VERIFIED, BLOCKED. VERIFIED requires every applicable check in a row. A dash in the commit column means no implementation commit has been identified. Dimensions measured from exports must be recorded separately from requested and calculated values. Family abbreviations: C Crystal, T Tile, G Gear, W Wave, K Control Cap, H Character, P Pebble/Light Pod; All means all seven.
 
 | ID / priority | Families | User-visible acceptance / implementation | Browser evidence required | Manufacturing and independent dimensional evidence required | Status / evidence / commit / limitation |
