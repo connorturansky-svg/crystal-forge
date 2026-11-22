@@ -6,7 +6,7 @@ concurrency:
 
 on:
   pull_request:
-    branches: [main, feat/verified-tile-gear-routing, feat/backed-family-cable-routing, feat/studio-svg-artwork-import, 'wt018/**', 'wt019/**']
+    branches: [main, feat/wt022-workspaces, feat/verified-tile-gear-routing, feat/backed-family-cable-routing, feat/studio-svg-artwork-import, 'wt018/**', 'wt019/**']
   push:
     branches: [main]
     paths:
@@ -65,6 +65,8 @@ jobs:
         run: node tests/release-metadata.mjs
       - name: Syntax, local import and HTML wiring checks
         run: npm run test:static
+      - name: Rank Studio tool searches
+        run: node tests/studio-tool-search-core.test.mjs
       - name: Validate conservative CI path classifier
         run: node tests/ci-scope.test.mjs
       - name: Test valid contributor tasks and duplicate claim rejection

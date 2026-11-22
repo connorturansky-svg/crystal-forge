@@ -16,7 +16,7 @@ export const featureCategories={
 
 export const studioFeatures=[
  ...builders.map(([id,title,description])=>({id,title,description,category:'models',family:id,status:'available',action:'family',label:'Open '+title})),
- {id:'edge-finishing',title:'Geometric edge finishing',description:'Round or chamfer real outside edges in all seven builders. Choose top, side, bottom or all edge groups, then verify walls and fit.',category:'design',status:'available',action:'design',label:'Open edge finishing'},
+ {id:'edge-finishing',title:'Geometric edge finishing',description:'Round or chamfer real outside edges in all seven builders. Choose top, side, bottom or all edge groups, then verify walls and fit.',category:'build',status:'available',action:'build',label:'Open Build'},
  {id:'shape',title:'Design workspaces',description:'Edit dimensions and shape controls. Use the precision fields for measured values.',category:'design',status:'available',action:'design',label:'Go to Design'},
  {id:'editing',title:'Place and move hardware',description:'Select a visible fitting, then hold and drag it along a supported face. An invalid move keeps the previous position.',category:'build',status:'partial',action:'build',label:'Go to Build'},
  {id:'fit',title:'Measured pixel profiles',description:'Save the body, flange, cap and wire dimensions. Compare the actual cutter and download a fit coupon.',category:'pixels',status:'available',action:'pixels',label:'Open Pixel Fittings'},
@@ -25,6 +25,7 @@ export const studioFeatures=[
  {id:'projects',title:'Projects and backups',description:'Save model revisions, reopen a project or download an editable workspace backup.',category:'library',status:'available',action:'library',label:'Open Library'},
  {id:'fabricate',title:'STL, 3MF and Cura downloads',description:'Prepare the actual mesh, select a printer profile and download the matching files.',category:'print',status:'available',action:'print',label:'Open Print Centre'},
  {id:'sections',title:'Prepared mesh cutaways',description:'Inspect the solid after cutting. Look through sockets, wire channels and mounting features before exporting.',category:'inspection',status:'available',action:'inspect',label:'Find mesh inspection'},
+ {id:'tool-search',title:'Find tools by phrase',description:'Search for a tool by name or intent. Select a result to open its workspace and focus the matching control.',category:'help',status:'available',action:'search',label:'Find tools'},
  {id:'keys',title:'Keyboard and display help',description:'Find keyboard controls, view shortcuts and the options for light and dark themes.',category:'help',status:'available',action:'help',label:'Open Help'},
  {id:'physical',title:'Printed fit certification',description:'Verify fit, load and supports on an actual print. The app reports software checks and geometry measurements.',category:'inspection',status:'unavailable'}
 ];

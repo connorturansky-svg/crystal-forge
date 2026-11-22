@@ -1,5 +1,9 @@
 # Crystal Forge — verification strategy and commands
 
+For WT-022 C, run `node tests/studio-tool-search-core.test.mjs` and `node tests/studio-tool-search-browser.mjs`. The browser test checks the actual focused controls in Crystal, Gear and Tile, including the prerequisites for mounting patterns and print downloads.
+
+For WT-022 B, run `node tests/studio-workspaces-browser.mjs` with the editor served on port 4321. It covers keyboard navigation, narrow overflow, control ownership, native mounting gestures and all seven builder families. The browser workflow also exercises Crystal and native editing and exports from their new destinations.
+
 For WT-022 mounting patterns, run `node tests/mounting-pattern.test.mjs`, `node tests/mounting-pattern-manifold.test.mjs` and `node tests/mounting-pattern-browser.mjs` with the editor served on port 4321. The first two compare exact model-space coordinates against the issue fixtures and independently section eight-pocket native and Crystal exports. The browser checks preview dragging and group edits in Gear and Crystal, applies layouts through the native workers, and measures printed sections from Print Centre downloads.
 
 Run `node tests/edge-mouth-baseline-audit.mjs` and `node tests/edge-mouth-native-mount-audit.mjs` to verify enabled and disabled through-holes in independently decoded STL and 3MF. These measure the taper, throat, lower bore and underside. The baseline also verifies that thin, crowded and obstructed cuts stay identical when local finishing is requested. The native audit verifies a 0.3 mm lead-in on backed tabs across six builders. `tests/fabrication.test.mjs` measures Crystal through-tabs with finishing on and off. Run `node tests/edge-mouth-build-browser.mjs` and repeat with `--finish-off` against the local editor on port 4321 for real placement, reload, preparation and downloads. The edge-mouth CI workflow uploads the measurements and browser screenshots.

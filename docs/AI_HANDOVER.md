@@ -1,6 +1,14 @@
 # AI handover — read immediately after AGENTS.md
 
-## WT-022 implementation checkpoint
+## WT-022 C search handover
+
+The global finder ranks the live tool registry in `studio-tool-registry.js` using the matcher prepared in draft #129. Workspace navigation and model-dependent availability are handled by `sensory-studio.js`. Keep the precision settings filter scoped to the current panel. Verify the browser focus route and all real control anchors whenever a tool is moved.
+
+## WT-022 B workspace handover
+
+The existing work in `feat/wt022-workspaces` gives Pixels, Wiring and Mounting separate destinations while preserving the Build editing stage. Verify the focused navigation test alongside the unified and Crystal browser suites. Issue #127 tracks acceptance, and draft #129 contains the ranking prototype for the next milestone.
+
+## WT-022 A mounting patterns checkpoint
 
 The active branch `feat/wt022-mount-patterns` starts from main after #126. It adds shared model-space mounting patterns with preserved member IDs, independent candidate validation, native and Crystal manufacturing checks, and a draggable draft centre. Test vectors and acceptance are tracked in [issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). Run the three WT-022 scripts in [TESTING.md](TESTING.md) before updating the draft.
 

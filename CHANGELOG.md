@@ -58,6 +58,18 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.30 — Find Studio tools by phrase
+
+- Search by ordinary phrases such as magnets in a circle, LED sockets or smooth sharp edges.
+- Open the matching workspace and focus the actual setting. Search explains unavailable controls and directs you to Prepare when a download needs a current mesh.
+- Press Enter to pick the first result, or use the arrow keys to choose another.
+
+## v0.16.0-dev.35.29 — Eight focused Studio workspaces
+
+- Open Pixels for LED fittings and fit tests, Wiring for cable routes, and Mounting for fixing holes, patterns and tabs.
+- Use Build for structural settings and edge finishing. All four workspaces share the same model and 3D editing history.
+- Move between the eight workspaces by keyboard or scroll the workspace bar on narrower screens.
+
 ## v0.16.0-dev.35.28 — Precision mounting patterns
 
 - Arrange fixings in equally spaced lines, circles and grids. Type exact pitch, radius, rotation and offsets, or drag the centre in Build before applying the complete pattern.
