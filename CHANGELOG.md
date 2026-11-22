@@ -62,6 +62,10 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 - Find Support-Free Shoulders in global search and open the existing Pixels control, with guidance when a shaped underside socket is needed.
 
+## v0.16.0-dev.35.31 — Export sloped Wave pixel sockets
+
+- Fix STL and 3MF downloads for valid sloped Wave sockets whose cuts produce collapsed mesh triangles.
+
 ## v0.16.0-dev.35.30 — Find Studio tools by phrase
 
 - Search by ordinary phrases such as magnets in a circle, LED sockets or smooth sharp edges.
