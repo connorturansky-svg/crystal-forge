@@ -1828,6 +1828,7 @@ try{
   await mountZ.fill('-12');
   await mountZ.press('Tab');
   assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.manualMountHoles[1].z),-12);
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await sidePalette.getByRole('button',{name:'P1',exact:true}).click();
   await sidePalette.getByText('Record measured fit',{exact:true}).click();
   const calibration=sidePalette.locator('[data-fit-calibration]');
