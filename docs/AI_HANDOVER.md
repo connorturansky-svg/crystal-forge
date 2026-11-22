@@ -4,7 +4,7 @@
 
 The active branch `feat/wt022-mount-patterns` starts from main after #126. It adds shared model-space mounting patterns with preserved member IDs, independent candidate validation, native and Crystal manufacturing checks, and a draggable draft centre. Test vectors and acceptance are tracked in [issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). Run the three WT-022 scripts in [TESTING.md](TESTING.md) before updating the draft.
 
-Milestone A still needs the full history and Library persistence audit before review. Milestones B and C follow in separate drafts for workspace routing and global tool search. The owner retains merge and deployment control. After WT-022, use the existing acceptance registers and GitHub roadmap to select the highest-priority unfinished software work.
+WT-022 browser checks cover group history, Crystal Library copying and reload, and independently measured Print Centre downloads for all seven builders. Milestones B and C follow in separate drafts for workspace routing and global tool search. The owner retains merge and deployment control. After WT-022, use the existing acceptance registers and GitHub roadmap to select the highest-priority unfinished software work.
 
 ## CURRENT RESTART POINTER — 21 NOVEMBER 2026 (read before historical entries)
 

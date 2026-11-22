@@ -39,7 +39,8 @@ export function mountPatternEditor({patterns,mounts,limit,footprint,profiles,fix
  function load(){
   const saved=patterns.find(entry=>entry.id===selection.value);
   draft={...defaults,id:crypto.randomUUID(),...saved};
-  fixing=fixedProfile??{profile:profiles[0],entryFace:'underside',diameter:3.4,...saved?.fixing};
+  fixing=fixedProfile?(saved?.fixing??fixedProfile):
+   {profile:profiles[0],entryFace:'underside',diameter:3.4,...saved?.fixing};
   if(draft.kind==='circle'&&!saved)draft.count=4;
   ungroupButton.hidden=!saved;
   button.textContent=saved?'Replace selected pattern':'Apply pattern';
@@ -112,6 +113,7 @@ export function mountPatternEditor({patterns,mounts,limit,footprint,profiles,fix
     list.append(row);
    });
    status.textContent='Centre X '+next.centre.centerX.toFixed(3)+' mm, Z '+next.centre.centerZ.toFixed(3)+' mm.'+
+    (draft.kind==='circle'?' Pitch-circle diameter '+(2*draft.radiusMm).toFixed(3)+' mm.':'')+
     (issues.some(Boolean)?' Resolve the marked holes before applying.':'');
    if(!issues.some(Boolean)){transaction=next;button.disabled=false;}
   }catch(error){onPreview(null);status.textContent=error.message;}

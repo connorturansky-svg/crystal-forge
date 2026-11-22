@@ -79,6 +79,10 @@ try{
  const edited=await read();
  assert.deepEqual(edited.manualMountHoles.map(hole=>hole.id),before.manualMountHoles.map(hole=>hole.id));
  assert.notEqual(edited.manualMountHoles[0].x,before.manualMountHoles[0].x);
+ await page.locator('#smsGlobalUndo').click();
+ assert.deepEqual((await read()).manualMountHoles,before.manualMountHoles);
+ await page.locator('#smsGlobalRedo').click();
+ assert.deepEqual((await read()).manualMountHoles,edited.manualMountHoles);
  await open();
  await page.locator('[data-pattern-select]').selectOption(id);
  await page.getByRole('button',{name:'Ungroup',exact:true}).click();
@@ -161,11 +165,23 @@ try{
  const crystalMounts=await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.manualMountHoles);
  assert.equal(crystalMounts.length,8);
  assert(crystalMounts.every(mount=>mount.crystalFixing.diameter===10.2&&mount.crystalFixing.depth===3.2));
+ await page.locator('#smsGlobalUndo').click();
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.manualMountHoles.length===0);
+ await page.locator('#smsGlobalRedo').click();
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.manualMountHoles.length===8);
  await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
  await page.reload();
  await page.waitForFunction(name=>window.__sensoryStudio?.currentModel?.name===name,crystalName);
  assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.manualMountHoles),crystalMounts);
  await page.locator('.sms-workspace-nav [data-tab=build]').click();
- await checkDownloads(crystalName,crystalMounts,2.9,5.1);
+ await page.locator('#smsSaveCrystal').click();
+ await page.locator('#smsLibrary').click();
+ const saved=page.locator('#smsSavedModels article').filter({hasText:crystalName});
+ await saved.getByRole('button',{name:'Independent copy'}).click();
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.mountingPatterns?.length===1);
+ assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.manualMountHoles),crystalMounts);
+ await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ const copiedName=await page.evaluate(()=>window.__sensoryStudio.currentModel.name);
+ await checkDownloads(copiedName,crystalMounts,2.9,5.1);
  console.log('WT-022 Crystal: eight worker-validated blind pockets persisted after reload');
 }finally{await browser.close();}

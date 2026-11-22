@@ -45,7 +45,7 @@ jobs:
         continue-on-error: true
         run: |
           set +e
-          npm test > fabrication-run.log 2>&1
+          { node tests/mounting-pattern.test.mjs && node tests/mounting-pattern-manifold.test.mjs && npm test; } > fabrication-run.log 2>&1
           status=$?
           cat fabrication-run.log
           exit "$status"
