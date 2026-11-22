@@ -16,7 +16,7 @@ export function needsExpensiveTests(paths){
 }
 export function gitChangedPaths(base,head='HEAD'){
  if(!/^[a-f0-9]{40}$/i.test(base||''))throw Error('Invalid exact base SHA');
- const bytes=execFileSync('git',['diff','--name-only','-z',base,head],
+ const bytes=execFileSync('git',['diff','--no-renames','--name-only','-z',base,head],
   {encoding:'utf8',maxBuffer:4*1024*1024});
  return bytes.split('\0').filter(Boolean);
 }
