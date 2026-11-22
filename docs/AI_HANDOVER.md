@@ -1,10 +1,10 @@
 # AI handover — read immediately after AGENTS.md
 
-## WT-022 implementation checkpoint
+## CURRENT POINTER — WT-022 after merged Milestone A (22 Nov 2026)
 
-The active branch `feat/wt022-mount-patterns` starts from main after #126. It adds shared model-space mounting patterns with preserved member IDs, independent candidate validation, native and Crystal manufacturing checks, and a draggable draft centre. Test vectors and acceptance are tracked in [issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). Run the three WT-022 scripts in [TESTING.md](TESTING.md) before updating the draft.
+**Read [Current work](PROJECT_STATUS.md) and [Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127) before any older log below.** [PR #128](https://github.com/connorturansky-svg/crystal-forge/pull/128) merged into main at `a6dd812`; its shared line/ring/grid mounting patterns and exact-head QA are in production. Milestone B (separate Pixels, Wiring and Mounting tabs) remains on `feat/wt022-workspaces` at snapshot `d563f02`, awaiting old-browser-test migration, release metadata, full CI and a focused reviewable PR. Preserve the branch; Codex credits are paused at this snapshot. Milestone C real searchable/focusable tool registry is subsequent work. The test-only ranking/fixture preparation is [draft #129](https://github.com/connorturansky-svg/crystal-forge/pull/129); it does **not** alter the app. Independent read-only B QA is in recent #127 comments.
 
-WT-022 browser checks cover group history, Crystal Library copying and reload, and independently measured Print Centre downloads for all seven builders. Milestones B and C follow in separate drafts for workspace routing and global tool search. The owner retains merge and deployment control. After WT-022, use the existing acceptance registers and GitHub roadmap to select the highest-priority unfinished software work.
+**The dated sections below are history, not an instruction to restart #121/#122/#124/#102 or reproduce the already-fixed top mouth chamfer.** Verify live main, PR heads and CI. Only the owner authorises merges and deployment.
 
 ## CURRENT RESTART POINTER — 21 NOVEMBER 2026 (read before historical entries)
 
