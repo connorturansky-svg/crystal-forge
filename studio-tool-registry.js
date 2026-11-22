@@ -9,7 +9,7 @@ export const TOOL_FINDER_ITEMS=Object.freeze([
  {id:'fixing-tabs',label:'External fixing tabs',workspace:'Mounting',aliases:['fixing ears','edge tabs','attachments'],
   description:'Set the mounting preset or add external backing tabs.',
   crystal:'select[data-state=mount]',control:'[data-add-backing-tab]',advanced:true,editing:true},
- {id:'mount-hole',label:'Place mounting hole',workspace:'Mounting',aliases:['manual through-hole','screw fixing','threaded insert'],
+ {id:'mount-hole',label:'Place mounting hole',workspace:'Mounting',aliases:['manual through-hole','screw fixing','threaded insert','magnet pocket'],
   description:'Place individual fixing holes and select a fixing profile.',
   crystal:'[data-tool-action=placeMountBtn]',control:'[data-place-mount]',editing:true},
  {id:'edge-finish',label:'Top edge bevel',workspace:'Build',aliases:['smooth sharp edges','bevel crystal','chamfer','edge finishing'],

@@ -181,12 +181,12 @@ try{
  // tools independently of the right-hand precision settings filter.
  const findTools=page.getByRole('searchbox',{name:'Find tools and downloads'});
  await findTools.fill('pixel fit test');
- assert(await page.getByRole('button',{name:/Download pixel fit test \(STL\)/}).isVisible(),
+ assert(await page.getByRole('button',{name:/Pixel test coupon/}).isVisible(),
   'Find tools locates the actual printable pixel test coupon');
  await findTools.fill('magnet');
- assert(await page.getByRole('button',{name:/Open mounting and attachments/}).isVisible());
+ assert(await page.getByRole('button',{name:/Place mounting hole/}).isVisible());
  await findTools.fill('Cura');
- assert(await page.getByRole('button',{name:/Open Cura profile download/}).isVisible());
+ assert(await page.getByRole('button',{name:/Cura profile/}).isVisible());
  await findTools.fill('fictional missing tool');
  assert(await page.getByText(/No matching tools/).isVisible());
  await findTools.fill('pixel');await findTools.press('Escape');
@@ -3193,8 +3193,8 @@ try{
   const name='Blind hardware '+type;
   await page.evaluate(({type,parameters,name})=>window.__sensoryStudio.addModel(type,parameters,name),{type,parameters,name});
   await page.getByRole('searchbox',{name:'Find tools and downloads'}).fill('magnet');
-  await page.getByRole('button',{name:'Open mounting and attachments'}).click();
-  await page.waitForFunction(()=>document.activeElement?.matches('[data-new-mount-profile]'));
+  await page.getByRole('button',{name:/Place mounting hole/}).click();
+  await page.waitForFunction(()=>document.activeElement?.matches('[data-place-mount]'));
   await page.locator('[data-view=bottom]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   const palette=page.locator('.sms-palette');
@@ -3223,12 +3223,14 @@ try{
   assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.manualMountHoles.length),2);
   await page.keyboard.press('Escape');
   if(backing){
+   await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
    await palette.locator('[data-fit-profile=seed]').click();
    await palette.getByRole('button',{name:'Place LED fitting in 3D'}).click();
    const led=await page.evaluate(()=>window.__sensoryStudio.fittingPointScreen(0,0,'underside'));
    assert(led);await page.mouse.click(led.x,led.y);
    await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles?.length===1);
    await page.keyboard.press('Escape');
+   await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
    await placementProfile.selectOption('Magnet pocket');
    await place.click();
    const blocked=await page.evaluate(()=>window.__sensoryStudio.fittingPointScreen(6,0,'underside'));
