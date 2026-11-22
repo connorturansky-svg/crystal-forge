@@ -141,7 +141,7 @@ try{
  await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{
   seed:42,count:5,width:94,baseHeight:35,baseWidth:18,cutSockets:true,lightingMode:'single',socketConical:true
  },'WT021 physical fitting'));
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  const toggle=page.locator('.sms-palette').getByRole('checkbox',{name:'Show physical pixels and socket cutters'});
  await toggle.check();
  const fit=page.locator('[data-build-fit-preview-status]');
@@ -163,6 +163,7 @@ try{
  await toggle.uncheck();
  assert.equal(await fit.innerText(),'');
  console.log('WT-021 Crystal physical fitting preview toggled in Build');
+ await page.locator('.sms-workspace-nav [data-tab=build]').click();
  const baseHeight=page.locator('.sms-palette').getByRole('slider',{name:'Base height',exact:true});
  await baseHeight.evaluate(input=>{
   input.value='25';
@@ -192,7 +193,7 @@ try{
  const width=await reveal(page.locator('[data-state=width]'));
  await width.press('ArrowRight');
  assert((await crystal()).parameters.width>94);
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  const profile=await reveal(page.locator('#pixelProfileSelect'));
  await profile.selectOption('seed');
  await page.locator('[data-view=top]').click();
@@ -238,9 +239,11 @@ try{
  const acceptedX=await p2x.inputValue();
  await p2x.fill('9999');await p2x.press('Tab');
  assert.equal(Number(await p2x.inputValue()),Number(acceptedX));
+ await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
  await (await reveal(page.locator('[data-state=wireChannels]'))).check();
  await page.locator('#wireRouteStatus').getByText(/ready|fit/i).first().waitFor();
  await page.locator('#advancedBtn').click();
+ await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
  await (await reveal(page.locator('[data-state=mount]'))).selectOption('Edge fixing tabs');
  const autoTabs=await crystal();
  const originalPositions=planHardware(autoTabs.editableState.crystals,autoTabs.parameters).tabs.map(tab=>tab.u);
@@ -265,6 +268,7 @@ try{
  await mountZ.fill('-42');await mountZ.press('Tab');
  assert.equal((await crystal()).parameters.manualMountHoles[1].z,-42);
  const crystalCalibration=new Map([['pixelName','Crystal measured seed fit'],['pixelSocketClearance','.4']]);
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  await (await reveal(page.locator('#editPixelProfileBtn'))).click();
  for(const [id,value] of crystalCalibration)await page.locator('#'+id).fill(value);
  await page.locator('#applyPixelSocketFit').click();
@@ -370,7 +374,7 @@ try{
   material.dispose();geometry.dispose();
  }
  console.log('WT-021 full Crystal manufacturing journey verified');
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
  const wireWidth=await reveal(page.locator('[data-state=wireWidth]'));
  await wireWidth.evaluate(node=>{node.value='6';node.dispatchEvent(new Event('input',{bubbles:true}));});
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.wireWidth===6);
@@ -407,7 +411,7 @@ try{
   const importedName='Crystal imported fit witness';
   await page.evaluate(name=>window.__sensoryStudio.addModel('crystals',{count:5,baseHeight:22,width:96,depth:82,
    cutSockets:true,pixelFit:.15,wireChannels:false,lightingMode:'single'},name),importedName);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   const palette=page.locator('.sms-palette'),libraryInput=palette.getByLabel('Import pixel profiles');
   const profileId='custom-wt021-crystal-fit-import';
   const measured={id:profileId,name:'Imported Crystal 5 mm fit',kind:'seed',bodyDiameter:5,bodyHeight:9,
@@ -430,7 +434,7 @@ try{
   assert.notEqual(revisedId,profileId);
   const importJob=page.locator('#smsJobs article').filter({hasText:importedName});
   const measureImported=async(id,diameter,retention=0)=>{
-   await page.locator('.sms-workspace-nav [data-tab=build]').click();
+   await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
    await selection.selectOption(id);
    await page.waitForFunction(id=>window.__sensoryStudio.currentModel.parameters.pixelProfileId===id,id);
    const model=await crystal(),[socket]=planHardware(model.editableState.crystals,model.parameters).sockets;
@@ -463,7 +467,7 @@ try{
   };
   await measureImported(revisedId,5.6);
   await measureImported(profileId,5.3);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await page.locator('#advancedBtn').click();
   const retention=await reveal(page.locator('[data-state=pixelRetentionLip]'));
   for(let i=0;i<4;i++)await retention.press('ArrowRight');
@@ -477,7 +481,7 @@ try{
    seed:42,count:5,width:95,baseType:'integrated',baseStyle:'Square',baseHeight:16,baseWidth:32,baseDome:0,
    cutSockets:false,lightingMode:'none',wireChannels:false,mount:'None',mountPlacement:'auto',mountSpacing:34,manualEdgeTabs:null,tabCount:2,tabHolesPerTab:1
   },name),name);
-  const build=page.locator('.sms-workspace-nav [data-tab=build]'),print=page.locator('.sms-workspace-nav [data-tab=print]');
+  const build=page.locator('.sms-workspace-nav [data-workspace=mounting]'),print=page.locator('.sms-workspace-nav [data-tab=print]');
   await page.locator('#advancedBtn').click();
   const preset=page.locator('[data-state=mount]'),job=page.locator('#smsJobs article').filter({hasText:name});
   for(const [type,diameter,depth] of [['Magnet inserts',10.2,3.2],['Threaded insert M3',4.2,6]]){
@@ -556,7 +560,7 @@ try{
   await page.evaluate(({parameters,name})=>window.__sensoryStudio.addModel('crystals',{
    ...parameters,mount:'None',manualMountHoles:[],manualEdgeTabs:null
   },name),{parameters:savedCrystal.parameters,name});
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   await page.locator('[data-view=top]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   const wireControls=page.locator('.sms-palette');
@@ -611,7 +615,7 @@ try{
   await page.reload();
   await page.waitForFunction(id=>window.__sensoryStudio?.currentModel?.id===id,moved.id);
   for(const key of openingKeys)assert.equal((await crystal()).parameters[key],moved.parameters[key]);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   assert(await wireControls.getByRole('checkbox',{name:'Allow over-length cables'}).isChecked());
   await page.getByRole('button',{name:'Render actual model',exact:true}).click();
   await inspector.getByText('Prepared manufacturing mesh').waitFor({timeout:120000});
@@ -632,14 +636,14 @@ try{
   for(const key of ['min','max'])for(let axis=0;axis<3;axis++)
    assert(Math.abs(movedStl[key][axis]-moved3mf[key][axis])<.001,'Moved openings export with matching print bounds');
   assert.deepEqual(await readDimensions(routedJob.getByText(/^Prepared X/)),movedStl.size.map(value=>Number(value.toFixed(1))));
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   await wireControls.getByRole('checkbox',{name:'Allow over-length cables'}).uncheck();
   await page.locator('.sms-workspace-nav [data-tab=print]').click();
   await routedJob.getByText('Stale',{exact:true}).waitFor();
   assert(await routedJob.locator('[data-job-stl]').isDisabled());
   assert(await routedJob.locator('[data-job-3mf]').isDisabled());
   console.log('WT-021 moved cable openings persist and both exports match the prepared dimensions');
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   await page.waitForFunction(()=>window.__crystalForgePlacementMetrics().routeGuidesVisible);
   const template=page.getByRole('button',{name:'New Cogs & Gears from template',exact:true});
   await page.locator('#smsLibrary').click();
