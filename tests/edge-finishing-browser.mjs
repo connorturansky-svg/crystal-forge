@@ -10,7 +10,7 @@ const name='Raised Gear manufacturing fixture';
 async function openRaisedGear(target){
  await target.waitForFunction(()=>window.__sensoryStudio);
  await target.evaluate(({input,name})=>window.__sensoryStudio.addModel('gears',input,name),{input:raisedFixture,name});
- await target.locator('.sms-workspace-nav [data-tab=design]').click();
+ await target.locator('.sms-workspace-nav [data-tab=build]').click();
 }
 async function prepareRaisedGear(target){
  await target.locator('.sms-workspace-nav [data-tab=build]').click();
@@ -29,7 +29,7 @@ try{
   if(index===0)await page.locator('#smsHomeNew').click();
   else await page.locator('#smsNew').click();
   await page.locator('#smsPicker [data-generator="'+family+'"]').click();
-  await page.locator('.sms-workspace-nav [data-tab=design]').click();
+  await page.locator('.sms-workspace-nav [data-tab=build]').click();
   const toggle=page.locator('.sms-palette [data-edge-finish=enabled]');
   await toggle.waitFor({state:'visible'});
   await toggle.check();
@@ -62,7 +62,7 @@ try{
  await page.evaluate(()=>window.__sensoryStudio.addModel('gears',{
   diameter:68.5,teeth:12,spokes:5,bore:8,webStyle:'Legacy',reliefStyle:'None'
  },'Openwork Gear chamfer'));
- await page.locator('.sms-workspace-nav [data-tab=design]').click();
+ await page.locator('.sms-workspace-nav [data-tab=build]').click();
  await page.locator('.sms-palette [data-edge-finish=enabled]').check();
  await page.getByText('Showing prepared chamfer geometry.',{exact:true}).waitFor();
  await fs.mkdir('qa',{recursive:true});
@@ -98,5 +98,5 @@ try{
   await download.saveAs('qa/unified-raised-gear.'+format);
  }
  assert.deepEqual(errors,[],'No uncaught Chromium errors');
- console.log('All seven Design palettes, model settings and reload passed');
+ console.log('All seven Build palettes, model settings and reload passed');
 }finally{await browser.close();}

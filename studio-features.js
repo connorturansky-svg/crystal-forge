@@ -16,7 +16,7 @@ export const featureCategories={
 
 export const studioFeatures=[
  ...builders.map(([id,title,description])=>({id,title,description,category:'models',family:id,status:'available',action:'family',label:'Open '+title})),
- {id:'edge-finishing',title:'Geometric edge finishing',description:'Round or chamfer real outside edges in all seven builders. Choose top, side, bottom or all edge groups, then verify walls and fit.',category:'design',status:'available',action:'design',label:'Open edge finishing'},
+ {id:'edge-finishing',title:'Geometric edge finishing',description:'Round or chamfer real outside edges in all seven builders. Choose top, side, bottom or all edge groups, then verify walls and fit.',category:'build',status:'available',action:'build',label:'Open Build'},
  {id:'shape',title:'Design workspaces',description:'Edit dimensions and shape controls. Use the precision fields for measured values.',category:'design',status:'available',action:'design',label:'Go to Design'},
  {id:'editing',title:'Place and move hardware',description:'Select a visible fitting, then hold and drag it along a supported face. An invalid move keeps the previous position.',category:'build',status:'partial',action:'build',label:'Go to Build'},
  {id:'fit',title:'Measured pixel profiles',description:'Save the body, flange, cap and wire dimensions. Compare the actual cutter and download a fit coupon.',category:'pixels',status:'available',action:'pixels',label:'Open Pixel Fittings'},

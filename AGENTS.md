@@ -1,6 +1,8 @@
 # Crystal Forge — instructions for AI coding assistants
 
-> **CURRENT WORK — 22 November 2026 snapshot.** Read [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md), [docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md) and [WT-022 Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127) before the chronological handover below. #128 has merged; finish the *existing* `feat/wt022-workspaces` B branch, then C search. Independent test-only C prework is [draft #129](https://github.com/connorturansky-svg/crystal-forge/pull/129). Old mentions of "current" #102/#121/#124/hardware mouth work below are **historical snapshots and NOT restart commands**. Fetch main, PR heads and exact-head CI; do not overwrite another agent's branch, merge or deploy. Owner alone approves merges.\n\n**Read this file first, then `docs/AI_HANDOVER.md`.** For a new feature or geometry change, also read `docs/PROJECT_VISION.md`, `docs/FEATURE_SPECIFICATIONS.md`, `docs/DESIGN_DECISIONS.md` and `docs/TESTING.md`. These are project-specific instructions for both ChatGPT and Codex; they complement the source code and never override a newer explicit user request.
+> **Current work.** Start with [Project status](docs/PROJECT_STATUS.md), [Repository map](docs/REPOSITORY_MAP.md) and [WT-022 Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). Verify the current main SHA and PR checks before editing. The owner approves merges and physical acceptance.
+
+**Read this file first, then `docs/AI_HANDOVER.md`.** For a new feature or geometry change, also read `docs/PROJECT_VISION.md`, `docs/FEATURE_SPECIFICATIONS.md`, `docs/DESIGN_DECISIONS.md` and `docs/TESTING.md`.
 
 ## Historical handoff and branch policy (21 November 2026)
 

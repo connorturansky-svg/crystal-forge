@@ -378,10 +378,14 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    plan.sockets.length+' LED hole(s) · '+(plan.mounts.length+plan.tabHoles.length)+' mounting hole(s) · '+plan.tabs.length+' edge tab(s) · '+
    (plan.invalidManualPixels.length+plan.invalidManualMounts.length)+' invalid (red) · '+(plan.wirePlan?.routes.length||0)+' cyan wire segments · '+(plan.wirePlan?.unrouted||0)+' unconnected';
   const list=$('manualHardwareList');if(!list)return;
+  const home=document.body.dataset.studioBuildHome||'build';
+  const showPixels=home==='pixels'||home==='wiring'||!document.body.dataset.studioBuildHome;
+  const showMounts=home==='mounting'||!document.body.dataset.studioBuildHome;
   const html=[];
   const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   for(const [kind,enabled,items] of [['pixel',s.pixelPlacement==='manual',s.manualPixelHoles||[]],
      ['mount',s.mountPlacement==='manual',s.manualMountHoles||[]]]){
+   if(kind==='pixel'?!showPixels:!showMounts)continue;
    if(!enabled){
     const actual=kind==='pixel'?plan.sockets:plan.mounts;
     if(actual.length){
@@ -424,7 +428,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
      (bad?'<p class="note warning">Invalid position. This hole will not be cut until corrected.</p>':'')+'</div>');
    }
   }
-  if(s.mount==='Edge fixing tabs'){
+  if(showMounts&&s.mount==='Edge fixing tabs'){
    const tabs=s.manualEdgeTabs;
    html.push('<div class="divider"></div><b>Edge tab positions</b>');
    if(!Array.isArray(tabs)&&plan.tabs.length){
@@ -439,7 +443,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    }
   }
   list.innerHTML=html.join('')||'<p class="note">Use Place / move to make existing automatic holes editable, or add new holes by clicking the model.</p>';
-  if(canEdit())renderMountPatterns(list,s,plan);
+  if(showMounts&&canEdit())renderMountPatterns(list,s,plan);
   const tabEditor=list.querySelector('[data-edit-tab-positions]');
   if(tabEditor)tabEditor.onclick=()=>manuallyPlace('tab');
   list.querySelectorAll('[data-pixel-edge]').forEach(select=>select.onchange=()=>{

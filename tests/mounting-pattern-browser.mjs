@@ -13,7 +13,7 @@ try{
  await page.waitForFunction(()=>window.__sensoryStudio);
  await page.evaluate(()=>window.__sensoryStudio.addModel('gears',{mode:'Decorative',wheelStyle:'Rounded lobes',
   webStyle:'Solid',diameter:110,teeth:12,bore:0,thickness:10,reliefStyle:'None',dualMaterial:false},'WT-022 Gear patterns'));
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
  const open=async()=>{
   const summary=page.getByText('Uniform mounting patterns',{exact:true});
   if(!await summary.evaluate(element=>element.parentElement.open))await summary.click();
@@ -104,6 +104,7 @@ try{
   });
   await backing.check();
   await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelBacking);
+  await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
   await open();
   await field('alignment').selectOption('custom');
   const offset=await page.evaluate(()=>{
@@ -142,8 +143,9 @@ try{
   baseHeight:15,baseDome:0,cutSockets:false,lightingMode:'none',mount:'Magnet inserts',
   mountPlacement:'manual',manualMountHoles:[]
  },name),crystalName);
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
  const crystalSummary=page.getByText('Uniform Crystal mounting patterns',{exact:true});
+ await page.waitForFunction(()=>document.body.dataset.studioBuildHome==='mounting');
  await crystalSummary.evaluate(element=>{
   for(let node=element.parentElement.parentElement;node;node=node.parentElement)
    if(node.tagName==='DETAILS')node.open=true;

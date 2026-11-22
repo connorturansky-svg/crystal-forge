@@ -1,10 +1,14 @@
 # AI handover — read immediately after AGENTS.md
 
-## CURRENT POINTER — WT-022 after merged A/B (22 Nov 2026)
+## WT-022 B workspace handover
 
-**Read [Current work](PROJECT_STATUS.md), [Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127) and [repository map](REPOSITORY_MAP.md) before continuing.** #128 mounting patterns and #132 eight workspaces are merged into `main`. #133 search was merged only into the stacked workspace branch; **draft release #134 targets `main`** with the same tested search implementation. #129 preparation is closed as superseded. Do not rebuild B or C, or assume #133's merged badge means search was deployed. The owner authorises merges and physical print acceptance, with #79 software parity and #10 print validation remaining.
+WT-022 A (#128) and B (#132) are on main. The search implementation from #133 is in release PR #134. Read [Current work](PROJECT_STATUS.md) for exact-head evidence and the next FIT-02 manufacturing task. The historical notes below record earlier decisions.
 
-**Everything below is historical dated work**, not instructions to restart the old #102/#121/#122/#124 toolchains. Verify current main, PR bases, and CI.
+## WT-022 A mounting patterns checkpoint
+
+The active branch `feat/wt022-mount-patterns` starts from main after #126. It adds shared model-space mounting patterns with preserved member IDs, independent candidate validation, native and Crystal manufacturing checks, and a draggable draft centre. Test vectors and acceptance are tracked in [issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). Run the three WT-022 scripts in [TESTING.md](TESTING.md) before updating the draft.
+
+WT-022 browser checks cover group history, Crystal Library copying and reload, and independently measured Print Centre downloads for all seven builders. Milestones B and C follow in separate drafts for workspace routing and global tool search. The owner retains merge and deployment control. After WT-022, use the existing acceptance registers and GitHub roadmap to select the highest-priority unfinished software work.
 
 ## CURRENT RESTART POINTER — 21 NOVEMBER 2026 (read before historical entries)
 
