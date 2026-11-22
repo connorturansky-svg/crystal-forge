@@ -58,6 +58,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  const registry=makeCatalogue(crystalAdapter),cache=new Map(),histories=new Map(),prepared=new Map(),workers=new Map();
  const nativeFitPreviewChoices=new Map(),nativeFitPreviewMessages=new Map();
  let currentId=null,mode='model',stage='design',switching=false,saveTimer=null,dirty=false,search='',filter='all',studioVault=null,vaultClient=null,previewBuilds=0;
+ let buildWorkspace='build',openingBuildWorkspace=false;
  const link=document.createElement('link');link.rel='stylesheet';link.href='./sensory-studio.css';document.head.append(link);
  const bar=document.createElement('nav');bar.className='studio-modelbar';bar.setAttribute('aria-label','Project and model workspaces');
  bar.innerHTML='<input id="smsProjectTitle" class="sms-project-input project-title" aria-label="Project name"><button id="smsLibrary">Library</button><div id="smsTabs" class="studio-modeltabs" role="tablist" aria-label="Open models"></div><button id="smsNew" aria-label="Add a model">＋ New model</button><button id="smsPrint">Print Centre</button><button id="smsReload" title="Save your project and load the latest published Studio">↻ Reload Studio</button><span id="smsSaveState" role="status"></span>';
@@ -171,6 +172,12 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   search.oninput=searchSettings;
   const styleNav=document.querySelector('.workspace-tabs'),top=document.querySelector('.topbar');
   styleNav.prepend(home,$('smsLibrary'));styleNav.setAttribute('aria-label','Workspaces');
+  const print=styleNav.querySelector('[data-tab=print]');
+  for(const [destination,label] of [['pixels','Pixels'],['wiring','Wiring'],['mounting','Mounting']]){
+   const control=button(label,()=>openBuildWorkspace(destination));
+   control.dataset.workspace=destination;
+   print.before(control);
+  }
   top.after(styleNav);styleNav.classList.add('sms-workspace-nav');styleNav.append(modelDimensions);
   top.querySelector('.topcluster').append($('smsProjectTitle'),$('smsSaveState'));
   const projectName=$('smsProjectTitle');
@@ -656,8 +663,12 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   for(const button of document.querySelectorAll('.workspace-tabs [data-tab]')){
    const step=button.dataset.tab;
    button.textContent=shell?{design:'Design',build:'Build',print:'Print Centre'}[step]:{design:'1 · Design',build:'2 · Build',print:'3 · Print Centre'}[step];
-   const selected=mode==='print'?step==='print':mode==='model'&&step===(type==='crystals'?document.querySelector('.workspace-tabs [data-tab].active')?.dataset.tab:stage);
+   const selected=mode==='print'?step==='print':mode==='model'&&!(step==='build'&&buildWorkspace!=='build')&&step===(type==='crystals'?document.querySelector('.workspace-tabs [data-tab].active')?.dataset.tab:stage);
    if(selected)button.setAttribute('aria-current','step');else button.removeAttribute('aria-current');
+  }
+  for(const control of document.querySelectorAll('.workspace-tabs [data-workspace]')){
+   if(mode==='model'&&stage==='build'&&control.dataset.workspace===buildWorkspace)control.setAttribute('aria-current','step');
+   else control.removeAttribute('aria-current');
   }
   const root=$('smsTabs');root.replaceChildren();
   for(const id of project.tabs){const model=findModel(project,id),button=document.createElement('button');button.role='tab';button.dataset.modelTheme=model.generator.typeId;button.id='model-tab-'+id;button.setAttribute('aria-selected',String(currentId===id&&mode==='model'));button.tabIndex=currentId===id?0:-1;
@@ -2032,7 +2043,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const build=model.generator.typeId==='crystals'?document.querySelector('.workspace-tabs [data-tab=build]').classList.contains('active'):stage==='build';
   const root=shell.palette;root.replaceChildren();
   if(model.generator.typeId!=='crystals')refreshNativeFittingPreview(model);
-  const heading=document.createElement('h2');heading.textContent=build?'Build tools':'Design choices';root.append(heading);
+  const heading=document.createElement('h2');
+  heading.textContent=build?({build:'Build tools',pixels:'Pixels',wiring:'Wiring',mounting:'Mounting'}[buildWorkspace]):'Design choices';root.append(heading);
   const controls=document.createElement('div');controls.className='sms-context-controls';root.append(controls);
   if(!build&&family.presets.length){
    const crystal=family.typeId==='crystals';
@@ -2076,7 +2088,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const button=document.createElement('button');button.type='button';button.textContent=label;button.disabled=target.disabled||!!model.link;
    button.onclick=()=>{target.click();after?.();};controls.append(button);
   };
-  if(build){
+  if(build&&model.generator.typeId!=='crystals'&&buildWorkspace==='mounting'){
+   renderMountPalette(controls,model);
+  }else if(build&&model.generator.typeId!=='crystals'&&buildWorkspace==='wiring'){
+   appendNativeRouting(controls,model);
+  }else if(build){
    if(model.generator.typeId==='crystals'){
     addAction('Create / edit pixel profile',$('editPixelProfileBtn'));
     addAction('Add pixel',$('placePixelBtn'));
@@ -2956,8 +2972,14 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const entries=[['tactile-tiles','Grass tile',{pattern:'grass'}],['characters','Goat silhouette',{character:'Goat'}],['tactile-tiles','Wool tile',{pattern:'wool'}],['waves','Thawmor river',{}],['tactile-tiles','River ripple tile',{pattern:'river'}],['light-pods','River light pod',{}],['crystals','McDigger crystal mine',null],['tactile-tiles','Mineral tile',{pattern:'mineral'}],['light-pods','Faceted pebble',{facets:12}],['gears','Weather cog',{}],['control-caps','Weather button',{}],['tactile-tiles','Raindrop tile',{pattern:'rain',dualMaterial:true}]];
   for(const [type,name,p] of entries)add(type,p,name);project.title='The Snowsmith — Wonder Trunks';$('smsProjectTitle').value=project.title;save();showLibrary();
  }
+ function openBuildWorkspace(destination){
+  buildWorkspace=destination;openingBuildWorkspace=true;
+  try{document.querySelector('.workspace-tabs [data-tab=build]').click();}
+  finally{openingBuildWorkspace=false;}
+ }
  document.addEventListener('click',e=>{
   const button=e.target.closest('[data-tab]');if(!button)return;
+  if(button.dataset.tab==='build'&&!openingBuildWorkspace)buildWorkspace='build';
   // Ensure Crystal Build/Design is authoritative before palette refresh.
   // A queued rerender can otherwise observe the previous native tab state.
   if(active()?.generator.typeId==='crystals'&&['design','build'].includes(button.dataset.tab)){
