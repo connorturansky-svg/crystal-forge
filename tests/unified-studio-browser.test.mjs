@@ -2225,7 +2225,7 @@ try{
   assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel),sequence);
   await rotationPrint.click();
   await job.getByText('Prepared',{exact:true}).waitFor();
-  await rotationBuild.click();
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   await waveSerial.getByRole('button',{name:'Reverse pixel order and wiring'}).click();
   await page.waitForFunction(id=>window.__sensoryStudio.currentModel.build.pixelHoles[0].id===id,b.id);
   const reversed=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles);
@@ -2900,6 +2900,7 @@ try{
    await page.waitForFunction(count=>window.__sensoryStudio.currentModel.build.pixelHoles?.length===count,i+1);
   }
   await page.keyboard.press('Escape');
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   const serial=palette.getByRole('group',{name:'Serial LED string'});
   await serial.getByRole('button',{name:'Pin automatic IN opening'}).click();
   const edge=serial.getByLabel('IN perimeter position (%)');
@@ -3090,6 +3091,7 @@ try{
   const modelAxis=axis===1?'z':'x',modelSign=axis===1?-1:sign,normalIndex=axis===1?2:0;
   assert(holes.every(hole=>Math.abs(hole[modelAxis]-modelSign*distance)<.01&&
    Math.abs(hole.surface.normal[normalIndex]-modelSign)<.00001),JSON.stringify(holes));
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   const serial=palette.getByRole('group',{name:'Serial LED string'});
   await serial.getByLabel('Cut serial channels').check();
   await serial.getByText('Channels ready for preparation.').waitFor();
@@ -3143,6 +3145,7 @@ try{
    const rotation=palette.getByLabel('Body rotation (°)');
    await rotation.fill('180');await rotation.press('Tab');
   }
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   const serial=palette.getByRole('group',{name:'Serial LED string'});
   await serial.getByRole('button',{name:'Pin automatic IN opening'}).click();
   const edge=serial.getByLabel('IN perimeter position (%)');
