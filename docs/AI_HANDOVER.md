@@ -1,8 +1,14 @@
 # AI handover — read immediately after AGENTS.md
 
-## WT-022 B workspace handover
+## CURRENT POINTER — after WT-022 C release (22 November 2026)
 
-WT-022 A (#128) and B (#132) are on main. The search implementation from #133 is in release PR #134. Read [Current work](PROJECT_STATUS.md) for exact-head evidence and the next FIT-02 manufacturing task. The historical notes below record earlier decisions.
+**Verified `main`:** `f6e1da1b00bc1aeff2add9bcf0486adf59a91d90`, which merges [WT-022 C release #134](https://github.com/connorturansky-svg/crystal-forge/pull/134). [Pages deployed successfully](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45063828028). Precision mounting #128, eight workspaces #132 and real tool search #134 are merged. The #133 search PR originally targeted the stacked B branch, not `main`; #134 reconciled that release. #129 is closed. Do not recreate those milestones.
+
+**Next focused software task:** [Issue #79 — FIT-02 near-edge sloped Wave fitting](https://github.com/connorturansky-svg/crystal-forge/issues/79), with the [test brief in project status](PROJECT_STATUS.md#next-print-quality-task--fit-02-near-edge-sloped-wave-fitting). The central 11 mm profile/5.2 mm bore case is already covered; investigate the near-perimeter valid/rejected boundary, diagnostics, saved-state rollback, real Manifold cutter and independently sectioned STL/3MF. Physical Cura, insertion, cable and printed fit remain under [#10](https://github.com/connorturansky-svg/crystal-forge/issues/10). Avoid #130 documentation and #131 CI workflow branches during geometry implementation.
+
+**Search architecture:** `studio-tool-registry.js` and `studio-tool-search-core.js` drive `studio-tool-finder.js`; `sensory-studio.js` handles model-dependent navigation, availability and focus. Search the actual live controls, not an invented settings panel. Issue #127 still notes the narrower missing `support-free shoulder` alias/control registry entry; fix separately from FIT-02.
+
+**Older sections below are dated engineering history, not a restart order.** Check current main, open PRs, latest-head CI and the user-approved task before coding. Owner controls all merges and physical acceptance.
 
 ## WT-022 A mounting patterns checkpoint
 

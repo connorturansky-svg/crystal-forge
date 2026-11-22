@@ -541,6 +541,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  }
  function renderMountPatterns(list,state,previous){
   const section=document.createElement('details'),summary=document.createElement('summary');
+  section.dataset.toolMountPattern='';
   summary.textContent='Uniform Crystal mounting patterns';
   section.append(summary);list.append(section);
   section.addEventListener('toggle',()=>{

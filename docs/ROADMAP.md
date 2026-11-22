@@ -2,7 +2,7 @@
 
 ## Current status — snapshot 22 November 2026
 
-**Live work pointer:** [Current work](PROJECT_STATUS.md) and [WT-022 #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). [#128 mounting patterns](https://github.com/connorturansky-svg/crystal-forge/pull/128) and [#132 eight workspaces](https://github.com/connorturansky-svg/crystal-forge/pull/132) are merged to main. [#133 search](https://github.com/connorturansky-svg/crystal-forge/pull/133) was merged into its feature-branch base; [draft #134](https://github.com/connorturansky-svg/crystal-forge/pull/134) is required to bring C to main. [#129](https://github.com/connorturansky-svg/crystal-forge/pull/129) is closed as superseded. Recheck live GitHub before making changes.
+**Live work pointer:** [Current work](PROJECT_STATUS.md), [Issue #79 — FIT-02 manufacturing-quality follow-up](https://github.com/connorturansky-svg/crystal-forge/issues/79) and [physical QA #10](https://github.com/connorturansky-svg/crystal-forge/issues/10). WT-022 [#128 mounting patterns](https://github.com/connorturansky-svg/crystal-forge/pull/128), [#132 eight workspaces](https://github.com/connorturansky-svg/crystal-forge/pull/132) and [#134 intelligent search](https://github.com/connorturansky-svg/crystal-forge/pull/134) are now merged to `main`. #133 landed on a stacked branch before #134 carried it to main; [#129](https://github.com/connorturansky-svg/crystal-forge/pull/129) closed as superseded. Verify live GitHub before making changes.
 
 **Everything below "Historical roadmap entries" preserves earlier planning snapshots**, including old "draft"/"current" labels. Do not restart or merge old PRs solely based on historical text.
 

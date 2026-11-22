@@ -1,6 +1,6 @@
 # Crystal Forge — instructions for AI coding assistants
 
-> **Current work.** Start with [Project status](docs/PROJECT_STATUS.md), [Repository map](docs/REPOSITORY_MAP.md) and [WT-022 Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). Verify the current main SHA and PR checks before editing. The owner approves merges and physical acceptance.
+> **Current work — 22 November 2026.** [Project status](docs/PROJECT_STATUS.md) and [repository map](docs/REPOSITORY_MAP.md) are the current entrypoints. WT-022 mounting (#128), eight workspaces (#132) and global search release (#134) are merged into `main`; do not rebuild them. For the next printing-quality software task, see [FIT-02 / #79](https://github.com/connorturansky-svg/crystal-forge/issues/79). Real prints and physical fit remain under [#10](https://github.com/connorturansky-svg/crystal-forge/issues/10). Always recheck the main head and active PRs. The owner approves merges.
 
 **Read this file first, then `docs/AI_HANDOVER.md`.** For a new feature or geometry change, also read `docs/PROJECT_VISION.md`, `docs/FEATURE_SPECIFICATIONS.md`, `docs/DESIGN_DECISIONS.md` and `docs/TESTING.md`.
 
@@ -16,7 +16,7 @@
 
 ## Historical Codex entrypoint (after 21 November 2026 QA merges)
 
-**Read [`docs/CODEX_RESTART_20261121.md`](docs/CODEX_RESTART_20261121.md) before any new manufacturing work.** All three supporting PRs **#122 (edge-mouth evidence), #123 (first-print/backlog documentation) and #124 (Pages retention) are merged**. Their tested helpers are available on main; they are **not drafts to merge or branches to cherry-pick**. Snapshot main after #124: `8d19701ac5bd5521140ebe4e1dfcabbedba8c53f`; verify latest actual SHA and test results before coding. The priority remains eligible top-entry negative-cut mouth chamfers in a *new* focused PR. The existing diagnostic audit succeeds while demonstrating the sharp lip; it is **not a passing fix test**. Production Pages historical release retention is now implemented in merged #124; preserve its stage and shared-browser continuity checks.
+**Historical 21 November checkpoint:** [`docs/CODEX_RESTART_20261121.md`](docs/CODEX_RESTART_20261121.md) is archived context; do not treat it as the next instruction. See [current work](docs/PROJECT_STATUS.md) first. All three supporting PRs **#122 (edge-mouth evidence), #123 (first-print/backlog documentation) and #124 (Pages retention) are merged**. Their tested helpers are available on main; they are **not drafts to merge or branches to cherry-pick**. Snapshot main after #124: `8d19701ac5bd5521140ebe4e1dfcabbedba8c53f`; verify latest actual SHA and test results before coding. The priority remains eligible top-entry negative-cut mouth chamfers in a *new* focused PR. The existing diagnostic audit succeeds while demonstrating the sharp lip; it is **not a passing fix test**. Production Pages historical release retention is now implemented in merged #124; preserve its stage and shared-browser continuity checks.
 
 ## Mission and invariants
 

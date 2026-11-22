@@ -117,6 +117,7 @@ jobs:
             node tests/studio-help-diagnostics-browser.mjs &&
             node tests/studio-backup-keyboard-browser.mjs &&
             node tests/studio-workspaces-browser.mjs &&
+            node tests/studio-tool-search-browser.mjs &&
             node tests/mounting-pattern-browser.mjs &&
             npm run test:browser
           } > browser-run.log 2>&1

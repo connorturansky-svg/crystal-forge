@@ -1,5 +1,7 @@
 # Crystal Forge — verification strategy and commands
 
+For WT-022 C, run `node tests/studio-tool-search-core.test.mjs` and `node tests/studio-tool-search-browser.mjs`. The browser test checks the actual focused controls in Crystal, Gear and Tile, including the prerequisites for mounting patterns and print downloads.
+
 For WT-022 B, run `node tests/studio-workspaces-browser.mjs` with the editor served on port 4321. It covers keyboard navigation, narrow overflow, control ownership, native mounting gestures and all seven builder families. The browser workflow also exercises Crystal and native editing and exports from their new destinations.
 
 For WT-022 mounting patterns, run `node tests/mounting-pattern.test.mjs`, `node tests/mounting-pattern-manifold.test.mjs` and `node tests/mounting-pattern-browser.mjs` with the editor served on port 4321. The first two compare exact model-space coordinates against the issue fixtures and independently section eight-pocket native and Crystal exports. The browser checks preview dragging and group edits in Gear and Crystal, applies layouts through the native workers, and measures printed sections from Print Centre downloads.
