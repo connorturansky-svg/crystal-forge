@@ -2,7 +2,7 @@
 
 Thanks for helping build Wonder Trunks Studio, formerly Crystal Forge.
 
-**Current Codex integration (WT-021):** The owner's active software milestone is confined to [existing draft PR #102](https://github.com/connorturansky-svg/crystal-forge/pull/102). Codex should begin at [`prompts/START_HERE.md`](prompts/START_HERE.md), read the complete [WT-021 brief](prompts/021-complete-seven-builder-manufacturing-parity.md), and follow the [Codex handover](docs/WT021_CODEX_HANDOFF.md). The usual fork/own-PR workflow below applies to **independent external contributors**, not to continuation of this specifically authorised integration branch. No merge or deployment is authorised.
+**Current work:** Read [Current work](docs/PROJECT_STATUS.md) → [repository map](docs/REPOSITORY_MAP.md) → [WT-022 Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). WT-021 PR #102 has merged; **do not restart it**. The active owner's Milestone B exists on the `feat/wt022-workspaces` branch at the dated snapshot, and requires its own focused PR, exact-head verification and owner review. The old WT-021 prompt archive is retained for provenance, not active branch instructions. The fork/own-draft-PR process below remains the default for independent contributors. **No merge or deployment is authorised by this guide.**
 
 **New contributor?** Start with the [onboarding guide on `planning/prompts`](https://github.com/connorturansky-svg/crystal-forge/blob/planning/prompts/prompts/000-contributor-onboarding.md) and the [AI orchestration charter](https://github.com/connorturansky-svg/crystal-forge/blob/planning/prompts/prompts/ORCHESTRATION.md). You do not need our ChatGPT conversation history.
 
