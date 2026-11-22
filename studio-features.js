@@ -25,6 +25,7 @@ export const studioFeatures=[
  {id:'projects',title:'Projects and backups',description:'Save model revisions, reopen a project or download an editable workspace backup.',category:'library',status:'available',action:'library',label:'Open Library'},
  {id:'fabricate',title:'STL, 3MF and Cura downloads',description:'Prepare the actual mesh, select a printer profile and download the matching files.',category:'print',status:'available',action:'print',label:'Open Print Centre'},
  {id:'sections',title:'Prepared mesh cutaways',description:'Inspect the solid after cutting. Look through sockets, wire channels and mounting features before exporting.',category:'inspection',status:'available',action:'inspect',label:'Find mesh inspection'},
+ {id:'tool-search',title:'Find tools by phrase',description:'Search for a tool by name or intent. Select a result to open its workspace and focus the matching control.',category:'help',status:'available',action:'search',label:'Find tools'},
  {id:'keys',title:'Keyboard and display help',description:'Find keyboard controls, view shortcuts and the options for light and dark themes.',category:'help',status:'available',action:'help',label:'Open Help'},
  {id:'physical',title:'Printed fit certification',description:'Verify fit, load and supports on an actual print. The app reports software checks and geometry measurements.',category:'inspection',status:'unavailable'}
 ];

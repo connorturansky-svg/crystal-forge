@@ -65,5 +65,7 @@ jobs:
         run: node tests/release-metadata.mjs
       - name: Syntax, local import and HTML wiring checks
         run: npm run test:static
+      - name: Rank Studio tool searches
+        run: node tests/studio-tool-search-core.test.mjs
       - name: Test valid contributor tasks and duplicate claim rejection
         run: python3 tests/ai-pr-contract.test.py

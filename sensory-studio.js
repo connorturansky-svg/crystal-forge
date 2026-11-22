@@ -119,8 +119,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   // Left-hand search indexes ACTIONS, not only parameter labels.
   // Preserve existing physically validated coupon exporter, saved profile and
   // per-model print preparation instead of maintaining duplicate download logic.
-  const focusAfterNavigation=selectors=>{
-   requestAnimationFrame(()=>{
+  const focusControl=selectors=>{
     for(const selector of selectors){
      for(const element of document.querySelectorAll(selector)){
       if(element.closest('[hidden],[inert]')||element.matches(':disabled'))continue;
@@ -132,11 +131,12 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
       if(!element.matches('button,input,select,summary,[tabindex]'))element.tabIndex=-1;
       element.scrollIntoView({block:'nearest'});
       element.focus({preventScroll:true});
-      return;
+      if(document.activeElement===element)return true;
      }
     }
-   });
+    return false;
   };
+  const focusAfterNavigation=selectors=>requestAnimationFrame(()=>focusControl(selectors));
   const chooseTool=action=>{
    const model=active();
    if(!model){showHome();return;}
@@ -164,7 +164,49 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     ['.sms-palette [data-new-mount-profile]','.sms-palette [data-place-mount]','.sms-palette [data-select-mount]','#mountType','#mountPlacement','[data-state="mount"]']:
     ['#wireRouteStatus','.sms-palette [data-native-route]','#wireSpacingPreset']);
   };
-  const finder=createToolFinder(chooseTool);
+  const modelAvailability=item=>{
+   const model=active();
+   if(!model&&!item.noModel)return 'Open a model to use this tool.';
+   if(model?.link&&(item.editing||item.routing))return 'Make an independent variant to edit this linked model.';
+   if(item.id==='wire-channel'&&model?.generator.typeId!=='crystals'&&!model?.build.serialRouting?.enabled)
+    return cache.get(model?.id)?.routing?.reason||'';
+   return '';
+  };
+  const nextFrame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+  const openSearchResult=async item=>{
+   const reason=modelAvailability(item);
+   if(!active()&&!item.noModel)return reason;
+   const crystal=active()?.generator.typeId==='crystals';
+   if(item.workspace==='Print Centre')showPrint();
+   else if(item.workspace==='Library')showLibrary();
+   else openBuildWorkspace(item.workspace.toLowerCase());
+   const selector=crystal&&item.crystal?item.crystal:item.control;
+   if(view.smsPrecision.collapsed&&[selector,item.panel,item.crystalSetup].some(target=>target&&precision.region.querySelector(target))){
+    view.smsPrecision.collapsed=false;applyPanels();
+   }
+   search.value='';searchSettings();
+   if(crystal&&item.advanced&&!document.body.classList.contains('advanced'))$('advancedBtn').click();
+   await nextFrame();
+   if(item.panel&&!reason){
+    const sections=[...document.querySelectorAll(item.panel)];
+    const section=sections.find(node=>!node.closest('[hidden],[inert]')&&node.getClientRects().length)||
+     sections.find(node=>!node.closest('[hidden],[inert]'));
+    if(section){
+     focusControl([item.panel+' > summary']);
+     section.open=true;
+     await nextFrame();
+     await nextFrame();
+    }
+   }
+   if(!reason&&focusControl([selector]))return '';
+   if(!reason&&crystal&&item.crystalSetup&&focusControl([item.crystalSetup]))return item.setupMessage;
+   if(item.prepare&&focusControl(['#smsPrintCurrent button','#smsJobs [data-job-prepare]']))
+    return 'Prepare the current model to enable '+item.label+'.';
+   const nav=Array.from(document.querySelectorAll('.workspace-tabs button')).find(button=>button.textContent===item.workspace);
+   nav?.focus();
+   return reason||'This control is unavailable for the current model or settings.';
+  };
+  const finder=createToolFinder(openSearchResult,modelAvailability);
   tools.body.prepend(finder);
   const searchSettings=()=>{
    const query=search.value.trim().toLowerCase();
@@ -1601,6 +1643,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(!model.link){
    const patterns=model.build.mountingPatterns??[];
    const section=document.createElement('details');
+   section.dataset.toolMountPattern='';
    const summary=document.createElement('summary');summary.textContent='Uniform mounting patterns';
    section.append(summary);
    section.addEventListener('toggle',()=>{
@@ -2098,6 +2141,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const addAction=(label,target,after)=>{
    if(!target)return;
    const button=document.createElement('button');button.type='button';button.textContent=label;button.disabled=target.disabled||!!model.link;
+   button.dataset.toolAction=target.id;
    button.onclick=()=>{target.click();after?.();};controls.append(button);
   };
   if(build&&buildWorkspace==='build'){
@@ -3051,7 +3095,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(!shell)return false;
   if(action==='family')return !!registry.get(family);
   if(action==='library'||action==='print')return true;
-  return !!active()&&['design','build','pixels','wires','mounts','inspect'].includes(action);
+  return !!active()&&['design','build','pixels','wires','mounts','inspect','search'].includes(action);
  }
  function openFeature(feature){
   if(!canOpenFeature(feature))return;
@@ -3059,6 +3103,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(action==='family'){renderPicker(registry.get(family));picker.showModal();return;}
   if(action==='library'){showLibrary();$('smsSearch')?.focus();return;}
   if(action==='print'){showPrint();shell.focusAfterNavigation(['#smsPrintCurrent button','#smsExpandPrint']);return;}
+  if(action==='search'){
+   document.querySelector('.workspace-tabs [data-tab=design]').click();
+   shell.focusAfterNavigation(['#smsFindTools']);return;
+  }
   if(['pixels','wires','mounts'].includes(action)){shell.chooseTool(action);return;}
   const tab=document.querySelector('.workspace-tabs [data-tab="'+(action==='design'?'design':'build')+'"]');
   tab?.click();
