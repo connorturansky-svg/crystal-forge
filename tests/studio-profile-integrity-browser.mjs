@@ -14,7 +14,7 @@ try{
  await page.evaluate(()=>window.__sensoryStudio.addModel('tactile-tiles',{
   width:90,depth:90,thickness:20,outline:'square',relief:2,pattern:'terraces',dualMaterial:false
  },'Profile integrity Tile'));
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  await page.locator('[data-view=bottom]').click();
  await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
  const palette=page.locator('.sms-palette');
