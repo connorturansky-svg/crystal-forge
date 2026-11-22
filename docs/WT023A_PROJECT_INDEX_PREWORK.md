@@ -14,11 +14,11 @@
 
 ## Prebuilt module
 
-`studio-project-index.js::listProjectFolders(state)` derives a list of display groups, preserving snapshots under their parent `project.id` without creating IDs or modifying state. It requires already stable, unique snapshot IDs, fails clearly when input is invalid, treats active project title as authoritative, shows saved-version detail explicitly, and preserves duplicate titles or model names across projects. It intentionally **does not pretend to implement a persistent multi-project file store**.
+`tests/helpers/wt023-project-index.mjs::listProjectFolders(state)` derives a list of display groups, preserving snapshots under their parent `project.id` without creating IDs or modifying state. It requires already stable, unique snapshot IDs, fails clearly when input is invalid, treats active project title as authoritative, shows saved-version detail explicitly, and preserves duplicate titles or model names across projects. It intentionally **does not pretend to implement a persistent multi-project file store**.
 
 `projectModelTabLabel(project, model)` renders the approved `Project : Model` text as a pure helper, without touching IDs or active tabs. This is **not wired to UI** in this QA prework.
 
-`tests/wt023-project-index.test.mjs` asserts active vs saved identity, two independent projects with equal titles, snapshot chronology, duplicate/missing ID safety, no mutation, model/library link identity, untouched prepared print-job validity and private GitHub manifest/profile round-trip. Run it directly with `node tests/wt023-project-index.test.mjs` or as part of `npm run test:static`. It does **not** prove UI/physical print fit.
+`tests/wt023-project-index.test.mjs` asserts active vs saved identity, two independent projects with equal titles, snapshot chronology, duplicate/missing ID safety, no mutation, model/library link identity, untouched prepared print-job validity and private GitHub manifest/profile round-trip. Run it directly with `node tests/wt023-project-index.test.mjs` or as part of `npm run test:static`; it is imported by the existing documents test, so the repository release metadata checks treat the branch as tests/docs-only. It does **not** prove UI/physical print fit.
 
 ## What is still critical for Codex under #138
 
@@ -27,4 +27,4 @@
 - Build unit/Chromium migration tests that show old workspace and private remote backups round-trip with every ID/profile/print job intact; do not generate new snapshot IDs on every page load or silently merge two different projects because their title matches.
 - Confirm exact-head CI, documents and the first non-destructive UI integration plan before proposing a merge. Independent QA must review the data model before #139 Library UI work begins.
 
-**Boundary:** This is additive prework. It makes no schema/version changes, no storage writes, no server requests, and no migrations. Codex should reuse or improve it rather than create another competing folder selector.
+**Boundary:** This is **test-only** prework. It makes no production module/schema/version changes, no storage writes, no server requests, and no migrations. After owner review, Codex may move the pure selector to production as part of a release-versioned WT-023A implementation. Codex should reuse or improve it rather than create another competing folder selector.
