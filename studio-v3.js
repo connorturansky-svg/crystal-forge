@@ -1501,7 +1501,7 @@ async function buildManufacturing(){
   const issue=routing.severity==='error'?routing:{severity:'error',title:'The print mesh could not be prepared.',body:String(error.message).split('\n')[0],details:[]};
   const technical=error.debugDetails||error.stack;
   renderFeedback($('prepareStatus'),{...issue,details:[...(issue.details||[]),...(technical?[technical]:[])]},{focus:()=>{
-   document.querySelector('[data-tab="build"]').click();const box=$('wireRouteStatus');for(let p=box?.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;box?.scrollIntoView({block:'nearest'});
+   (document.querySelector('.sms-workspace-nav [data-workspace="wiring"]')??document.querySelector('[data-tab="build"]')).click();const box=$('wireRouteStatus');for(let p=box?.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;box?.scrollIntoView({block:'nearest'});
   }});
   renderFeedback($('status'),{severity:'error',title:issue.title,body:'See the highlighted explanation in the settings panel.'});
  }finally{

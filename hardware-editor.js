@@ -379,7 +379,8 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    (plan.invalidManualPixels.length+plan.invalidManualMounts.length)+' invalid (red) · '+(plan.wirePlan?.routes.length||0)+' cyan wire segments · '+(plan.wirePlan?.unrouted||0)+' unconnected';
   const list=$('manualHardwareList');if(!list)return;
   const home=document.body.dataset.studioBuildHome||'build';
-  const showPixels=home!=='mounting',showMounts=home==='build'||home==='mounting';
+  const showPixels=home==='pixels'||home==='wiring'||!document.body.dataset.studioBuildHome;
+  const showMounts=home==='mounting'||!document.body.dataset.studioBuildHome;
   const html=[];
   const esc=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   for(const [kind,enabled,items] of [['pixel',s.pixelPlacement==='manual',s.manualPixelHoles||[]],

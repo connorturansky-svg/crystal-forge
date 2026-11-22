@@ -85,6 +85,7 @@ body.sms-unified .layout{display:grid;flex:1;min-height:0;height:auto;position:r
 #smsModelDimensions{margin-inline-start:auto;padding:4px 8px;color:var(--muted);font-size:11px;white-space:nowrap}
 .sms-workspace-nav{flex:0 0 auto;padding:3px 10px;border-bottom:1px solid var(--border);flex-wrap:wrap;background:var(--panel);align-items:center}
 .sms-workspace-nav button{padding:3px 10px}
+body[data-studio-build-home="build"] section[data-workspace="build"]>.card:is([data-build-home],[data-shared-hardware]),
 body[data-studio-build-home="pixels"] section[data-workspace="build"]>.card:not([data-build-home="pixels"]):not([data-shared-hardware]),
 body[data-studio-build-home="wiring"] section[data-workspace="build"]>.card:not([data-build-home="wiring"]):not([data-shared-hardware]),
 body[data-studio-build-home="mounting"] section[data-workspace="build"]>.card:not([data-build-home="mounting"]):not([data-shared-hardware]){display:none}

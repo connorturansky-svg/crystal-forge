@@ -22,10 +22,10 @@ try{
   mode:'Decorative',wheelStyle:'Rounded lobes',webStyle:'Solid',diameter:100,
   teeth:12,bore:0,thickness:10,reliefStyle:'None',dualMaterial:false
  },name),name);
- await page.locator('.sms-workspace-nav [data-tab=design]').click();
+ await page.locator('.sms-workspace-nav [data-tab=build]').click();
  await page.locator('.sms-palette [data-edge-finish=enabled]').setChecked(enabled);
  await page.waitForFunction(enabled=>Boolean(window.__sensoryStudio.currentModel.build.edgeFinish?.enabled)===enabled,enabled);
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
  await page.locator('[data-view=top]').click();
  await page.waitForFunction(()=>window.__crystalForgeViewMetrics?.().settled,undefined,{timeout:30000});
  await page.locator('.sms-palette').getByRole('button',{name:'Place mounting hole in 3D'}).click();

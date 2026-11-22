@@ -27,6 +27,12 @@ try{
   assert.equal(await destination(name).getAttribute('aria-current'),'step');
   assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.id),id);
  }
+ await destination('Build').press('Enter');
+ assert(await page.locator('.sms-palette [data-pixel-backing]').isVisible());
+ assert(await page.locator('.sms-palette [data-edge-finish=enabled]').isVisible());
+ assert.equal(await page.locator('.sms-palette [data-place-pixel], .sms-palette [data-place-mount]').count(),0);
+ await destination('Pixels').press('Enter');
+ assert.equal(await page.locator('.sms-palette [data-pixel-backing]').count(),0);
  await page.setViewportSize({width:390,height:844});
  for(const name of ['Pixels','Wiring','Mounting','Print Centre'])await destination(name).press('Enter');
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
@@ -42,6 +48,8 @@ try{
   await target.waitFor({timeout:4000});
  };
  await reveal('[data-state=mount]');
+ await reveal('#placeMountBtn');
+ await reveal('#manualHardwareList summary');
  assert(!await page.locator('[data-state=wireChannels]').isVisible());
  await destination('Wiring').press('Enter');
  await reveal('[data-state=wireChannels]');
@@ -49,6 +57,9 @@ try{
  await destination('Pixels').press('Enter');
  await reveal('#pixelProfileSelect');
  assert(!await page.locator('[data-state=wireChannels]').isVisible());
+ await destination('Build').press('Enter');
+ assert(await page.locator('.sms-palette [data-palette-key=crystal-base-height]').isVisible());
+ assert(!await page.locator('#pixelProfileSelect').isVisible());
  for(const family of ['tactile-tiles','waves','control-caps','characters','light-pods']){
   await page.evaluate(family=>window.__sensoryStudio.addModel(family,null,'WT-022 workspace '+family),family);
   await destination('Pixels').press('Enter');
