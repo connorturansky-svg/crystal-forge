@@ -446,6 +446,9 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
   onProgress('Checking the joined shell and optional cavities…');
   const initialVolume=combined.volume();
   const hardware=planHardware(crystals,s);
+  if(s.mountPlacement==='manual'&&hardware.mounting.enabled&&
+     hardware.invalidManualMounts.some(({index})=>s.manualMountHoles[index]?.crystalFixing))
+   throw Error('A precision mounting hole no longer fits. Edit its group or move the ungrouped hole before preparing.');
   if(hardware.collisions.length)throw new Error('Hardware holes overlap.');
   // A requested physical string must never export a disconnected, over-length
   // or partly cut groove. Stop BEFORE drilling even the first LED socket.
@@ -731,6 +734,12 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
   if(hardware.mounts.length){
    const cutters=[];
    for(const pos of hardware.mounts){
+    if(pos.blind){
+     const stock=hold(wasm.Manifold.cylinder(pos.depth+1.58,pos.radius+1,pos.radius+1,32)
+      .rotate([-90,0,0]).translate([pos.x,.02,pos.z]));
+     if(hold(stock.subtract(combined)).volume()>1e-4)
+      throw Error(pos.label+' needs continuous wall and roof stock around the pocket.');
+    }
     cutters.push(hold(wasm.Manifold.cylinder(pos.depth+.5,pos.radius,pos.radius,32)
       .rotate([-90,0,0]).translate([pos.x,-.5,pos.z])));
    }

@@ -1,7 +1,7 @@
 // Native mounting profiles share placement checks and production stock guards.
 import {pixelBoreIssue} from './studio-pixel-bore-validation.js';
 
-const maximum=16;
+export const MAX_NATIVE_MOUNTS=16;
 export const mountProfiles=['Through-hole','Counterbore','Countersink'];
 const pocketDefaults={'Magnet pocket':{diameter:6,depth:2.5},'Threaded insert pilot':{diameter:4,depth:4}};
 export const manualMountProfiles=[...mountProfiles,...Object.keys(pocketDefaults)];
@@ -44,9 +44,13 @@ export function mountHoleIssue(recipe,mount,otherMounts=[],pixelHoles=[]){
  if(!reason)return null;
  return reason.replace(/another pixel/g,'another pixel or mounting hole').replace(/^The bore/g,'The mount').replace(/^Through bores/g,'Through mounting holes');
 }
+export function patternMountIssues(recipe,{candidates,remaining},pixelHoles=[]){
+ return candidates.map((mount,index)=>mountHoleIssue(recipe,mount,
+  [...remaining,...candidates.filter((_,other)=>other!==index)],pixelHoles));
+}
 export function addManualMountCuts(recipe,build={}){
  const mounts=build.manualMountHoles||[];
- if(!Array.isArray(mounts)||mounts.length>maximum)
+ if(!Array.isArray(mounts)||mounts.length>MAX_NATIVE_MOUNTS)
   throw Error('Use up to 16 manually placed mounting holes.');
  const seen=new Set();
  for(let i=0;i<mounts.length;i++){

@@ -1392,6 +1392,33 @@ function cancelActivePreparation(reason='Preparation cancelled'){
  const reject=activePreparationReject;activePreparationReject=null;
  if(reject)reject(new Error(reason));
 }
+function fabricationComponents(){
+ return [...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents].filter(mesh=>
+  !mesh.userData.crystalId||!crystals.find(crystal=>crystal.id===mesh.userData.crystalId)?.hidden
+ ).map(mesh=>({
+  positions:new Float32Array(mesh.geometry.getAttribute('position').array),
+  position:mesh.position.toArray(),quaternion:mesh.quaternion.toArray(),scale:mesh.scale.toArray(),
+  userData:{crystalId:mesh.userData.crystalId||null,isBase:!!mesh.userData.isBase,isBaseAccent:!!mesh.userData.isBaseAccent}
+ }));
+}
+async function validateCrystalMountPattern(settings){
+ flushScheduledEdit();
+ const source=sourceHash(),components=fabricationComponents();
+ const worker=new Worker(new URL('./fabrication-worker.js',import.meta.url),{type:'module'});
+ try{
+  await new Promise((resolve,reject)=>{
+   worker.onmessage=({data})=>{
+    if(data.type==='complete')resolve();
+    if(data.type==='error')reject(Error(data.message));
+   };
+   worker.onerror=event=>reject(Error(event.message||'Mounting validation could not start.'));
+   worker.onmessageerror=()=>reject(Error('Mounting validation returned an unreadable result.'));
+   worker.postMessage({type:'prepare',components,crystals:structuredClone(crystals),
+    settings:structuredClone(settings),validateOnly:true},components.map(component=>component.positions.buffer));
+  });
+  if(source!==sourceHash())throw Error('The model changed during validation. Preview the pattern again.');
+ }finally{worker.terminate();}
+}
 async function buildManufacturing(){
  $('prepareStatus').classList.remove('issue-box');delete $('prepareStatus').dataset.severity;
  if($('prepareBtn').disabled)return;
@@ -1410,16 +1437,7 @@ async function buildManufacturing(){
  setStatus('Preparing in background · you can still use the editor');
  try{
   if(!window.Worker)throw new Error('This browser does not support Web Workers.');
-  const components=[...crystalMeshes,...(baseMesh?[baseMesh]:[]),...baseAccents].filter(m=>{
-   if(m.userData.crystalId)return !crystals.find(c=>c.id===m.userData.crystalId)?.hidden;
-   return true;
-  }).map(mesh=>({
-   positions:new Float32Array(mesh.geometry.getAttribute('position').array),
-   position:mesh.position.toArray(),quaternion:mesh.quaternion.toArray(),
-   scale:mesh.scale.toArray(),
-   userData:{crystalId:mesh.userData.crystalId||null,isBase:!!mesh.userData.isBase,
-    isBaseAccent:!!mesh.userData.isBaseAccent}
-  }));
+  const components=fabricationComponents();
   const id=++preparationSerial;
   const result=await new Promise((resolve,reject)=>{
    let worker;
@@ -1505,6 +1523,7 @@ $('showManufacturing').onchange=e=>manufacturingView(e.target.checked);
 $('printHeatmap').onchange=applyPrintHeatmap;
 if(s.floatView){grid.visible=false;axes.visible=false}
 hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh:()=>baseMesh,
+ validateMountPattern:validateCrystalMountPattern,
  getSettings:()=>s,getCrystals:()=>crystals,canEdit:()=>!window.__sensoryStudio?.currentModel?.link,
  onSelectionChange:()=>document.dispatchEvent(new Event('studio-crystal-pixel-selection')),
  getManufacturingVisible:()=>!!manufacturingMesh?.visible,onStatus:setStatus,

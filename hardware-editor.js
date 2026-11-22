@@ -1,5 +1,7 @@
 /* Build-stage placement/inspection: same authoritative plan as fabrication. */
-import {planHardware} from './hardware-layout.js';
+import {planHardware,mountingProfile} from './hardware-layout.js';
+import {mountPatternEditor} from './mounting-pattern-editor.js';
+import {mountPatternViewport} from './mounting-pattern-viewport.js';
 import {resolvePixelProfile,resolveSocketProfile,allPixelProfiles} from './pixel-profiles.js';
 import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
 import {nearestEdgePosition} from './edge-tabs.js';
@@ -8,8 +10,26 @@ import {snapPixelsToWireLength} from './pixel-spacing-snap.js';
 import {setPixelEdgeMode,pixelEdgeMode,solvePixelMove} from './pixel-motion.js';
 import {routingSummary,renderFeedback} from './routing-feedback.js';
 
-export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,getManufacturingVisible=()=>false,onEdit,onStatus,onSelectionChange=()=>{},canEdit=()=>true}){
+export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,getManufacturingVisible=()=>false,onEdit,onStatus,validateMountPattern,onSelectionChange=()=>{},canEdit=()=>true}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
+ const mountingPreview=new THREE.Group();mountingPreview.name='Mount pattern preview';scene.add(mountingPreview);
+ const patternViewport=mountPatternViewport({THREE,canvas:renderer.domElement,camera,
+  visible:()=>isBuild()&&!placing&&!getManufacturingVisible()});
+ function drawMountPreview(transaction,issues){
+  for(const mesh of [...mountingPreview.children]){
+   mountingPreview.remove(mesh);mesh.geometry.dispose();mesh.material.dispose();
+  }
+  if(!transaction)return;
+  const ring=(x,z,radius,color)=>{
+   const mesh=new THREE.Mesh(new THREE.TorusGeometry(radius,.22,6,32),
+    new THREE.MeshBasicMaterial({color,depthTest:false,depthWrite:false}));
+   mesh.rotation.x=-Math.PI/2;mesh.position.set(x,.9,z);mesh.renderOrder=108;
+   mountingPreview.add(mesh);
+  };
+  transaction.candidates.forEach((hole,index)=>ring(hole.x,hole.z,hole.diameter/2,issues[index]?0xff536b:0x25e5c0));
+  ring(transaction.centre.centerX,transaction.centre.centerZ,1,0xffffff);
+ }
+ const groupedMount=(settings,id)=>settings.mountingPatterns?.some(pattern=>pattern.members.includes(id));
  guides.name='Live hardware holes';scene.add(guides);
  // A true cursor in the 3D scene, always visible above the intersected base
  // and independent of hover hit-testing (the exported geometry is separate).
@@ -176,6 +196,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const build=isBuild(),rect=renderer.domElement.getBoundingClientRect();
   markerLayer.hidden=!build||!!placing;
   guides.visible=build&&!getManufacturingVisible();
+  mountingPreview.visible=build&&!placing&&!getManufacturingVisible();
   movementGuides.visible=build&&!placing&&!getManufacturingVisible();
   if(build&&!placing&&rect.width&&rect.height)for(const {button,p} of markerObjects){
    const pt=new THREE.Vector3(p.x,edgeMarkerHeight,p.z).project(camera);
@@ -324,6 +345,8 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   markerLayer.append(button);markerObjects.push({button,p});
  }
  function refresh(){
+  drawMountPreview(null);
+  patternViewport.clear();
   const s=getSettings();
   ensureHardwareIds(s);
   const plan=getPlan();
@@ -416,6 +439,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    }
   }
   list.innerHTML=html.join('')||'<p class="note">Use Place / move to make existing automatic holes editable, or add new holes by clicking the model.</p>';
+  if(canEdit())renderMountPatterns(list,s,plan);
   const tabEditor=list.querySelector('[data-edit-tab-positions]');
   if(tabEditor)tabEditor.onclick=()=>manuallyPlace('tab');
   list.querySelectorAll('[data-pixel-edge]').forEach(select=>select.onchange=()=>{
@@ -469,6 +493,9 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
     if(!result.valid){input.value=item[input.dataset.holeAxis];onStatus(result.reason);}
     return;
    }
+   if(groupedMount(s,item.id)){
+    input.value=item[input.dataset.holeAxis];onStatus('Edit the whole mounting pattern or ungroup it first.');return;
+   }
    item[input.dataset.holeAxis]=coordinate;onEdit();
   });
   list.querySelectorAll('[data-hole-profile]').forEach(select=>select.onchange=()=>{
@@ -500,9 +527,60 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   });
   list.querySelectorAll('[data-remove-hole]').forEach(button=>button.onclick=()=>{
    const key=button.dataset.removeHole==='pixel'?'manualPixelHoles':'manualMountHoles';
+   if(key==='manualMountHoles'&&groupedMount(s,s[key][Number(button.dataset.holeIndex)]?.id)){
+    onStatus('Ungroup the mounting pattern before removing an individual hole.');return;
+   }
    s[key].splice(Number(button.dataset.holeIndex),1);
    if(key==='manualPixelHoles'&&s.lightingMode==='multi')s.pixelCount=s[key].length;
    onEdit();
+  });
+ }
+ function renderMountPatterns(list,state,previous){
+  const section=document.createElement('details'),summary=document.createElement('summary');
+  summary.textContent='Uniform Crystal mounting patterns';
+  section.append(summary);list.append(section);
+  section.addEventListener('toggle',()=>{
+   if(!section.open){drawMountPreview(null);patternViewport.clear();return;}
+   if(section.children.length>1){section.querySelector('[data-pattern-select]')?.dispatchEvent(new Event('change'));return;}
+   const {preset,enabled,diameter,depth}=mountingProfile(state);
+   const patterns=state.mountingPatterns??[];
+   if(!enabled||preset==='Detachable plate'||state.mountPlacement!=='manual'){
+    const note=document.createElement('p');
+    note.textContent='Choose a supported base mounting preset and switch mounting positions to Manual.';
+    section.append(note);return;
+   }
+   const mounts=state.manualMountHoles||[],footprint=previous.polygon.map(({x,z})=>[x,z]);
+   const fixing={crystalFixing:{profile:preset,diameter,depth,
+    blind:['Magnet inserts','Threaded insert M3'].includes(preset)},profile:preset,diameter,depth};
+   const validate=({mounts,candidates})=>{
+    const next=planHardware(getCrystals(),{...state,manualMountHoles:mounts});
+    const accepted=new Set(next.mounts.map(hole=>hole.id));
+    const missing=next.invalidManualMounts.length;
+    const tabConflict=next.tabs.length<previous.tabs.length||next.tabHoles.length<previous.tabHoles.length;
+    const routeConflict=previous.wirePlan?.ready&&!next.wirePlan?.ready;
+    return candidates.map(hole=>!accepted.has(hole.id)?'The hole crosses the footprint or another fitting.':
+     tabConflict?'This pattern interferes with existing edge tabs.':
+     routeConflict?'This pattern blocks the existing cable route.':
+     missing?'Another mounting hole would be displaced.':null);
+   };
+   section.append(mountPatternEditor({patterns,mounts,footprint,limit:20,fixedProfile:fixing,validate,
+    onPreview:(transaction,issues,move)=>{
+     drawMountPreview(transaction,issues);patternViewport.preview(transaction,issues,move);
+    },
+    apply:async transaction=>{
+     if(validate(transaction).some(Boolean))return;
+     if(!section.isConnected)return;
+     const {mounts,patterns}=transaction;
+     try{
+      await validateMountPattern({...state,manualMountHoles:mounts,mountingPatterns:patterns});
+      if(!section.isConnected||getSettings()!==state||!canEdit())return;
+      state.manualMountHoles=mounts;
+      state.mountingPatterns=patterns;
+      onEdit();onStatus('Applied all '+transaction.candidates.length+' mounting holes.');
+     }catch(error){onStatus(error.message);throw error;}
+    },
+    ungroup:id=>{state.mountingPatterns=patterns.filter(entry=>entry.id!==id);onEdit();}
+   }));
   });
  }
  let autoRepairWorker=null,autoRepairSerial=0;
@@ -576,6 +654,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    return !next.invalidManualPixels.some(p=>p.index===(replaceIndex===null?holes.length-1:replaceIndex));
   }
   const holes=(s.manualMountHoles||[]).map(p=>({...p}));
+  if(replaceIndex!=null&&groupedMount(s,holes[replaceIndex]?.id))return false;
   if(replaceIndex===null){if(holes.length>=20)return false;holes.push(pos)}
   else if(holes[replaceIndex])holes[replaceIndex]=pos;
   else return false;

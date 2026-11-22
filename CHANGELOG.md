@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.28 — Precision mounting patterns
+
+- Arrange fixings in equally spaced lines, circles and grids. Type exact pitch, radius, rotation and offsets, or drag the centre in Build before applying the complete pattern.
+- Edit a saved pattern as a group or ungroup it to adjust individual holes. Preparation checks the complete candidate against the model’s stock and other hardware.
+
 ## v0.16.0-dev.35.27 — Chamfer exposed fixing-hole mouths
 
 - Top-edge finishing adds a 45° lead-in to eligible top-entry through-holes and external tab holes. The existing amount control defaults to 0.5 mm. The bore below the lead-in keeps its original diameter.

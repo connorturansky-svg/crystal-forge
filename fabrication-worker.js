@@ -27,6 +27,11 @@ self.onmessage=async(event)=>{
    onProgress:stage=>self.postMessage({type:'progress',stage})});
   const manufacturingEnd=performance.now();
   for(const obj of objects)obj.geometry.dispose();
+  if(data.validateOnly){
+   result.geometry.dispose();
+   self.postMessage({type:'complete'});
+   return;
+  }
   const positions=new Float32Array(result.geometry.getAttribute('position').array);
   result.geometry.dispose();
   const report=result.report;
