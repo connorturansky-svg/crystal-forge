@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.33 — Save and switch projects safely
+
+- Save the outgoing project and open the selected project in one workspace write. A failed save leaves the current project open.
+- Keep stable snapshot IDs when restoring project backups, with separate copies for conflicting snapshots.
+
 ## v0.16.0-dev.35.32 — Find Support-Free Shoulders
 
 - Find Support-Free Shoulders in global search and open the existing Pixels control, with guidance when a shaped underside socket is needed.

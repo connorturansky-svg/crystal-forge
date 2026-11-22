@@ -1,4 +1,4 @@
-import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive,assertWorkspaceVersion} from './studio-sync-plan.js';
+import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive,assertWorkspaceVersion,projectWorkspaceCandidate} from './studio-sync-plan.js';
 import {readMeshFile,importedMeshRecipe,MAX_MESH_BYTES} from './studio-mesh-import.js';
 import {parseSvgArtwork,createSvgImport,MAX_SVG_BYTES} from './svg-import/index.js';
 import {readOrganisation,organisationName,ensureSnapshotIds,templateProject} from './studio-organisation.js';
@@ -33,8 +33,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  const state=bootstrap,project=state.project;
  let savedWorkspace=localStorage.getItem(WORKSPACE_KEY);
  function writeWorkspace(workspace){
-  assertWorkspaceVersion(localStorage,savedWorkspace);
   const serialized=JSON.stringify(workspace);
+  assertWorkspaceVersion(localStorage,savedWorkspace);
   localStorage.setItem(WORKSPACE_KEY,serialized);
   savedWorkspace=serialized;
  }
@@ -49,9 +49,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  state.pixelProfiles=copy(adapter.pixelFitProfiles?.()||state.pixelProfiles||[]);
  state.organisation=readOrganisation(state.organisation);
  let collectionFilter='',favouritesOnly=false,templatesOnly=false;
- function saveProjectSnapshot(){
-  const saved=copy(project);saved.snapshotId=newId();state.savedProjects.push(saved);return saved;
- }project.printer={printer:'Ultimaker 3 Extended',curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'balanced',...project.printer};
+ project.printer={printer:'Ultimaker 3 Extended',curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'balanced',...project.printer};
  const crystalAdapter={typeId:'crystals',typeVersion:1,displayName:'Crystal Clusters',category:'Lighting',defaultParameters:adapter.formationDefaults(),
   parameterSchema:[],presets:crystalStartingPoints(adapter.formationDefaults()),capabilities:{supportsBase:true,supportsLEDs:true,supportsMounting:true,supportsTactileSurfaces:false,supportsMechanisms:false,supportsDualMaterial:false,supportsPartSplitting:true},
   validateParameters:p=>({valid:!!p,errors:[],parameters:p}),generatePreview:()=>adapter.capture(),
@@ -496,10 +494,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  }
  function saveImmediately(){clearTimeout(saveTimer);validateProject(project);writeWorkspace(state);dirty=false;}
  window.addEventListener('beforeunload',event=>{try{if(dirty)saveImmediately();}catch{event.preventDefault();event.returnValue='';}});
- function remember(){
+ function remember({capture=true}={}){
   if(!currentId)return;const model=active();
   if(model.generator.typeId==='crystals'){
-   captureCrystal();cache.set(currentId,{...adapter.detach(),kind:'crystals',fingerprint:modelFingerprint(model)});
+   if(capture)captureCrystal();
+   cache.set(currentId,{...adapter.detach(),kind:'crystals',fingerprint:modelFingerprint(model)});
   }else{
    const c=cache.get(currentId);if(c?.group)c.group.removeFromParent();if(c)c.view={camera:camera.position.toArray(),target:orbit.target.toArray()};
   }
@@ -2090,7 +2089,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     const item=document.createElement('button');item.className='sms-tile';item.append(modelPicture(model.thumbnail||(model.id===currentId&&model.generator.typeId==='crystals'?thumbnail(adapter.previewGroup()):null)),model.name);item.onclick=()=>switchModel(model.id);root.append(item);
    }
    for(const saved of state.savedProjects.filter(item=>item.title.toLowerCase().includes(query))){
-    const item=document.createElement('button');item.textContent='Open project: '+saved.title;item.onclick=()=>{if(!confirm('Open this project and save a copy of the current project?'))return;remember();saveProjectSnapshot();replaceProject(saved);};root.append(item);
+    const item=document.createElement('button');item.textContent='Open project: '+saved.title;item.onclick=()=>{if(!confirm('Open this project and save a copy of the current project?'))return;saveProjectSnapshot(saved);};root.append(item);
    }
    if(!root.children.length)root.textContent='No matching work. Clear search or create a model.';
   };
@@ -2431,7 +2430,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   recoveryStatus(adapter.vault()?.connected?'Private repository connected. Check the backup before recovering or uploading.':'Local only. Connect a private repository to use cross-device backup.');
   $('smsCloudPush').onclick=()=>syncStudio(false);$('smsCloudPull').onclick=()=>syncStudio(true);
   $('smsSearch').oninput=e=>{search=e.target.value;renderLibraryCards();};$('smsFilter').onchange=e=>{filter=e.target.value;renderLibraryCards();};
-  $('smsBrowseModels').onclick=openPicker;$('smsDemo').onclick=demo;$('smsSaveProject').onclick=()=>{saveProjectSnapshot();save();renderLibraryCards();};$('smsBackup').onclick=backup;$('smsImport').onchange=importFile;
+  $('smsBrowseModels').onclick=openPicker;$('smsDemo').onclick=demo;$('smsSaveProject').onclick=()=>{if(saveProjectSnapshot())renderLibraryCards();};$('smsBackup').onclick=backup;$('smsImport').onchange=importFile;
   const organise=document.createElement('section');
   organise.innerHTML='<h3>Organise Library</h3><div class="sms-actions"><button id="smsLibraryAll">All items</button><button id="smsFavourites">Favourites</button><button id="smsTemplates">Templates</button></div><label>Collections<select id="smsCollections"></select></label><div class="sms-actions"><button id="smsCollectionNew">Create collection</button><button id="smsCollectionRename">Rename collection</button><button id="smsCollectionDelete">Delete collection</button></div><p id="smsOrganisationStatus" role="status">Organisation is stored locally until you back up your workspace.</p>';
   panel.append(organise);
@@ -2553,7 +2552,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    button.setAttribute('aria-label','Open project '+saved.title);
    button.onclick=()=>{
     if(!confirm('Open this saved project? Your current project will be kept as a saved copy.'))return;
-    remember();saveProjectSnapshot();replaceProject(saved);
+    saveProjectSnapshot(saved);
    };
    const rename=document.createElement('button');
    rename.type='button';rename.textContent='Rename';
@@ -2624,13 +2623,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    });
    if(source&&template.kind==='project')action('Create project from template',()=>{
     if(!confirm('Create a new project from this template? Your current project will be saved as a recoverable copy.'))return;
-    try{
-     const next=templateProject(source);captureCrystal();
-     const saved=copy(project);saved.snapshotId=newId();
-     const savedProjects=[...state.savedProjects,saved];
-     writeWorkspace({...state,savedProjects});
-     state.savedProjects=savedProjects;remember();replaceProject(next);
-    }catch(error){$('smsOrganisationStatus').textContent=error.message;}
+    saveProjectSnapshot(templateProject(source));
    });
    action('Remove template',()=>{if(confirm('Remove this template? Its source stays in the Library.'))editOrganisation(next=>{next.templates=next.templates.filter(t=>t.id!==template.id);});});
    grid.append(tile);
@@ -3016,11 +3009,33 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   validateArchive(state);
   adapter.download(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),'wonder-trunks-studio-backup.json');
  }
- function replaceProject(saved){
+ function saveProjectSnapshot(target){
+  let candidate;
+  try{
+   candidate=projectWorkspaceCandidate(state,target);
+   writeWorkspace(candidate);
+  }catch(error){
+   $('smsSaveState').textContent='Project not saved';
+   adapter.status(error.message);
+   return false;
+  }
+  clearTimeout(saveTimer);dirty=false;$('smsSaveState').textContent='Saved locally';
+  state.savedProjects=candidate.savedProjects;
+  if(target)replaceProject(candidate.project);
+  return true;
+ }
+ function replaceProject(next){
+  cancelPixelGesture();endPixelPlacement();editors.cancel();remember({capture:false});
   for(const worker of workers.values())worker.terminate();workers.clear();prepared.clear();histories.clear();
   for(const c of cache.values())if(c.group)disposeGroup(c.group);else adapter.release(c);cache.clear();
-  currentId=null;Object.assign(project,copy(saved));delete project.snapshotId;for(const job of project.printJobs){job.status='stale';job.requestId=null;job.preparedRevision=null;}
-  $('smsProjectTitle').value=project.title;switchModel(project.activeTab||project.models[0]?.id);save();
+  for(const map of [nativeFitPreviewChoices,nativeFitPreviewMessages,nativeGuideChoices,selectedPixels,
+   selectedMounts,pixelMessages,mountPlacementProfiles,selectedParts])map.clear();
+  currentId=null;
+  for(const field of Object.keys(project))delete project[field];
+  Object.assign(project,next);
+  $('smsProjectTitle').value=project.title;
+  const modelId=project.activeTab||project.models[0]?.id;
+  if(modelId)switchModel(modelId);else showHome();
  }
  async function importFile(event){
   const file=event.target.files[0];if(!file)return;event.target.value='';

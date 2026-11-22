@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## WT-023A project persistence foundation
+
+Project folders can derive from `project.id`; saved versions use `snapshotId`. Model IDs and tabs are project-local, and links still pin a Library source and revision. No workspace or vault schema change is needed. Explicit saves and project switches validate and store one complete v1 workspace before publishing the new state. Only active jobs that rely on discarded preparation are marked stale. Historical missing and duplicate snapshot IDs receive stable, non-overlapping IDs on the next successful workspace write. The independent read-only folder-index implementation and its characterization remain in #146 for owner review. See #138 for scope and the implementation PR for exact-head evidence.
+
 ## CURRENT POINTER — after WT-022 C release (22 November 2026)
 
 **Verified `main`:** `f6e1da1b00bc1aeff2add9bcf0486adf59a91d90`, which merges [WT-022 C release #134](https://github.com/connorturansky-svg/crystal-forge/pull/134). [Pages deployed successfully](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45063828028). Precision mounting #128, eight workspaces #132 and real tool search #134 are merged. The #133 search PR originally targeted the stacked B branch, not `main`; #134 reconciled that release. #129 is closed. Do not recreate those milestones.
