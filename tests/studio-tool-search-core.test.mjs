@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import {searchStudioTools,searchTokens,withinOneEdit} from "../studio-tool-search-core.js";
+import {searchStudioTools,searchTokens,withinOneEdit} from "./helpers/studio-tool-search-core.mjs";
 
 // Contract fixtures, deliberately NOT live DOM/action IDs. WT-022 C must connect
 // these intents to real routed controls and then verify focus in Chromium.
