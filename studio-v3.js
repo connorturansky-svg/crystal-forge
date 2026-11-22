@@ -1820,6 +1820,22 @@ for(const kind of ['pointerover','focusin','change'])
  });
 toggleDescriptionsUI();
 installExactValueEditors();
+// Keep the classic lighting card intact before installing collapsible sections.
+if(classicLayout){
+ const build=document.querySelector('section[data-workspace="build"]');
+ const [lighting,sockets]=build.querySelectorAll('[data-build-home="pixels"]');
+ const wiring=build.querySelector('[data-build-home="wiring"]');
+ const title=wiring.querySelector('.cardtitle');
+ title.textContent='⤳ Optional underside wiring channels';
+ title.style.padding='6px 0';
+ const divider=document.createElement('div');divider.className='divider';
+ const socketBody=sockets.querySelector('.cardbody');
+ const socketOptions=socketBody.querySelector('.advanced-only');
+ wiring.querySelector('[data-state="wireWidth"]').closest('.control').after(...socketOptions.children);
+ socketOptions.remove();
+ lighting.querySelector('.cardbody').append(divider,title,...wiring.querySelector('.cardbody').childNodes,...socketBody.childNodes);
+ wiring.remove();sockets.remove();
+}
 installCollapsibleSections();
 installConciseHelp();
 if(studioBootstrap&&!new URLSearchParams(location.search).has('legacy'))studioBridge=installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstrap:studioBootstrap,adapter:{
