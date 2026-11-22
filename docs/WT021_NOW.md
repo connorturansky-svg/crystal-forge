@@ -1,4 +1,6 @@
-# WT-021 — Current actionable state (short pointer, 21 November 2026)
+# WT-021 — historical actionable state (21 November 2026)
+
+> **RETIRED:** the exposed top hardware mouth fix referenced below was subsequently merged as #126, and WT-022 A #128 also merged. For current work use [current project status](PROJECT_STATUS.md) and [Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). This entry is retained as a historical evidence pointer, not a Codex restart command.
 
 **Read [CODEX_RESTART_20261121.md](CODEX_RESTART_20261121.md) for the next engineering objective.** This is an audit snapshot; **fetch current main and exact-head checks each time**.
 
