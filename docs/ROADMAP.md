@@ -1,8 +1,10 @@
 # Crystal Forge roadmap
 
-## Current status
+## Current status — snapshot 22 November 2026
 
-Main `7ad5326` contains WT-018 consolidation #80 and Gear interaction PR #84. The tested six-family #85 changes are carried in the open #86 and #87 review stack. See [the acceptance matrix](MODEL_BUILDER_PARITY.md) for software evidence, including geometry restrictions.
+**Live work pointer:** [Current work](PROJECT_STATUS.md), [Issue #79 — FIT-02 manufacturing-quality follow-up](https://github.com/connorturansky-svg/crystal-forge/issues/79) and [physical QA #10](https://github.com/connorturansky-svg/crystal-forge/issues/10). WT-022 [#128 mounting patterns](https://github.com/connorturansky-svg/crystal-forge/pull/128), [#132 eight workspaces](https://github.com/connorturansky-svg/crystal-forge/pull/132) and [#134 intelligent search](https://github.com/connorturansky-svg/crystal-forge/pull/134) are now merged to `main`. #133 landed on a stacked branch before #134 carried it to main; [#129](https://github.com/connorturansky-svg/crystal-forge/pull/129) closed as superseded. Verify live GitHub before making changes.
+
+**Everything below "Historical roadmap entries" preserves earlier planning snapshots**, including old "draft"/"current" labels. Do not restart or merge old PRs solely based on historical text.
 
 ## Software release P0/P1
 
