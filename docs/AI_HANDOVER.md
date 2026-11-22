@@ -1,5 +1,11 @@
 # AI handover — read immediately after AGENTS.md
 
+## FIT-02 Wave perimeter
+
+FIT-02 Wave perimeter — Chromium placed the calibrated 11 mm profile on the sloped face, refused Z=49 mm, and preserved the last valid model and revision after an invalid numeric edit. The accepted Z=40 mm edit survived undo, redo and reload. Fresh STL and 3MF sections both measured a 5.200 mm bore, 11.000 mm seating depth, 7.400 mm perimeter stock and 4.147 mm rear stock. The accepted Manifold preview encloses the positive hardware and matches the production subtraction. Physical retention and printer tolerances remain under #10.
+
+The Wave-only preparation repair reuses Manifold simplification when the accepted socket cut produces degenerate export triangles. Review the browser and catalogue regressions on the draft PR before bringing this into main.
+
 ## WT-022 C search handover
 
 The global finder ranks the live tool registry in `studio-tool-registry.js` using the matcher prepared in draft #129. Workspace navigation and model-dependent availability are handled by `sensory-studio.js`. Keep the precision settings filter scoped to the current panel. Verify the browser focus route and all real control anchors whenever a tool is moved.

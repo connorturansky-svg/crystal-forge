@@ -457,8 +457,8 @@ assert.throws(()=>applyBuildModules(sideRouteStock,{...sideRouteBuild,serialRout
 const gentleWave=waveGenerator.recipe({width:160,depth:100,thickness:15,amplitude:1,frequency:.5,variation:0,direction:0});
 const waveSurfaceMesh=previewRecipe(THREE,gentleWave);
 const shortProfile=PIXEL_PRESETS.find(profile=>profile.id==='seed');
-function gentleWaveSeat(x){
- const hit=new THREE.Raycaster(new THREE.Vector3(x,30,0),new THREE.Vector3(0,-1,0)).intersectObject(waveSurfaceMesh.children[0])[0];
+function gentleWaveSeat(x,z=0){
+ const hit=new THREE.Raycaster(new THREE.Vector3(x,30,z),new THREE.Vector3(0,-1,0)).intersectObject(waveSurfaceMesh.children[0])[0];
  const {point,face}=hit;
  return {...checked('wave-seat-'+x,point.x,point.z,180),entryFace:'top',
   surface:{y:point.y,normal:face.normal.toArray()},socketProfile:{...shortProfile,retentionLip:0}};
@@ -466,6 +466,7 @@ function gentleWaveSeat(x){
 const gentleSeat=gentleWaveSeat(-40);
 const secondWaveSeat=gentleWaveSeat(-20);
 const convexSeat=gentleWaveSeat(40);
+const perimeterSeats=[40,49].map(z=>gentleWaveSeat(-40,z));
 disposeGroup(waveSurfaceMesh);
 assert(Math.abs(gentleSeat.surface.normal[0])>.005,'The seat follows the actual sloped face');
 const waveSeatRecipe=hole=>applyBuildModules(gentleWave,{pixelBuilderVersion:1,pixelHoles:[hole]},waveGenerator.capabilities);
@@ -473,11 +474,28 @@ const curvedSeatOnly=waveSeatRecipe(gentleSeat);
 const calibratedWaveSeat={...gentleSeat,clearance:.2,
  socketProfile:{...gentleSeat.socketProfile,bodyHeight:11}};
 const calibratedWaveRecipe=waveSeatRecipe(calibratedWaveSeat);
+const [perimeterWaveRecipe,breakthroughWaveRecipe]=perimeterSeats.map(seat=>
+ waveSeatRecipe({...calibratedWaveSeat,x:seat.x,z:seat.z,surface:seat.surface}));
+// Preserve the real Chromium raycast coordinate that produced a collapsed
+// triangle after the numeric move to Z=40.
+const browserPerimeterWaveRecipe=waveSeatRecipe({...calibratedWaveSeat,
+ x:-39.99999939188582,z:40,rotation:0,surface:perimeterSeats[0].surface});
 const convexSeatRecipe=waveSeatRecipe(convexSeat);
 assert.throws(()=>prepareRecipe(THREE,wasm,convexSeatRecipe),/needs continuous stock on its installation face/);
 {
  const [preview]=nativeFittingPreviews(THREE,wasm,curvedSeatOnly);
  const [calibrated]=nativeFittingPreviews(THREE,wasm,calibratedWaveRecipe);
+ const [perimeter]=nativeFittingPreviews(THREE,wasm,perimeterWaveRecipe);
+ const [breakthrough]=nativeFittingPreviews(THREE,wasm,breakthroughWaveRecipe);
+ assert.equal(perimeter.insertionDepth,11);
+ assert(perimeter.missingStockVolume<=.05&&perimeter.warnings.length===0);
+ assert(perimeter.collisionVolume<=.02);
+ assert(breakthrough.missingStockVolume>.05);
+ assert.throws(()=>prepareRecipe(THREE,wasm,breakthroughWaveRecipe),/continuous stock on its installation face/);
+ console.log('FIT-02 rejected Wave perimeter missing stock (mm3):',breakthrough.missingStockVolume);
+ const browserPerimeter=prepareRecipe(THREE,wasm,browserPerimeterWaveRecipe);
+ const {stls,threeMF}=exportMaterialBodies(browserPerimeter);
+ assert(stls[0].bytes.byteLength>84&&threeMF.byteLength>0);
  assert.equal(calibrated.insertionDepth,11);
  assert(calibrated.missingStockVolume<=.05&&calibrated.warnings.length===0);
  const [rejected]=nativeFittingPreviews(THREE,wasm,convexSeatRecipe);
@@ -489,7 +507,7 @@ assert.throws(()=>prepareRecipe(THREE,wasm,convexSeatRecipe),/needs continuous s
  try{
   const {Manifold}=wasm;
   const blank=hold(new Manifold(prepareRecipe(THREE,wasm,gentleWave).bodies[0].mesh));
-  for(const [recipe,inspection] of [[curvedSeatOnly,preview],[calibratedWaveRecipe,calibrated]]){
+  for(const [recipe,inspection] of [[curvedSeatOnly,preview],[calibratedWaveRecipe,calibrated],[perimeterWaveRecipe,perimeter]]){
    const printed=hold(new Manifold(prepareRecipe(THREE,wasm,recipe).bodies[0].mesh));
    const cutter=hold(new Manifold(inspection.negative));
    const housing=hold(new Manifold(inspection.positive));
