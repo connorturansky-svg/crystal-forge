@@ -288,7 +288,7 @@ body.theme-light .cloud-sync-panel summary{color:#142d44}
 <p class="note">Default: leave this OFF. Crystal Forge exports a joined solid model with LED and mounting cuts; set infill (0–100%) and wall count in Cura. At 0% infill, Cura can still close spike roots with horizontal skins, so inspect the sliced light path. Turn ON only if you need explicit internal channels.</p>
 <div class="success"><strong>Supportless-first:</strong> after preparing the solid, inspect downward-facing surfaces and recommended orientation. A 45° reference alone cannot guarantee support-free printing.</div>
 </div></div>
-<div class="card amber"><div class="cardtitle"><span class="symbol">✳</span> Pixel lighting plan</div><div class="cardbody">
+<div class="card amber" data-build-home="pixels"><div class="cardtitle"><span class="symbol">✳</span> Pixel lighting plan</div><div class="cardbody">
 <div class="control"><label>Illumination approach</label><select data-state="lightingMode"><option value="single">One pixel · shared glowing cluster</option><option value="multi">Multiple pixels (advanced)</option><option value="none">No lighting</option></select></div>
 <label class="checks"><input data-state="showPixels" type="checkbox"> Show physical pixels and socket cutters</label><output id="pixelFittingPreviewStatus" aria-live="polite"></output><label class="checks"><input data-state="cutSockets" type="checkbox"> Cut LED socket holes into manufacturing mesh</label><div class="control"><label>Pixel hole placement</label><select data-state="pixelPlacement"><option value="auto">Automatic</option><option value="manual">Manual X/Z positions</option></select></div>
 <div id="multiplePixelsRow" class="control advanced-only"><label>Pixel quantity <output data-out="pixelCount"></output></label><input data-state="pixelCount" type="range" min="1" max="60" step="1"></div>
@@ -299,7 +299,8 @@ body.theme-light .cloud-sync-panel summary{color:#142d44}
 <div class="control"><label>Nominal socket diameter <output data-out="pixelDiameter"></output></label><input data-state="pixelDiameter" type="range" min="2" max="30" step=".1"></div>
 <div class="control"><label>Fit adjustment <output data-out="pixelFit"></output></label><input data-state="pixelFit" type="range" min="-.5" max=".8" step=".05"></div>
 <div class="buttonrow"><button id="fitOverrideToolBtn" type="button" hidden title="Review the calibrated hole">⚙ Calibrated fit</button><button id="resetFitOverrideBtn" type="button" hidden>↺ Reset calibration</button></div>
-<div class="divider"></div><div class="cardtitle" style="padding:6px 0">⤳ Optional underside wiring channels</div>
+</div></div>
+<div class="card teal" data-build-home="wiring"><div class="cardtitle">⤳ Underside wiring channels</div><div class="cardbody">
 <label class="checks"><input type="checkbox" data-state="wireChannels"> Carve underside wire channels between accepted LEDs</label>
 <div class="control"><label>Physical cable layout</label><select data-state="wireMode">
 <option value="string">Pixel string — IN / OUT, ordered P1 → P2</option>
@@ -325,21 +326,25 @@ body.theme-light .cloud-sync-panel summary{color:#142d44}
 <p id="wireRouteStatus" class="note" aria-live="polite">Enable underside wiring to inspect calculated channels.</p>
 <div class="advanced-only">
 <div class="control"><label>Channel width <output data-out="wireWidth"></output></label><input data-state="wireWidth" type="range" min="1.5" max="9" step=".25"></div>
-<div class="control"><label><input data-state="socketSupportFreeShoulders" type="checkbox"> Support-Free Shoulders</label></div>
-<div class="control" id="socketShoulderAngleControl" hidden><label>Shoulder angle from horizontal <output data-out="socketShoulderAngle"></output><input data-state="socketShoulderAngle" type="range" min="30" max="60" step="1"></label></div>
-<div class="control"><label><input data-state="socketConical" type="checkbox"> Conical pixel socket ceilings (base-down printing)</label></div>
 <div class="control"><label><input data-state="wireVaulted" type="checkbox"> Vault wire-track roofs</label></div>
 <div class="control"><label><input data-state="wireAllowOverLength" type="checkbox"> Allow over-length cables</label></div>
 <div class="control"><label>Channel depth <output data-out="wireDepth"></output></label><input data-state="wireDepth" type="range" min=".8" max="5" step=".2"></div>
 <div class="control"><label>Extra cable slack <output data-out="wireSlack"></output></label><input data-state="wireSlack" type="range" min="0" max="30" step="5"></div>
 </div>
 <p class="note"><strong>Pixel string:</strong> each LED IN and OUT is permanently collinear (180° apart). Smooth tangent paths curve only between pixels; arrows show flow, red runs exceed the measured cable spacing. Set any manual pixel as P1, or reverse the chain. Every LED has two cable-bundle tails on opposite sides. The first IN and final OUT each reach the exterior, including with only one pixel. The order of P1, P2… in the hardware list sets the groove route; ↑↓ and drag change the order without moving pixels. Pick each perimeter opening independently. Legacy single/parallel modes remain only for imported projects. Cyan outlines show <em>physical cable channels</em>, not separate conductors or an electrical loop. Unsafe routes are rejected; test real wire/strain relief before printing.</p>
+</div></div>
+<div class="card amber" data-build-home="pixels"><div class="cardtitle">Socket shape and light preview</div><div class="cardbody">
+<div class="advanced-only">
+<div class="control"><label><input data-state="socketSupportFreeShoulders" type="checkbox"> Support-Free Shoulders</label></div>
+<div class="control" id="socketShoulderAngleControl" hidden><label>Shoulder angle from horizontal <output data-out="socketShoulderAngle"></output><input data-state="socketShoulderAngle" type="range" min="30" max="60" step="1"></label></div>
+<div class="control"><label><input data-state="socketConical" type="checkbox"> Conical pixel socket ceilings (base-down printing)</label></div>
+</div>
 <p class="softnotice">Underside pixel opening: <strong id="actualHole">12.00 mm</strong> · one shared colour</p><div class="divider"></div><label class="checks"><input data-state="glowPreview" type="checkbox"> Preview the whole cluster glowing one colour</label>
 <div class="control"><label>Simulated LED colour</label><select data-state="glowColour"><option value="0x77c4ff">Ice blue</option><option value="0xffa3df">Pink</option><option value="0xa58bff">Purple</option><option value="0xffdb8b">Warm white</option><option value="0x9affbc">Green</option><option value="0xffffff">Cool white</option></select></div>
 <p class="note">Illustrative glow only — real brightness depends on filament translucency, wall thickness, cavity connectivity and LED placement.</p>
 <div class="note warning">When enabled, Print → Prepare Print cuts nominal socket holes using the Manifold engine. Check physical fit against your actual pixels. Experimental retaining ridges require actual fit checks. Pixel-string mode now cuts only its connected planned IN/OUT grooves (no duplicate local reliefs); legacy wiring modes retain their previous stand-alone slots.</div>
 </div></div>
-<div class="card purple advanced-only"><div class="cardtitle"><span class="symbol">⚙</span> Mounting &amp; attachments</div><div class="cardbody">
+<div class="card purple advanced-only" data-build-home="mounting"><div class="cardtitle"><span class="symbol">⚙</span> Mounting &amp; attachments</div><div class="cardbody">
 <div class="control"><label>Mount hole placement</label><select data-state="mountPlacement"><option value="auto">Automatic</option><option value="manual">Manual X/Z positions</option></select></div><div class="control"><label>Mounting preset</label><select data-state="mount"><option>None</option><option>Wall screws</option><option>Magnet inserts</option><option>Threaded insert M3</option><option>Custom dual holes</option><option>Edge fixing tabs</option><option>Detachable plate</option><option>Ceiling mount</option></select></div>
 <div class="control"><label>Custom hole diameter <output data-out="mountHoleDiameter"></output></label><input data-state="mountHoleDiameter" type="range" min="2.5" max="12" step=".1"></div>
 <div class="control"><label>Hole spacing <output data-out="mountSpacing"></output></label><input data-state="mountSpacing" type="range" min="10" max="150" step="1"></div>
@@ -360,7 +365,7 @@ body.theme-light .cloud-sync-panel summary{color:#142d44}
 <p class="note">Detachable plate now produces two registered nominal M3 insert pockets in the base; after preparing the mesh, download a separate mating plate with matching bolt holes. Fit and strength must be checked in a physical build.</p>
 <p class="note warning">Overhead installations need independently verified load-bearing fixings and secondary retention.</p>
 </div></div>
-<div class="card amber"><div class="cardtitle">◎ Hardware hole editor</div><div class="cardbody">
+<div class="card amber" data-shared-hardware><div class="cardtitle">◎ Hardware hole editor</div><div class="cardbody">
 <p class="note">Numbered 3D hardware labels match this list: P1… = string pixels, M1… = mounting holes, T1… = tabs. Click a marker to highlight its card; select a card to highlight the marker. Drag or ↑↓ to change the pixel-string order. Double-click an empty part of the model to choose a new pixel or mounting hole. Red markers are invalid and not cut.</p>
 <p id="hardwareGuideSummary" class="softnotice">Hole layout pending…</p>
 <label class="checks"><input data-state="hardwareSnap" type="checkbox"> Snap new/manual hardware positions to a grid</label>

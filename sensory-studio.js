@@ -132,7 +132,6 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     }
    });
   };
-  const toBuild=()=>document.querySelector('.workspace-tabs [data-tab="build"]')?.click();
   const chooseTool=action=>{
    const model=active();
    if(!model){showHome();return;}
@@ -153,7 +152,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
       ['#smsJobs [data-job-export]','#smsPrintCurrent']);
     return;
    }
-   toBuild();
+   openBuildWorkspace(action==='mounts'?'mounting':action==='pixels'?'pixels':'wiring');
    focusAfterNavigation(action==='pixels'?
     ['.sms-palette [data-pixel-profile-editor]','.sms-palette [data-fit-profile]','.sms-palette [data-fit-print]','#placePixelBtn']:
     action==='mounts'?
@@ -1923,8 +1922,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    }catch(error){pixelStatus(model,error.message);}
   };
   bindPixelEditor(root,model,holes,profiles);
-  appendNativeRouting(root,model);
-  renderMountPalette(root,model);
+  if(buildWorkspace==='build'){
+   appendNativeRouting(root,model);
+   renderMountPalette(root,model);
+  }
  }
  async function downloadPixelCoupon(model,hole,options,button){
   if(button)button.disabled=true;
@@ -2041,6 +2042,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(!shell||mode!=='model')return;
   const model=active(),family=registry.get(model.generator.typeId);
   const build=model.generator.typeId==='crystals'?document.querySelector('.workspace-tabs [data-tab=build]').classList.contains('active'):stage==='build';
+  document.body.dataset.studioBuildHome=buildWorkspace;
   const root=shell.palette;root.replaceChildren();
   if(model.generator.typeId!=='crystals')refreshNativeFittingPreview(model);
   const heading=document.createElement('h2');
@@ -2088,7 +2090,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const button=document.createElement('button');button.type='button';button.textContent=label;button.disabled=target.disabled||!!model.link;
    button.onclick=()=>{target.click();after?.();};controls.append(button);
   };
-  if(build&&model.generator.typeId!=='crystals'&&buildWorkspace==='mounting'){
+  if(build&&model.generator.typeId==='crystals'&&buildWorkspace==='wiring'){
+   renderCrystalWirePalette(controls);
+  }else if(build&&model.generator.typeId==='crystals'&&buildWorkspace==='mounting'){
+   addAction('Place mounting hole',$('placeMountBtn'));
+  }else if(build&&model.generator.typeId!=='crystals'&&buildWorkspace==='mounting'){
    renderMountPalette(controls,model);
   }else if(build&&model.generator.typeId!=='crystals'&&buildWorkspace==='wiring'){
    appendNativeRouting(controls,model);
@@ -2134,7 +2140,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
      },!!model.link);
     }
     renderCrystalPixelPalette(controls,model);
-    renderCrystalWirePalette(controls);
+    if(buildWorkspace==='build')renderCrystalWirePalette(controls);
    }else{
     renderPixelPalette(controls,model);
     renderActivePixelProfile(controls,model);

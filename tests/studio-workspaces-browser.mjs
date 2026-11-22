@@ -30,5 +30,36 @@ try{
  await page.setViewportSize({width:390,height:844});
  for(const name of ['Pixels','Wiring','Mounting','Print Centre'])await destination(name).press('Enter');
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth));
+ await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{count:5},'WT-022 workspace Crystal'));
+ await destination('Mounting').press('Enter');
+ await page.waitForFunction(()=>document.body.dataset.studioBuildHome==='mounting');
+ const reveal=async selector=>{
+  const target=page.locator(selector);
+  await target.evaluate(element=>{
+   for(let ancestor=element.parentElement;ancestor;ancestor=ancestor.parentElement)
+    if(ancestor.tagName==='DETAILS')ancestor.open=true;
+  });
+  await target.waitFor({timeout:4000});
+ };
+ await reveal('[data-state=mount]');
+ assert(!await page.locator('[data-state=wireChannels]').isVisible());
+ await destination('Wiring').press('Enter');
+ await reveal('[data-state=wireChannels]');
+ assert(!await page.locator('[data-state=mount]').isVisible());
+ await destination('Pixels').press('Enter');
+ await reveal('#pixelProfileSelect');
+ assert(!await page.locator('[data-state=wireChannels]').isVisible());
+ for(const family of ['tactile-tiles','waves','control-caps','characters','light-pods']){
+  await page.evaluate(family=>window.__sensoryStudio.addModel(family,null,'WT-022 workspace '+family),family);
+  await destination('Pixels').press('Enter');
+  await page.locator('.sms-palette [data-place-pixel]').waitFor();
+  assert.equal(await page.locator('.sms-palette [data-place-mount]').count(),0);
+  await destination('Mounting').press('Enter');
+  await page.locator('.sms-palette [data-place-mount]').waitFor();
+  assert.equal(await page.locator('.sms-palette [data-place-pixel]').count(),0);
+  await destination('Wiring').press('Enter');
+  assert.equal(await destination('Wiring').getAttribute('aria-current'),'step');
+  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.generator.typeId),family);
+ }
  console.log('WT-022 workspaces: keyboard, retained model, actual mounting gesture and narrow navigation passed');
 }finally{await browser.close();}
