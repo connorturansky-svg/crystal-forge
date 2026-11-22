@@ -1,6 +1,6 @@
 # WT-023 · Library, project folders, preset catalogues and cloud repository blueprint
 
-**Status:** proposed architecture, not shipped implementation. **Audit date:** 22 November 2026.
+**Status:** proposed architecture, not shipped implementation. **Audit date:** 22 November 2026. **Owner-approved cloud direction:** existing private GitHub repository with improved **manual** Studio sync first. No hosted login, unattended background upload or PIN-based repository authentication in this milestone.
 **Source baseline:** `main` `7ff6ba8ba8dd0525563e2c933c0a9a5cc920c0f7` after merged #135. Recheck GitHub before implementation.
 **Owner milestone:** [WT-023 #137](https://github.com/connorturansky-svg/crystal-forge/issues/137). **Do not merge planning work or implement contested product decisions without owner approval.**
 
@@ -96,10 +96,12 @@ Info (hover, keyboard focus and touch dialog) exposes family, generator ID, inde
 
 Render real geometry for every eligible family; the thumbnail is a derivative **not authoritative model data**. Use deterministic preview from actual saved parameters/build/materials; validate cached image against stable model fingerprint/generator version and invalidate on edits. Lazy bounded queue, capped dimension and bytes, backpressure, WebGL/context cleanup, no eager heavy Manifold exports for all cards. For unsupported/corrupt/missing import assets, show a truthful error + Retry instead of a made-up image or silent blank.
 
-### F. Cloud journey (first release)
+### F. Cloud journey (owner-approved first release)
 User enters Library → Sync & Backups → Connect private GitHub repository. Explain private repo and fine-grained Contents token, session-memory credential handling and no public/repo-source uploads. Device A: review status → Upload workspace → confirm manifest SHA/time. Device B: connect → Check cloud read-only → inspect local/remote-only/conflicting projects/models/profiles/templates → choose Keep local / Merge-and-copy-conflicts / Import selected as copy → recoverable local checkpoint → apply. Changes on Device B require explicit Upload after reconciliation. Reconnect/new device must re-authorise; untrusted/failed/private repo check blocks remote use without corrupting local work.
 
-Never describe the legacy Crystal 3.5-second auto-sync as whole-Studio autosync. Fully automatic push/pull is a **separate option**, only after proven conflict-safe background sync and user consent.
+Never describe the legacy Crystal 3.5-second auto-sync as whole-Studio autosync. Fully automatic push/pull is **explicitly deferred**. Owner chose the existing private GitHub vault, straightforward manual Check/Preview/Merge/Upload and visible remote status first; no hosted login is required for the WT-023 rollout.
+
+**Security and new-device access:** The public GitHub Pages website contains no private user vault by default. To read private vault assets, a newly connected device must have genuine repository authorisation. A 4-digit PIN has 10,000 possibilities, cannot protect a stored PAT, and cannot grant private GitHub access in a public client-only app. Any 4-digit feature is at most an optional, explicitly low-security **local screen/privacy lock on an already authorised device** and does not encrypt browser data. The current flow stays repo-scoped fine-grained token in memory; a less awkward approved GitHub/device-auth flow would be a separate future security design. See [WT-023G #145](https://github.com/connorturansky-svg/crystal-forge/issues/145).
 
 ## 4. Data contract and migration proposal (for #138 to validate, not a preselected schema)
 
@@ -125,7 +127,8 @@ Possible **additive** metadata (select exact implementation in WT-023A after tes
 | [WT-023C #140](https://github.com/connorturansky-svg/crystal-forge/issues/140) | required names, `Project : Model` tabs, metadata, truthful full-family thumbnails | B merged; same Library renderer ownership | seven families, legacy previews, lazy cache and save/reload |
 | [WT-023D #141](https://github.com/connorturansky-svg/crystal-forge/issues/141) | reusable pixel then printer/Cura resource catalogues | A/B contract; **split into D1 and D2 PRs** | preserved calibrations and correct print/profile overrides |
 | [WT-023E #142](https://github.com/connorturansky-svg/crystal-forge/issues/142) | first-class cloud setup and sync status in Library, two-device manual recovery | schema/resource slices integrated; no new server | mock private GitHub conflict/partial upload/offline/390px |
-| [WT-023F #143](https://github.com/connorturansky-svg/crystal-forge/issues/143) | optional account-backed cloud / autosync ADR, not code | owner choice before implementation | provider, security, cost and exportability decision |
+| [WT-023F #143](https://github.com/connorturansky-svg/crystal-forge/issues/143) | optional future account-backed cloud / autosync ADR, not code | **deferred; GitHub manual first is approved** | provider, security, cost and exportability decision |
+| [WT-023G #145](https://github.com/connorturansky-svg/crystal-forge/issues/145) | new-device onboarding and optional 4-digit convenience PIN **security design only** | review with #142 before cloud UI code | private repo auth remains authoritative; no PIN-based remote access |
 
 **Current concurrent work:** [#135](https://github.com/connorturansky-svg/crystal-forge/pull/135) Wave print repair is merged into `7ff6ba8`; [#136](https://github.com/connorturansky-svg/crystal-forge/pull/136) Support-Free Shoulders search is draft and touches `sensory-studio.js`, `index.html`; [#131](https://github.com/connorturansky-svg/crystal-forge/pull/131) CI efficiency is draft and touches Actions workflows/classifier. Do not begin #139–#142 editing their source until #136 and current releases are reconciled. #131 should independently complete/land before expensive test-heavy WT-023 work if approved. Keep real physical [Issue #10](https://github.com/connorturansky-svg/crystal-forge/issues/10) on the printing track; UI scope does not substitute for tested parts.
 
@@ -145,7 +148,9 @@ Possible **additive** metadata (select exact implementation in WT-023A after tes
 
 1. **Project folders:** initial single-level expandable projects (recommended) or user-created nested directories? These are app virtual folders, not OS folders.
 2. **Tabs:** `Project : Model` display of the active project's tabs (recommended) or simultaneously editable models from different projects? The latter requires a larger state/session design.
-3. **Cloud:** private GitHub vault/manual conflict-safe sync first (recommended), with a later hosted login option; or hosted account/cloud login as a requirement before investing in Library redesign?
+3. **Cloud — DECIDED:** **private GitHub vault with manual conflict-safe sync first**. Hosted login and unattended sync deferred. A proposed 4-digit PIN is **not cloud authentication**; optional local privacy-screen lock and secure new-device onboarding require a separate UX/security choice in [#145](https://github.com/connorturansky-svg/crystal-forge/issues/145).
 4. **Resources:** shared global pixel/printer profiles with project-specific selections (recommended), or duplicate all resource definitions into each project by default? Prefer global authoritative identity plus explicit version pinning/snapshot for export reproducibility.
+
+**Approved decision scope:** Use the existing private GitHub repository as cloud storage and improve the manual connection/status/Check/Preview/Merge/Upload experience. This is not approval to implement a PIN login, a hosted backend or continuous multi-device sync.
 
 No assumption above grants permission to change hosting, create private repositories, store user tokens, delete data or merge product PRs.
