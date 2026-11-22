@@ -1951,6 +1951,72 @@ try{
   assert(Math.abs(socket.surface.normal[0])>.005);
   assert(socket.surface.normal[1]>.95);
   await assertNativeFittingPreview('Calibrated Wave socket',1);
+  const snapshot=()=>page.evaluate(()=>window.__sensoryStudio.currentModel);
+  const status=palette.locator('[data-pixel-status]');
+  const rejected=/continuous stock|too close|outside|perimeter|does not fit/i;
+  const central=await snapshot();
+  await palette.getByRole('button',{name:'Place shaped socket in 3D'}).click();
+  const edge=await page.evaluate(()=>window.__sensoryStudio.fittingPointScreen(-40,49,'top'));
+  assert(edge);
+  await page.mouse.click(edge.x,edge.y);
+  await status.filter({hasText:rejected}).waitFor();
+  assert.deepEqual(await snapshot(),central,'Near-edge raycast must preserve the central socket and revision');
+  await page.keyboard.press('Escape');
+  await palette.getByRole('button',{name:'P1',exact:true}).click();
+  const z=palette.locator('[data-pixel-field=z]');
+  await z.fill('40');
+  await z.press('Tab');
+  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles[0].z===40);
+  const accepted=await snapshot();
+  assert(accepted.revision>central.revision);
+  await assertNativeFittingPreview('Perimeter Wave socket',1);
+  await z.fill('49');
+  await z.press('Tab');
+  await status.filter({hasText:rejected}).waitFor();
+  assert.deepEqual(await snapshot(),accepted,'Invalid numeric edit must preserve the last valid revision');
+  assert.equal(Number(await z.inputValue()),40);
+  await page.locator('#smsGlobalUndo').click();
+  assert.deepEqual((await snapshot()).build.pixelHoles,central.build.pixelHoles);
+  await page.locator('#smsGlobalRedo').click();
+  assert.deepEqual((await snapshot()).build.pixelHoles,accepted.build.pixelHoles);
+  const saved=await snapshot();
+  await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
+  await page.reload();
+  await page.waitForFunction(()=>window.__sensoryStudio?.currentModel?.name==='FIT-02 calibrated Wave');
+  assert.deepEqual(await snapshot(),saved);
+  await page.locator('.sms-workspace-nav [data-tab=print]').click();
+  await page.locator('#smsPrintCurrent').getByRole('button',{name:'Prepare current model'}).click();
+  const job=page.locator('#smsJobs article').filter({hasText:saved.name});
+  await job.getByText('Prepared',{exact:true}).waitFor({timeout:120000});
+  const stl=await useDownload(job.locator('[data-job-stl]'));
+  const mf=await useDownload(job.locator('[data-job-3mf]'));
+  const near=saved.build.pixelHoles[0];
+  const origin=new THREE.Vector3(near.x,-near.z,near.surface.y);
+  const [nx,ny,nz]=near.surface.normal;
+  const axis=new THREE.Vector3(nx,-nz,ny);
+  const across=new THREE.Vector3(0,-1,0).addScaledVector(axis,-axis.dot(new THREE.Vector3(0,-1,0))).normalize();
+  for(const [format,geometry] of [
+   ['STL',new STLLoader().parse(Uint8Array.from(stl.bytes).buffer)],
+   ['3MF',read3MFGeometry(zipEntries(mf.bytes).get('3D/3dmodel.model').toString())]
+  ]){
+   const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});
+   const mesh=new THREE.Mesh(geometry,material);
+   const hit=(point,direction)=>new THREE.Raycaster(point,direction).intersectObject(mesh)[0]?.point;
+   const inward=axis.clone().negate();
+   const floor=hit(origin.clone().addScaledVector(axis,1),inward);
+   assert(floor&&Math.abs(origin.distanceTo(floor)-11)<.02,format+' axial entry and seating depth');
+   const centre=origin.clone().addScaledVector(axis,-4);
+   const outer=hit(centre,across),inner=hit(centre,across.clone().negate());
+   assert(outer&&inner&&Math.abs(outer.distanceTo(inner)-5.2)<.03,format+' calibrated bore');
+   const perimeter=hit(centre.clone().addScaledVector(across,10),across.clone().negate());
+   const underside=hit(floor.clone().setZ(-1),new THREE.Vector3(0,0,1));
+   assert(perimeter&&perimeter.distanceTo(outer)>7.3,format+' continuous perimeter stock');
+   assert(underside&&floor.z-underside.z>2.8,format+' stock behind the seat');
+   console.log('FIT-02 perimeter Wave',format,{bore:outer.distanceTo(inner),depth:origin.distanceTo(floor),
+    perimeterStock:perimeter.distanceTo(outer),rearStock:floor.z-underside.z});
+   material.dispose();
+   geometry.dispose();
+  }
  }
  // FIT-03: Measured wire relief drives both prepared Wave exports.
  for(const {name,amplitude,width,depth} of [

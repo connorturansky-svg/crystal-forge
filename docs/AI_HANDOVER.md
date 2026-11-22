@@ -10,6 +10,12 @@
 
 **Older sections below are dated engineering history, not a restart order.** Check current main, open PRs, latest-head CI and the user-approved task before coding. Owner controls all merges and physical acceptance.
 
+## FIT-02 Wave perimeter
+
+FIT-02 Wave perimeter — Chromium placed the calibrated 11 mm profile on the sloped face, refused Z=49 mm, and preserved the last valid model and revision after an invalid numeric edit. The accepted Z=40 mm edit survived undo, redo and reload. Fresh STL and 3MF sections both measured a 5.200 mm bore, 11.000 mm seating depth, 7.400 mm perimeter stock and 4.147 mm rear stock. The accepted Manifold preview encloses the positive hardware and matches the production subtraction. Physical retention and printer tolerances remain under #10.
+
+The Wave-only preparation repair reuses Manifold simplification when the accepted socket cut produces degenerate export triangles. Review the browser and catalogue regressions on the draft PR before bringing this into main.
+
 ## WT-022 A mounting patterns checkpoint
 
 The active branch `feat/wt022-mount-patterns` starts from main after #126. It adds shared model-space mounting patterns with preserved member IDs, independent candidate validation, native and Crystal manufacturing checks, and a draggable draft centre. Test vectors and acceptance are tracked in [issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). Run the three WT-022 scripts in [TESTING.md](TESTING.md) before updating the draft.
