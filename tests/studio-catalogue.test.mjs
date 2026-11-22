@@ -492,7 +492,7 @@ assert.throws(()=>prepareRecipe(THREE,wasm,convexSeatRecipe),/needs continuous s
  assert(perimeter.collisionVolume<=.02);
  assert(breakthrough.missingStockVolume>.05);
  assert.throws(()=>prepareRecipe(THREE,wasm,breakthroughWaveRecipe),/continuous stock on its installation face/);
- console.log('FIT-02 rejected Wave perimeter missing stock (mm3):',breakthrough.missingStockVolume);
+ console.log('FIT-02 rejected Wave perimeter missing stock (mm³):',breakthrough.missingStockVolume);
  const browserPerimeter=prepareRecipe(THREE,wasm,browserPerimeterWaveRecipe);
  const {stls,threeMF}=exportMaterialBodies(browserPerimeter);
  assert(stls[0].bytes.byteLength>84&&threeMF.byteLength>0);

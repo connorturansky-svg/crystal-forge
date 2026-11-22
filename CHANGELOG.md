@@ -58,7 +58,7 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
-## v0.16.0-dev.35.31 - Export sloped Wave pixel sockets
+## v0.16.0-dev.35.31 — Export sloped Wave pixel sockets
 
 - Fix STL and 3MF downloads for valid sloped Wave sockets whose cuts produce collapsed mesh triangles.
 
