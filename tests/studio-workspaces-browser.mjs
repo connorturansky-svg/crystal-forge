@@ -12,6 +12,11 @@ try{
  const nav=page.getByRole('navigation',{name:'Workspaces'});
  const destination=name=>nav.getByRole('button',{name,exact:true});
  const id=await page.evaluate(()=>window.__sensoryStudio.currentModel.id);
+ for(const name of ['Home','Library']){
+  await destination(name).press('Enter');
+  assert.equal(await destination(name).getAttribute('aria-current'),'step');
+  assert.equal(await nav.locator('[aria-current=step]').count(),1);
+ }
  await destination('Mounting').press('Enter');
  assert.equal(await destination('Mounting').getAttribute('aria-current'),'step');
  await page.locator('[data-view=top]').click();
