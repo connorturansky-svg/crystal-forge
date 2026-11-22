@@ -49,4 +49,36 @@ try{
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.mountingPatterns?.length===0);
  assert.deepEqual((await read()).manualMountHoles,edited.manualMountHoles);
  console.log('WT-022 Gear: validated eight pockets, atomic rejection, stable group editing and exact ungrouping passed');
+
+ const crystalName='WT-022 Crystal magnet pattern';
+ await page.evaluate(name=>window.__sensoryStudio.addModel('crystals',{
+  seed:42,count:5,width:100,height:90,baseType:'integrated',baseStyle:'Square',baseWidth:42,
+  baseHeight:15,baseDome:0,cutSockets:false,lightingMode:'none',mount:'Magnet inserts',
+  mountPlacement:'manual',manualMountHoles:[]
+ },name),crystalName);
+ await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ const crystalSummary=page.getByText('Uniform Crystal mounting patterns',{exact:true});
+ await crystalSummary.evaluate(element=>{
+  for(let node=element.parentElement.parentElement;node;node=node.parentElement)
+   if(node.tagName==='DETAILS')node.open=true;
+ });
+ await crystalSummary.click();
+ const crystalField=key=>page.locator('#manualHardwareList [data-pattern-field="'+key+'"]');
+ await crystalField('kind').selectOption('circle');
+ await crystalField('count').fill('8');
+ await crystalField('radiusMm').fill('30');
+ await crystalField('startAngleDeg').fill('22.5');
+ await crystalField('alignment').selectOption('custom');
+ await crystalField('offsetX').fill('7');
+ await crystalField('offsetZ').fill('-4');
+ await page.locator('#manualHardwareList [data-pattern-apply]').click();
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.mountingPatterns?.length===1);
+ const crystalMounts=await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.manualMountHoles);
+ assert.equal(crystalMounts.length,8);
+ assert(crystalMounts.every(mount=>mount.crystalFixing.diameter===10.2&&mount.crystalFixing.depth===3.2));
+ await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
+ await page.reload();
+ await page.waitForFunction(name=>window.__sensoryStudio?.currentModel?.name===name,crystalName);
+ assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.manualMountHoles),crystalMounts);
+ console.log('WT-022 Crystal: eight worker-validated blind pockets persisted after reload');
 }finally{await browser.close();}

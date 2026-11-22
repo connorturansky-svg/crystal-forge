@@ -120,9 +120,15 @@ export function planHardware(crystals,s){
   }
   const mp=mountingProfile(s);
   if(mp.enabled&&mountManual)manualMounts.slice(0,20).forEach((entry,i)=>{
-    const p={x:Number(entry.x),z:Number(entry.z)},radius=mp.diameter/2;
-    if(Number.isFinite(p.x)&&Number.isFinite(p.z)&&validHole(p,radius,[...sockets,...mounts]))
-      mounts.push({...p,radius,kind:'mount',diameter:mp.diameter,depth:mp.depth,label:(mp.preset==='Edge fixing tabs'?'Manual through-hole':mp.preset)+' '+(i+1),id:String(entry.id||'manual-mount-'+(i+1)),manual:true,index:i});
+    const p={x:Number(entry.x),z:Number(entry.z)};
+    const fixed=entry.crystalFixing;
+    const {diameter,depth}=fixed??mp,radius=diameter/2;
+    const validProfile=Number.isFinite(radius)&&radius>0&&Number.isFinite(depth)&&depth>0&&
+     (!fixed?.blind||depth+1.6<=s.baseHeight+1e-8);
+    if(validProfile&&Number.isFinite(p.x)&&Number.isFinite(p.z)&&validHole(p,radius,[...sockets,...mounts]))
+      mounts.push({...p,radius,kind:'mount',diameter,depth,blind:fixed?.blind,
+       label:(fixed?.profile??(mp.preset==='Edge fixing tabs'?'Manual through-hole':mp.preset))+' '+(i+1),
+       id:String(entry.id||'manual-mount-'+(i+1)),manual:true,index:i});
     else invalidManualMounts.push({...p,radius,kind:'mount',index:i});
   });
   if(mp.enabled&&!mountManual){
