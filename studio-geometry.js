@@ -182,6 +182,17 @@ function gearRailSection(wasm,{source,outerInset,innerInset}){
   }finally{inner.delete();outer.delete();}
  }finally{profile.delete();}
 }
+ const validTriangles=mesh=>{
+  const p=mesh.vertProperties,t=mesh.triVerts,stride=mesh.numProp;
+  for(let i=0;i<t.length;i+=3){
+   const a=t[i]*stride,b=t[i+1]*stride,c=t[i+2]*stride;
+   const u=[p[b]-p[a],p[b+1]-p[a+1],p[b+2]-p[a+2]];
+   const v=[p[c]-p[a],p[c+1]-p[a+1],p[c+2]-p[a+2]];
+   const twiceArea=Math.hypot(u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]);
+   if(!Number.isFinite(twiceArea)||twiceArea<1e-12)return false;
+  }
+  return true;
+ };
 export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittings=false}={}){
  const owned=[];const hold=solid=>(owned.push(solid),solid);
  const positionSeat=(solid,seat,rotation=0)=>placeNativeSocketSolid(THREE,wasm,hold,solid,seat,rotation);
@@ -373,17 +384,6 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    const originalVolume=total.volume();
    const routed=hold(total.subtract(hold(wasm.Manifold.union(cuts))));
    total=hold(hold(routed.asOriginal()).simplify(tolerance));
-   const validTriangles=mesh=>{
-    const p=mesh.vertProperties,t=mesh.triVerts,stride=mesh.numProp;
-    for(let i=0;i<t.length;i+=3){
-     const a=t[i]*stride,b=t[i+1]*stride,c=t[i+2]*stride;
-     const u=[p[b]-p[a],p[b+1]-p[a+1],p[b+2]-p[a+2]];
-     const v=[p[c]-p[a],p[c+1]-p[a+1],p[c+2]-p[a+2]];
-     const twiceArea=Math.hypot(u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]);
-     if(!Number.isFinite(twiceArea)||twiceArea<1e-12)return false;
-    }
-    return true;
-   };
    const mesh=total.getMesh();
    if(!validTriangles(mesh)){
     // Round-trip through the exact float precision used by STL/3MF as a solid.
@@ -401,6 +401,17 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    if((part.pixelHole||part.mountHole||part.tabHole||part.wireChannel)&&before.volume()-total.volume()<.1)
     throw Error((part.pixelHole||part.mountHole||part.tabHole||part.wireChannel)+' does not cut the model. Move it onto solid material in Build.');
   }
+  if(recipe.serialSupport?.wave&&!recipe.nativeRouting?.ready&&
+   recipe.negative.some(part=>part.kind==='pixel-seat'&&part.surface)&&!validTriangles(total.getMesh())){
+   // A sloped socket cut can leave slivers that collapse at export precision.
+   const rebuilt=hold(new wasm.Manifold(total.getMesh()));
+   const repaired=hold(hold(rebuilt.asOriginal()).simplify(.0001));
+   if(repaired.status()!=='NoError'||repaired.isEmpty()||
+    Math.abs(repaired.volume()-total.volume())>.01||!validTriangles(repaired.getMesh()))
+    throw Error('The Wave socket mesh cannot be exported at STL precision. Move the fitting slightly and prepare again.');
+   total=repaired;
+  }
+
   if(total.status()!=='NoError'||total.isEmpty()||total.volume()<=0)throw Error('Manufacturing produced no valid material.');
   let regions=[{role:'primary',solid:total}];
   const coincidentFace=recipe.positive.length===1&&recipe.secondary?.length===1&&!secondaryStock.length&&!recipe.partitioned?recipe.secondary[0]:null;
