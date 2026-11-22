@@ -192,7 +192,7 @@ try{
  await findTools.fill('pixel');await findTools.press('Escape');
  assert.equal(await findTools.inputValue(),'');
  await shot('wt014-desktop');
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  await page.locator('.sms-palette').getByRole('button',{name:'Add pixel automatically',exact:true}).click();
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles.length),1);
  await page.locator('#smsGlobalUndo').click();
@@ -239,7 +239,7 @@ try{
  assert.equal(await purpose.inputValue(),'Decorative');
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.mode),'Decorative');
  assert(await purpose.evaluate(input=>document.activeElement===input));
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  await page.locator('.sms-palette').getByRole('button',{name:'Add pixel automatically',exact:true}).click();
  const pixel=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles[0]);
  assert(pixel);
@@ -268,7 +268,7 @@ try{
  await shot('crystal-palette');
  await page.locator('#smsNew').click();
  await page.locator('#smsPicker [data-generator="tactile-tiles"]').click();
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  const pixelPalette=page.locator('.sms-palette');
  await pixelPalette.getByRole('button',{name:'Add pixel automatically',exact:true}).click();
  const getHoles=()=>page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles);
@@ -296,8 +296,8 @@ try{
  const rotation=pixelPalette.locator('[data-pixel-field=rotation]');
  await rotation.fill('45');await rotation.press('Tab');
  assert.equal((await getHoles())[0].rotation,45);
- const precisionRotation=page.locator('.sms-panel-details [data-pixel-field=rotation]');
- assert.equal(await precisionRotation.inputValue(),'45');
+ assert.equal(await rotation.inputValue(),'45');
+ assert.equal(await page.locator('[data-pixel-field=rotation]:visible').count(),1);
  const position=pixelPalette.locator('[data-pixel-field=x]');
  await position.fill('9999');await position.press('Tab');
  assert.equal(Number(await position.inputValue()),movedHole.x);
@@ -682,7 +682,7 @@ try{
    return match.slice(1).map(Number);
   };
   const previousBounds=await readBounds(boundsDisplay);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
   await palette.getByRole('button',{name:'Remove T'+tab,exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('#smsModelDimensions').textContent.startsWith('Design preview'));
   await page.locator('.sms-workspace-nav [data-tab=print]').click();
@@ -937,7 +937,7 @@ try{
   assert.equal(JSON.parse(archive.get('print-job-manifest.json')).routing.channels.length,3);
   await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
   await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   assert.equal(await serial.locator('[data-native-custom]').inputValue(),'40');
   assert.equal(await serial.locator('[data-native-out-tail]').inputValue(),'110');
   assert.notEqual(await serial.locator('[data-native-edge=in]').inputValue(),'');
@@ -963,7 +963,7 @@ try{
   await shot('wt020-openwork-gear-four-pixels');
   await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
   await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   assert.deepEqual(await getHoles(),openworkFittings);
   assert.match(await serial.locator('[data-native-guide-blocked]').innerText(),/openwork/);
   await page.locator('.sms-workspace-nav [data-tab=print]').click();
@@ -973,14 +973,14 @@ try{
   assert([...openworkPack.keys()].some(name=>name.endsWith('.stl')));
   assert(zipEntries((await useDownload(routedJob.locator('[data-job-3mf]'))).bytes).has('3D/3dmodel.model'));
   assert.equal(JSON.parse(openworkPack.get('print-job-manifest.json')).routing?.channels?.length??0,0);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   for(let count=4;count>=1;count--){
    await palette.getByRole('button',{name:'P'+count,exact:true}).click();
    await palette.getByRole('button',{name:'Remove P'+count,exact:true}).click();
   }
   await page.locator('.sms-workspace-nav [data-tab=design]').click();
   await palette.getByRole('button',{name:'Solid',exact:true}).click();
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await palette.getByRole('button',{name:'Add pixel automatically',exact:true}).click();
   await position.fill('-15');await position.press('Tab');
   await palette.getByRole('button',{name:'Add pixel automatically',exact:true}).click();
@@ -1022,7 +1022,7 @@ try{
   const low=page.locator('#smsPicker [data-preset=beacon-low]');
   assert.notEqual(await tall.locator('img').getAttribute('src'),await low.locator('img').getAttribute('src'));
   await tall.click();
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   assert(await serial.locator('[data-native-route]').isDisabled());
  }
 
@@ -1063,7 +1063,7 @@ try{
  // WT-017: measured profiles are available before placement and reused on
  // multiple families. The existing A-G dimensional editor remains canonical.
  await page.evaluate(()=>window.__sensoryStudio.addModel('waves',{flowStyle:'Parallel',dualMaterial:false},'Pixel profile source'));
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  const wavePalette=page.locator('.sms-palette');
  await wavePalette.getByRole('button',{name:'Create / edit pixel profile'}).click();
  assert(await page.locator('#pixelProfileOverlay').isVisible());
@@ -1140,7 +1140,7 @@ try{
  // CAL-02: independently measure linked and locally captured fits before and after a library edit.
  const linkedModel=await page.evaluate(()=>window.__sensoryStudio.currentModel);
  await page.evaluate(()=>window.__sensoryStudio.addModel('waves',{flowStyle:'Parallel',dualMaterial:false},'Local clearance witness'));
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  await selector.selectOption({label:'Reusable 4.5 mm seed'});
  await wavePalette.getByRole('button',{name:'Add pixel automatically',exact:true}).click();
  await wavePalette.getByRole('button',{name:'P1',exact:true}).click();
@@ -1152,7 +1152,7 @@ try{
  assert.equal(localModel.build.pixelHoles[0].followProfileClearance,false);
  const switchFitModel=async id=>{
   await page.locator('[id="model-tab-'+id+'"]').click();
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  };
  const checkFitDownloads=async(model,diameter)=>{
   await switchFitModel(model.id);
@@ -1240,7 +1240,7 @@ try{
  ];
  for(const [type,parameters,backing] of nativeFamilies){
   await page.evaluate(({type,parameters})=>window.__sensoryStudio.addModel(type,parameters,'WT017 '+type),{type,parameters});
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   const pal=page.locator('.sms-palette');
   assert(await pal.getByRole('button',{name:'Add pixel automatically',exact:true}).isVisible(),type+' has Add pixel');
   assert(await pal.getByRole('button',{name:'Create / edit pixel profile'}).isVisible());
@@ -1250,7 +1250,7 @@ try{
   if(type==='tactile-tiles'){
    await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
    await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
-   await page.locator('.sms-workspace-nav [data-tab=build]').click();
+   await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
    assert.equal(await activeProfile.inputValue(),activeProfileId);
   }
   if(backing)await pal.locator('[data-pixel-backing]').check();
@@ -1263,7 +1263,7 @@ try{
  }
  // WT-020: true double-click mount placement, edit and persisted source.
  await page.evaluate(()=>window.__sensoryStudio.addModel('tactile-tiles',{pattern:'grass',dualMaterial:false},'WT020 native mounting'));
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
  const mountPalette=page.locator('.sms-palette');
  assert(await mountPalette.getByRole('button',{name:'Place mounting hole in 3D'}).isVisible());
  await page.locator('[data-view=top]').click();await page.waitForTimeout(400);
@@ -1318,7 +1318,7 @@ try{
  await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
  assert.equal((await page.evaluate(()=>window.__sensoryStudio.currentModel.build.manualMountHoles))[0].x,dragged.x,
   'Native mounting state must survive workspace reload');
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
  assert(await page.locator('.sms-palette').getByRole('button',{name:'M1',exact:true}).isVisible());
  assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.backingTabs),savedTabs);
  assert.equal(await backingThickness.inputValue(),'8','Fitting backing thickness survives save and reload');
@@ -1364,11 +1364,11 @@ try{
  await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
  assert.equal((await page.evaluate(()=>window.__sensoryStudio.currentModel.build.manualMountHoles))[0].x,dragged.x,
   'Native mounting state must survive workspace reload');
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
  assert(await page.locator('.sms-palette').getByRole('button',{name:'M1',exact:true}).isVisible());
 
  await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',null,'WT017 Crystals'));
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  assert(await page.locator('.sms-palette').getByRole('button',{name:'Add pixel',exact:true}).isVisible());
  assert(await page.locator('.sms-palette').getByRole('button',{name:'Create / edit pixel profile'}).isVisible());
  const crystalPitch=page.locator('.sms-palette [data-build-wire-pitch]');
@@ -1488,7 +1488,7 @@ try{
    await page.locator('.sms-palette [data-palette-key=diameter]').press('ArrowLeft');
    assert(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.diameter)<120);
   }
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await page.locator('[data-view=top]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   await page.locator('[data-fit-profile="gumdrop"]').click();
@@ -1529,7 +1529,7 @@ try{
    await page.waitForFunction(()=>window.__sensoryStudio?.currentModel?.build.pixelHoles?.length===1);
    assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles),[socket],
     'The original fitting and installation normal must survive reload after a rejected placement');
-   await page.locator('.sms-workspace-nav [data-tab=build]').click();
+   await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
    await page.locator('[data-view=top]').click();
    await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
    await page.getByRole('button',{name:'Place shaped socket in 3D'}).click();
@@ -1568,7 +1568,7 @@ try{
    await page.waitForFunction(()=>window.__sensoryStudio?.currentModel?.build.pixelHoles?.length===2);
    assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.pixelHoles),prior,
     'Rejected drag preserves both fitted poses, orientations and installation normals after reload');
-   await page.locator('.sms-workspace-nav [data-tab=build]').click();
+   await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
    const gearPalette=page.locator('.sms-palette');
    for(const number of [1,2]){
     await gearPalette.getByRole('button',{name:'P'+number,exact:true}).click();
@@ -1710,7 +1710,7 @@ try{
   await page.locator('.sms-workspace-nav [data-tab=design]').click();
   await page.locator('.sms-palette [data-palette-key=width]').press('ArrowRight');
   assert(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.width)>100);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await page.locator('[data-view=front]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   await page.locator('[data-fit-profile=seed]').click();
@@ -1754,7 +1754,7 @@ try{
   await page.reload();
   await page.waitForFunction(()=>window.__sensoryStudio?.currentModel?.build.pixelHoles?.length===1);
   assert.deepEqual(await getSeat(),exactSide);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await page.locator('[data-view=front]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   await page.getByRole('button',{name:'Place shaped socket in 3D'}).click();
@@ -1863,7 +1863,7 @@ try{
     width:90,depth:90,thickness:20,outline:'square',relief:2,pattern:'terraces',dualMaterial:false
    },'FIT-02 Tile perpendicular wall');
   });
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await page.locator('[data-view=right]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   const palette=page.locator('.sms-palette');
@@ -1904,7 +1904,7 @@ try{
     width:160,depth:100,thickness:15,amplitude:1,frequency:.5,variation:0,direction:0,dualMaterial:false
    },'FIT-02 calibrated Wave');
   });
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await page.locator('[data-view=top]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   const palette=page.locator('.sms-palette');
@@ -1940,7 +1940,7 @@ try{
     width:160,depth:100,thickness:15,amplitude,frequency:.5,variation:0,direction:0,dualMaterial:false
    },name);
   },{name,amplitude,width,depth});
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await page.locator('[data-view=top]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   const palette=page.locator('.sms-palette');
@@ -2019,7 +2019,7 @@ try{
   await page.locator('.sms-workspace-nav [data-tab=design]').click();
   await page.locator('.sms-palette [data-palette-key=width]').press('ArrowRight');
   assert(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.width)>160);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await page.locator('[data-view=top]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   await page.locator('[data-fit-profile=seed]').click();
@@ -2148,7 +2148,7 @@ try{
    material.dispose();geometry.dispose();
   }
   const job=page.locator('#smsJobs article').filter({hasText:'FIT-03 gentle Wave'});
-  const rotationBuild=page.locator('.sms-workspace-nav [data-tab=build]');
+  const rotationBuild=page.locator('.sms-workspace-nav [data-workspace=pixels]');
   const rotationPrint=page.locator('.sms-workspace-nav [data-tab=print]');
   await rotationBuild.click();
   await wavePalette.getByRole('button',{name:'P1',exact:true}).click();
@@ -2407,7 +2407,7 @@ try{
   await verifyTabRemovalBounds(name,palette);
   const tabJob=page.locator('#smsJobs article').filter({hasText:name});
   const tabProfile=type==='light-pods'?'Countersink':'Counterbore';
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
   await palette.locator('[data-tab-profile="0"]').selectOption(tabProfile);
   await page.waitForFunction(profile=>window.__sensoryStudio.currentModel.build.backingTabs[0].profile===profile,tabProfile);
   const recess=palette.locator('[data-tab-recess=recessDepth]');
@@ -2439,7 +2439,7 @@ try{
  await page.evaluate(()=>window.__sensoryStudio.addModel('tactile-tiles',{
   pattern:'terraces',width:90,depth:90,thickness:20,relief:2,dualMaterial:false
  },'FIT-02 Tile underside'));
- await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  await page.locator('[data-view=bottom]').click();
  await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
  await page.getByRole('button',{name:'Place shaped socket in 3D'}).click();
@@ -2465,7 +2465,7 @@ try{
   const witness='Recessed fixing witness';
   await page.evaluate(name=>window.__sensoryStudio.addModel('gears',{mode:'Decorative',wheelStyle:'Rounded lobes',
    webStyle:'Solid',diameter:100,thickness:10,bore:0,reliefStyle:'None',dualMaterial:false},name),witness);
-  const buildTab=page.locator('.sms-workspace-nav [data-tab=build]');
+  const buildTab=page.locator('.sms-workspace-nav [data-workspace=mounting]');
   const printTab=page.locator('.sms-workspace-nav [data-tab=print]');
   await buildTab.click();
   const enabled=page.locator('[data-build=mounting]');
@@ -2708,7 +2708,7 @@ try{
  }
  {
   await page.evaluate(()=>window.__sensoryStudio.addModel('waves',{width:100,depth:70,thickness:2,amplitude:1,variation:0},'Thin fixing witness'));
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=mounting]').click();
   const mounting=page.locator('[data-build=mounting]');
   await mounting.evaluate(node=>{for(let p=node.parentElement;p;p=p.parentElement)if(p.tagName==='DETAILS')p.open=true;});
   await mounting.check();
@@ -2724,7 +2724,7 @@ try{
   const name='Conical Gear '+thickness;
   await page.evaluate(({name,thickness})=>window.__sensoryStudio.addModel('gears',{mode:'Decorative',
    wheelStyle:'Rounded lobes',webStyle:'Solid',diameter:100,thickness,bore:0,reliefStyle:'None',dualMaterial:false},name),{name,thickness});
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   const palette=page.locator('.sms-palette');
   await palette.locator('[data-fit-profile=seed]').click();
   await page.locator('[data-view=bottom]').click();
@@ -2790,7 +2790,7 @@ try{
   const name='Tapered Gear socket';
   await page.evaluate(name=>window.__sensoryStudio.addModel('gears',{mode:'Decorative',
    wheelStyle:'Rounded lobes',webStyle:'Solid',diameter:100,thickness:25,bore:0,reliefStyle:'None',dualMaterial:false},name),name);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   const palette=page.locator('.sms-palette');
   await palette.locator('[data-fit-profile=bullet]').click();
   await page.locator('[data-view=bottom]').click();
@@ -2843,7 +2843,7 @@ try{
   await page.evaluate(name=>window.__sensoryStudio.addModel('tactile-tiles',{
    width:100,depth:80,thickness:12,outline:'square',relief:2,pattern:'terraces',dualMaterial:false
   },name),name);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   const palette=page.locator('.sms-palette');
   await palette.locator('[data-fit-profile=seed]').click();
   await page.locator('[data-view=bottom]').click();
@@ -2909,7 +2909,7 @@ try{
    geometry.dispose();
   }
   material.dispose();
-  const buildTab=page.locator('.sms-workspace-nav [data-tab=build]');
+  const buildTab=page.locator('.sms-workspace-nav [data-workspace=wiring]');
   const printTab=page.locator('.sms-workspace-nav [data-tab=print]');
   await buildTab.click();
   await edge.fill('');await edge.press('Tab');
@@ -3023,7 +3023,7 @@ try{
   const name='Routed Tile '+view;
   await page.evaluate(name=>window.__sensoryStudio.addModel('tactile-tiles',{width:100,depth:80,thickness:20,
    outline:'square',relief:2,pattern:'terraces',dualMaterial:false},name),name);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await page.locator('[data-view='+view+']').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   const palette=page.locator('.sms-palette');
@@ -3077,7 +3077,7 @@ try{
   const name='Two-axis routed Wave';
   await page.evaluate(name=>window.__sensoryStudio.addModel('waves',{width:160,depth:100,thickness:15,
    amplitude:1,frequency:.5,variation:.1,direction:12,dualMaterial:false},name),name);
-  await page.locator('.sms-workspace-nav [data-tab=build]').click();
+  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   await page.locator('[data-view=top]').click();
   await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
   const palette=page.locator('.sms-palette');

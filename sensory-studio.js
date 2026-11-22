@@ -2987,14 +2987,20 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const entries=[['tactile-tiles','Grass tile',{pattern:'grass'}],['characters','Goat silhouette',{character:'Goat'}],['tactile-tiles','Wool tile',{pattern:'wool'}],['waves','Thawmor river',{}],['tactile-tiles','River ripple tile',{pattern:'river'}],['light-pods','River light pod',{}],['crystals','McDigger crystal mine',null],['tactile-tiles','Mineral tile',{pattern:'mineral'}],['light-pods','Faceted pebble',{facets:12}],['gears','Weather cog',{}],['control-caps','Weather button',{}],['tactile-tiles','Raindrop tile',{pattern:'rain',dualMaterial:true}]];
   for(const [type,name,p] of entries)add(type,p,name);project.title='The Snowsmith — Wonder Trunks';$('smsProjectTitle').value=project.title;save();showLibrary();
  }
+ function setBuildWorkspace(destination){
+  if(buildWorkspace===destination)return;
+  if(placementModel||mountingModel)endPixelPlacement();
+  if(viewport.dataset.hardwarePlacement)$('stopHolePlacementBtn')?.click();
+  buildWorkspace=destination;
+ }
  function openBuildWorkspace(destination){
-  buildWorkspace=destination;openingBuildWorkspace=true;
+  setBuildWorkspace(destination);openingBuildWorkspace=true;
   try{document.querySelector('.workspace-tabs [data-tab=build]').click();}
   finally{openingBuildWorkspace=false;}
  }
  document.addEventListener('click',e=>{
   const button=e.target.closest('[data-tab]');if(!button)return;
-  if(button.dataset.tab==='build'&&!openingBuildWorkspace)buildWorkspace='build';
+  if(button.dataset.tab==='build'&&!openingBuildWorkspace)setBuildWorkspace('build');
   // Ensure Crystal Build/Design is authoritative before palette refresh.
   // A queued rerender can otherwise observe the previous native tab state.
   if(active()?.generator.typeId==='crystals'&&['design','build'].includes(button.dataset.tab)){
