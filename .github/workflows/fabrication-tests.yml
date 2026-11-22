@@ -23,7 +23,7 @@ on:
       - 'package-lock.json'
       - '.github/workflows/pages.yml'
   pull_request:
-    branches: [main, feat/verified-tile-gear-routing, feat/backed-family-cable-routing, feat/studio-svg-artwork-import, 'wt018/**', 'wt019/**']
+    branches: [main, feat/wt022-workspaces, feat/verified-tile-gear-routing, feat/backed-family-cable-routing, feat/studio-svg-artwork-import, 'wt018/**', 'wt019/**']
   workflow_dispatch:
 permissions:
   contents: read

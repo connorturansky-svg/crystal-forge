@@ -23,7 +23,7 @@ on:
       - 'package-lock.json'
       - '.github/workflows/pages.yml'
   pull_request:
-    branches: [main, feat/verified-tile-gear-routing, feat/backed-family-cable-routing, feat/studio-svg-artwork-import, 'wt018/**', 'wt019/**']
+    branches: [main, feat/wt022-workspaces, feat/verified-tile-gear-routing, feat/backed-family-cable-routing, feat/studio-svg-artwork-import, 'wt018/**', 'wt019/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -117,6 +117,7 @@ jobs:
             node tests/studio-help-diagnostics-browser.mjs &&
             node tests/studio-backup-keyboard-browser.mjs &&
             node tests/studio-workspaces-browser.mjs &&
+            node tests/studio-tool-search-browser.mjs &&
             node tests/mounting-pattern-browser.mjs &&
             npm run test:browser
           } > browser-run.log 2>&1
