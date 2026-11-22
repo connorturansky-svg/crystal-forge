@@ -1,8 +1,8 @@
 # Crystal Forge — instructions for AI coding assistants
 
-**Read this file first, then `docs/AI_HANDOVER.md`.** For a new feature or geometry change, also read `docs/PROJECT_VISION.md`, `docs/FEATURE_SPECIFICATIONS.md`, `docs/DESIGN_DECISIONS.md` and `docs/TESTING.md`. These are project-specific instructions for both ChatGPT and Codex; they complement the source code and never override a newer explicit user request.
+> **CURRENT WORK — 22 November 2026 snapshot.** Read [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md), [docs/REPOSITORY_MAP.md](docs/REPOSITORY_MAP.md) and [WT-022 Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127) before the chronological handover below. #128 has merged; finish the *existing* `feat/wt022-workspaces` B branch, then C search. Independent test-only C prework is [draft #129](https://github.com/connorturansky-svg/crystal-forge/pull/129). Old mentions of "current" #102/#121/#124/hardware mouth work below are **historical snapshots and NOT restart commands**. Fetch main, PR heads and exact-head CI; do not overwrite another agent's branch, merge or deploy. Owner alone approves merges.\n\n**Read this file first, then `docs/AI_HANDOVER.md`.** For a new feature or geometry change, also read `docs/PROJECT_VISION.md`, `docs/FEATURE_SPECIFICATIONS.md`, `docs/DESIGN_DECISIONS.md` and `docs/TESTING.md`. These are project-specific instructions for both ChatGPT and Codex; they complement the source code and never override a newer explicit user request.
 
-## Active project handoff and branch policy (21 November 2026)
+## Historical handoff and branch policy (21 November 2026)
 
 **The former WT-021-only branch exception is historical and retired.** PR #102 has merged, and PRs #117, #118, #120 and #121 have subsequently merged. Do **not** restart coding in PR #102 or assume its branch is the current integration target. At the time of this handover, #121 merged into main as `9f792e1c133ab93cff0fc1ee68d2f23562b40077`; **fetch current `origin/main` before every new task** rather than treating any SHA or status document as a live pointer.
 
@@ -12,7 +12,7 @@
 
 **Use the general branch rule below for all new tasks:** create an isolated `feat/...`, `fix/...` or `qa/...` branch from up-to-date main (or explicitly reviewed stack), commit focused tested work and open a draft PR. The owner alone approves merges, Pages deployment and physical sign-off. No automatic merge/publish. Do not claim code, tests or physical prints succeeded without exact-head evidence. Changelog and What's New must be updated for user-visible product changes; documentation-only QA work does not invent a release version.
 
-## Current Codex entrypoint (after 21 November 2026 QA merges)
+## Historical Codex entrypoint (after 21 November 2026 QA merges)
 
 **Read [`docs/CODEX_RESTART_20261121.md`](docs/CODEX_RESTART_20261121.md) before any new manufacturing work.** All three supporting PRs **#122 (edge-mouth evidence), #123 (first-print/backlog documentation) and #124 (Pages retention) are merged**. Their tested helpers are available on main; they are **not drafts to merge or branches to cherry-pick**. Snapshot main after #124: `8d19701ac5bd5521140ebe4e1dfcabbedba8c53f`; verify latest actual SHA and test results before coding. The priority remains eligible top-entry negative-cut mouth chamfers in a *new* focused PR. The existing diagnostic audit succeeds while demonstrating the sharp lip; it is **not a passing fix test**. Production Pages historical release retention is now implemented in merged #124; preserve its stage and shared-browser continuity checks.
 
