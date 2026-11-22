@@ -1,4 +1,6 @@
-# Start here — Codex / WT-021
+# Historical Codex entrypoint — WT-021 (merged)
+
+> **RETIRED ACTIVE INSTRUCTIONS.** This document preserves the WT-021 source-branch prompt provenance and its original #102 workflow. **PR #102 has merged**. For new work on WT-022, read [current project status](../docs/PROJECT_STATUS.md), [repository map](../docs/REPOSITORY_MAP.md), [AGENTS.md](../AGENTS.md) and [Issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). Do not restart the branch named below. The remainder is historic.\n
 
 **Status:** Active implementation; not a completed or deployed release.  
 **Repository:** `connorturansky-svg/crystal-forge`. **Only working PR:** [#102](https://github.com/connorturansky-svg/crystal-forge/pull/102), **draft**, branch `wt021/integrated-release`.  
