@@ -2,17 +2,17 @@
 
 [Open the browser app](https://connorturansky-svg.github.io/crystal-forge/).
 
-## Current development — WT-021 (draft PR #102)
+## Current development — WT-022 (22 November 2026 snapshot)
 
-**For Codex and collaborators:** [Start here: WT-021 active prompt](prompts/START_HERE.md) → [complete owner-approved WT-021 specification](prompts/021-complete-seven-builder-manufacturing-parity.md) → [verified handover](docs/WT021_CODEX_HANDOFF.md) → [23-item acceptance register](docs/WT021_COMPLETION_REGISTER.md).
+**Start with [Current work](docs/PROJECT_STATUS.md) and the [repository/source map](docs/REPOSITORY_MAP.md)**. These explain where the live code, tests, active issues, unmerged branches and historical instructions belong. Recheck GitHub before acting; this README is not a live status feed.
 
-The [complete milestone prompt library](prompts/README.md) has been copied from the dedicated `planning/prompts` branch for easier access. The planning source remains an independently versioned historical archive. **Active implementation is confined to existing draft [PR #102](https://github.com/connorturansky-svg/crystal-forge/pull/102); do not open another PR, merge, or deploy.** `main` hosts the production app and does not contain draft-only features. See the [documentation hub](docs/README.md) for architecture, tests, print guidance, acceptance and historical plans.
+**Merged:** [PR #128](https://github.com/connorturansky-svg/crystal-forge/pull/128) delivers precise editable line, radial and grid mounting patterns across the seven model builders. **Next:** [Issue #127 — WT-022 B](https://github.com/connorturansky-svg/crystal-forge/issues/127) reorganises the interface into Home, Library, Design, Build, Pixels, Wiring, Mounting and Print Centre. Its changes are **still on the unmerged `feat/wt022-workspaces` branch** at this snapshot. **Then C:** improve global find-a-tool search; [draft #129](https://github.com/connorturansky-svg/crystal-forge/pull/129) is test-only search preparation, not the live feature.
 
-Design seven model families, including Crystal Clusters, Tactile Tiles, Gears, Waves, Control Caps, Characters, and Light Pods. Build adds measured LED fittings on suitable material. Print Centre prepares valid geometry through Manifold and exports STL and 3MF. SVG artwork and validated STL/OBJ solids can enter the same workspace. Open or invalid meshes remain available for preview with an explanation.
+**For Codex:** read [AGENTS.md](AGENTS.md) → [Current work](docs/PROJECT_STATUS.md) → [WT-022 acceptance #127](https://github.com/connorturansky-svg/crystal-forge/issues/127) → [source map](docs/REPOSITORY_MAP.md) → relevant source/tests. Former WT-021 **PR #102 is merged**; `prompts/START_HERE.md` preserves that historical prompt, not a current instruction to code in #102.
 
-Projects save locally. Use Library to save reusable models and export a backup, or connect a private GitHub repository for optional cross-device recovery.
+The browser app offers seven model families — Crystal Clusters, Tactile Tiles, Gears, Waves, Control Caps, Characters and Light Pods. Design sets up forms; Build configures manufacturable structure and fittings; Print Centre validates true Manifold geometry and STL/3MF exports. Projects save locally, with Library backups and optional private GitHub recovery. The preview is **not** proof that the manufactured file or physical print is safe.
 
-[Software parity and acceptance](docs/MODEL_BUILDER_PARITY.md) tracks evidence across all seven families. [Software work #79](https://github.com/connorturansky-svg/crystal-forge/issues/79) and [physical Cura/print QA #10](https://github.com/connorturansky-svg/crystal-forge/issues/10) remain active. For current branch and CI state, use the [draft PR #102](https://github.com/connorturansky-svg/crystal-forge/pull/102) rather than a hard-coded historical SHA.
+For evidence and next priorities, see [software parity #79](https://github.com/connorturansky-svg/crystal-forge/issues/79), [Cura/physical QA #10](https://github.com/connorturansky-svg/crystal-forge/issues/10), [documentation hub](docs/README.md), [open PRs](https://github.com/connorturansky-svg/crystal-forge/pulls) and [Actions](https://github.com/connorturansky-svg/crystal-forge/actions). Only the owner approves merges and deployments.
 
 ## Source visibility and reuse
 
