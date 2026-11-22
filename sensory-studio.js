@@ -28,6 +28,7 @@ import {crystalStartingPoints,crystalStartingPointPreview} from './studio-crysta
 const copy=x=>JSON.parse(JSON.stringify(x));
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=id=>document.getElementById(id);
+const isUndersidePixel=hole=>hole.surface?hole.surface.normal?.[1]<=-.9999:hole.entryFace==='underside';
 export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstrap,adapter}){
  const state=bootstrap,project=state.project;
  let savedWorkspace=localStorage.getItem(WORKSPACE_KEY);
@@ -168,6 +169,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const model=active();
    if(!model&&!item.noModel)return 'Open a model to use this tool.';
    if(model?.link&&(item.editing||item.routing))return 'Make an independent variant to edit this linked model.';
+   if(item.id==='pixel-shoulders'&&model?.generator.typeId!=='crystals'){
+    const hole=pixelHoles(model).find(hole=>hole.id===selectedPixels.get(model.id));
+    if(!hole?.socketProfile||!isUndersidePixel(hole))
+     return 'Select a shaped underside socket in Pixels, or place one on the underside.';
+   }
    if(item.id==='wire-channel'&&model?.generator.typeId!=='crystals'&&!model?.build.serialRouting?.enabled)
     return cache.get(model?.id)?.routing?.reason||'';
    return '';
@@ -1833,7 +1839,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const disabled=model.link?' disabled':'',noAdd=holes.length>=16?' disabled':disabled;
   const hole=holes[selected]||newPixel(chosenProfile(model));
   const fit=resolvePixelFitting(hole,adapter.pixelFitProfiles());
-  const underside=hole.surface?hole.surface.normal?.[1]<=-.9999:hole.entryFace==='underside';
+  const underside=isUndersidePixel(hole);
   root.innerHTML='<h3>Pixel fittings</h3><div class="sms-actions"><button type="button" data-pixel-profile-editor>Create / edit pixel profile</button></div>'+
    '<p>Choose a saved measured profile before placing. A profile selection with P1/P2 selected updates <strong>only that fitting</strong>; otherwise it chooses the next fitting. Plain bores open on both faces. Select a fitting to enable a measured blind socket on its installation face. Cable cuts open on the underside. Print a coupon to check fit.</p>'+
    '<p>Fitting bores need continuous solid material. Thin walls, cavities and narrow rims can block placement.</p>'+

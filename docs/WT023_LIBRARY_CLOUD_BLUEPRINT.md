@@ -4,6 +4,17 @@
 **Source baseline:** `main` `7ff6ba8ba8dd0525563e2c933c0a9a5cc920c0f7` after merged #135. Recheck GitHub before implementation.
 **Owner milestone:** [WT-023 #137](https://github.com/connorturansky-svg/crystal-forge/issues/137). **Do not merge planning work or implement contested product decisions without owner approval.**
 
+## Owner-approved design decisions — 22 November 2026
+
+The owner **explicitly approved** the four architectural defaults below. They are no longer outstanding design questions, but this approval does **not** authorise automatic merging, new cloud account creation or destructive migrations.
+
+1. **Single-level project folders**: user-visible, collapsible projects with stable project ownership/identity; no nested subfolders in first release.
+2. **One active project**: the model tab rail labels each as `Project : Model` (compact visually on small screens, full accessible identity), without concurrent editing across projects.
+3. **Global/shared profile catalogue**: reusable, version-aware pixel types and printer/Cura profiles, selected at project level with explicit model/job overrides and no silent reconfiguration of saved hardware.
+4. **Private GitHub manual sync first**: clearer Connect, Check, Preview, safe Merge/Copy, explicit Upload and local/remote revision/status. No PIN, hosted sign-in or unattended automatic cross-device sync in this milestone.
+
+**GitHub milestone:** [#137](https://github.com/connorturansky-svg/crystal-forge/issues/137); first narrow implementation [#138](https://github.com/connorturansky-svg/crystal-forge/issues/138). Existing WT-022 search PR #136 merged on `main` at `dddb172a26b5d9e2b70df607951f938069b62ab3`. Product work may begin from latest main; keep separate CI #131 and physical print QA #10 independent.
+
 ## 0. Executive design decision
 
 Keep the already working source-of-truth model, version history, private-GitHub vault, calibrated pixel data and non-destructive conflict recovery. **Reorganise how people see and move work** around actual named Projects and shared reusable Resources. Avoid a broad rewrite of the geometry editor or a new unaudited cloud backend.
@@ -130,7 +141,9 @@ Possible **additive** metadata (select exact implementation in WT-023A after tes
 | [WT-023F #143](https://github.com/connorturansky-svg/crystal-forge/issues/143) | optional future account-backed cloud / autosync ADR, not code | **deferred; GitHub manual first is approved** | provider, security, cost and exportability decision |
 | [WT-023G #145](https://github.com/connorturansky-svg/crystal-forge/issues/145) | new-device onboarding and optional 4-digit convenience PIN **security design only** | review with #142 before cloud UI code | private repo auth remains authoritative; no PIN-based remote access |
 
-**Current concurrent work:** [#135](https://github.com/connorturansky-svg/crystal-forge/pull/135) Wave print repair is merged into `7ff6ba8`; [#136](https://github.com/connorturansky-svg/crystal-forge/pull/136) Support-Free Shoulders search is draft and touches `sensory-studio.js`, `index.html`; [#131](https://github.com/connorturansky-svg/crystal-forge/pull/131) CI efficiency is draft and touches Actions workflows/classifier. Do not begin #139–#142 editing their source until #136 and current releases are reconciled. #131 should independently complete/land before expensive test-heavy WT-023 work if approved. Keep real physical [Issue #10](https://github.com/connorturansky-svg/crystal-forge/issues/10) on the printing track; UI scope does not substitute for tested parts.
+**Release coordination update:** #135 and #136 are merged on main. **Independent CI draft #131** remains separate and must not be concurrently edited by Codex. 
+
+**Historical coordination:** [#135](https://github.com/connorturansky-svg/crystal-forge/pull/135) Wave print repair is merged into `7ff6ba8`; [#136](https://github.com/connorturansky-svg/crystal-forge/pull/136) Support-Free Shoulders search is draft and touches `sensory-studio.js`, `index.html`; [#131](https://github.com/connorturansky-svg/crystal-forge/pull/131) CI efficiency is draft and touches Actions workflows/classifier. Do not begin #139–#142 editing their source until #136 and current releases are reconciled. #131 should independently complete/land before expensive test-heavy WT-023 work if approved. Keep real physical [Issue #10](https://github.com/connorturansky-svg/crystal-forge/issues/10) on the printing track; UI scope does not substitute for tested parts.
 
 ## 6. Acceptance campaign
 
@@ -146,11 +159,11 @@ Possible **additive** metadata (select exact implementation in WT-023A after tes
 
 ## 7. Decisions for owner (not blocking the planning PR)
 
-1. **Project folders:** initial single-level expandable projects (recommended) or user-created nested directories? These are app virtual folders, not OS folders.
-2. **Tabs:** `Project : Model` display of the active project's tabs (recommended) or simultaneously editable models from different projects? The latter requires a larger state/session design.
+1. **Project folders — DECIDED:** single-level expandable named projects, no nested subfolders in first implementation. Virtual app folders, not OS folders.
+2. **Tabs — DECIDED:** one active editable project at a time; each tab displays `Project : Model`. No simultaneous cross-project tabs in initial implementation.
 3. **Cloud — DECIDED:** **private GitHub vault with manual conflict-safe sync first**. Hosted login and unattended sync deferred. A proposed 4-digit PIN is **not cloud authentication**; optional local privacy-screen lock and secure new-device onboarding require a separate UX/security choice in [#145](https://github.com/connorturansky-svg/crystal-forge/issues/145).
-4. **Resources:** shared global pixel/printer profiles with project-specific selections (recommended), or duplicate all resource definitions into each project by default? Prefer global authoritative identity plus explicit version pinning/snapshot for export reproducibility.
+4. **Resources — DECIDED:** globally shared, versioned pixel and printer/Cura profiles with project-level selection and explicit pinning/snapshot for export reproducibility. Do not duplicate definitions in every project by default.
 
-**Approved decision scope:** Use the existing private GitHub repository as cloud storage and improve the manual connection/status/Check/Preview/Merge/Upload experience. This is not approval to implement a PIN login, a hosted backend or continuous multi-device sync.
+**Approved decision scope:** All four main architecture decisions are now approved. Use the existing private GitHub repository as cloud storage and improve the manual connection/status/Check/Preview/Merge/Upload experience. This is not approval to implement a PIN login, a hosted backend or continuous multi-device sync.
 
 No assumption above grants permission to change hosting, create private repositories, store user tokens, delete data or merge product PRs.

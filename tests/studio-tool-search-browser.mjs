@@ -25,6 +25,8 @@ try{
   assert.equal(await activeNav.textContent(),workspace,query);
  };
  await add('crystals',{baseType:'integrated',baseHeight:20,wireChannels:true,mount:'None'});
+ await choose('Support-Free Shoulders','Pixels','[data-crystal-shoulders]');
+ assert.equal(await page.locator('[data-crystal-shoulders]').isChecked(),false);
  await choose('magnets in a circle','Mounting','select[data-state=mount]');
  assert.match(await page.locator('.sms-tool-finder [role=status]').innerText(),/set hole placement to Manual/);
  await add('crystals',{baseType:'integrated',baseHeight:20,wireChannels:true,mount:'Magnet inserts',mountPlacement:'manual'});
@@ -61,6 +63,29 @@ try{
  await search.press('Escape');
  assert.equal(await search.inputValue(),'');
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.setViewportSize({width:1440,height:950});
+ await add('gears',{mode:'Decorative',wheelStyle:'Rounded lobes',webStyle:'Solid',diameter:100,
+  thickness:25,bore:0,reliefStyle:'None',dualMaterial:false});
+ const guidance=/select a shaped underside socket/i;
+ await search.fill('Support-Free Shoulders');
+ assert.match(await page.locator('.sms-tool-result').first().innerText(),guidance);
+ await choose('Support-Free Shoulders','Pixels','[data-workspace=pixels]');
+ assert.match(await page.locator('.sms-tool-finder [role=status]').innerText(),guidance);
+ const palette=page.locator('.sms-palette');
+ await palette.locator('[data-fit-profile=bullet]').click();
+ await page.locator('[data-view=bottom]').click();
+ await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
+ await palette.locator('[data-place-shaped]').click();
+ const point=await page.evaluate(()=>window.__sensoryStudio.fittingPointScreen(0,0,'underside'));
+ assert(point);
+ await page.mouse.click(point.x,point.y);
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.pixelHoles?.length===1);
+ await page.keyboard.press('Escape');
+ await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ const before=await page.evaluate(()=>window.__sensoryStudio.currentModel.revision);
+ await choose('taper socket shoulder','Pixels','[data-seat-shoulders]');
+ assert.equal(await palette.locator('[data-seat-shoulders]').isChecked(),false);
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.revision),before);
  assert.deepEqual(errors,[]);
  console.log('WT-022 search: Crystal, Gear and Tile ranking, focus, Advanced, availability, STL readiness and narrow layout passed');
 }finally{await browser.close();}
