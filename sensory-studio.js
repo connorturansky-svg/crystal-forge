@@ -217,6 +217,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   };
   search.oninput=searchSettings;
   const styleNav=document.querySelector('.workspace-tabs'),top=document.querySelector('.topbar');
+  home.setAttribute('aria-label','Home');
   styleNav.prepend(home,$('smsLibrary'));styleNav.setAttribute('aria-label','Workspaces');
   const print=styleNav.querySelector('[data-tab=print]');
   for(const [destination,label] of [['pixels','Pixels'],['wiring','Wiring'],['mounting','Mounting']]){
@@ -702,7 +703,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    inspection.update(supported?currentId:null,printResult,supported?job?.status:undefined,type,supported?job?.error:undefined);
    updateModelDimensions(supported?model:null,printResult);
   }
-  if(shell){const history=histories.get(currentId),crystal=active()?.generator.typeId==='crystals';const blocked=mode!=='model'||!!active()?.link;$('smsGlobalUndo').disabled=blocked||!(crystal?adapter.canUndo(-1):history?.index>0);$('smsGlobalRedo').disabled=blocked||!(crystal?adapter.canUndo(1):history?.index<history?.items.length-1);document.body.dataset.studioView=mode;shell.home.toggleAttribute('aria-current',mode==='home');$('smsLibrary').toggleAttribute('aria-current',mode==='library');if(mode!=='model'&&document.body.classList.contains('sms-focused'))shell.focus.click();}
+  if(shell){const history=histories.get(currentId),crystal=active()?.generator.typeId==='crystals';const blocked=mode!=='model'||!!active()?.link;$('smsGlobalUndo').disabled=blocked||!(crystal?adapter.canUndo(-1):history?.index>0);$('smsGlobalRedo').disabled=blocked||!(crystal?adapter.canUndo(1):history?.index<history?.items.length-1);document.body.dataset.studioView=mode;for(const [control,view] of [[shell.home,'home'],[$('smsLibrary'),'library']]){if(mode===view)control.setAttribute('aria-current','step');else control.removeAttribute('aria-current');}if(mode!=='model'&&document.body.classList.contains('sms-focused'))shell.focus.click();}
   const type=mode==='model'?active()?.generator.typeId:null;
   document.body.dataset.modelTheme=type||'workspace';
   document.body.classList.add('sms-workspace');
