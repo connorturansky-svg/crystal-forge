@@ -1,4 +1,6 @@
-# Architecture — implementation as inspected (10 November 2026)
+# Architecture — historic implementation inspection (10 November 2026)
+
+> This technical snapshot predates multiple merged WT-021/WT-022 milestones. Use [current work](PROJECT_STATUS.md), [repository map](REPOSITORY_MAP.md) and the latest source/CI as authoritative. Do not treat this file's old "active draft" or CDN deployment descriptions as confirmed current facts. Its coordinate-frame, Manifold and mechanical safety explanations remain useful engineering context.
 
 ## Studio boundaries after PR #27
 
