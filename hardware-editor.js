@@ -1,6 +1,7 @@
 /* Build-stage placement/inspection: same authoritative plan as fabrication. */
 import {planHardware,mountingProfile} from './hardware-layout.js';
 import {mountPatternEditor} from './mounting-pattern-editor.js';
+import {mountPatternViewport} from './mounting-pattern-viewport.js';
 import {resolvePixelProfile,resolveSocketProfile,allPixelProfiles} from './pixel-profiles.js';
 import {snapHardwarePoint,snapHardwareCoordinate} from './design-workflows.js';
 import {nearestEdgePosition} from './edge-tabs.js';
@@ -12,6 +13,8 @@ import {routingSummary,renderFeedback} from './routing-feedback.js';
 export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,getManufacturingVisible=()=>false,onEdit,onStatus,validateMountPattern,onSelectionChange=()=>{},canEdit=()=>true}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
  const mountingPreview=new THREE.Group();mountingPreview.name='Mount pattern preview';scene.add(mountingPreview);
+ const patternViewport=mountPatternViewport({THREE,canvas:renderer.domElement,camera,
+  visible:()=>isBuild()&&!placing&&!getManufacturingVisible()});
  function drawMountPreview(transaction,issues){
   for(const mesh of [...mountingPreview.children]){
    mountingPreview.remove(mesh);mesh.geometry.dispose();mesh.material.dispose();
@@ -343,6 +346,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
  }
  function refresh(){
   drawMountPreview(null);
+  patternViewport.clear();
   const s=getSettings();
   ensureHardwareIds(s);
   const plan=getPlan();
@@ -536,7 +540,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   summary.textContent='Uniform Crystal mounting patterns';
   section.append(summary);list.append(section);
   section.addEventListener('toggle',()=>{
-   if(!section.open){drawMountPreview(null);return;}
+   if(!section.open){drawMountPreview(null);patternViewport.clear();return;}
    if(section.children.length>1){section.querySelector('[data-pattern-select]')?.dispatchEvent(new Event('change'));return;}
    const {preset,enabled,diameter,depth}=mountingProfile(state);
    const patterns=state.mountingPatterns??[];
@@ -560,7 +564,9 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
      missing?'Another mounting hole would be displaced.':null);
    };
    section.append(mountPatternEditor({patterns,mounts,footprint,limit:20,fixedProfile:fixing,validate,
-    onPreview:drawMountPreview,
+    onPreview:(transaction,issues,move)=>{
+     drawMountPreview(transaction,issues);patternViewport.preview(transaction,issues,move);
+    },
     apply:async transaction=>{
      if(validate(transaction).some(Boolean))return;
      if(!section.isConnected)return;

@@ -1,5 +1,11 @@
 # AI handover — read immediately after AGENTS.md
 
+## WT-022 implementation checkpoint
+
+The active branch `feat/wt022-mount-patterns` starts from main after #126. It adds shared model-space mounting patterns with preserved member IDs, independent candidate validation, native and Crystal manufacturing checks, and a draggable draft centre. Test vectors and acceptance are tracked in [issue #127](https://github.com/connorturansky-svg/crystal-forge/issues/127). Run the three WT-022 scripts in [TESTING.md](TESTING.md) before updating the draft.
+
+Milestone A still needs the full history and Library persistence audit before review. Milestones B and C follow in separate drafts for workspace routing and global tool search. The owner retains merge and deployment control. After WT-022, use the existing acceptance registers and GitHub roadmap to select the highest-priority unfinished software work.
+
 ## CURRENT RESTART POINTER — 21 NOVEMBER 2026 (read before historical entries)
 
 - The focused hardware-mouth branch starts at main after #125 (`d0f7fdb`). Native top-entry through-mounts and eligible external through-tabs use a local profiled Manifold cutter. Crystal uses the same eligibility check on its external tab through-holes. The existing chamfer amount controls the lead-in.

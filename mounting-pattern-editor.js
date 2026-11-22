@@ -1,4 +1,4 @@
-import {patternMountTransaction} from './mounting-pattern.js';
+import {footprintCentre,patternMountTransaction} from './mounting-pattern.js';
 
 const defaults={kind:'line',alignment:'centre',count:2,rows:2,columns:2,
  pitchMm:30,pitchXmm:20,pitchZmm:20,radiusMm:20,angleDeg:0,startAngleDeg:0,offsetX:0,offsetZ:0};
@@ -7,6 +7,11 @@ const dimensions={
  circle:[['count','Quantity'],['radiusMm','Pattern radius (mm)'],['startAngleDeg','Starting angle (°)']],
  grid:[['rows','Rows'],['columns','Columns'],['pitchXmm','X pitch (mm)'],['pitchZmm','Z pitch (mm)'],['angleDeg','Rotation (°)']]
 };
+const presets=[
+ ['2-hole line',{kind:'line',count:2}],['3-hole line',{kind:'line',count:3}],['4-hole line',{kind:'line',count:4}],
+ ...[3,4,6,8].map(count=>[count+'-hole circle',{kind:'circle',count}]),
+ ...[[2,2],[2,3],[3,3]].map(([rows,columns])=>[rows+' × '+columns+' grid',{kind:'grid',rows,columns}])
+];
 
 export function mountPatternEditor({patterns,mounts,limit,footprint,profiles,fixedProfile,validate,apply,ungroup,onPreview=()=>{}}){
  const root=document.createElement('fieldset');
@@ -19,6 +24,18 @@ export function mountPatternEditor({patterns,mounts,limit,footprint,profiles,fix
  selection.add(new Option('Add new pattern',''));
  patterns.forEach((entry,index)=>selection.add(new Option(entry.kind+' '+(index+1),entry.id)));
  let draft,fixing,transaction;
+ const origin=footprintCentre(footprint);
+ function moveCentre(x,z){
+  if(fields.inert)return;
+  const redraw=draft.alignment!=='custom';
+  draft.alignment='custom';draft.offsetX=x-origin.x;draft.offsetZ=z-origin.z;
+  if(redraw)renderFields();
+  else{
+   fields.querySelector('[data-pattern-field=offsetX]').value=draft.offsetX;
+   fields.querySelector('[data-pattern-field=offsetZ]').value=draft.offsetZ;
+   preview();
+  }
+ }
  function load(){
   const saved=patterns.find(entry=>entry.id===selection.value);
   draft={...defaults,id:crypto.randomUUID(),...saved};
@@ -51,6 +68,14 @@ export function mountPatternEditor({patterns,mounts,limit,footprint,profiles,fix
  }
  function renderFields(){
   fields.replaceChildren();
+  const preset=document.createElement('select');
+  preset.add(new Option('Choose a preset',''));
+  presets.forEach(([label],index)=>preset.add(new Option(label,String(index))));
+  preset.onchange=()=>{
+   if(preset.value==='')return;
+   Object.assign(draft,presets[Number(preset.value)][1]);renderFields();
+  };
+  field('Layout preset',preset);
   select('Layout','kind',[['line','Line'],['circle','Circle / Radial'],['grid','Grid']],draft,true);
   dimensions[draft.kind].forEach(([key,label])=>number(key,label,draft));
   select('Centre alignment','alignment',[['centre','Model centre'],['x','X centreline'],['z','Z centreline'],['custom','Custom offset']],draft,true);
@@ -73,13 +98,13 @@ export function mountPatternEditor({patterns,mounts,limit,footprint,profiles,fix
  }
  function preview(){
   const list=get('preview'),status=get('status');
-  transaction=null;button.disabled=true;list.replaceChildren();onPreview(null);
+  transaction=null;button.disabled=true;list.replaceChildren();
   try{
    const activeFixing={...fixing};
    if(!fixedProfile&&fixing.profile===profiles[0]){delete activeFixing.recessDiameter;delete activeFixing.recessDepth;}
    const next=patternMountTransaction({patterns,mounts,limit,footprint,pattern:draft,fixing:activeFixing});
    const issues=validate(next);
-   onPreview(next,issues);
+   onPreview(next,issues,moveCentre);
    next.candidates.forEach(({x,z},index)=>{
     const row=document.createElement('li'),issue=issues[index];
     row.textContent='X '+x.toFixed(3)+' mm, Z '+z.toFixed(3)+' mm'+(issue?' — '+issue:'');
@@ -89,11 +114,14 @@ export function mountPatternEditor({patterns,mounts,limit,footprint,profiles,fix
    status.textContent='Centre X '+next.centre.centerX.toFixed(3)+' mm, Z '+next.centre.centerZ.toFixed(3)+' mm.'+
     (issues.some(Boolean)?' Resolve the marked holes before applying.':'');
    if(!issues.some(Boolean)){transaction=next;button.disabled=false;}
-  }catch(error){status.textContent=error.message;}
+  }catch(error){onPreview(null);status.textContent=error.message;}
  }
  selection.onchange=load;
  button.onclick=async()=>{
   if(!transaction||fields.inert)return;
+  const previous=patterns.find(pattern=>pattern.id===draft.id);
+  const removed=(previous?.members.length??0)-transaction.candidates.length;
+  if(removed>0&&!window.confirm('Replace this pattern and remove '+removed+' mounting hole'+(removed===1?'?':'s?')))return;
   fields.inert=true;selection.disabled=true;button.disabled=true;ungroupButton.disabled=true;
   try{await apply(transaction);}
   catch(error){get('status').textContent=error.message;}

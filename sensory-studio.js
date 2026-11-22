@@ -9,6 +9,7 @@ import {applyPixelFittingProfile,resolvePixelFitting,withMeasuredPixelFit,saveab
 import {pixelBuilderMarkup,pixelHoleMarkup,bindPixelBuilder,pixelProfiles,stablePixels,findPixelPosition,checkedPixelBore,newPixel} from './studio-pixel-builder.js';
 import {stableMounts,newMount,mountHoleIssue,mountProfiles,manualMountProfiles,blindMountProfile,recessDimensions,MAX_NATIVE_MOUNTS,patternMountIssues} from './studio-mount-builder.js';
 import {mountPatternEditor} from './mounting-pattern-editor.js';
+import {mountPatternViewport} from './mounting-pattern-viewport.js';
 import {createModel,addModel,findModel,openTab,closeTab,reorderTabs,duplicateModel,editModel,
  queueModel,beginPreparation,finishPreparation,cancelPreparation,canExport,resolveJobPrinter,movePrintJob,invalidatePrintJob,saveLibraryRevision,
  insertLibraryModel,availableLinkedUpdate,acceptLinkedUpdate,breakLink,modelFingerprint,validateProject,WORKSPACE_KEY,newId} from './studio-documents.js';
@@ -997,6 +998,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   }).filter(hit=>hit.distance<=14).sort((a,b)=>a.distance-b.distance)[0]?.marker;
  }
  const viewport=renderer.domElement;
+ const patternViewport=mountPatternViewport({THREE,canvas:viewport,camera,
+  visible:()=>mode==='model'&&stage==='build'&&active()?.generator.typeId!=='crystals'});
  function fittingMeshes(model){
   return cache.get(model.id)?.group?.children.filter(mesh=>mesh.visible&&mesh.isMesh&&!mesh.userData.previewOnly)||[];
  }
@@ -1080,19 +1083,22 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   return {y:point.y,normal:normal.toArray()};
  }
  function checkFittingBuild(model,build,onValidated,{
-  report=message=>pixelStatus(model,message),pending='Checking socket walls, insertion opening and collisions…'
+  report=message=>pixelStatus(model,message),pending='Checking socket walls, insertion opening and collisions…',
+  onSettled=()=>{}
  }={}){
-  if(seatCheck||model.link)return;
+  if(seatCheck||model.link){onSettled();return;}
   const revision=model.revision;
   const worker=new Worker(new URL('./studio-model-worker.js',import.meta.url),{type:'module'});
   seatCheck=worker;
   const finish=message=>{
    worker.terminate();
-   if(seatCheck!==worker)return;
+   if(seatCheck!==worker){onSettled();return;}
    seatCheck=null;
-   if(active()?.id!==model.id||active().revision!==revision||!canEditPixels(model))return;
-   if(message){report(message);return;}
-   onValidated();
+   try{
+    if(active()?.id!==model.id||active().revision!==revision||!canEditPixels(model))return;
+    if(message){report(message);return;}
+    onValidated();
+   }finally{onSettled();}
   };
   worker.onmessage=({data})=>{
    if(data.type==='complete')finish();
@@ -1582,20 +1588,22 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const summary=document.createElement('summary');summary.textContent='Uniform mounting patterns';
    section.append(summary);
    section.addEventListener('toggle',()=>{
-    if(!section.open||section.children.length>1)return;
+    if(!section.open){patternViewport.clear();return;}
+    if(section.children.length>1){section.querySelector('[data-pattern-select]')?.dispatchEvent(new Event('change'));return;}
     try{
      const source=mountSource(model),{width,depth}=source.bounds;
      const footprint=source.serialSupport?.outline??source.pixelBoreSupport?.outline??
       [[-width/2,-depth/2],[width/2,depth/2]];
      section.append(mountPatternEditor({patterns,mounts,footprint,limit:MAX_NATIVE_MOUNTS,profiles:manualMountProfiles,
+      onPreview:patternViewport.preview,
       validate:transaction=>patternMountIssues(source,transaction,pixelHoles(model)),
-      apply:transaction=>{
+      apply:transaction=>new Promise(resolve=>{
        const build={...model.build,manualMountHoles:transaction.mounts,mountingPatterns:transaction.patterns};
        checkFittingBuild(model,build,()=>{if(commit({build}))renderPalette();},{
         report:message=>section.querySelector('[data-pattern-status]').textContent=message,
-        pending:'Checking all pattern holes against the manufactured model…'
+        pending:'Checking all pattern holes against the manufactured model…',onSettled:resolve
        });
-      },
+      }),
       ungroup:id=>{
        if(commit({build:{...model.build,mountingPatterns:patterns.filter(pattern=>pattern.id!==id)}}))renderPalette();
       }
@@ -2018,6 +2026,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   $('smsHomeSearch').oninput=render;render();
  }
  function renderPalette(){
+  patternViewport.clear();
   if(!shell||mode!=='model')return;
   const model=active(),family=registry.get(model.generator.typeId);
   const build=model.generator.typeId==='crystals'?document.querySelector('.workspace-tabs [data-tab=build]').classList.contains('active'):stage==='build';
