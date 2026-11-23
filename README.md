@@ -2,6 +2,10 @@
 
 [Open the browser app](https://connorturansky-svg.github.io/crystal-forge/).
 
+**Need a clearer starting point?** Read the [plain-English Studio quick guide](docs/WT025_READABLE_USER_GUIDE.md) for current controls, finding tools, understanding What's New and preserving your designs.
+
+**Accessibility work (PLANNED, not in the app yet):** [WT-025 legibility and easy-to-read updates #154](https://github.com/connorturansky-svg/crystal-forge/issues/154) has a [detailed design/acceptance blueprint](docs/WT025_LEGIBILITY_CHANGE_AWARENESS_SPEC.md), [Codex/AI fast start](docs/WT025_CODEX_FAST_START.md) and [human-friendly PR review guide](docs/WT025_HUMAN_FIRST_PR_CHECKLIST.md). It complements, rather than replaces, [WT-024 universal setting explanations #152](https://github.com/connorturansky-svg/crystal-forge/issues/152) / [draft plan #153](https://github.com/connorturansky-svg/crystal-forge/pull/153). Nothing in these planning docs claims shipped features or changes the live Pages app.
+
 ## Current development — WT-022 (22 November 2026 snapshot)
 
 **Start with [Current work](docs/PROJECT_STATUS.md) and the [repository/source map](docs/REPOSITORY_MAP.md)**. These explain where the live code, tests, active issues, unmerged branches and historical instructions belong. Recheck GitHub before acting; this README is not a live status feed.
