@@ -1,7 +1,7 @@
 # WT-023 · Library, project folders, preset catalogues and cloud repository blueprint
 
-**Status:** proposed architecture, not shipped implementation. **Audit date:** 22 November 2026. **Owner-approved cloud direction:** existing private GitHub repository with improved **manual** Studio sync first. No hosted login, unattended background upload or PIN-based repository authentication in this milestone.
-**Source baseline:** `main` `7ff6ba8ba8dd0525563e2c933c0a9a5cc920c0f7` after merged #135. Recheck GitHub before implementation.
+**Status:** owner-approved architecture; #131/#144/#146 merged, #147 implementation in review. **Last coordination update:** 23 November 2026. **Owner-approved cloud direction:** existing private GitHub repository with improved **manual** Studio sync first. No hosted login, unattended background upload or PIN-based repository authentication in this milestone.
+**Current audited main:** `d2ee1ab84ea41d363d9448df436732a286bf2c54` after merged #131/#144/#146. Recheck GitHub before implementation; #147 and #148 are still drafts.
 **Owner milestone:** [WT-023 #137](https://github.com/connorturansky-svg/crystal-forge/issues/137). **Do not merge planning work or implement contested product decisions without owner approval.**
 
 ## Owner-approved design decisions — 22 November 2026
@@ -133,7 +133,7 @@ Possible **additive** metadata (select exact implementation in WT-023A after tes
 
 | Slice / Issue | Scope | Dependency / overlap control | Exit gate |
 |---|---|---|---|
-| [WT-023A #138](https://github.com/connorturansky-svg/crystal-forge/issues/138) | identity, project/snapshot distinction, project-folder metadata, reversible migration | Start after owner choice; do not rewrite #136 search | unit document/vault/backup and original model ID tests |
+| [WT-023A #138](https://github.com/connorturansky-svg/crystal-forge/issues/138) | identity, project/snapshot distinction, project-folder metadata, reversible migration | Implemented in draft #147; reconcile onto post-#146 main and obtain owner review | unit document/vault/backup and original model ID tests |
 | [WT-023B #139](https://github.com/connorturansky-svg/crystal-forge/issues/139) | Library information architecture, collapsing project view and template destination chooser | A merged, then work in `sensory-studio.js` | real Chromium template targeting, 390px, safe project open/copy |
 | [WT-023C #140](https://github.com/connorturansky-svg/crystal-forge/issues/140) | required names, `Project : Model` tabs, metadata, truthful full-family thumbnails | B merged; same Library renderer ownership | seven families, legacy previews, lazy cache and save/reload |
 | [WT-023D #141](https://github.com/connorturansky-svg/crystal-forge/issues/141) | reusable pixel then printer/Cura resource catalogues | A/B contract; **split into D1 and D2 PRs** | preserved calibrations and correct print/profile overrides |
@@ -141,9 +141,9 @@ Possible **additive** metadata (select exact implementation in WT-023A after tes
 | [WT-023F #143](https://github.com/connorturansky-svg/crystal-forge/issues/143) | optional future account-backed cloud / autosync ADR, not code | **deferred; GitHub manual first is approved** | provider, security, cost and exportability decision |
 | [WT-023G #145](https://github.com/connorturansky-svg/crystal-forge/issues/145) | new-device onboarding and optional 4-digit convenience PIN **security design only** | review with #142 before cloud UI code | private repo auth remains authoritative; no PIN-based remote access |
 
-**Release coordination update:** #135 and #136 are merged on main. **Independent CI draft #131** remains separate and must not be concurrently edited by Codex. 
+**Release coordination update:** #135 and #136 are merged on main. **CI optimisation #131 is now merged on main**. Preserve its fail-closed docs-only classifier; do not edit workflows for WT-023B. 
 
-**Historical coordination:** [#135](https://github.com/connorturansky-svg/crystal-forge/pull/135) Wave print repair is merged into `7ff6ba8`; [#136](https://github.com/connorturansky-svg/crystal-forge/pull/136) Support-Free Shoulders search is draft and touches `sensory-studio.js`, `index.html`; [#131](https://github.com/connorturansky-svg/crystal-forge/pull/131) CI efficiency is draft and touches Actions workflows/classifier. Do not begin #139–#142 editing their source until #136 and current releases are reconciled. #131 should independently complete/land before expensive test-heavy WT-023 work if approved. Keep real physical [Issue #10](https://github.com/connorturansky-svg/crystal-forge/issues/10) on the printing track; UI scope does not substitute for tested parts.
+**Historical 22 Nov coordination (superseded by current status above):** [#135](https://github.com/connorturansky-svg/crystal-forge/pull/135) Wave print repair is merged into `7ff6ba8`; [#136](https://github.com/connorturansky-svg/crystal-forge/pull/136) Support-Free Shoulders search is draft and touches `sensory-studio.js`, `index.html`; [#131](https://github.com/connorturansky-svg/crystal-forge/pull/131) CI efficiency is draft and touches Actions workflows/classifier. Do not begin #139–#142 editing their source until #136 and current releases are reconciled. #131 should independently complete/land before expensive test-heavy WT-023 work if approved. Keep real physical [Issue #10](https://github.com/connorturansky-svg/crystal-forge/issues/10) on the printing track; UI scope does not substitute for tested parts.
 
 ## 6. Acceptance campaign
 
