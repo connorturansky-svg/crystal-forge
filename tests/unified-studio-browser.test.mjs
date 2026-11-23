@@ -3422,12 +3422,13 @@ try{
    await openLibrary();
    assert.equal(await folder.evaluate(element=>element.open),false);
    await summary.press('Enter');
-   await targetPage.screenshot({path:'qa/wt023b-library-narrow.png'});
+   await targetPage.screenshot({path:'qa/unified-wt023b-library-narrow.png'});
    targetPage.once('dialog',dialog=>dialog.accept());
    await folder.locator('[data-snapshot-id="version-2"] button').first().press('Enter');
    const switched=JSON.parse(await storage());
    assert.equal(switched.project.id,'other-project');
-   assert.deepEqual(switched.project.models[0],second.models[0]);
+   assert.deepEqual({...switched.project.models[0],thumbnail:null},second.models[0],
+    'Rendering may regenerate the active thumbnail; the saved model and source revision must match.');
    assert.deepEqual(switched.savedProjects.filter(item=>item.snapshotId.startsWith('version-')),[first,second]);
    assert.deepEqual(await modelIds(),['shared-model']);
    await targetPage.reload();
