@@ -18,7 +18,7 @@ Current `tooltips.js` has `SETTINGS` (113 keys), `BUTTONS` (36 keys), `describeC
 
 `studio-v3.js` installs tooltips and, separately at initialization, manages a legacy `crystal-forge-descriptions` localStorage key and updates `#contextHelpTitle` / `#contextHelpBody` on pointerover, focusin and change. That explains why current long-lived descriptions only appear on the right. Both systems repeat the same short text; the long tier does not yet exist.
 
-`index.html` defines 112 distinct classic `data-state` values; **14 were missing exact keys** from `tooltips.js` at this snapshot. See [source-level coverage audit](WT024_HELP_COVERAGE_AUDIT.md). It also owns the top-bar button, hard-coded tooltip styles and old Help entry for PR4. `sensory-studio.js` builds seven native family control groups in `control(schema,p)` using `data-model-param` and dynamically regenerates pixel, mount, wiring, print and modal controls. `studio-catalogue.js` contains at least 69 distinct literal native parameter keys. No claim that counting keys proves complete UI coverage.
+`index.html` defines 112 distinct classic `data-state` values; **15 were missing exact keys** from `tooltips.js` at this snapshot. See [source-level coverage audit](WT024_HELP_COVERAGE_AUDIT.md). It also owns the top-bar button, hard-coded tooltip styles and old Help entry for PR4. `sensory-studio.js` builds seven native family control groups in `control(schema,p)` using `data-model-param` and dynamically regenerates pixel, mount, wiring, print and modal controls. `studio-catalogue.js` contains at least 69 distinct literal native parameter keys. No claim that counting keys proves complete UI coverage.
 
 The existing `.control-tooltip` uses `pointer-events:none`; this needs revision for hoverable popup content. Previous tooltip and keyboard improvements already exist; **reuse and extend**, do not remove Escape, focus handling, descriptor merging, or view edge positioning. Existing `.control-help` and warning/status text must not be duplicated or hidden when long help is on.
 
@@ -107,7 +107,7 @@ Real examples (authoritative copy still needs family review):
 |---|---|
 | Registry | Deterministic coverage manifest for visible classic keys, every family schema key, dynamic specialised selectors; each has useful short + detail or explicit reviewed exception with rationale |
 | Preferences | All four combinations; persistence across reload/model/workspace and Simple/Advanced; one-time legacy migration, malformed/denied storage; no project dirty/write or unintended save |
-| Classic Crystal | Existing `browser-smoke.mjs` description/tooltip assertions migrated, 14 missing mapped settings covered; mount select content updates correctly |
+| Classic Crystal | Existing `browser-smoke.mjs` description/tooltip assertions migrated, 15 missing mapped settings covered; mount select content updates correctly |
 | Seven builders | Real Chromium visits all family-specific Design/Build/Pixels/Wiring/Mounting/Print Centre paths (plus Home and Library where relevant), shows inline help physically attached to rendered control, changes a value and observes no loss of edit state after rerender |
 | Accessibility | Mouse hover→popup crossing, focus, Escape, touch trigger, light/dark contrast, keyboard tab order, mobile 390 px and text zoom, existing error descriptions preserved; no focus trap |
 | Layout | Side/centre/header/dialog locations; no hidden right sidebar dependency, no overlay blocking sliders, predictable scrolling, no stale duplicate help after modal close/field mode switch |
