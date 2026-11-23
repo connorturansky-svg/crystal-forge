@@ -17,7 +17,7 @@ test('inventory deduplicates keys and never treats a generic fallback as documen
  assert.deepEqual(report.classic,{controls:2,exactLegacyDescriptions:1,unmapped:['missing']});
  assert.equal(report.legacyRegistry.explicitSettingKeys,1);
  assert.deepEqual(report.native.keys,['diameter','mode']);
- assert.deepEqual(report.dynamic.candidateAttributeNames,['model-param','pixel-field','remove-mount']);
+ assert.deepEqual(report.dynamic.candidateAttributeNames,['model-param','pixel-field']); // remove-mount is an action, not a field candidate
  assert.match(report.limitations.join(' '),/Chromium/);
 });
 
