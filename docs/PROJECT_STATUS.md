@@ -1,5 +1,21 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
+## Latest owner-approved work — 22 November 2026
+
+**Authoritative milestone:** [WT-023 Library/project folders and reliable private GitHub sync #137](https://github.com/connorturansky-svg/crystal-forge/issues/137). Four decisions approved: **single-level collapsible projects**, **one active project with `Project : Model` tabs**, **shared version-aware pixel/printer profiles with project selections**, **manual conflict-safe sync to a private GitHub repository**. No PIN, hosted account or automatic whole-Studio cloud sync.
+
+**Production at this audited handoff:** `main` `dddb172a26b5d9e2b70df607951f938069b62ab3`, including merged [#135 Wave export repair](https://github.com/connorturansky-svg/crystal-forge/pull/135) and [#136 search follow-up](https://github.com/connorturansky-svg/crystal-forge/pull/136). Pages deployment succeeded at [run 45083277341](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45083277341). Main static, native precision and measured-profile checks passed; browser/fabrication runs were in progress when audited. All checks must be reverified on the actual later SHA before any claim.
+
+**Codex next:** [#138 WT-023A](https://github.com/connorturansky-svg/crystal-forge/issues/138) **only**, starting from current main; [fast one-page runbook](WT023_CODEX_FAST_START.md). [#144 architecture blueprint](https://github.com/connorturansky-svg/crystal-forge/pull/144) and [#146 test-only project-index prework](https://github.com/connorturansky-svg/crystal-forge/pull/146) are separate drafts. #146 exact-head static and seven-builder edge checks passed at the most recent audit, with longer Chromium/Manifold runs in progress. Use #146's test-only code **only after checking its final CI and owner merge/cherry-pick instruction**; do not duplicate it.
+
+**Independent QA:** [#131 fail-closed docs-only CI optimisation](https://github.com/connorturansky-svg/crystal-forge/pull/131), owned outside Codex; exact-head static/edge/fabrication checks passed, browser still pending at last audit. Never merge #131/#144/#146 automatically. Hardware owner [#10 first-print and fit acceptance](https://github.com/connorturansky-svg/crystal-forge/issues/10) remains open and unrelated to this Library upgrade.
+
+**Source truth:** WT-015/WT-016 collections/templates/private vault are implemented. A saved Studio project in `state.savedProjects` is a **snapshot with `snapshotId`**, often the same `project.id` as its parent. Folders must not silently collapse or delete saved revisions. Prefer additive, reversible source contracts over a new competing store.
+
+---
+
+### Historical WT-022 checkpoint below (retained for evidence; not an active Codex task)
+
 **Snapshot:** 22 November 2026, after merged [WT-022 search release #134](https://github.com/connorturansky-svg/crystal-forge/pull/134). **Not a live dashboard.** Recheck [main](https://github.com/connorturansky-svg/crystal-forge/commits/main), [open PRs](https://github.com/connorturansky-svg/crystal-forge/pulls), [Issues](https://github.com/connorturansky-svg/crystal-forge/issues) and [Actions](https://github.com/connorturansky-svg/crystal-forge/actions).
 
 ## One-minute orientation
