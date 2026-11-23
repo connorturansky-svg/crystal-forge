@@ -23,7 +23,7 @@
 
 ## Ready-made QA preflight — check whether #156 is merged
 
-[QA PR #156](https://github.com/connorturansky-svg/crystal-forge/pull/156) adds a standalone, source-only inventory and unit tests. Once it is on your working branch, run `npm run help:audit` to print structured gaps; do **not** reimplement the same parser. If #156 is still a draft on another branch, read its diff or use the one-off snippet in the coverage audit, and report the dependency. **Its inventory does not certify native/UI completeness, user comprehension or accessibility.**
+[QA PR #156](https://github.com/connorturansky-svg/crystal-forge/pull/156) adds a standalone tests-only source inventory and unit tests. Once it is on your working branch, run `node tests/helpers/wt024-help-audit.mjs` to print structured gaps; do **not** reimplement the same parser. If #156 is still a draft on another branch, read its diff or use the one-off snippet in the coverage audit, and report the dependency. **Its inventory does not certify native/UI completeness, user comprehension or accessibility.**
 
 ## Final release rule and efficient handover
 

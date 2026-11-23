@@ -77,7 +77,7 @@ Classification: `explained`, `explicitly excluded (not a setting)`, `missing`, `
 
 ## Companion automated source inventory (separate QA PR #156)
 
-A focused **test-only** utility now exists in [PR #156](https://github.com/connorturansky-svg/crystal-forge/pull/156): `scripts/wt024-help-audit.mjs`, `tests/wt024-help-audit.test.mjs` and the `npm run help:audit` command.
+A focused **tests-only** utility now exists in [PR #156](https://github.com/connorturansky-svg/crystal-forge/pull/156): `tests/helpers/wt024-help-audit.mjs`, `tests/wt024-help-audit.test.mjs`, plus integration in the existing `tests/static.test.mjs`. Run `node tests/helpers/wt024-help-audit.mjs` on a checkout containing that PR. No `package.json` or workflow modification is required.
 
 **Only run it on a branch that actually contains #156**; the command does not exist on the base main until that QA PR is approved/merged or deliberately incorporated. It reports classic exact legacy gaps, literal native schema keys and likely dynamic selectors, in deterministic JSON, **without changing a project or any DOM**. Static CI runs the parser regression; the separate `--fail-on-legacy-gaps` argument is deliberately *not* in CI because the existing app is known incomplete.
 
