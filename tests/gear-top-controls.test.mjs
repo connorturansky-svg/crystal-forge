@@ -9,7 +9,7 @@ assert.equal(GEAR_TOP_PRESETS.length,10);
 assert(new Set(GEAR_TOP_PRESETS.map(item=>item.id)).size===GEAR_TOP_PRESETS.length);
 const knob=newGearTopControl('knob-1','fluted-knob');
 assert.equal(gearTopPlacementIssue(knob,base.gearHost),null);
-const spindle=newGearTopControl('handle-1','offset-spindle',{x:32,z:0});
+const spindle=newGearTopControl('handle-1','offset-spindle',{x:24,z:0});
 assert.equal(gearTopPlacementIssue(spindle,base.gearHost),null);
 assert.match(gearTopPlacementIssue({...spindle,x:0},base.gearHost),/shaft bore/i);
 assert.match(gearTopPlacementIssue({...spindle,x:49},base.gearHost),/edge/i);
