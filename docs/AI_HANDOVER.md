@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## WT-025A readable defaults
+
+PR #157 uses the existing workspaces, tool finder and Help dialog. The legibility browser audit follows the seven-builder saved-state and mounting regression from #150. See [readable quick guide](WT025_READABLE_USER_GUIDE.md) and [review steps and limits](WT025A_LEGIBILITY_RELEASE_QA.md). Keep the current Description control until the separate WT-024 work. Review the exact-head screenshots and checks in #157 before release.
+
 ## CURRENT POINTER — after WT-022 C release (22 November 2026)
 
 **Verified `main`:** `f6e1da1b00bc1aeff2add9bcf0486adf59a91d90`, which merges [WT-022 C release #134](https://github.com/connorturansky-svg/crystal-forge/pull/134). [Pages deployed successfully](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45063828028). Precision mounting #128, eight workspaces #132 and real tool search #134 are merged. The #133 search PR originally targeted the stacked B branch, not `main`; #134 reconciled that release. #129 is closed. Do not recreate those milestones.

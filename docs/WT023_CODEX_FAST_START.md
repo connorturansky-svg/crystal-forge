@@ -1,37 +1,39 @@
-# WT-023A · Codex fast start — minimise tokens, maximise data safety
+# WT-023 Codex fast start — 23 November 2026
 
-**Status:** owner-approved task, 22 November 2026. **START WITH THIS FILE instead of the full historical chat/WT-021 roadmap.** [Master #137](https://github.com/connorturansky-svg/crystal-forge/issues/137), [first task #138](https://github.com/connorturansky-svg/crystal-forge/issues/138). Fetch current main; last audited `dddb172a26b5d9e2b70df607951f938069b62ab3` after merged #135/#136. Read `AGENTS.md` first for branch/release rules. The owner must approve every merge.
+**Read this once, then work directly on the current issue and affected code.** Production `main` was last verified at `d2ee1ab84ea41d363d9448df436732a286bf2c54`; fetch it again before doing anything. The owner must approve every merge. [WT-023 master #137](https://github.com/connorturansky-svg/crystal-forge/issues/137), [next issue #139](https://github.com/connorturansky-svg/crystal-forge/issues/139).
 
-## Owner decisions are already final for this milestone
+## Owner-approved decisions (do not reopen)
 
-Single-level collapsible Project folders; only **one active editable project** with `Project : Model` tab names; shared version-aware pixel and printer/Cura profiles chosen per project; **private GitHub + safe manual Check/Preview/Merge/Upload**. No PIN, nested folder tree, cross-project active tabs, hosted server, or background automatic sync.
+- **One-level, collapsible Project folders**; no nested directory tree.
+- **One active editable project**; eventually label model tabs `Project : Model`, no cross-project concurrent editing.
+- **Global version-aware Pixel and printer/Cura profiles**, selected per project, no silent remapping of fitted hardware.
+- **Private GitHub manual Check / Preview / Merge / Upload**; no PIN, hosted identity service, automatic cross-device sync or public model Library.
 
-## Do not duplicate independently prepared work
+## Work that is ALREADY MERGED to main
 
-- [Draft plan #144](https://github.com/connorturansky-svg/crystal-forge/pull/144): `docs/WT023_LIBRARY_CLOUD_BLUEPRINT.md` is the complete requirements/design record.
-- [Draft QA source contract #146](https://github.com/connorturansky-svg/crystal-forge/pull/146): `docs/WT023A_PROJECT_INDEX_PREWORK.md`, `tests/helpers/wt023-project-index.mjs` and `tests/wt023-project-index.test.mjs` already characterize read-only grouping and stable identities; static tests passed at QA audit. **Only reuse after checking final CI/owner integration decision**. No UI or storage migration shipped from it.
-- [#131 CI efficiency](https://github.com/connorturansky-svg/crystal-forge/pull/131): separate reviewer owns that branch; never edit workflows or cherry-pick it.
-- [#10 physical QA](https://github.com/connorturansky-svg/crystal-forge/issues/10): real print validation separate; do not touch geometry for the Library task.
+- **#131** — fail-closed CI efficiency: docs-only PRs skip expensive browser/Manifold steps but preserve required check contexts. Code and test PRs run full checks.
+- **#144** — authoritative architecture, backup user guide, AGENTS/repository map/status, and this fast-start entrypoint.
+- **#146** — **test-only** project/snapshot grouping helper `tests/helpers/wt023-project-index.mjs`, `tests/wt023-project-index.test.mjs`, `docs/WT023A_PROJECT_INDEX_PREWORK.md`. The helper groups by `project.id` and preserves each `snapshotId`. It is NOT a production import yet.
 
-## Read five source contracts, not the entire repo
+Do not create a duplicate helper, rewrite the existing Studio vault, rebuild WT-022 search/workspaces or touch physical geometry for this milestone.
 
-| Concern | Read |
-|---|---|
-| Project/model identity and prepared jobs | `studio-documents.js`: `createProject`, `validateProject`, `saveLibraryRevision`, `editModel` |
-| Snapshot copies and switching | `sensory-studio.js`: `saveProjectSnapshot`, `replaceProject`, `writeWorkspace` |
-| Tagged collections and saved templates | `studio-organisation.js`: `readOrganisation`, `ensureSnapshotIds`, `templateProject` |
-| Validated private vault | `studio-vault.js`: `packStudioVault/unpackStudioVault`; `studio-sync-plan.js`: `reconcileArchive/commitRecovery` |
-| Old JSON import | `studio-migration.js`; tests `studio-documents.test.mjs`, `studio-vault.test.mjs` |
+## Integration gate — #147 still draft
 
-**Known traps:** `state.savedProjects` is saved *snapshots*, not a directory of independent live files; a snapshot can share `project.id` with its parent and has unique `snapshotId`. Model IDs are unique per project, titles can repeat. `state.organisation.collections` are virtual tags, not real project ownership. `readOrganisation` normalises only v1 known fields. A new root field would be omitted from remote backups unless `studio-vault.js` explicitly packs it and `reconcileArchive` merges it. `editModel` increments revision and stales print jobs even on rename; do not call it in read-only renderers.
+[Codex WT-023A #147](https://github.com/connorturansky-svg/crystal-forge/pull/147), exact old head `8773200f48797c7366b8789de3bd03ab2961c4ff`: implements stable legacy snapshot IDs and atomic project save/switch; old-head static/full Chromium/native/fabrication/profile/edge suites passed. **Not merged.** Main advanced by 24 commits after #131/#144/#146. Reconcile #147 onto *fresh main*, preserve all post-merge documentation/test work, run exact-head static/focused Chromium/vault and release metadata checks, and leave draft for owner review. No force push, no auto-merge and no synthetic physical fit claims.
 
-## Your one critical job: WT-023A only
+Independent [cloud PR #148](https://github.com/connorturansky-svg/crystal-forge/pull/148) already implements a large private GitHub backup read fallback with mocked tests. It includes #147 history as a stack: **do not merge it ahead of #147, modify its branch or duplicate the blob recovery work**.
 
-1. Verify whether existing project+snapshot IDs support folders without a new schema. **Prefer derived project groups** from #146; add *versioned optional persistent metadata only when a required operation cannot be derived*. Never add a competing project database needlessly.
-2. Build/validate a **complete candidate** before any write/switch; verify old local bytes and snapshot recovery if quota, conflict, network or other-tab updates block the commit. Preserve all original v1 data, templates and measured pixel fit.
-3. Add tests for projects with equal titles/different IDs; multiple snapshots same ID; missing/duplicate snapshot ID once-only migration; linked saved Library revision; independent copy; one-active-project tabs; custom profile ID collision; prepared-job source identity; selective and full JSON/cloud recovery. A clean old browser and private vault should still open.
-4. Produce **one small draft PR** from current main with exact-head Node + relevant Chromium and mocked vault evidence. No Cloud UI, no nested folders, no printer catalogue, no Pages/CI changes. Code change triggers release metadata policy; update in-app version/changelog only if runtime change genuinely visible.
+## Next production job: WT-023B #139, B1 only
 
-**Commands:** `node tests/studio-documents.test.mjs`, `node tests/studio-vault.test.mjs`, `npm run test:static`; if #146 code is integrated, `node tests/wt023-project-index.test.mjs`. Browser checks require the local server at port 4321; use `docs/TESTING.md` for setup, and existing CI for exact-head validation.
+After the #147 base is verified (or in a **clearly labelled dependent draft** from #147 while owner review proceeds):
+1. Implement the **Library layout** with built-in/reusable Templates first, followed by collapsible **single-level Projects** keyed by immutable `project.id`. Distinguish the active project from saved revisions indexed by `snapshotId`.
+2. Promote/reuse #146's pure read-only grouping design in production (do not import from `tests/helpers/`), retaining the source tests and release-version policy. **No new redundant folder database**.
+3. Preserve saved models, collections/favourites, project opens, all seven builders, eight workspaces, SVG/mesh imports, keyboard focus, 390px responsive layout and prepared jobs. Use the #147 transactional switch.
+4. In **separate B2 PR**, introduce destination chooser (current/existing/new project) for template/model copies with cancel-that-writes-nothing. Do not build B2 within a broad, unreviewable B1 rewrite. Naming and previews are #140; profile catalogues #141.
+5. Browser acceptance: two same-name projects with distinct IDs, several snapshots of one project, legacy v1 and measured profile archive, active-vs-history markers, expand/collapse and tab/focus preservation, reload, quota/concurrent-tab failures. No physical printed-fit claim.
 
-**Report once:** branch/head, what data model is authoritative, migration/rollback approach, saved ID/profile preservation tests, exact check URLs, anything explicitly unverified, and next owner action. Do not merge or start WT-023B without review.
+## Read only the relevant source
+
+`sensory-studio.js::showLibrary/renderLibraryCards/renderTemplates/renderBuiltInTemplates/saveProjectSnapshot`; `studio-documents.js` project/model IDs and print jobs; `studio-organisation.js` tags and snapshot IDs; `studio-sync-plan.js::projectWorkspaceCandidate`; the merged `tests/wt023-project-index.test.mjs`. See [#139 source-mapped preflight](https://github.com/connorturansky-svg/crystal-forge/issues/139) and `docs/TESTING.md` for browser setup. Use focused `node tests/wt023-project-index.test.mjs`, `npm run test:static`, existing Chromium and manufacturing workflow checks on the exact head. No new hosted auth, backend, geometry, CI workflow or cloud refactor.
+
+**Deliverable:** one **draft** B1 PR with screenshots, exact-head CI, limitations and dependency. Update app version/CHANGELOG for any runtime UI changes. Do not merge or start #140 without review. Report the exact action the owner should take next.

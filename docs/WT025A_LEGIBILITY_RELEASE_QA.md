@@ -22,8 +22,8 @@
 
 ## Automated review evidence
 
-- `tests/studio-workspaces-browser.mjs` includes new **rendered** font-size checks for main text, tool-search labels/results, Help and What's New, theme switching, 390px layout and 200% text-size scaling.
-- It saves **qa/unified-wt025-legibility-390.png** and **qa/unified-wt025-legibility-1440.png**, included by the existing `qa/unified-*.png` browser CI artifact rule.
+- `tests/studio-workspaces-browser.mjs` includes new **rendered** font-size checks for main text, tool-search labels/results, Help and What's New, both themes, keyboard focus, desktop and 390px layout across all eight workspaces, 200% equivalent reflow and 200% text-size scaling. The same fixture retains #150’s seven-builder and real mounting save/reload assertions.
+- Screenshots are **qa/unified-wt025-legibility-390.png**, **qa/unified-wt025-legibility-1440.png**, and **qa/unified-wt025-legibility-200-reflow.png**. The existing `qa/unified-*.png` CI artifact rule collects them. The 200% screenshot uses a 720 CSS-pixel viewport and 2× DPR to reproduce reflow on a 1440-pixel desktop. It is separate from the 200% root text-size assertion and a manual native browser-zoom check.
 - Exact-head CI gates to inspect: Static repository checks and release-metadata version parity; Browser smoke test (including this fixture); Verify Crystal Forge fabrication; Seven-builder edge finishing. Older passed SHAs are not sufficient. No existing workflow must be loosened to accommodate this feature.
 - No fonts are downloaded, third-party services added, print geometry altered, or new browser storage written. CSS changes can change layout; scrutinise narrow/wide overlap and scroll before approval.
 
