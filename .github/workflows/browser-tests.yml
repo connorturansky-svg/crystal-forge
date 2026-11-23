@@ -39,10 +39,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Classify PR scope (fail closed on unknown diffs)
+        id: scope
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node tests/helpers/ci-scope.mjs
       # Cache the npm package tarballs between branches; no lockfile needed
       # for a best-effort cache. The runner's system Chrome avoids the 200 MB+
       # Playwright Chromium download that can time out before tests start.
       - name: Cache browser dependencies
+        if: steps.scope.outputs.run_heavy == 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -52,6 +58,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cf-browser-node22-
       - name: Install browser test dependencies
+        if: steps.scope.outputs.run_heavy == 'true'
         id: install
         timeout-minutes: 6
         continue-on-error: true
@@ -84,14 +91,14 @@ jobs:
           fi
           echo "Browser test dependencies and Chromium are ready."
       - name: Print dependency logs on installation failure
-        if: steps.install.outcome != 'success'
+        if: steps.scope.outputs.run_heavy == 'true' && steps.install.outcome != 'success'
         run: |
           echo '== npm install tail =='
           tail -n 100 /tmp/npm-install.log || true
           echo '== browser install tail =='
           tail -n 100 /tmp/playwright-install.log || true
       - name: Serve the comparison baseline
-        if: github.event_name == 'pull_request'
+        if: steps.scope.outputs.run_heavy == 'true' && github.event_name == 'pull_request'
         env:
           BASELINE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
@@ -125,14 +132,14 @@ jobs:
           cat browser-run.log
           exit "$status"
       - name: Upload browser test output log
-        if: always()
+        if: always() && steps.scope.outputs.run_heavy == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: crystal-forge-browser-test-log
           path: browser-run.log
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.scope.outputs.run_heavy == 'true'
         with:
           name: crystal-forge-browser-screenshot
           path: |
@@ -142,5 +149,5 @@ jobs:
             qa/wt022-*-pattern.png
           if-no-files-found: ignore
       - name: Fail on browser errors
-        if: steps.install.outcome != 'success' || steps.browser.outcome != 'success'
+        if: steps.scope.outputs.run_heavy == 'true' && (steps.install.outcome != 'success' || steps.browser.outcome != 'success')
         run: exit 1
