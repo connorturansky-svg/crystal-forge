@@ -6,6 +6,7 @@ import {createLightInspector} from './studio-light-inspector.js';
 import {lightPassageExportBlock,lightPassageReportEntries} from './light-passage-inspection.js';
 import {renderPixelProfileDiagram} from './pixel-profile-diagram.js';
 import {applyPixelFittingProfile,resolvePixelFitting,withMeasuredPixelFit,saveablePixelFit} from './studio-pixel-fit.js';
+import {GEAR_TOP_PRESETS,TOP_PROFILES,TOP_SURFACES,TOP_JOINS,newGearTopControl,gearTopPlacementIssue} from './studio-gear-top-controls.js';
 import {pixelBuilderMarkup,pixelHoleMarkup,bindPixelBuilder,pixelProfiles,stablePixels,findPixelPosition,checkedPixelBore,newPixel} from './studio-pixel-builder.js';
 import {stableMounts,newMount,mountHoleIssue,mountProfiles,manualMountProfiles,blindMountProfile,recessDimensions,MAX_NATIVE_MOUNTS,patternMountIssues} from './studio-mount-builder.js';
 import {mountPatternEditor} from './mounting-pattern-editor.js';
@@ -2002,6 +2003,150 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     return editPixel(model,index,hole,{root,selector});
    }});
  }
+
+ const selectedGearTops=new Map(),gearTopPresetChoices=new Map();
+ const gearTops=model=>model.build.gearTopControls||[];
+ function gearTopMarkup(model){
+  const controls=gearTops(model),selectedId=selectedGearTops.get(model.id)||controls[0]?.id;
+  const current=controls.find(item=>item.id===selectedId)||controls[0];
+  const disabled=model.link?' disabled':'';
+  const opts=(values,currentValue)=>values.map(value=>'<option'+(value===currentValue?' selected':'')+'>'+esc(value)+'</option>').join('');
+  const preset=gearTopPresetChoices.get(model.id)||'offset-spindle';
+  const names={x:'X position',z:'Z position',width:'Width',depth:'Depth',height:'Height',rotation:'Rotation',joinMm:'Join shoulder size'};
+  const numeric=[['x',-150,150,.1],['z',-150,150,.1],['width',8,100,.1],
+   ['depth',8,100,.1],['height',6,80,.1],['rotation',-360,360,1],['joinMm',0,5,.1]];
+  const fields=current?'<fieldset><legend>Selected grip — exact dimensions</legend>'+
+   '<label>Grip<select id="smsGearTopSelect"'+disabled+'>'+controls.map(c=>'<option value="'+esc(c.id)+'"'+(c.id===current.id?' selected':'')+'>'+esc(GEAR_TOP_PRESETS.find(p=>p.id===c.presetId)?.name||c.kind)+' · '+esc(c.id.slice(0,6))+'</option>').join('')+'</select></label>'+
+   numeric.map(([key,min,max,step])=>'<label>'+names[key]+' ('+(key==='rotation'?'degrees':'mm')+')<input data-gear-top-field="'+key+'" type="number" min="'+min+'" max="'+max+'" step="'+step+'" value="'+esc(current[key])+'"'+disabled+' title="'+esc(key==='joinMm'?'Widen the joint where grip meets wheel. The shoulder is real printed geometry.':'Edit this dimension independently. Values outside the solid gear are rejected.')+'"></label>').join('')+
+   '<label>Profile<select data-gear-top-field="profile"'+disabled+'>'+opts(TOP_PROFILES,current.profile)+'</select></label>'+
+   '<label>Surface texture<select data-gear-top-field="surface"'+disabled+'>'+opts(TOP_SURFACES,current.surface)+'</select></label>'+
+   '<label>Base join<select data-gear-top-field="join"'+disabled+'>'+opts(TOP_JOINS,current.join)+'</select></label>'+
+   '<p class="sms-descriptor" id="smsGearTopFieldHelp">Width, depth and height are separate. A round base strengthens the connection; a chamfer can be easier to print. Horizontal grooves, ribs, scallops and diamond texture are real geometry, not visual-only shading. Check their size against your nozzle.</p>'+
+   '<button type="button" id="smsRemoveGearTop"'+disabled+'>Remove selected grip</button></fieldset>':
+   '<p class="sms-descriptor">No grips yet. Select a starting point and add one, or double-click the solid top face in the viewport.</p>';
+  return '<details class="sms-panel-details" id="smsGearTopEditor" open><summary>Top handles & tactile knobs<small>Place a grip on your cog, then move it and adjust its shape.</small></summary><div>'+
+   '<p class="sms-descriptor" id="smsGearTopHelp">Double-click the flat top of your cog to place the chosen grip. Click a grip to select it; drag it across the top or use the exact X and Z fields. A red preview means the strengthened base would cover a hole, window or outside edge. The original shaft bore remains open through a centred knob after manufacturing preparation.</p>'+
+   '<label>New grip preset<select id="smsGearTopPreset"'+disabled+'>'+GEAR_TOP_PRESETS.map(p=>'<option value="'+p.id+'"'+(p.id===preset?' selected':'')+'>'+esc(p.name)+'</option>').join('')+'</select></label>'+
+   '<button type="button" id="smsAddGearTop"'+disabled+'>＋ Add selected grip</button>'+
+   '<p class="sms-descriptor">For an off-centre spindle, start away from the shaft. For a centred dial, use X = 0 and Z = 0. These are integral printed grips, not mechanically free-spinning bearings.</p>'+fields+
+   '</div></details>';
+ }
+ function updateGearTop(model,id,change){
+  const controls=gearTops(model).map(c=>c.id===id?{...c,...change}:c);
+  if(!commit({build:{...model.build,gearTopControls:controls}}))return false;
+  selectedGearTops.set(model.id,id);renderEditor();return true;
+ }
+ function addGearTop(model,point){
+  const preset=gearTopPresetChoices.get(model.id)||'offset-spindle';
+  const initial=GEAR_TOP_PRESETS.find(p=>p.id===preset);
+  const diameter=model.parameters.mode==='Mechanical'
+   ?(Math.round(model.parameters.teeth)+2)*model.parameters.module:model.parameters.diameter;
+  const at=point||{x:initial.kind==='spindle'?Math.round(diameter*.26*10)/10:0,z:0};
+  const c=newGearTopControl(newId(),preset,{x:at.x,z:at.z});
+  if(!commit({build:{...model.build,gearTopControls:[...gearTops(model),c]}}))return false;
+  selectedGearTops.set(model.id,c.id);renderEditor();return true;
+ }
+ function bindGearTopEditor(model){
+  const root=$('smsGearTopEditor');if(!root)return;
+  const preset=$('smsGearTopPreset');
+  preset.onchange=()=>{gearTopPresetChoices.set(model.id,preset.value);};
+  $('smsAddGearTop').onclick=()=>addGearTop(model);
+  const selected=$('smsGearTopSelect');
+  if(!selected)return;
+  selected.onchange=()=>{selectedGearTops.set(model.id,selected.value);renderEditor();};
+  const chosen=gearTops(model).find(c=>c.id===selected.value);
+  for(const input of root.querySelectorAll('[data-gear-top-field]')){
+   input.setAttribute('aria-describedby','smsGearTopFieldHelp');
+   input.onchange=()=>{
+    if(!chosen)return;
+    const key=input.dataset.gearTopField;
+    const value=input.type==='number'?input.valueAsNumber:input.value;
+    if(input.type==='number'&&!input.reportValidity()){input.value=chosen[key];return;}
+    const change={[key]:value};
+    if(key==='join'&&value==='None')change.joinMm=0;
+    if(!updateGearTop(model,chosen.id,change))input.value=chosen[key];
+   };
+  }
+  $('smsRemoveGearTop').onclick=()=>{
+   const controls=gearTops(model).filter(c=>c.id!==chosen.id);
+   if(commit({build:{...model.build,gearTopControls:controls}})){
+    selectedGearTops.set(model.id,controls[0]?.id);renderEditor();
+   }
+  };
+ }
+ let gearTopGesture=null;
+ const gearPointer=(event)=>{
+  const rect=renderer.domElement.getBoundingClientRect();
+  pointer.set((event.clientX-rect.left)/rect.width*2-1,1-(event.clientY-rect.top)/rect.height*2);
+  partRay.setFromCamera(pointer,camera);
+ };
+ const activeGearForPointer=()=>{
+  const model=active();
+  return mode==='model'&&stage==='design'&&model?.generator.typeId==='gears'&&!model.link?model:null;
+ };
+ renderer.domElement.addEventListener('dblclick',event=>{
+  const model=activeGearForPointer();
+  if(!model||event.button!==0)return;
+  gearPointer(event);
+  const group=cache.get(model.id)?.group;
+  if(!group)return;
+  const hit=partRay.intersectObjects(group.children.filter(mesh=>mesh.isMesh&&mesh.visible),false)[0];
+  if(!hit)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  if(hit.object.userData.gearTopId){
+   selectedGearTops.set(model.id,hit.object.userData.gearTopId);renderEditor();return;
+  }
+  if(Math.abs(hit.point.y-model.parameters.thickness)>1.2||hit.face?.normal.y<.7){
+   adapter.status('Double-click an exposed, flat gear top; raised rails and side faces are not yet supported.');return;
+  }
+  addGearTop(model,{x:Math.round(hit.point.x*10)/10,z:Math.round(hit.point.z*10)/10});
+ },true);
+ renderer.domElement.addEventListener('pointerdown',event=>{
+  const model=activeGearForPointer();
+  if(!model||event.button!==0)return;
+  gearPointer(event);
+  const mesh=partRay.intersectObjects(cache.get(model.id)?.group?.children||[],false)
+   .find(hit=>hit.object.visible&&hit.object.userData.gearTopId)?.object;
+  if(!mesh)return;
+  const control=gearTops(model).find(c=>c.id===mesh.userData.gearTopId);
+  if(!control)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  selectedGearTops.set(model.id,control.id);renderEditor();
+  gearTopGesture={id:event.pointerId,model,control,mesh,candidate:null,issue:null,
+   start:[event.clientX,event.clientY]};
+  renderer.domElement.setPointerCapture(event.pointerId);
+ },true);
+ renderer.domElement.addEventListener('pointermove',event=>{
+  const gesture=gearTopGesture;
+  if(!gesture||gesture.id!==event.pointerId)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  if(Math.hypot(event.clientX-gesture.start[0],event.clientY-gesture.start[1])<3)return;
+  gearPointer(event);
+  const point=partRay.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),
+   -gesture.model.parameters.thickness),new THREE.Vector3());
+  if(!point)return;
+  const candidate={...gesture.control,x:Math.round(point.x*10)/10,z:Math.round(point.z*10)/10};
+  const issue=gearTopPlacementIssue(candidate,cache.get(gesture.model.id)?.recipe?.gearHost,
+   gearTops(gesture.model).filter(c=>c.id!==gesture.control.id));
+  gesture.candidate=issue?null:candidate;gesture.issue=issue;
+  gesture.mesh.position.set(candidate.x-gesture.control.x,0,candidate.z-gesture.control.z);
+  gesture.mesh.material.emissive?.setHex(issue?0x9b1528:0x075b43);
+  adapter.status(issue||'Valid grip position. Release to place.');
+ },true);
+ function finishGearDrag(event){
+  const gesture=gearTopGesture;
+  if(!gesture||gesture.id!==event.pointerId)return;
+  gearTopGesture=null;
+  event.preventDefault();event.stopImmediatePropagation();
+  if(renderer.domElement.hasPointerCapture(event.pointerId))renderer.domElement.releasePointerCapture(event.pointerId);
+  gesture.mesh.position.set(0,0,0);gesture.mesh.material.emissive?.setHex(0);
+  if(gesture.candidate&&active()?.id===gesture.model.id)
+   updateGearTop(gesture.model,gesture.control.id,{x:gesture.candidate.x,z:gesture.candidate.z});
+  else if(gesture.issue)adapter.status(gesture.issue+' No change saved.');
+ }
+ renderer.domElement.addEventListener('pointerup',finishGearDrag,true);
+ renderer.domElement.addEventListener('pointercancel',finishGearDrag,true);
+
  const selectedParts=new Map();
  const partRay=new THREE.Raycaster();
  const pointer=new THREE.Vector2();
@@ -2334,7 +2479,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    '<div class="sms-actions">'+(stage==='design'?'<button id="smsBuild" class="primary">Next → Build</button>':'<button id="smsDesign">← Design</button><button id="smsSend" class="primary">Next → Queue for print</button>')+'</div>'+
    (model.link?'<p class="sms-descriptor">Linked to library revision '+model.link.revision+'.</p><button id="smsBreak">Make an independent variant</button>'+(update?'<button id="smsAccept">Accept library revision '+update.revision+'</button>':''):'')+
    '<div class="sms-actions"><button id="smsUndo">Undo</button><button id="smsRedo">Redo</button><button id="smsDuplicate">Duplicate</button><button id="smsSaveModel">Save to Library</button><button id="smsSaveModelAs">Save as new model…</button></div>'+
-   (stage==='design'?'<label>Starting point<select id="smsPreset"><option value="">Choose a preset…</option>'+g.presets.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('')+'</select></label>'+designSections(g,model)+partEditor(model):
+   (stage==='design'?'<label>Starting point<select id="smsPreset"><option value="">Choose a preset…</option>'+g.presets.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('')+'</select></label>'+designSections(g,model)+(g.typeId==='gears'?gearTopMarkup(model):'')+partEditor(model):
     ((!shell||buildWorkspace==='build')&&g.capabilities.supportsBase?details('Base and backing','Add a flat backing and set its thickness.','<label><input type="checkbox" data-build="base" '+(model.build.base?'checked':'')+'> Integrated flat base</label><label>Base thickness (mm)<input type="number" data-build="baseThickness" value="'+(model.build.baseThickness||3)+'" min="2" max="15"></label>'):'')+((!shell||buildWorkspace==='mounting')&&g.capabilities.supportsMounting?details('Automatic screw pair','Set the separate two-hole preset.','<label><input type="checkbox" data-build="mounting" '+(model.build.mounting?'checked':'')+'> Two mounting holes</label><label>Fixing profile<select data-build="mountStyle">'+['Through holes','Underside counterbores','Underside countersinks'].map(value=>'<option'+(model.build.mountStyle===value?' selected':'')+'>'+value+'</option>').join('')+'</select></label><label>Hole diameter (mm)<input type="number" data-build="holeDiameter" value="'+(model.build.holeDiameter||3.4)+'" min="2" max="8" step=".1"></label>'):'')+((!shell||buildWorkspace==='build')&&g.capabilities.supportsLEDs?details('Lighting and cable access','Set the cavity and opening in Design.','<p>Use the Light and materials and Holes and fittings sections to size the cavity and cable exit.</p>'):'')+(!shell?details('Pixel holes','Place and size holes to fit real pixels.',pixelBuilderMarkup(model,esc,fittingProfiles())):'') )+
    '<div id="smsModelError" class="sms-descriptor" role="status"></div>';
   $('smsModelName').onchange=e=>commit({name:e.target.value.trim()||g.displayName});
@@ -2393,6 +2538,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    };
   });
   bindPartEditor(model);
+  if(g.typeId==='gears'&&stage==='design')bindGearTopEditor(model);
   editors.refresh();renderPalette();
  }
  function commit(changes,{history=true}={}){
