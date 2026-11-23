@@ -2037,6 +2037,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    '<label>Surface texture<select data-gear-top-field="surface"'+tip('surface')+disabled+'>'+opts(TOP_SURFACES,current.surface)+'</select></label>'+
    '<label>Base join<select data-gear-top-field="join"'+tip('join')+disabled+'>'+opts(TOP_JOINS,current.join)+'</select></label>'+
    '<p class="sms-descriptor" id="smsGearTopFieldHelp">Width, depth and height are separate. A round base strengthens the connection; a chamfer can be easier to print. Horizontal grooves, ribs, scallops and diamond texture are real geometry, not visual-only shading. Check their size against your nozzle.</p>'+
+   '<details class="sms-panel-details"><summary>Detailed explanations for every grip setting</summary><div>'+Object.entries(help).filter(([key])=>key!=='add'&&key!=='remove').map(([key,description])=>'<p><strong>'+esc(names[key]||key[0].toUpperCase()+key.slice(1))+'</strong> — '+esc(description)+'</p>').join('')+'</div></details>'+
    '<button type="button" id="smsRemoveGearTop"'+tip('remove')+disabled+'>Remove selected grip</button></fieldset>':
    '<p class="sms-descriptor">No grips yet. Select a starting point and add one, or double-click the solid top face in the viewport.</p>';
   return '<details class="sms-panel-details" id="smsGearTopEditor" open><summary>Top handles & tactile knobs<small>Place a grip on your cog, then move it and adjust its shape.</small></summary><div>'+
