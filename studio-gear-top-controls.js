@@ -145,7 +145,9 @@ export function gearTopMesh(c,topY){
    rings.push([topY+shoulder*t,r]);
   }else rings.push([topY+shoulder,1]);
  }else rings.push([baseTop,1]);
- const start=Math.max(shoulder,c.height*.08),travel=c.height-start;
+ // Ensure the first profile ring never coincides with the previous join ring.
+ // Repeated zero-height rings generate degenerate triangles at the weld.
+ const start=Math.max(shoulder+.15,c.height*.08),travel=c.height-start;
  const steps=Math.max(12,Math.min(48,Math.ceil(travel/.75)));
  for(let j=0;j<=steps;j++){
   const t=j/steps,y=topY+start+t*travel;
