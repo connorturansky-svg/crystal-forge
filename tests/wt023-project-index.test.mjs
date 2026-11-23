@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createProject,createModel,addModel,queueModel,beginPreparation,finishPreparation,canExport} from '../studio-documents.js';
-import {listProjectFolders,projectModelTabLabel} from './helpers/wt023-project-index.mjs';
+import {listProjectFolders,projectModelTabLabel} from '../studio-project-index.js';
 import {packStudioVault,unpackStudioVault} from '../studio-vault.js';
 
 const when='2026-11-22T00:00:00.000Z';

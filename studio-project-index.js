@@ -4,7 +4,7 @@
  * The active project's ID is the stable group identity; snapshotId identifies
  * one saved revision. Preserve all snapshots, even when titles/model names match.
  */
-import {validateProject} from '../../studio-documents.js';
+import {validateProject} from './studio-documents.js';
 
 const validSnapshotId = id => typeof id === 'string' && id.length > 0 && id.length <= 160;
 

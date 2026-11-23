@@ -161,3 +161,6 @@ dialog[aria-label="Review backup"] .sms-actions{flex-wrap:wrap}
 .sms-tool-result{display:grid;text-align:left;gap:3px;white-space:normal;font-size:12px;padding:8px;border-radius:7px}
 .sms-tool-result small{display:block;font-weight:400;line-height:1.35;color:var(--muted)}
 .sms-tool-result:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+
+.sms-project-folder{margin-block:.65rem;padding:.65rem;border:1px solid var(--line,currentColor);border-radius:.6rem}
+.sms-project-folder>summary{cursor:pointer;font-weight:650;overflow-wrap:anywhere}
