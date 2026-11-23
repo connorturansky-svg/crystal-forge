@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.33 — Clearer everyday text
+
+- Increase main editor text and label sizes so controls are easier to read without zooming.
+- Make Help, What’s New, setting notes and tool-search explanations larger with more breathing room.
+- Keep the same tools, model settings and printable geometry. You can still use browser zoom and light or dark mode.
+
 ## v0.16.0-dev.35.32 — Find Support-Free Shoulders
 
 - Find Support-Free Shoulders in global search and open the existing Pixels control, with guidance when a shaped underside socket is needed.

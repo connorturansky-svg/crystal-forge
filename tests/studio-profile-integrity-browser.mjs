@@ -65,7 +65,10 @@ try{
  });
  form=await openCalibration();
  await form.getByRole('button',{name:'Save measured fit'}).click();
- await palette.locator('[data-pixel-status]').filter({hasText:/not saved.*storage full/i}).waitFor({timeout:30000});
+ const quotaWarning=palette.locator('[data-pixel-status]').filter({hasText:/not saved.*storage full/i});
+ await quotaWarning.waitFor({timeout:30000});
+ assert(await quotaWarning.evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=14),
+  'The measured-fit quota warning is readable at default text size');
  assert.equal(await model(),previous,'Quota failure cannot commit a broken custom ID');
  assert.equal(await page.evaluate(key=>localStorage.getItem(key),profileKey),space,'Quota failure preserves exact previous library bytes');
  assert.deepEqual(errors,[],'Asynchronous storage failure must not emit an uncaught window error');
