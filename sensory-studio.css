@@ -168,7 +168,7 @@ dialog[aria-label="Review backup"] .sms-actions{flex-wrap:wrap}
 .sms-product .version{font-size:.75rem;line-height:1.35}
 .sms-unified #smsSaveState,#smsModelDimensions{font-size:.875rem;line-height:1.45}
 .sms-workspace-nav button{min-height:36px;padding:7px 10px}
-.sms-descriptor,.sms-tool-finder>p,.sms-tool-result small{font-size:.875rem;line-height:1.5}
+.sms-descriptor,.sms-tool-finder>p,.sms-tool-result small,.sms-palette [data-pixel-status]{font-size:.875rem;line-height:1.5}
 .sms-tool-finder>label,#smsJobs fieldset label{font-size:.9375rem;line-height:1.5}
 .sms-tool-result{font-size:.9375rem;line-height:1.5;padding:10px}
 .sms-context-controls label,.sms-context-controls fieldset,.sms-visual-range-caption{line-height:1.5}
