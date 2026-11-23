@@ -2013,21 +2013,36 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const opts=(values,currentValue)=>values.map(value=>'<option'+(value===currentValue?' selected':'')+'>'+esc(value)+'</option>').join('');
   const preset=gearTopPresetChoices.get(model.id)||'offset-spindle';
   const names={x:'X position',z:'Z position',width:'Width',depth:'Depth',height:'Height',rotation:'Rotation',joinMm:'Join shoulder size'};
+  const help={
+   x:'Moves the grip left or right across the gear top in millimetres. Keep the full base on solid material and away from openings.',
+   z:'Moves the grip forward or backwards across the gear top in millimetres. Position an offset handle away from the centre shaft.',
+   width:'Changes the grip width independently of depth and height. Wider grips give more hand contact but require clear gear stock.',
+   depth:'Changes the grip depth independently of width and height. Narrower grips can clear windows, spokes and adjacent fittings.',
+   height:'Changes the grip height. A taller lever can increase twisting force at the base, so test actual printed strength.',
+   rotation:'Turns an asymmetric wing or rectangular grip around its vertical axis, without rotating the Gear itself.',
+   joinMm:'Sets the real added shoulder around the handle root. More shoulder can spread force but needs clear surrounding material.',
+   profile:'Shapes the handle along its height: flat, straight, two-thirds bulbous, hourglass, mushroom or rounded top.',
+   surface:'Creates actual ribs, scallops, knurl or grooves for more tactile feedback. The nozzle must reproduce their detail.',
+   join:'Choose no extra flare, a 45-degree chamfer, or a multi-ring rounded shoulder. Inspect print supports and load direction.',
+   add:'Adds a new independently editable top grip. The final connected solid is produced at manufacturing preparation.',
+   remove:'Deletes this grip while keeping the underlying cog and its original measured shaft hole.'
+  };
+  const tip=key=>' data-tooltip-title="'+esc(names[key]||key[0].toUpperCase()+key.slice(1))+'" data-tooltip-body="'+esc(help[key]||'')+'"';
   const numeric=[['x',-150,150,.1],['z',-150,150,.1],['width',8,100,.1],
    ['depth',8,100,.1],['height',6,80,.1],['rotation',-360,360,1],['joinMm',0,5,.1]];
   const fields=current?'<fieldset><legend>Selected grip — exact dimensions</legend>'+
    '<label>Grip<select id="smsGearTopSelect"'+disabled+'>'+controls.map(c=>'<option value="'+esc(c.id)+'"'+(c.id===current.id?' selected':'')+'>'+esc(GEAR_TOP_PRESETS.find(p=>p.id===c.presetId)?.name||c.kind)+' · '+esc(c.id.slice(0,6))+'</option>').join('')+'</select></label>'+
-   numeric.map(([key,min,max,step])=>'<label>'+names[key]+' ('+(key==='rotation'?'degrees':'mm')+')<input data-gear-top-field="'+key+'" type="number" min="'+min+'" max="'+max+'" step="'+step+'" value="'+esc(current[key])+'"'+disabled+' title="'+esc(key==='joinMm'?'Widen the joint where grip meets wheel. The shoulder is real printed geometry.':'Edit this dimension independently. Values outside the solid gear are rejected.')+'"></label>').join('')+
-   '<label>Profile<select data-gear-top-field="profile"'+disabled+'>'+opts(TOP_PROFILES,current.profile)+'</select></label>'+
-   '<label>Surface texture<select data-gear-top-field="surface"'+disabled+'>'+opts(TOP_SURFACES,current.surface)+'</select></label>'+
-   '<label>Base join<select data-gear-top-field="join"'+disabled+'>'+opts(TOP_JOINS,current.join)+'</select></label>'+
+   numeric.map(([key,min,max,step])=>'<label>'+names[key]+' ('+(key==='rotation'?'degrees':'mm')+')<input data-gear-top-field="'+key+'"'+tip(key)+' type="number" min="'+min+'" max="'+max+'" step="'+step+'" value="'+esc(current[key])+'"'+disabled+' title="'+esc(key==='joinMm'?'Widen the joint where grip meets wheel. The shoulder is real printed geometry.':'Edit this dimension independently. Values outside the solid gear are rejected.')+'"></label>').join('')+
+   '<label>Profile<select data-gear-top-field="profile"'+tip('profile')+disabled+'>'+opts(TOP_PROFILES,current.profile)+'</select></label>'+
+   '<label>Surface texture<select data-gear-top-field="surface"'+tip('surface')+disabled+'>'+opts(TOP_SURFACES,current.surface)+'</select></label>'+
+   '<label>Base join<select data-gear-top-field="join"'+tip('join')+disabled+'>'+opts(TOP_JOINS,current.join)+'</select></label>'+
    '<p class="sms-descriptor" id="smsGearTopFieldHelp">Width, depth and height are separate. A round base strengthens the connection; a chamfer can be easier to print. Horizontal grooves, ribs, scallops and diamond texture are real geometry, not visual-only shading. Check their size against your nozzle.</p>'+
-   '<button type="button" id="smsRemoveGearTop"'+disabled+'>Remove selected grip</button></fieldset>':
+   '<button type="button" id="smsRemoveGearTop"'+tip('remove')+disabled+'>Remove selected grip</button></fieldset>':
    '<p class="sms-descriptor">No grips yet. Select a starting point and add one, or double-click the solid top face in the viewport.</p>';
   return '<details class="sms-panel-details" id="smsGearTopEditor" open><summary>Top handles & tactile knobs<small>Place a grip on your cog, then move it and adjust its shape.</small></summary><div>'+
    '<p class="sms-descriptor" id="smsGearTopHelp">Double-click the flat top of your cog to place the chosen grip. Click a grip to select it; drag it across the top or use the exact X and Z fields. A red preview means the strengthened base would cover a hole, window or outside edge. The original shaft bore remains open through a centred knob after manufacturing preparation.</p>'+
    '<label>New grip preset<select id="smsGearTopPreset"'+disabled+'>'+GEAR_TOP_PRESETS.map(p=>'<option value="'+p.id+'"'+(p.id===preset?' selected':'')+'>'+esc(p.name)+'</option>').join('')+'</select></label>'+
-   '<button type="button" id="smsAddGearTop"'+disabled+'>＋ Add selected grip</button>'+
+   '<button type="button" id="smsAddGearTop"'+tip('add')+disabled+'>＋ Add selected grip</button>'+
    '<p class="sms-descriptor">For an off-centre spindle, start away from the shaft. For a centred dial, use X = 0 and Z = 0. These are integral printed grips, not mechanically free-spinning bearings.</p>'+fields+
    '</div></details>';
  }
@@ -2140,6 +2155,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   event.preventDefault();event.stopImmediatePropagation();
   if(renderer.domElement.hasPointerCapture(event.pointerId))renderer.domElement.releasePointerCapture(event.pointerId);
   gesture.mesh.position.set(0,0,0);gesture.mesh.material.emissive?.setHex(0);
+  if(event.type==='pointercancel'){adapter.status('Grip move cancelled; previous position preserved.');return;}
   if(gesture.candidate&&active()?.id===gesture.model.id)
    updateGearTop(gesture.model,gesture.control.id,{x:gesture.candidate.x,z:gesture.candidate.z});
   else if(gesture.issue)adapter.status(gesture.issue+' No change saved.');
