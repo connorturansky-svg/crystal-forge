@@ -81,6 +81,8 @@ try{
 
  // WT-025A: check actual rendered legibility, not merely that CSS contains token names.
  await destination('Design').press('Enter');
+ await page.locator('#smsFindTools').fill('mounting grid');
+ await page.locator('.sms-tool-result').first().waitFor();
  const textSize=selector=>page.evaluate(selector=>{
   const element=document.querySelector(selector);
   return element?Number.parseFloat(getComputedStyle(element).fontSize):null;
@@ -89,6 +91,7 @@ try{
  assert((await textSize('.sms-tool-finder>label'))>=15,'Find-tools label is readable');
  assert((await textSize('.sms-tool-finder>p'))>=14,'Find-tools guidance is readable');
  assert((await textSize('.sms-tool-result'))>=15,'Tool search results are readable');
+ await page.locator('#smsFindTools').fill('');
  await page.locator('#changelogBtn').click();
  assert(await page.locator('#infoChangelog').isVisible(),'What’s New remains available');
  assert((await textSize('.dialog-body'))>=16,'Release notes are readable at default zoom');
