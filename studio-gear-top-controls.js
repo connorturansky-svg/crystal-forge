@@ -11,7 +11,7 @@ export const GEAR_TOP_PRESETS=Object.freeze([
  {id:'fluted-knob',name:'Centred fluted knob',kind:'knob',profile:'Flat',surface:'Vertical ribs',width:36,depth:36,height:15,join:'Round',joinMm:2},
  {id:'scalloped-dial',name:'Scalloped turning dial',kind:'knob',profile:'Rounded cap',surface:'Scalloped',width:42,depth:42,height:16,join:'Chamfer',joinMm:2},
  {id:'knurled-dial',name:'Knurled turning dial',kind:'knob',profile:'Flat',surface:'Diamond knurl',width:36,depth:36,height:16,join:'Round',joinMm:2},
- {id:'rectangular',name:'Rounded rectangular grip',kind:'rectangular',profile:'Flat',surface:'Smooth',width:42,depth:15,height:17,join:'Chamfer',joinMm:2},
+ {id:'rectangular',name:'Rounded rectangular grip',kind:'rectangular',profile:'Flat',surface:'Smooth',width:42,depth:18,height:17,join:'Chamfer',joinMm:2},
  {id:'wing',name:'Two-wing turning grip',kind:'wing',profile:'Rounded cap',surface:'Smooth',width:48,depth:22,height:17,join:'Round',joinMm:2}
 ]);
 export const TOP_PROFILES=Object.freeze(['Flat','Straight taper','Bulbous 2/3','Hourglass','Mushroom','Rounded cap']);
