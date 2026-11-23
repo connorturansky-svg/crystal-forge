@@ -97,12 +97,17 @@ export function gearTopPlacementIssue(c,host,others=[]){
   if(separation<Math.max(c.width,c.depth)/2+c.joinMm+Math.max(other.width,other.depth)/2+other.joinMm+1)
    return 'This handle overlaps another handle. Move them apart.';
  }
+ for(const hardware of host.hardwareExclusions||[]){
+  const clearance=Math.max(c.width,c.depth)/2+c.joinMm+hardware.radius+1;
+  if(Math.hypot(c.x-hardware.x,c.z-hardware.z)<clearance)
+   return 'The grip base overlaps an existing pixel, fixing or hardware cut. Move it or edit the fitting first.';
+ }
  return null;
 }
 function topRadius(profile,t){
  switch(profile){
   case 'Straight taper':return .68+.30*t;
-  case 'Bulbous 2/3':return .76+.29*Math.sin(Math.PI*t*.92);
+  case 'Bulbous 2/3':return t<=2/3?.76+.29*Math.sin(t*3/2*Math.PI/2):.76+.29*Math.cos((t-2/3)*3*Math.PI/2);
   case 'Hourglass':return 1-.27*Math.sin(Math.PI*t);
   case 'Mushroom':return t<.67?.68:.68+.36*Math.sin((t-.67)/.33*Math.PI*.85);
   case 'Rounded cap':return t>.75?Math.max(.25,Math.sqrt(Math.max(.05,1-Math.pow((t-.75)/.28,2)))):1;
@@ -168,11 +173,26 @@ export function withGearTopControls(recipe,controls=[]){
  if(!controls.length)return recipe;
  const host=recipe.gearHost;
  if(!host)throw Error('Top controls are available only for the Cogs & Gears builder.');
+ const hardwareExclusions=[];
+ for(const part of recipe.negative||[]){
+  if(part.gearThroughBore)continue;
+  const position=part.position||[part.x,0,part.z];
+  const x=position?.[0],z=position?.[2];
+  if(!Number.isFinite(x)||!Number.isFinite(z)){
+   throw Error('An existing hardware cut has no supported position. Remove or resolve the cut before adding a grip.');
+  }
+  const radius=part.kind==='box'&&part.size?Math.hypot(part.size[0],part.size[2])/2:
+   Math.max(part.radius||0,part.topRadius||0,part.profile?.maxDiameter/2||0);
+  if(!Number.isFinite(radius)||radius<=0)
+   throw Error('An existing hardware cut lacks a measurable footprint. Resolve it before adding a grip.');
+  hardwareExclusions.push({x,z,radius});
+ }
+ const safeHost={...host,hardwareExclusions};
  const ids=new Set();
  for(const c of controls){
   validateGearTopControl(c);
   if(ids.has(c.id))throw Error('Duplicate top-control ID.');ids.add(c.id);
-  const problem=gearTopPlacementIssue(c,host,controls.filter(x=>x!==c));
+  const problem=gearTopPlacementIssue(c,safeHost,controls.filter(x=>x!==c));
   if(problem)throw Error(problem);
  }
  const positive=[...recipe.positive,...controls.map(c=>gearTopMesh(c,host.topY))],negative=[...(recipe.negative||[])];
@@ -182,6 +202,6 @@ export function withGearTopControls(recipe,controls=[]){
   const height=host.topY+Math.max(...controls.map(c=>c.height))+4;
   negative.push({kind:'cylinder',radius:host.shaftBore/2,height,position:[0,height/2-2,0],gearThroughBore:true});
  }
- return {...recipe,positive,negative,bounds:{...recipe.bounds,height:Math.max(recipe.bounds.height,host.topY+Math.max(...controls.map(c=>c.height)))},
+ return {...recipe,gearHost:safeHost,positive,negative,bounds:{...recipe.bounds,height:Math.max(recipe.bounds.height,host.topY+Math.max(...controls.map(c=>c.height)))},
   warnings:[...(recipe.warnings||[]),'Handle and joint are Boolean-fused; verify torque, print orientation, grip texture and pinch points on a physical sample.']};
 }
