@@ -56,7 +56,7 @@ export function previewRecipe(THREE, recipe, colours=[0x88bbff,0xffcf70]) {
  const group=new THREE.Group();
  for(const [role,parts] of [['primary',recipe.positive],['secondary',recipe.secondary||[]]])for(const part of parts){
   const mesh=new THREE.Mesh(recipeGeometry(THREE,part),new THREE.MeshStandardMaterial({color:colours[role==='primary'?0:1],roughness:.55,flatShading:false}));
-  mesh.userData.materialRole=role;mesh.userData.partId=part.partId;group.add(mesh);
+  mesh.userData.materialRole=role;mesh.userData.partId=part.partId;mesh.userData.gearTopId=part.gearTopId;group.add(mesh);
   if(role==='primary'&&recipe.dualMaterial&&recipe.materialSplitRole==='top'){
    const y=recipe.materialSplitHeight;
    mesh.material.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,-1,0),y)];
