@@ -61,7 +61,7 @@ Only in the draft integration branch; **not a production release**. Owner approv
 ## v0.16.0-dev.35.34 — Find templates and projects in Library
 
 - Browse templates first, then open saved versions from collapsible project folders.
-- Choose the current project, a saved project version or a new project for a template. Cancel to keep the workspace unchanged.
+- See the active project separately from its saved versions. Fold or expand each folder with the keyboard.
 
 ## v0.16.0-dev.35.33 — Save and switch projects safely
 

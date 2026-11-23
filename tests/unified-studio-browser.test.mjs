@@ -405,8 +405,8 @@ try{
  await page.locator('#smsTemplates').press('Enter');
  const starter=page.getByRole('button',{name:'Create project from template'});
  await starter.waitFor();
+ page.once('dialog',dialog=>dialog.dismiss());
  await starter.press('Enter');
- await page.getByRole('dialog',{name:'Choose template target'}).getByRole('button',{name:'Cancel',exact:true}).click();
  assert.equal(await page.locator('#smsProjectTitle').inputValue(),'Current unsaved title');
  await shot('wt015-templates');
  await page.locator('#smsLibraryAll').press('Enter');
@@ -506,17 +506,15 @@ try{
  await page.locator('#smsTemplates').press('Enter');
  const pinned=page.locator('article').filter({has:page.getByRole('heading',{name:'Pinned model starter',exact:true})});
  await pinned.getByRole('button',{name:'Linked copy',exact:true}).click();
- await page.getByRole('dialog',{name:'Choose template target'}).getByRole('button',{name:'Current project',exact:true}).click();
  const link=await page.evaluate(()=>window.__sensoryStudio.currentModel.link);
  assert.equal(link.revision,1);
  await page.locator('#smsLibrary').click();
  await pinned.getByRole('button',{name:'Independent copy',exact:true}).click();
- await page.getByRole('dialog',{name:'Choose template target'}).getByRole('button',{name:'Current project',exact:true}).click();
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.link),null);
  const previousProject=await page.evaluate(()=>window.__sensoryStudio.project.id);
  await page.locator('#smsLibrary').click();
+ page.once('dialog',dialog=>dialog.accept());
  await page.getByRole('button',{name:'Create project from template'}).press('Enter');
- await page.getByRole('dialog',{name:'Choose template target'}).getByRole('button',{name:'New project',exact:true}).click();
  assert.notEqual(await page.evaluate(()=>window.__sensoryStudio.project.id),previousProject);
  assert.deepEqual(await snapshot(),savedModels);
  await shot('wt015-restored-project');
@@ -3388,7 +3386,7 @@ try{
    geometry.dispose();material.dispose();
   }
  }
- // WT-023B: isolated legacy v1 workspace, duplicate titles and all target choices.
+ // WT-023B: isolated legacy v1 workspace, duplicate titles and keyboard folder state.
  {
   const {createProject,createModel,addModel}=await import('../studio-documents.js');
   const activeProject=createProject({id:'active-project',title:'Same name'});
@@ -3415,45 +3413,25 @@ try{
    assert.equal(await folders.filter({has:targetPage.locator('[data-snapshot-id="version-1"]')}).locator('[data-snapshot-id]').count(),2);
    assert.equal(await targetPage.locator('#smsBuiltInTemplates button').count(),7);
    assert(await targetPage.locator('#smsTemplateSection').evaluate(section=>section.nextElementSibling.id==='smsProjectsSection'));
-   await targetPage.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
-   const unchanged=await storage();
-   const targetDialog=targetPage.getByRole('dialog',{name:'Choose template target'});
-   const chooseFamily=()=>targetPage.locator('#smsBuiltInTemplates button').first().click();
-   await targetPage.evaluate(()=>{
-    const set=Storage.prototype.setItem;
-    window.__wt023Writes=0;
-    window.__wt023StorageRestore=()=>{Storage.prototype.setItem=set;};
-    Storage.prototype.setItem=function(...args){window.__wt023Writes++;return set.apply(this,args);};
-   });
-   await chooseFamily();
-   await targetDialog.getByRole('button',{name:'Cancel',exact:true}).press('Enter');
-   assert.equal(await storage(),unchanged);
-   assert.equal(await targetPage.evaluate(()=>window.__wt023Writes),0);
-   await targetPage.evaluate(()=>window.__wt023StorageRestore());
-   await targetPage.screenshot({path:'qa/wt023b-library-narrow.png'});
-   await chooseFamily();
-   await targetDialog.getByRole('button',{name:'Current project',exact:true}).click();
-   assert.equal((await modelIds()).length,2);
-   assert.equal(JSON.parse(await storage()).project.id,'active-project');
+   const folder=folders.filter({has:targetPage.locator('[data-snapshot-id="version-1"]')});
+   const summary=folder.locator(':scope > summary');
+   await summary.press('Enter');
+   assert.equal(await folder.evaluate(element=>element.open),false);
+   await targetPage.reload();
+   await targetPage.waitForFunction(()=>window.__sensoryStudio);
    await openLibrary();
-   await chooseFamily();
-   await targetDialog.getByRole('combobox',{name:'Saved project version'}).selectOption('version-2');
-   await targetDialog.getByRole('button',{name:'Existing saved project'}).click();
+   assert.equal(await folder.evaluate(element=>element.open),false);
+   await summary.press('Enter');
+   await targetPage.screenshot({path:'qa/wt023b-library-narrow.png'});
+   targetPage.once('dialog',dialog=>dialog.accept());
+   await folder.locator('[data-snapshot-id="version-2"] button').first().press('Enter');
    const switched=JSON.parse(await storage());
    assert.equal(switched.project.id,'other-project');
    assert.deepEqual(switched.project.models[0],second.models[0]);
    assert.deepEqual(switched.savedProjects.filter(item=>item.snapshotId.startsWith('version-')),[first,second]);
-   assert.equal(await targetPage.getByRole('tab',{name:'Same name : Saved tile',exact:true}).count(),1);
+   assert.deepEqual(await modelIds(),['shared-model']);
    await targetPage.reload();
    await targetPage.waitForFunction(()=>window.__sensoryStudio?.project.id==='other-project');
-   assert.equal((await modelIds()).length,2);
-   await openLibrary();
-   await chooseFamily();
-   await targetDialog.getByRole('button',{name:'New project',exact:true}).click();
-   assert.equal((await modelIds()).length,1);
-   const created=JSON.parse(await storage());
-   assert.notEqual(created.project.id,'other-project');
-   assert(created.savedProjects.some(item=>item.id==='other-project'&&item.models.length===2));
   }finally{await targetPage.close();}
  }
  assert.deepEqual(errors,[]);

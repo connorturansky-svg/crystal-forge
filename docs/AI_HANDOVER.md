@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## WT-023B B1 Library view
+
+Templates precede single-level project folders. The index derives folders from `project.id` and versions from `snapshotId`; collapse preferences live in session storage. Opening a saved version uses WT-023A. Existing template actions keep their destinations and naming behavior. Template destination selection, naming, resources and cloud UI are follow-ups. See #139 and draft #151 for verification and merge dependency.
+
 ## WT-023A project persistence foundation
 
 Project folders can derive from `project.id`; saved versions use `snapshotId`. Model IDs and tabs are project-local, and links still pin a Library source and revision. No workspace or vault schema change is needed. Explicit saves and project switches validate and store one complete v1 workspace before publishing the new state. Only active jobs that rely on discarded preparation are marked stale. Historical missing and duplicate snapshot IDs receive stable, non-overlapping IDs on the next successful workspace write. The independent read-only folder-index implementation and its characterization remain in #146 for owner review. See #138 for scope and the implementation PR for exact-head evidence.

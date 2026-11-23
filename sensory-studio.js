@@ -1,4 +1,4 @@
-import {listProjectFolders,projectModelTabLabel} from './studio-project-index.js';
+import {listProjectFolders} from './studio-project-index.js';
 import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive,assertWorkspaceVersion,projectWorkspaceCandidate} from './studio-sync-plan.js';
 import {readMeshFile,importedMeshRecipe,MAX_MESH_BYTES} from './studio-mesh-import.js';
 import {parseSvgArtwork,createSvgImport,MAX_SVG_BYTES} from './svg-import/index.js';
@@ -11,7 +11,7 @@ import {pixelBuilderMarkup,pixelHoleMarkup,bindPixelBuilder,pixelProfiles,stable
 import {stableMounts,newMount,mountHoleIssue,mountProfiles,manualMountProfiles,blindMountProfile,recessDimensions,MAX_NATIVE_MOUNTS,patternMountIssues} from './studio-mount-builder.js';
 import {mountPatternEditor} from './mounting-pattern-editor.js';
 import {mountPatternViewport} from './mounting-pattern-viewport.js';
-import {createProject,createModel,addModel,findModel,openTab,closeTab,reorderTabs,duplicateModel,editModel,
+import {createModel,addModel,findModel,openTab,closeTab,reorderTabs,duplicateModel,editModel,
  queueModel,beginPreparation,finishPreparation,cancelPreparation,canExport,resolveJobPrinter,movePrintJob,invalidatePrintJob,saveLibraryRevision,
  insertLibraryModel,availableLinkedUpdate,acceptLinkedUpdate,breakLink,modelFingerprint,validateProject,WORKSPACE_KEY,newId} from './studio-documents.js';
 import {makeCatalogue,applyBuildModules,generators} from './studio-catalogue.js';
@@ -459,7 +459,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  if(!project.models.length)addModel(project,createModel({name:snapshot.settings.title||'Crystal Mine',typeId:'crystals',parameters:snapshot.settings,editableState:{crystals:snapshot.crystals,selectedId:snapshot.selectedId}}));
  if(!project.tabs.length)openTab(project,project.models[0].id);
  $('smsProjectTitle').value=project.title;
- $('smsProjectTitle').onchange=()=>{project.title=$('smsProjectTitle').value.trim()||'Untitled project';renderTabs();save();};
+ $('smsProjectTitle').onchange=()=>{project.title=$('smsProjectTitle').value.trim()||'Untitled project';save();};
  $('smsReload').onclick=()=>{
   try{
    saveImmediately();
@@ -725,8 +725,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   }
   const root=$('smsTabs');root.replaceChildren();
   for(const id of project.tabs){const model=findModel(project,id),button=document.createElement('button');button.role='tab';button.dataset.modelTheme=model.generator.typeId;button.id='model-tab-'+id;button.setAttribute('aria-selected',String(currentId===id&&mode==='model'));button.tabIndex=currentId===id?0:-1;
-   button.textContent=projectModelTabLabel(project,model)+(project.printJobs.some(j=>j.modelId===id&&j.status==='preparing')?' ⏳':'');button.draggable=true;
-   button.setAttribute('aria-label',projectModelTabLabel(project,model));
+   button.textContent=model.name+(project.printJobs.some(j=>j.modelId===id&&j.status==='preparing')?' ⏳':'');button.draggable=true;
+   button.setAttribute('aria-label',model.name);
    if(shell)button.prepend(modelPicture(model.thumbnail||(model.id===currentId&&model.generator.typeId==='crystals'?thumbnail(adapter.previewGroup()):null)));
    const close=document.createElement('span');close.textContent='×';close.className='close-tab';close.setAttribute('aria-hidden','true');button.append(close);
    button.onclick=e=>{if(e.target===close){closeModel(id);return;}switchModel(id);};
@@ -742,14 +742,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(c?.group)disposeGroup(c.group);else if(c)adapter.release(c);cache.delete(id);
   if(project.activeTab)switchModel(project.activeTab);else showLibrary();save();
  }
- function newFamilyModel(typeId,parameters=null,name=null){
+ function add(typeId,parameters=null,name=null){
   const g=registry.get(typeId),p={...g.defaultParameters,...parameters};
   const editableState=typeId==='crystals'?adapter.createCrystals(p):{};
-  return createModel({name:name||g.displayName,typeId,parameters:p,editableState});
- }
- function add(typeId,parameters=null,name=null){
-  const model=newFamilyModel(typeId,parameters,name);
-  addModel(project,model);switchModel(model.id);return model;
+  const model=createModel({name:name||g.displayName,typeId,parameters:p,editableState});addModel(project,model);switchModel(model.id);return model;
  }
  function control(schema,p){
   const key=esc(schema.key),label=esc(schema.label||schema.key),value=p[schema.key];
@@ -2625,7 +2621,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const button=document.createElement('button');button.type='button';button.className='sms-picker-choice';
    button.setAttribute('aria-label','New '+family.displayName+' from template');
    button.append(startingPointPicture(family),family.displayName);
-   button.onclick=()=>chooseTemplateTarget(family.displayName,target=>addModel(target,newFamilyModel(family.typeId)));
+   button.onclick=()=>{
+    add(family.typeId);
+    document.querySelector('.workspace-tabs [data-tab=design]').click();
+   };
    tile.append(button);grid.append(tile);
   }
   if(!grid.childElementCount)return;
@@ -2650,61 +2649,16 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     const button=document.createElement('button');button.type='button';button.textContent=name;button.onclick=handler;controls.append(button);
    };
    if(source&&template.kind==='model')for(const [name,linked] of [['Independent copy',false],['Linked copy',true]])action(name,()=>{
-    chooseTemplateTarget(template.name,target=>insertLibraryModel(target,state.library,template.sourceId,{revision:template.revision,linked}));
+    const model=insertLibraryModel(project,state.library,template.sourceId,{revision:template.revision,linked});switchModel(model.id);
    });
-   if(source&&template.kind==='project')action('Create project from template',()=>chooseTemplateTarget(template.name,target=>{
-    for(const model of source.models)addModel(target,{...copy(model),id:newId()});
-   },()=>templateProject(source)));
+   if(source&&template.kind==='project')action('Create project from template',()=>{
+    if(!confirm('Create a new project from this template? Your current project will be saved as a recoverable copy.'))return;
+    saveProjectSnapshot(templateProject(source));
+   });
    action('Remove template',()=>{if(confirm('Remove this template? Its source stays in the Library.'))editOrganisation(next=>{next.templates=next.templates.filter(t=>t.id!==template.id);});});
    grid.append(tile);
   }
   if(!grid.childElementCount)grid.textContent='No matching templates. Save a model or project as a reusable template to get started.';
- }
- function chooseTemplateTarget(name,append,create=()=>createProject({title:name})){
-  const dialog=document.createElement('dialog');
-  dialog.setAttribute('aria-labelledby','smsTemplateTargetTitle');
-  dialog.innerHTML='<h2 id="smsTemplateTargetTitle">Choose template target</h2><p data-template-name></p><p>Opening another project saves the current project as a recoverable version.</p><label>Saved project version <select><option value="">Choose a saved version</option></select></label><div class="sms-actions"><button type="button" data-target="current">Current project</button><button type="button" data-target="saved" disabled>Existing saved project</button><button type="button" data-target="new">New project</button><form method="dialog"><button>Cancel</button></form></div><p role="status"></p>';
-  dialog.querySelector('[data-template-name]').textContent=name;
-  const select=dialog.querySelector('select'),status=dialog.querySelector('[role=status]');
-  const savedButton=dialog.querySelector('[data-target=saved]');
-  const folders=listProjectFolders(state);
-  for(const folder of folders){
-   if(!folder.snapshots.length)continue;
-   const group=document.createElement('optgroup');
-   group.label=folders.filter(item=>item.title===folder.title).length>1?folder.title+' · '+folder.id.slice(0,8):folder.title;
-   for(const [index,version] of folder.snapshots.entries())
-    group.append(new Option(version.title+' · Saved version '+(index+1)+' · '+version.models.length+' models',version.snapshotId));
-   select.append(group);
-  }
-  select.onchange=()=>{savedButton.disabled=!select.value;};
-  if(select.options.length===1)select.disabled=true;
-  for(const button of dialog.querySelectorAll('[data-target]'))button.onclick=()=>{
-   try{
-    const kind=button.dataset.target;
-    if(kind==='current'){
-     const next=copy(project);
-     append(next);
-     validateArchive({...state,project:next});
-     writeWorkspace({...state,project:next});
-     clearTimeout(saveTimer);dirty=false;
-     project.models.push(...next.models.slice(project.models.length));
-     project.tabs=next.tabs;
-     dialog.close();
-     if(next.activeTab)switchModel(next.activeTab);
-     else $('smsSaveState').textContent='Saved locally';
-     return;
-    }
-    const saved=kind==='saved'?state.savedProjects.find(item=>item.snapshotId===select.value):null;
-    if(kind==='saved'&&!saved)throw Error('Choose a saved project version.');
-    const next=saved?copy(saved):create();
-    // A complete project template supplies its own models when creating a project.
-    if(saved||!next.models.length)append(next);
-    if(!saveProjectSnapshot(next))throw Error('The project could not be saved. Your current project is still open.');
-    dialog.close();
-   }catch(error){status.textContent=error.message;}
-  };
-  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
-  document.body.append(dialog);dialog.showModal();
  }
  function recoveryStatus(message){
   const node=$('smsSyncState');if(node)node.textContent=message;else adapter.status(message);
