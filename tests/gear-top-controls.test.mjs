@@ -62,7 +62,7 @@ const withFixings=()=>applyBuildModules(gearGenerator.recipe({
  ...gearGenerator.defaultParameters,webStyle:'Solid',bore:8,diameter:100
 }),{mounting:true,spacing:44,holeDiameter:3.4,gearTopControls:[spindle]},gearGenerator.capabilities);
 assert.throws(withFixings,/existing pixel, fixing or hardware cut/,'New grips must not cover existing fixing cuts.');
-assert.equal(gearTopPlacementIssue({...knob,x:0},{
+assert.match(gearTopPlacementIssue({...knob,x:0},{
  ...base.gearHost,hardwareExclusions:[{x:0,z:0,radius:7}]
-}),null===true?'':/existing pixel, fixing or hardware cut/,'Explicit hardware footprints block a centred knob.');
+}),/existing pixel, fixing or hardware cut/,'Explicit hardware footprints block a centred knob.');
 console.log('WT-026 gear top: presets, exact bounds, geometry, collision, stable IDs and bore recipe passed.');
