@@ -161,3 +161,23 @@ dialog[aria-label="Review backup"] .sms-actions{flex-wrap:wrap}
 .sms-tool-result{display:grid;text-align:left;gap:3px;white-space:normal;font-size:12px;padding:8px;border-radius:7px}
 .sms-tool-result small{display:block;font-weight:400;line-height:1.35;color:var(--muted)}
 .sms-tool-result:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+
+/* WT-025A: readable everyday controls. Do not change preview/geometry markers. */
+.sms-unified .topbar button{min-height:34px;padding:6px 9px}
+.sms-unified .sms-product .brand{font-size:1.0625rem;line-height:1.25}
+.sms-product .version{font-size:.75rem;line-height:1.35}
+.sms-unified #smsSaveState,#smsModelDimensions{font-size:.875rem;line-height:1.45}
+.sms-workspace-nav button{min-height:36px;padding:7px 10px}
+.sms-descriptor,.sms-tool-finder>p,.sms-tool-result small{font-size:.875rem;line-height:1.5}
+.sms-tool-finder>label,#smsJobs fieldset label{font-size:.9375rem;line-height:1.5}
+.sms-tool-result{font-size:.9375rem;line-height:1.5;padding:10px}
+.sms-context-controls label,.sms-context-controls fieldset,.sms-visual-range-caption{line-height:1.5}
+.sms-visual-range .sms-precision-reset{font-size:.875rem}
+.sms-rail .studio-modeltabs button{padding:6px 9px}
+.sms-unified .sms-side-heading{min-height:40px}
+.sms-unified :is(.sms-tool-finder,.sms-palette,.sms-side-body){overflow-wrap:break-word}
+@media(max-width:600px){
+ .sms-unified .topbar button{white-space:normal}
+ .sms-unified #smsModelDimensions{white-space:normal}
+ .sms-tool-finder-results{max-height:min(40dvh,320px)}
+}
