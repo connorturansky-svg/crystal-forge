@@ -21,6 +21,10 @@
 - **C — Verified content parity:** complete human copy for all classic controls, native parameter schemas, hardware/pixels/wiring/Print Centre and editable modals; generate coverage manifest; avoid generic placeholders.
 - **D — Regression + release:** full seven family/eight workspace Chromium, UI-only persistence, search focus, 390 px, both themes and existing manufacturing pipelines. Only then remove `#contextHelp` and old CSS, update in-app Help/What’s New and external user docs, with release metadata.
 
+## Ready-made QA preflight — check whether #156 is merged
+
+[QA PR #156](https://github.com/connorturansky-svg/crystal-forge/pull/156) adds a standalone, source-only inventory and unit tests. Once it is on your working branch, run `npm run help:audit` to print structured gaps; do **not** reimplement the same parser. If #156 is still a draft on another branch, read its diff or use the one-off snippet in the coverage audit, and report the dependency. **Its inventory does not certify native/UI completeness, user comprehension or accessibility.**
+
 ## Final release rule and efficient handover
 
 **Do not merge a visible half-finished feature.** Core helper and registry commits are fine on a feature branch, but all 7 families/8 workspaces and applicable modals must pass the coverage and interaction gates before exposing the two checkboxes on main. If implementation spans PRs, stack clearly and merge only the completed user-facing chain after owner approval; an internal-only foundation must remain invisible and inert on production.

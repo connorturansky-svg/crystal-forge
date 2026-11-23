@@ -75,6 +75,14 @@ Classification: `explained`, `explicitly excluded (not a setting)`, `missing`, `
 5. Save/reload a project containing seven models, existing print jobs and measured pixel profiles. Toggling help must not update any project value, job status, model ID, last saved revision or private vault hash.
 6. Open/close the pixel profile editor, mounting patterns and print controls; no duplicate/stranded inline help or trapped focus. Run global search and Enter to navigate to the actual control.
 
+## Companion automated source inventory (separate QA PR #156)
+
+A focused **test-only** utility now exists in [PR #156](https://github.com/connorturansky-svg/crystal-forge/pull/156): `scripts/wt024-help-audit.mjs`, `tests/wt024-help-audit.test.mjs` and the `npm run help:audit` command.
+
+**Only run it on a branch that actually contains #156**; the command does not exist on the base main until that QA PR is approved/merged or deliberately incorporated. It reports classic exact legacy gaps, literal native schema keys and likely dynamic selectors, in deterministic JSON, **without changing a project or any DOM**. Static CI runs the parser regression; the separate `--fail-on-legacy-gaps` argument is deliberately *not* in CI because the existing app is known incomplete.
+
+This is a productivity tool, **not** the release gate. Codex must still supply a runtime Chromium control census, human-reviewed detailed copy and the final zero-missing gate for all visible settings and relevant dialogs. Never count an attribute selector as an actual setting until its rendered role is inspected.
+
 ## Risk register
 
 | Risk | Mitigation |
