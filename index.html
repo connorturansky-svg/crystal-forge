@@ -172,6 +172,8 @@ body.theme-light .cloud-sync-panel summary{color:#142d44}
 /* WT-025A: readable defaults, without changing the 3D viewport or physical geometry. */
 :root{--cf-reading-size:1rem;--cf-supporting-size:.875rem;--cf-focus-ring:#9bdcff}
 body.theme-light{--cf-focus-ring:#17549e}
+/* Darken secondary text that was borderline under 4.5:1 in the light theme. */
+body.theme-light .panelhead span,body.theme-light .filename,body.theme-light .note,body.theme-light .treeentry .treeactions,body.theme-light .dialog-body .release time{color:#405976}
 body{font-size:var(--cf-reading-size);line-height:1.5}
 .control label,.checks{font-size:.9375rem;line-height:1.5}
 .panelhead h2{font-size:1.125rem;line-height:1.35}
