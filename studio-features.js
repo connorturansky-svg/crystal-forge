@@ -1,7 +1,7 @@
 const builders=[
  ['crystals','Crystal Clusters','Shape a faceted cluster, edit individual crystals and fit an illuminated base.'],
  ['tactile-tiles','Tactile Texture Tiles','Choose a relief pattern and outline, then add fittings and real edge tabs.'],
- ['gears','Cogs & Gears','Design solid or openwork wheels. Cable channels require a compatible solid surface.'],
+ ['gears','Cogs & Gears','Design solid or openwork wheels with placed tactile knobs, tapered off-centre handles and textured turning grips. Cable channels need compatible solid stock.'],
  ['waves','Waves & Organic Forms','Sculpt flowing surfaces. Gentle parallel Waves can carry a groove along their surface.'],
  ['control-caps','Buttons & Control Caps','Design a control shell or a stationary display. Fixed tabs require stationary stock.'],
  ['characters','Characters & Silhouettes','Shape a flat or layered character. An optional backing adds room for fittings and tabs.'],
