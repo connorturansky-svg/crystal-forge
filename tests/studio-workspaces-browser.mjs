@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {WORKSPACE_KEY} from '../studio-documents.js';
 import {chromium} from 'playwright';
 
 const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
@@ -77,5 +78,45 @@ try{
   assert.equal(await destination('Wiring').getAttribute('aria-current'),'step');
   assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.generator.typeId),family);
  }
+
+ // End-to-end post-merge protection: navigation may not merely keep a model
+ // alive in memory. All builders and the real mounting edit must survive a
+ // serialized v1 save and a full new document load on the same browser.
+ await page.waitForFunction(key=>{
+  const raw=localStorage.getItem(key);
+  if(!raw)return false;
+  try{
+   const data=JSON.parse(raw),types=new Set(data.project.models.map(x=>x.generator.typeId));
+   return ['gears','crystals','tactile-tiles','waves','control-caps','characters','light-pods']
+    .every(type=>types.has(type)) &&
+    data.project.models.some(model=>model.generator.typeId==='gears' &&
+      model.build.manualMountHoles?.length===1);
+  }catch{return false;}
+ },WORKSPACE_KEY,{timeout:15000});
+ const saved=await page.evaluate(key=>{
+  const state=JSON.parse(localStorage.getItem(key)),project=state.project;
+  return {id:project.id,tabs:[...project.tabs],activeTab:project.activeTab,
+   models:project.models.map(m=>({id:m.id,name:m.name,type:m.generator.typeId,
+    revision:m.revision,pixelHoles:m.build.pixelHoles?.length??0,
+    mountingHoles:m.build.manualMountHoles?.length??0})),
+   jobs:project.printJobs.map(j=>({id:j.id,revision:j.revision,status:j.status})),
+   savedSnapshots:(state.savedProjects||[]).map(p=>p.snapshotId)};
+ },WORKSPACE_KEY);
+ await page.reload();
+ await page.waitForFunction(()=>window.__sensoryStudio);
+ const reloaded=await page.evaluate(key=>{
+  const state=JSON.parse(localStorage.getItem(key)),project=state.project;
+  return {id:project.id,tabs:[...project.tabs],activeTab:project.activeTab,
+   models:project.models.map(m=>({id:m.id,name:m.name,type:m.generator.typeId,
+    revision:m.revision,pixelHoles:m.build.pixelHoles?.length??0,
+    mountingHoles:m.build.manualMountHoles?.length??0})),
+   jobs:project.printJobs.map(j=>({id:j.id,revision:j.revision,status:j.status})),
+   savedSnapshots:(state.savedProjects||[]).map(p=>p.snapshotId)};
+ },WORKSPACE_KEY);
+ assert.deepEqual(reloaded,saved,
+  'Seven builders, real mounting placement, tab order and job revisions survive reload');
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.project.id),saved.id);
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.id),saved.activeTab);
+ console.log('Post-merge Studio cross-builder saved state, model tabs and real mount placement survived reload.');
  console.log('WT-022 workspaces: keyboard, retained model, actual mounting gesture and narrow navigation passed');
 }finally{await browser.close();}

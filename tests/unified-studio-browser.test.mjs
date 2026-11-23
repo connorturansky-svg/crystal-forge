@@ -3438,8 +3438,13 @@ try{
  assert.deepEqual(errors,[]);
  console.log('Unified Home, Design, Build, Library and Quick Print screenshots captured.');
 }catch(error){
+ console.error('Unified browser failure:',error);
  console.error('Unified browser page errors:',errors);
- await fs.mkdir('qa',{recursive:true});
- await page.screenshot({path:'qa/unified-wt006-failure.png'});
+ try{
+  await fs.mkdir('qa',{recursive:true});
+  await page.screenshot({path:'qa/unified-wt006-failure.png',timeout:3000});
+ }catch(screenshotError){
+  console.warn('Could not capture unified browser failure screenshot:',screenshotError);
+ }
  throw error;
 }finally{await browser.close();}

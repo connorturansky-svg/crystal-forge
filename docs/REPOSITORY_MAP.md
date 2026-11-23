@@ -1,6 +1,6 @@
 # Repository map — start here before opening 100 files
 
-**Latest orientation (22 Nov 2026):** main `dddb172a26b5d9e2b70df607951f938069b62ab3` includes merged #135 Wave and #136 Support-Free Shoulders search. Current owner-approved software milestone is [WT-023 Library/cloud #137](https://github.com/connorturansky-svg/crystal-forge/issues/137), starting with [WT-023A data identities #138](https://github.com/connorturansky-svg/crystal-forge/issues/138). [Minimal Codex entrypoint](WT023_CODEX_FAST_START.md), [architecture planning draft #144](https://github.com/connorturansky-svg/crystal-forge/pull/144) and [test-only prework draft #146](https://github.com/connorturansky-svg/crystal-forge/pull/146) are the relevant starting points. Old WT-021 and early WT-022 paragraphs are historical. Recheck GitHub current main and active PRs before coding.
+**Current orientation (23 Nov 2026):** main `d2ee1ab84ea41d363d9448df436732a286bf2c54` includes merged CI efficiency #131, approved WT-023 architecture #144, and independent test-only project-index prework #146. Codex's data-layer #147 is still a **draft** and behind main; the next feature milestone is [WT-023B #139](https://github.com/connorturansky-svg/crystal-forge/issues/139), not a new WT-023A architecture exercise. Start at [Codex fast start](WT023_CODEX_FAST_START.md) and [status](PROJECT_STATUS.md). Recheck live GitHub before changing code; archived WT-021 and WT-022 entries remain historical.
 
 ## For a human opening the repository
 
@@ -47,7 +47,7 @@ Only call a check **passed** when it actually executed on the exact branch/PR SH
 
 ## Documentation: what's current versus historic
 
-- Current owner-approved Library/cloud milestone: [WT-023 #137](https://github.com/connorturansky-svg/crystal-forge/issues/137), first task [#138](https://github.com/connorturansky-svg/crystal-forge/issues/138); WT-022 #127 is prior navigation/search scope.
+- Current owner-approved Library/cloud milestone: [WT-023 #137](https://github.com/connorturansky-svg/crystal-forge/issues/137), next feature [#139](https://github.com/connorturansky-svg/crystal-forge/issues/139) after #147 source/data integration; WT-022 #127 is prior navigation/search scope.
 - Engineering constraints: [AGENTS.md](../AGENTS.md), [architecture](ARCHITECTURE.md), [testing](TESTING.md).
 - Former WT-021 specifics: `docs/WT021_*.md`, `prompts/START_HERE.md` and `prompts/active/WT021_*.md`: retain for provenance, but treat dated instructions as historical.
 - Long chronology: [AI handover](AI_HANDOVER.md), [roadmap](ROADMAP.md), [development history](DEVELOPMENT_HISTORY.md); do not restart superseded branches on the basis of these records.
