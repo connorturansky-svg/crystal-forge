@@ -34,3 +34,20 @@ This is manual, not automatic sync. Open a Crystal model's saved-project control
 - **Could not read backup:** Check that you selected the original backup JSON, not a print export or a partially downloaded file. Try another dated backup; keep the original file.
 - **Recovery won't apply:** Leave the current workspace open. Read the message in the review dialog. If local work changed, review the backup again. If storage is full, download a complete backup before clearing any data.
 - **Need the previous state:** In **Backups & Recovery**, select a dated **Review local snapshot** if available. It uses the same review process rather than rolling back your entire workspace. These snapshots are stored in the browser, so they aren't a substitute for a downloaded backup.
+
+## Your privacy: the public Studio is not a public Library
+
+Anyone can open the public Crystal Forge editor, but that does **not** let them read your locally saved projects or your private GitHub backup. The app stores editable Studio data in the browser profile currently in use. Your private cloud backup stays in a **separate private GitHub data repository** and requires valid repository authorisation. Do not upload private workspace JSON to the public `crystal-forge` source repository.
+
+A four-digit PIN is not required for this single-user design and would not securely authorise a private GitHub repository. Lock your computer/browser session when leaving it unattended; GitHub's repository permissions and revocable, repository-restricted credentials protect the remote data.
+
+### Connect a second device (current manual workflow)
+
+1. Create a separate **Private** GitHub repository for the Library. Generate a **fine-grained personal access token** limited to that repository with **Contents: Read and write** permission. GitHub's [official token guide](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) explains how; write includes read. Never put the token in a GitHub Issue, commit, screenshot or saved project.
+2. In the **current** app, open a Crystal model's saved-project controls and expand **Private GitHub sync**, then enter the `owner/repository` name and the token and connect. This setup is currently separate from the Studio Library; WT-023E will make it accessible from Library directly. The token is kept in client session memory and must be supplied again after a new session.
+3. On the first device, use **Library → Backups & Recovery → Upload studio backup**. Wait for confirmation of the remote manifest; **Saved locally** is not the same as **Backed up on GitHub**.
+4. On the second device, connect to the same private repository and select **Check private backup**. Review differences **before** choosing which copies/projects to import. Checking remote alone does not replace the active project. Explicitly upload the new combined workspace after any changes.
+
+**Important:** Whole-Studio sync is currently manual. The older Crystal editor's auto-sync switch is for the separate legacy Crystal backup, not continuous whole-Studio collaboration. Keep a dated downloaded JSON backup too. The cloud manifest and GitHub commit history help preserve versions, but the Studio UI does **not** yet provide a verified one-click historical remote restore for every Studio revision. A private token can expire or be revoked; if connection fails, keep editing locally and reconnect without deleting files.
+
+**Storage limitations:** GitHub's [repository Contents API](https://docs.github.com/en/rest/repos/contents) returns differently formatted content for files larger than 1 MB, and [rate limits](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api) may affect large Libraries. WT-023E tracks size/retry/recovery hardening; never treat an incomplete or failed upload as a finished backup.
