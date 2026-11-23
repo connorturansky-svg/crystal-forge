@@ -46,7 +46,7 @@ export function inventoryFromCheckout(root){
 }
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+ const root=resolve(dirname(fileURLToPath(import.meta.url)),'../..');
  const result=inventoryFromCheckout(root);
  const json=JSON.stringify(result,null,2);
  process.stdout.write(json+'\n');

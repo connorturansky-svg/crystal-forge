@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {inventoryFromSources,inventoryFromCheckout} from '../scripts/wt024-help-audit.mjs';
+import {inventoryFromSources,inventoryFromCheckout} from './helpers/wt024-help-audit.mjs';
 
 test('inventory deduplicates keys and never treats a generic fallback as documented coverage',()=>{
  const report=inventoryFromSources({
