@@ -9,7 +9,7 @@ import {exportMaterialBodies} from '../studio-material-export.js';
 const wasm=await Module();wasm.setup();
 const base={...gearGenerator.defaultParameters,webStyle:'Solid',bore:8,diameter:100,dualMaterial:false};
 const source=gearGenerator.recipe(base),plain=prepareRecipe(THREE,wasm,source);
-for(const [preset,x] of [['fluted-knob',0],['knurled-dial',0],['offset-spindle',31],['rectangular',0]]){
+for(const [preset,x] of [['fluted-knob',0],['knurled-dial',0],['offset-spindle',24],['rectangular',0]]){
  const control=newGearTopControl('fixture-'+preset,preset,{x,z:0});
  const recipe=applyBuildModules(gearGenerator.recipe(base),{gearTopControls:[control]},gearGenerator.capabilities);
  const preview=previewRecipe(THREE,recipe);
