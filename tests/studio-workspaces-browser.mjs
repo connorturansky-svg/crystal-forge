@@ -92,15 +92,39 @@ try{
  assert((await textSize('.sms-tool-finder>p'))>=14,'Find-tools guidance is readable');
  assert((await textSize('.sms-tool-result'))>=15,'Tool search results are readable');
  await page.locator('#smsFindTools').fill('');
+ // Check computed foreground/background contrast in the real active theme.
+ const contrast=async(foreground,background)=>page.evaluate(({foreground,background})=>{
+  const channels=s=>{
+   const match=s.match(/rgba?\\(([^)]+)\\)/);
+   if(!match)throw Error('Missing computed RGB colour: '+s);
+   return match[1].split(',').slice(0,3).map(v=>Number.parseFloat(v.trim())/255);
+  };
+  const luminance=s=>channels(s).reduce((total,v,i)=>{
+   const linear=v<=.04045?v/12.92:((v+.055)/1.055)**2.4;
+   return total+linear*[.2126,.7152,.0722][i];
+  },0);
+  const fg=luminance(getComputedStyle(document.querySelector(foreground)).color);
+  const bg=luminance(getComputedStyle(document.querySelector(background)).backgroundColor);
+  return (Math.max(fg,bg)+.05)/(Math.min(fg,bg)+.05);
+ },{foreground,background});
+ const auditContrast=async()=>{
+  const label=await contrast('.sms-tool-finder>label','.sms-tool-finder');
+  const note=await contrast('.sms-tool-finder>p','.sms-tool-finder');
+  assert(label>=4.5&&note>=4.5,
+   'Tool finder primary/secondary text must meet 4.5:1 contrast: '+JSON.stringify({label,note}));
+ };
+ await auditContrast();
  await page.locator('#changelogBtn').click();
  assert(await page.locator('#infoChangelog').isVisible(),'What’s New remains available');
  assert((await textSize('.dialog-body'))>=16,'Release notes are readable at default zoom');
+ assert((await contrast('#infoChangelog','.dialog'))>=4.5,'Release notes meet normal-text contrast');
  await page.locator('#infoTabHelp').click();
  assert((await textSize('#infoHelp'))>=16,'Help paragraphs are readable');
  await page.locator('#closeInfo').click();
  await page.locator('#themeBtn').click();
  assert((await textSize('.sms-tool-finder>label'))>=15,'Readable labels survive theme changes');
  assert((await textSize('body'))>=16,'Readable main text survives theme changes');
+ await auditContrast();
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),
   'Readable controls do not create mobile document overflow');
  // Browser text-size overrides must scale the new rem-based typography.
