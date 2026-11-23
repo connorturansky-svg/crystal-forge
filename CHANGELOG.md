@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.34 — Tactile cog grips and off-centre handles
+
+- Add ten Gear-top grip starting points, including offset crank spindles, fluted/knurled dials, rounded rectangular handles and tactile profiles with independent width, depth and height.
+- Double-click a flat cog face or choose Add grip, drag or edit exact X/Z coordinates, and get explicit feedback when a strengthened base overlaps a shaft bore, window or gear edge.
+- Prepare a real Boolean-fused model with round or chamfered grip roots and a continuous measured centre shaft bore through a combined centred knob. Edit all source settings later; bearing-mounted handles, arbitrary Cap-model fusion and physical strength qualification remain future work.
+
 ## v0.16.0-dev.35.32 — Find Support-Free Shoulders
 
 - Find Support-Free Shoulders in global search and open the existing Pixels control, with guidance when a shaped underside socket is needed.
