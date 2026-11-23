@@ -21,6 +21,14 @@
 - **C — Verified content parity:** complete human copy for all classic controls, native parameter schemas, hardware/pixels/wiring/Print Centre and editable modals; generate coverage manifest; avoid generic placeholders.
 - **D — Regression + release:** full seven family/eight workspace Chromium, UI-only persistence, search focus, 390 px, both themes and existing manufacturing pipelines. Only then remove `#contextHelp` and old CSS, update in-app Help/What’s New and external user docs, with release metadata.
 
+## Final release rule and efficient handover
+
+**Do not merge a visible half-finished feature.** Core helper and registry commits are fine on a feature branch, but all 7 families/8 workspaces and applicable modals must pass the coverage and interaction gates before exposing the two checkboxes on main. If implementation spans PRs, stack clearly and merge only the completed user-facing chain after owner approval; an internal-only foundation must remain invisible and inert on production.
+
+For the next Codex session, **start coding rather than re-researching**: use the [source audit's executable snippet](WT024_HELP_COVERAGE_AUDIT.md#reproducible-source-audit-snippet-for-codex-diagnostic-not-a-release-test) to update literal keys, then build the registry and representative Crystal/native vertical slice. Record for every milestone exactly `branch, head SHA, changed files, tests and links, coverage missing, next safe action` in the PR body. Avoid a log that merely says "tested" without an exact command/run.
+
+Reviewers should see screenshots or observations for **both preferences**, actual inline placement, keyboard/touch behaviour and the short-vs-detailed text distinction. Include normal and narrow viewport screenshots and a control-inventory artifact. For new prose use the [plain-language and cognitive readability contract](WT024_HELP_SYSTEM_BLUEPRINT.md#practical-accessibility-typography-and-reading-load); no specialist fonts are required.
+
 ## Tests, stop condition and exact-head report
 
 Focused tests: `tests/context-help-coverage.test.mjs` (proposed), `tests/context-help-browser.mjs` (proposed), legacy `tests/browser-smoke.mjs`, `tests/unified-studio-browser.test.mjs` and actual tooltip accessibility checks. Full suites: `npm run test:static`, `npm run test:browser`, `npm test`, plus all relevant existing native-precision, WT-022 search and Pages packaging checks. Do not change CI to skip slow tests. If the environment cannot run Chromium/Manifold, state the limitation and use Actions exact-head verification; never call a test green solely from older main.

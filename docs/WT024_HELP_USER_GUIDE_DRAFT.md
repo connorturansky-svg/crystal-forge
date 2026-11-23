@@ -12,6 +12,10 @@ Crystal Forge is intended to be usable without prior CAD experience. Two compact
 
 You can enable either option, both or neither. Your choice is remembered on that browser. The options are only about how you **view help**: switching them does not change the model, undo history, exported STL/3MF or saved project versions.
 
+On first use, the planned default is **Hover notes on** and **Detailed explanations off**. If you previously chose the old Descriptions option, that preference will be carried forward so the detailed notes appear. If you decide the extra text is distracting, untick Detailed explanations; your actual design stays unchanged.
+
+You do not need to make these choices separately in every workspace or for every model. They are app-level reading preferences, not tools that alter the print.
+
 ## Example
 
 Imagine you're adjusting **LED fit clearance**. The short note explains that this adds room around the LED in the opening. With Detailed explanations on, you'll also learn that an opening printed at the LED's advertised size may be too tight, while one with too much clearance may not hold the LED securely. You should print a fit coupon with the intended printer and filament rather than assuming the numbers guarantee a fit.

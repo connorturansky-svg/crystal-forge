@@ -83,6 +83,30 @@ Wire up all of:
 
 Prefer instrumentation in the **existing renderers** (plus event delegation) to blind app-wide DOM mutation/observer injection. The UI is rerendered; prevent duplicate help nodes, duplicate listeners, stale model descriptions and focus loss. Content should be lazily materialised for visible controls when Detailed=on, not thousands of hidden extra blocks. Conditional controls receive the same help when they appear.
 
+### Practical accessibility, typography and reading load
+
+This feature is explicitly intended to reduce cognitive load for people with dyslexia, ADHD or limited CAD experience. The two levels must be visually **different but predictable**, not a collection of novelty fonts or tiny coloured annotations.
+
+- Use the existing legible system sans-serif stack; **do not bundle external fonts or force a specialised dyslexia font**. Respect browser font and zoom preferences. Keep ordinary explanatory text at a comfortable readable size (target approximately 16 px at default zoom where layout permits), generous line-height (~1.5), and left alignment with ragged-right edges. Avoid long italic or ALL-CAPS paragraphs; use short bold headings only for wayfinding.
+- Keep paragraph lines reasonably short (target around 50–75 characters where the panel permits) and break long ideas into short paragraphs or one tiny example. Do not justify text or introduce side-scrolling. Distinguish the short note and long explanation by a **label, layout, border/shape and accessible colour**, not by colour alone. Prefer quieter, flat surfaces over highly saturated boxes.
+- This is **not** a new typography/theme preference or a broad redesign. Do not override user-set text spacing. WCAG 1.4.12 requires no loss when user overrides line/word/letter spacing; WCAG 1.4.10 tests reflow at an effective **320 CSS px** (often achieved using 1280 px viewport at 400% zoom). Preserve editor controls under these conditions even if the 3D viewport itself is an exception.
+- Keep the checkbox labels readable and click targets spacious: WCAG 2.2 SC 2.5.8 uses **24 × 24 CSS px** minimum or qualifying spacing/equivalent exceptions; aim for larger comfortable touch targets rather than treating 24 as an ideal.
+- Avoid changing focus or automatically scrolling the editor when the explanation appears. Use in-flow blocks, no sudden side-panel opening, no compulsory animations, and respect `prefers-reduced-motion`. When Detailed is on, every currently visible setting gets its own explanation and users may scroll naturally.
+- Don't put mandatory safety warnings behind a preference. Neither toggle may hide validation errors, fit warnings, inaccessible actions, or other content needed to finish the task.
+- For touch-only users, when Hover notes is enabled, a labelled `?`/information affordance should open the short text on tap with an equally clear close action. With Hover notes **off**, this transient explanatory surface is disabled; Detailed notes remain independently visible if enabled. Screen readers still have the necessary field label, current value and validation semantics in all combinations.
+
+References: [WCAG 2.2 reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html), [text spacing](https://www.w3.org/WAI/WCAG22/Understanding/text-spacing.html), [target size](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html), [Dyslexia Scotland typed formats](https://dyslexiascotland.org.uk/dyslexia-friendly-typed-formats/), and [GOV.UK/DWP hint text guidance](https://design-system.dwp.gov.uk/guidance/hint-text). This is a readability target, not a claim that all users prefer identical typefaces, colours or density.
+
+### Event handling and safe renderer integration
+
+- Keep one shared installed help owner. Wire the two view preferences to its existing `enable()` API or a compatible extension; do **not** leave both the legacy descriptions listeners and the new renderer updating different destinations.
+- Prefer explicit `data-help-key` or an adapter from existing `data-state`, `data-model-param`, and typed dynamic hardware controls. A label's visible text is **not an identity**; the same label (e.g. "Depth") has different meanings across Pixel, Mounting and a specific generator.
+- For native fields derive semantic identity as `generator.typeId + parameter key` with shared content only when verified equivalent; for repeated fitted objects use a scoped instance anchor while allowing them to share correct base text. Conditional values (e.g. mount style) must select appropriate text after changing without leaving stale guidance.
+- In-flow detail belongs in its own element directly following the logical labelled control / fieldset, **outside a wrapping `label`**. Preserve any existing help/status/error `aria-describedby` IDs; avoid attaching entire long paragraphs to inputs on every focus. Use stable IDs only where actually needed and remove stale IDs/nodes on rerender.
+- For a classic dynamic control or a model editor rebuilt with `innerHTML`, add/update inline help through the existing render function or controlled post-render hook. Prevent duplicate nodes/listeners and ensure a model/family switch doesn't reuse stale text or IDs.
+- A truly hoverable popup requires positioning **without a pointer dead-zone**, and pointer leave logic for both anchor and tooltip. `pointer-events:none` must not remain on the visible popup; a noninteractive tooltip still doesn't take keyboard focus or contain buttons/links. Touch-activated interactive content should use an appropriate disclosure or dialog if it ever needs its own focusable actions.
+- Use text nodes and escaped content, never insert user-supplied text as raw HTML. The registry must be pure and must not make model changes, network calls, trigger a print preparation, or mutate stored project data.
+
 ### Copywriting requirements — human before technical
 No "Sets the X parameter" explanations. Start with the user's goal and plain consequence. Technical words may follow in brackets when needed. For every field, review (a) identity and units (b) action/real-world consequence (c) meaningful trade-off (d) related safety/fit limitation (e) example if relevant. The short and detailed tiers must **add information**, not duplicate sentences.
 
@@ -101,6 +125,22 @@ Real examples (authoritative copy still needs family review):
 
 **Do not ship the examples as facts until the control's actual code and geometry behaviour have been reviewed.** In particular, do not imply every family has every option. Native-family copy for Tactile Tiles, Control Caps, Characters and Light Pods must be authored and audited in the implementation PR.
 
+### Family-specific editorial examples (verify against code before shipping)
+
+These are **research prompts, not final vetted copy**; validate real control names, units, defaults and construction effects with the corresponding generator and printer pipeline:
+
+| Family | Candidate explanation to write | Main trade-off to make understandable |
+|---|---|---|
+| Crystal Clusters | Base margin and how far it extends beyond roots | More material / fitting room versus a wider print bed footprint |
+| Tactile Tiles | Relief height and how much the pattern rises or sinks | Strong tactile relief versus local walls/bridges or touch sharpness |
+| Gears | Centre bore and shaft fit | Larger hole versus hub/spoke stock and actual axle tolerance |
+| Waves | Amplitude and the high/low surface shape | Stronger wave shape versus fitting positions and remaining stock |
+| Control Caps | Socket profile and shaft/lever installation style | Better fit to actual actuator versus too loose/tight assembly |
+| Characters | Relief amount, outlines and surface features | Distinct details versus fragile thin raised features |
+| Light Pods | Shell wall and openings | Light passage / interior room versus shell strength and print time |
+
+Review each specific control's source and realistic values before writing advice. Do not assume a parameter changes STL geometry or light output without verified evidence.
+
 ## Test and acceptance contract
 
 | Area | Minimum executable evidence |
@@ -115,6 +155,17 @@ Real examples (authoritative copy still needs family review):
 | Release | Product implementation PR updates in-app Help, What’s New, external user guide, CHANGELOG/version and Pages-specific app guidance **only once implementation passes**; exact-head static/browser/manufacturing gates |
 
 Use existing `npm run test:static`, `npm run test:browser` and `npm test`, plus focused new `tests/context-help*.test.mjs` modules; do not change CI workflow classifiers merely to run docs. Follow `docs/TESTING.md` and issue #10 physical limitations. Reports must distinguish unit/static from real Chromium, automated geometry from actual prints, and CI exact head from earlier merged runs.
+
+## Merge-safe release decision
+
+**The feature must not be presented to users as universal until the coverage gate passes.** Small core/registry work may be tested independently on feature branches, but do not merge a visibly enabled two-checkbox UI into deployable main if large classes of settings still show no explanation. Possible safe paths: stack implementation/content PRs and merge the complete chain together after owner review, or merge an inert, explicitly feature-flagged internal foundation whose toggles remain unreachable in production. A disabled-by-default feature is *not* complete unless the full parity PR is ready.
+
+The reviewer needs **two separate signoffs**:
+
+1. **Planning PR (#153)** — Markdown-only source audit, guide and acceptance criteria are coherent and CI-green; merging this is safe but does **not** release the UI.
+2. **Implementation PR(s)** — full visible-control inventory, two real controls, human explanations, real browser interaction and all required exact-head regressions are green; only then may owners merge and call the feature available.
+
+When the user changes Help preferences, prove that model JSON, project snapshots, print source revision, undo/redo and vault state are identical before/after. Accessibility checks need both automated results and at least one manual keyboard/assistive-technology walkthrough; never equate axe-like tooling with full WCAG certification.
 
 ## Implementation sequence and boundaries
 

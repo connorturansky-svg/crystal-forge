@@ -37,6 +37,44 @@ An implementation test (suggested `tests/context-help-coverage.test.mjs`) should
 6. Exercise key identity across project/model switches so a dynamically reused input never shows stale content.
 7. Expose missing entries as a test failure in the final implementation PR; planning-only PR intentionally adds **no misleading test**.
 
+## Reproducible source-audit snippet for Codex (diagnostic, not a release test)
+
+Run this in a checkout of the **current** repository from its root. It prints the latest literal classic gaps; it cannot see all runtime conditional native controls, so **never** treat a zero-gap result as completion.
+
+```bash
+node --input-type=module <<'NODE'
+import fs from 'node:fs';
+const index=fs.readFileSync('index.html','utf8');
+const tips=fs.readFileSync('tooltips.js','utf8');
+const settings=tips.split('const SETTINGS=')[1]?.split('const BUTTONS=')[0]||'';
+const keys=new Set([...settings.matchAll(/^\s*"([^"]+)"\s*:\s*\[/gm)].map(m=>m[1]));
+const controls=new Set([...index.matchAll(/\bdata-state="([^"]+)"/g)].map(m=>m[1]));
+const missing=[...controls].filter(key=>!keys.has(key)).sort();
+console.log(JSON.stringify({controls:controls.size,keys:keys.size,missing},null,2));
+NODE
+```
+
+This is intentionally a **legacy mapping inventory**, not a specification for the future registry. With the audited main head, it should show **112 classic data-state keys, 113 explicit SETTINGS keys and 15 missing exact names**. Any discrepancy means main has changed: update the issue with the new source evidence, not the code to force old numbers.
+
+### Required runtime coverage report
+
+A real Chromium audit must iterate the actual rendered controls in every reachable workspace/model/mode and produce a machine-readable table (never only a screenshot):
+
+```text
+family | workspace | mode | section/dialog | semantic help key | label | short? | inline? | excluded + reason | current visibility
+```
+
+Classification: `explained`, `explicitly excluded (not a setting)`, `missing`, `not reachable`. **Absent or generic-template copy is missing, not explained.** Include conditional controls discovered by clicking options, created pixel/mount rows, profile editors and Print Centre forms. Separate a currently hidden field from one with no text. The final shipping gate is **zero missing for all applicable controls**, along with human review of content quality, not a high percentage alone.
+
+### Manual QA script for owner / non-coding agent
+
+1. Choose Crystal → Design; turn both preferences **off** and confirm there are no transient or inline explanations but ordinary warnings remain. Turn Hover on: hover and then move the pointer into a tooltip; Escape must close it. Focus the same field with Tab; Help appears without changing its value.
+2. Turn Detailed on: explanation appears **below the setting**, not in `#contextHelp` or a right floating card. Change the model parameter, switch to another workspace then back and verify the control value and explanation persist.
+3. Switch to a different native family (Gear then Wave then another family). Explain identically named **Depth** controls differently when their physical meaning is different; verify long text follows the correct field when sections rebuild.
+4. At a 390 px viewport, touch-help and both checkboxes are operable; at 400% browser zoom, normal explanatory prose reflows. Test high-contrast light/dark text, pointer placement and reduced-motion preference.
+5. Save/reload a project containing seven models, existing print jobs and measured pixel profiles. Toggling help must not update any project value, job status, model ID, last saved revision or private vault hash.
+6. Open/close the pixel profile editor, mounting patterns and print controls; no duplicate/stranded inline help or trapped focus. Run global search and Enter to navigate to the actual control.
+
 ## Risk register
 
 | Risk | Mitigation |
