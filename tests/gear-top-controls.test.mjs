@@ -13,7 +13,7 @@ const spindle=newGearTopControl('handle-1','offset-spindle',{x:24,z:0});
 assert.equal(gearTopPlacementIssue(spindle,base.gearHost),null);
 assert.match(gearTopPlacementIssue({...spindle,x:0},base.gearHost),/shaft bore/i);
 assert.match(gearTopPlacementIssue({...spindle,x:49},base.gearHost),/edge/i);
-assert.match(gearTopPlacementIssue({...spindle,x:30},base.gearHost,[{...spindle,id:'overlap'}]),/another handle/i);
+assert.match(gearTopPlacementIssue({...spindle,x:24},base.gearHost,[{...spindle,id:'overlap'}]),/another handle/i);
 assert.throws(()=>validateGearTopControl({...knob,width:-5}),/width/);
 assert.throws(()=>validateGearTopControl({...knob,profile:'Not a profile'}),/supported/);
 assert.throws(()=>validateGearTopControl({...knob,join:'None',joinMm:2}),/zero/);
