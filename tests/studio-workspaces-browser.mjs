@@ -95,7 +95,7 @@ try{
  // Check computed foreground/background contrast in the real active theme.
  const contrast=async(foreground,background)=>page.evaluate(({foreground,background})=>{
   const channels=s=>{
-   const match=s.match(/rgba?\\(([^)]+)\\)/);
+   const match=s.match(/rgba?\(([^)]+)\)/);
    if(!match)throw Error('Missing computed RGB colour: '+s);
    return match[1].split(',').slice(0,3).map(v=>Number.parseFloat(v.trim())/255);
   };
