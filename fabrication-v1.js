@@ -14,7 +14,7 @@ import {crystalGeometry,crystalRootOffset,baseGeometry,baseSurfaceHeight} from '
 import {planHardware} from './hardware-layout.js';
 import {planCrystalLightPorts} from './light-port-plan.js';
 import {resolvePixelProfile,resolveSocketProfile,socketShoulderRise} from './pixel-profiles.js';
-import {estimateRoofReview} from './print-advisor.js';
+import {estimateRoofReview} from './src/printing/print-advisor.js';
 import {planTargetedLightPaths} from './targeted-light-paths.js';
 import {planDetachablePlate} from './detachable-plate.js';
 import {calibrationSpec,couponLegendCuts} from './fit-calibration.js';

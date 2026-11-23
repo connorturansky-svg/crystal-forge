@@ -1,8 +1,8 @@
 /* An inspection-first optical access report, NOT a light transport solver.
  * Never interpret a reachable position as a proven unblocked lumen.
  */
-import {planHardware} from './hardware-layout.js';
-import {planCrystalLightPorts} from './light-port-plan.js';
+import {planHardware} from '../../hardware-layout.js';
+import {planCrystalLightPorts} from '../../light-port-plan.js';
 export function assessOpticalAccess(crystals,s,report=null){
  const plan=planHardware(crystals,s),sockets=plan.sockets;
  const hasOpenInterior=!!(s.baseVault||s.hollowCrystals||s.targetedLightPaths||s.lightPorts);
