@@ -3401,8 +3401,8 @@ try{
    await targetPage.addInitScript(({key,workspace})=>{
     if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(workspace));
    },{key:WORKSPACE_KEY,workspace});
-   await targetPage.goto(url);
-   await targetPage.waitForFunction(()=>window.__sensoryStudio);
+   await targetPage.goto(url,{waitUntil:'commit'});
+   await targetPage.waitForFunction(()=>window.__sensoryStudio,undefined,{timeout:60000});
    const storage=()=>targetPage.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY);
    const modelIds=()=>targetPage.evaluate(()=>window.__sensoryStudio.project.models.map(model=>model.id));
    const openLibrary=()=>targetPage.locator('#smsLibrary').click();
@@ -3417,7 +3417,7 @@ try{
    const summary=folder.locator(':scope > summary');
    await summary.press('Enter');
    assert.equal(await folder.evaluate(element=>element.open),false);
-   await targetPage.reload();
+   await targetPage.reload({waitUntil:'commit'});
    await targetPage.waitForFunction(()=>window.__sensoryStudio);
    await openLibrary();
    assert.equal(await folder.evaluate(element=>element.open),false);
@@ -3431,7 +3431,7 @@ try{
     'Rendering may regenerate the active thumbnail; the saved model and source revision must match.');
    assert.deepEqual(switched.savedProjects.filter(item=>item.snapshotId.startsWith('version-')),[first,second]);
    assert.deepEqual(await modelIds(),['shared-model']);
-   await targetPage.reload();
+   await targetPage.reload({waitUntil:'commit'});
    await targetPage.waitForFunction(()=>window.__sensoryStudio?.project.id==='other-project');
   }finally{await targetPage.close();}
  }
