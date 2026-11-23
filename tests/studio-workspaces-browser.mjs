@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright';
 
 const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
@@ -77,5 +78,41 @@ try{
   assert.equal(await destination('Wiring').getAttribute('aria-current'),'step');
   assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.generator.typeId),family);
  }
+
+ // WT-025A: check actual rendered legibility, not merely that CSS contains token names.
+ await destination('Design').press('Enter');
+ const textSize=selector=>page.evaluate(selector=>{
+  const element=document.querySelector(selector);
+  return element?Number.parseFloat(getComputedStyle(element).fontSize):null;
+ },selector);
+ assert((await textSize('body'))>=16,'Default main text is at least 16px');
+ assert((await textSize('.sms-tool-finder>label'))>=15,'Find-tools label is readable');
+ assert((await textSize('.sms-tool-finder>p'))>=14,'Find-tools guidance is readable');
+ assert((await textSize('.sms-tool-result'))>=15,'Tool search results are readable');
+ await page.locator('#changelogBtn').click();
+ assert(await page.locator('#infoChangelog').isVisible(),'What’s New remains available');
+ assert((await textSize('.dialog-body'))>=16,'Release notes are readable at default zoom');
+ await page.locator('#infoTabHelp').click();
+ assert((await textSize('#infoHelp'))>=16,'Help paragraphs are readable');
+ await page.locator('#closeInfo').click();
+ await page.locator('#themeBtn').click();
+ assert((await textSize('.sms-tool-finder>label'))>=15,'Readable labels survive theme changes');
+ assert((await textSize('body'))>=16,'Readable main text survives theme changes');
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1),
+  'Readable controls do not create mobile document overflow');
+ // Browser text-size overrides must scale the new rem-based typography.
+ const zoomed=await page.evaluate(()=>{
+  document.documentElement.style.fontSize='200%';
+  const size=selector=>Number.parseFloat(getComputedStyle(document.querySelector(selector)).fontSize);
+  const result={body:size('body'),searchLabel:size('.sms-tool-finder>label')};
+  document.documentElement.style.fontSize='';
+  return result;
+ });
+ assert(zoomed.body>=32&&zoomed.searchLabel>=30,
+  '200% browser text sizing scales the main UI and tool-finder labels: '+JSON.stringify(zoomed));
+ await mkdir('qa',{recursive:true});
+ await page.screenshot({path:'qa/unified-wt025-legibility-390.png'});
+ await page.setViewportSize({width:1440,height:950});
+ await page.screenshot({path:'qa/unified-wt025-legibility-1440.png'});
  console.log('WT-022 workspaces: keyboard, retained model, actual mounting gesture and narrow navigation passed');
 }finally{await browser.close();}
