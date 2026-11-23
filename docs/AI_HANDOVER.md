@@ -1,8 +1,10 @@
 # AI handover — read immediately after AGENTS.md
 
+See the [WT-023 integration checkpoint](PROJECT_STATUS.md#wt-023-integration-checkpoint--23-november-2026) for the current review and CI pointers.
+
 ## WT-023A project persistence foundation
 
-Project folders can derive from `project.id`; saved versions use `snapshotId`. Model IDs and tabs are project-local, and links still pin a Library source and revision. No workspace or vault schema change is needed. Explicit saves and project switches validate and store one complete v1 workspace before publishing the new state. Only active jobs that rely on discarded preparation are marked stale. Historical missing and duplicate snapshot IDs receive stable, non-overlapping IDs on the next successful workspace write. The independent read-only folder-index implementation and its characterization remain in #146 for owner review. See #138 for scope and the implementation PR for exact-head evidence.
+Project folders can derive from `project.id`; saved versions use `snapshotId`. Model IDs and tabs are project-local, and links still pin a Library source and revision. No workspace or vault schema change is needed. Explicit saves and project switches validate and store one complete v1 workspace before publishing the new state. Only active jobs that rely on discarded preparation are marked stale. Historical missing and duplicate snapshot IDs receive stable, non-overlapping IDs on the next successful workspace write. The independent read-only folder-index implementation and its characterization are available from merged #146. See #138 for scope and the implementation PR for exact-head evidence.
 
 ## CURRENT POINTER — after WT-022 C release (22 November 2026)
 
