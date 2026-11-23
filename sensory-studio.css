@@ -163,7 +163,8 @@ dialog[aria-label="Review backup"] .sms-actions{flex-wrap:wrap}
 .sms-tool-result:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
 
 /* WT-025A: readable everyday controls. Do not change preview/geometry markers. */
-.sms-unified .topbar button{min-height:34px;padding:6px 9px}
+.sms-unified .topbar button{min-height:34px;padding:6px 9px;white-space:normal;overflow-wrap:anywhere}
+.sms-unified .topbar .utility{max-width:100%}
 .sms-unified .sms-product .brand{font-size:1.0625rem;line-height:1.25}
 .sms-product .version{font-size:.75rem;line-height:1.35}
 .sms-unified #smsSaveState,#smsModelDimensions{font-size:.875rem;line-height:1.45}
@@ -177,7 +178,6 @@ dialog[aria-label="Review backup"] .sms-actions{flex-wrap:wrap}
 .sms-unified .sms-side-heading{min-height:40px}
 .sms-unified :is(.sms-tool-finder,.sms-palette,.sms-side-body){overflow-wrap:break-word}
 @media(max-width:600px){
- .sms-unified .topbar button{white-space:normal}
  .sms-unified #smsModelDimensions{white-space:normal}
  .sms-tool-finder-results{max-height:min(40dvh,320px)}
 }

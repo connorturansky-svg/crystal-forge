@@ -155,8 +155,15 @@ try{
  };
  await mkdir('qa',{recursive:true});
  const auditLayout=async(label)=>{
-  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),
-   label+' must not create horizontal page overflow');
+  const overflow=await page.evaluate(()=>{
+   const width=document.documentElement.clientWidth,scroll=document.documentElement.scrollWidth;
+   if(scroll<=innerWidth+1)return null;
+   return {width,scroll,offenders:[...document.querySelectorAll('body *')].filter(el=>{
+    const rect=el.getBoundingClientRect();
+    return rect.width&&rect.right>width+2;
+   }).slice(0,24).map(el=>[el.tagName,el.id,String(el.className).slice(0,100),Math.round(el.getBoundingClientRect().right)])};
+  });
+  assert.equal(overflow,null,label+' must not create horizontal page overflow: '+JSON.stringify(overflow));
  };
  const savedModel=await page.evaluate(()=>window.__sensoryStudio.currentModel.id);
  for(const width of [1440,390]){
