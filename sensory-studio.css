@@ -168,6 +168,7 @@ dialog[aria-label="Review backup"] .sms-actions{flex-wrap:wrap}
 .sms-unified .sms-product .brand{font-size:1.0625rem;line-height:1.25}
 .sms-product .version{font-size:.75rem;line-height:1.35}
 .sms-unified #smsSaveState,#smsModelDimensions{font-size:.875rem;line-height:1.45}
+.sms-unified #smsModelDimensions{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
 .sms-workspace-nav button{min-height:36px;padding:7px 10px}
 .sms-descriptor,.sms-tool-finder>p,.sms-tool-result small,.sms-palette [data-pixel-status]{font-size:.875rem;line-height:1.5}
 .sms-tool-finder>label,#smsJobs fieldset label{font-size:.9375rem;line-height:1.5}
@@ -178,6 +179,5 @@ dialog[aria-label="Review backup"] .sms-actions{flex-wrap:wrap}
 .sms-unified .sms-side-heading{min-height:40px}
 .sms-unified :is(.sms-tool-finder,.sms-palette,.sms-side-body){overflow-wrap:break-word}
 @media(max-width:600px){
- .sms-unified #smsModelDimensions{white-space:normal}
  .sms-tool-finder-results{max-height:min(40dvh,320px)}
 }
