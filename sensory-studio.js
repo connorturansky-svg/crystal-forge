@@ -2189,7 +2189,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     renderActivePixelProfile(controls,model);
     const origin=document.querySelector('[data-state="showPixels"]');
     const label=document.createElement('label'),toggle=document.createElement('input'),status=document.createElement('output');
-    toggle.type='checkbox';toggle.checked=origin.checked;toggle.disabled=!!model.link;
+    toggle.type='checkbox';toggle.dataset.crystalFitPreview='';toggle.checked=origin.checked;toggle.disabled=!!model.link;
     toggle.onchange=()=>origin.click();
     label.append(toggle,' Show physical pixels and socket cutters');
     status.dataset.buildFitPreviewStatus='';status.setAttribute('aria-live','polite');
@@ -2265,7 +2265,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    for(const key of keys){
     const field=family.parameterSchema.find(item=>item.key===key);if(!field)continue;
     if(field.type==='number'){
-     visualRange(controls,field,parameters[key],value=>apply(key,Number(value)),!!model.link);
+     visualRange(controls,{...field,helpFamily:model.generator.typeId},parameters[key],value=>apply(key,Number(value)),!!model.link);
     }else if(field.type==='select'){
      const group=document.createElement('fieldset'),legend=document.createElement('legend');legend.textContent=field.label;group.append(legend);
      for(const option of field.options){

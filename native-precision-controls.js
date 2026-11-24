@@ -17,6 +17,7 @@ export function renderPrecisionRange(root,field,initial,apply,disabled=false){
  caption.textContent=field.label;caption.className='sms-visual-range-caption';
  const slider=document.createElement('input');
  slider.type='range';slider.dataset.paletteKey=field.key;
+ if(field.helpFamily)slider.dataset.modelFamily=field.helpFamily;
  slider.min=field.min;slider.max=field.max;slider.step=field.step??.1;
  slider.value=initial;slider.disabled=disabled;
  slider.setAttribute('aria-label',field.label);

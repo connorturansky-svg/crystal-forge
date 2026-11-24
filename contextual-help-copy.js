@@ -184,6 +184,15 @@ export const nativeHelp = {
 };
 
 export const nativeFamilyHelp = {
+ 'tactile-tiles': {
+  cornerRadius: ['Sets the radius of rounded tile corners.', 'Choose a small radius when the tile still needs to fit a rectangular frame. Check how larger corners affect the space for mounting holes.'],
+  pattern: ['Chooses the tactile texture on the tile.', 'Try a sample to compare patterns such as ridges or dots by touch. Check whether the smallest features will print clearly at the selected size.'],
+  density: ['Changes how closely the tactile features repeat.', 'Use lower density for larger features with more space between them. Print a small example to check densely spaced details remain distinct.'],
+  orientation: ['Turns the surface pattern across the tile.', 'Rotate a directional pattern to line it up with neighbouring tiles or the direction people will move their hands. The tile outline stays in place.'],
+  randomness: ['Changes how irregular the texture pattern looks and feels.', 'Use less variation for an even repeating texture. More variation can give nearby features different shapes and heights.'],
+  border: ['Sets the width of the edge band around the texture.', 'Widen the band to leave more room for mounting or to give hands a flat edge to find. A wider band reduces the textured area.'],
+ },
+
  'control-caps': {
   diameter: ['Sets the outside width of the control cap.', 'Choose a width that is easy to grip and clears neighbouring controls. Check clearance with the cap installed and turned through its full range.'],
   depth: ['Sets the front-to-back size of an oval cap.', 'Use it to make an oval grip narrower or deeper. Compare both dimensions against the surrounding panel before printing.'],
@@ -314,4 +323,17 @@ export const dynamicHelp = {
  "#printHeatmap": ["Highlights slopes that may be difficult to print unsupported.","Use the highlighted areas to guide a closer look in Cura. Check flat bridges separately because slope alone does not measure how far a bridge spans."],
  "#featureOverlay": ["Shows markers for hardware openings on the prepared model.","Turn this on to identify screws, LEDs and related fittings when inspecting a crowded model. Inspect the mesh with the markers hidden to see the actual edges."],
  "#wireSpacingPreset": ["Selects a preset pixel cable length or a custom measurement.","Choose the real available cable between adjacent pixels. Use the custom value when the manufactured string differs from the presets."],
+ "[data-active-pixel-profile]": ["Chooses which physical LED profile to use for new or active fittings.","Select the housing that matches the LEDs you have. Use a measured profile and a small fit print before cutting the full model."],
+ "[data-native-channel-width]": ["Sets the requested width of the native cable groove.","Measure across the cable insulation and leave some room to insert it. Compare the actual planned channel width and surrounding material."],
+ "[data-native-preview]": ["Displays the native cable route in the 3D view.","Turn it on to inspect cable directions and bends before preparing. It only changes what you see on screen."],
+ "[data-native-edge=in]": ["Moves the inlet around the edge of the model.","Set its perimeter position so the lead can reach the first pixel. Check the calculated cable length and bend at the opening."],
+ "[data-native-edge=out]": ["Moves the outlet around the edge of the model.","Position it where the cable needs to leave. Check that the path from the final pixel fits the cable length and avoids tight turns."],
+ "[data-crystal-pixel-key=x]": ["Moves the selected classic socket left or right.","Type the measured centre coordinate. Inspect nearby sockets and the space left for the cable after adjusting it."],
+ "[data-crystal-pixel-key=z]": ["Moves the selected classic socket forwards or backwards.","Use the centre coordinate from your installation. Check whether the move leaves enough printed material around the hole."],
+ "[data-crystal-pixel-key=wireAngle]": ["Turns the pair of cable connections on this socket.","Use the angle to align the inlet and outlet with the path to adjacent pixels. Inspect bends to check the cable can follow them."],
+ "[data-crystal-pixel-key=profile]": ["Changes the shape of the selected pixel socket.","Choose the profile for the actual housing. Review clearance and cable relief before preparing the full model."],
+ "[data-crystal-shoulders]": ["Adds a sloping transition inside eligible LED sockets.","Use it if the printed flange step would otherwise make a flat ledge. Check the remaining height and fit with the actual LED."],
+ "[data-crystal-fit-preview]": ["Displays the physical fittings and the shapes used to cut their sockets.","Compare the housing shape with the space around each opening. Inspect the prepared mesh to check the final shape of the cutouts."],
+ "[data-edge-finish=enabled]": ["Applies a bevel to supported exposed top edges.","Use a bevel to make an eligible top edge less sharp. Thin areas or crowded rims can be skipped. Check the actual prepared edge before printing."],
+ "[data-palette-key=edge-finish-amount]": ["Sets the amount of material the bevel may remove.","Use a smaller value around thin edges and nearby holes. Inspect the prepared model to confirm where the bevel was applied."],
 };

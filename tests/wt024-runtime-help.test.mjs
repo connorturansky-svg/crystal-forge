@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {fileURLToPath} from 'node:url';
 import {inventoryFromCheckout} from './helpers/wt024-help-audit.mjs';
-import {classicDetails,nativeHelp,dynamicHelp} from '../contextual-help-copy.js';
+import {classicDetails,nativeHelp,nativeFamilyHelp,dynamicHelp} from '../contextual-help-copy.js';
+import {studioGenerators} from '../studio-catalogue.js';
 import {HELP_PREFERENCES_KEY,readHelpPreferences,describeControl} from '../tooltips.js';
 
 test('contextual help preferences default and migrate independently',()=>{
@@ -22,6 +23,10 @@ test('classic and native control copy uses explicit registry entries',()=>{
  assert.deepEqual(report.classic.unmapped,[]);
  for(const key of report.native.keys){
   assert(nativeHelp[key]?.[0]&&nativeHelp[key]?.[1],key);
+ }
+ for(const generator of studioGenerators)for(const {key} of generator.parameterSchema){
+  const copy=nativeFamilyHelp[generator.typeId]?.[key]||nativeHelp[key];
+  assert(copy?.[0]&&copy?.[1],generator.typeId+' / '+key);
  }
  assert.match(classicDetails.count,/few crystals/);
  assert.match(nativeHelp.teeth[1],/mating gear/);

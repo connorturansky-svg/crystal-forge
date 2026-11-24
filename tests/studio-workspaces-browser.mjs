@@ -247,6 +247,8 @@ try{
  await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{count:5},'WT-024 Crystal'));
  await destination('Design').press('Enter');
  await verifyHelp('[data-state=count]',/few crystals/);
+ assert(await page.locator('[data-palette-key=count][aria-describedby*="contextualHelpDetail"]').count(),
+  'the Crystal quick control also has detailed help');
  await page.evaluate(()=>window.__sensoryStudio.addModel('gears',{},'WT-024 Gear'));
  await destination('Design').press('Enter');
  await verifyHelp('[data-model-param=teeth]',/finer spacing/);

@@ -447,27 +447,37 @@ const titleFrom=el=>el.closest('.control')?.querySelector('label')?.textContent?
  el.closest('.checks')?.textContent?.trim().replace(/\s+/g,' ')||
  el.textContent?.trim().replace(/\s+/g,' ')||'Control';
 const dynamicSelectors=Object.keys(dynamicHelp);
+const dynamicSelector=dynamicSelectors.join(',');
 const helpTriggerOwners=new WeakMap();
 function dynamicEntry(el){
- if(el.nodeType!==1)return undefined;
+ if(el.nodeType!==1||!el.matches(dynamicSelector))return undefined;
  const key=dynamicSelectors.find(selector=>el.matches(selector));
  return dynamicHelp[key];
 }
 function settingLabel(el){
  const label=el.closest?.('label')||el.parentElement?.querySelector('label');
- return label&&Array.from(label.childNodes).filter(node=>node.nodeType===3).map(node=>node.textContent.trim()).filter(Boolean).join(' ');
+ const caption=label&&Array.from(label.childNodes).filter(node=>node.nodeType===3).map(node=>node.textContent.trim()).filter(Boolean).join(' ');
+ return caption||el.getAttribute?.('aria-label');
 }
 function nativeEntry(el){
- const {modelFamily,modelParam}=el.dataset;
- return nativeFamilyHelp[modelFamily]?.[modelParam]||nativeHelp[modelParam];
+ const {modelFamily,modelParam,paletteKey}=el.dataset;
+ const key=modelParam||(modelFamily?paletteKey:undefined);
+ return nativeFamilyHelp[modelFamily]?.[key]||nativeHelp[key];
 }
+const paletteClassicKeys={'crystal-base-height':'baseHeight',count:'count',spacing:'spacing',width:'width',socketShoulderAngle:'socketShoulderAngle'};
+function classicKey(el){return el.dataset.state||(!el.dataset.modelFamily?paletteClassicKeys[el.dataset.paletteKey]:undefined)}
 function lookup(el){
+ if(el.dataset.precisionInput){
+  const slider=el.closest('.sms-visual-range')?.querySelector('[data-palette-key]');
+  if(slider)return lookup(slider);
+ }
  if(el.dataset.tooltipTitle&&el.dataset.tooltipBody)return [el.dataset.tooltipTitle,el.dataset.tooltipBody];
  const nativeParameter=nativeEntry(el);
  if(nativeParameter)return [settingLabel(el)||el.dataset.modelParam,nativeParameter[0]];
  const dynamic=dynamicEntry(el);
  if(dynamic)return [settingLabel(el)||'Setting',dynamic[0]];
- if(el.dataset.state&&SETTINGS[el.dataset.state])return SETTINGS[el.dataset.state];
+ const key=classicKey(el);
+ if(key&&SETTINGS[key])return SETTINGS[key];
  if(el.id&&BUTTONS[el.id])return BUTTONS[el.id];
  if(el.id&&SETTINGS[el.id])return SETTINGS[el.id];
  if(el.id&&OTHER[el.id])return OTHER[el.id];
@@ -616,7 +626,7 @@ export function installContextualHelp(doc=document){
  let storage;
  try{storage=doc.defaultView.localStorage}catch{}
  const settings=readHelpPreferences(storage);
- const selector=['[data-state]','[data-model-param]',...dynamicSelectors].join(',');
+ const selector=['[data-state]','[data-model-param]','[data-palette-key]',...dynamicSelectors].join(',');
  const controls=new Map();
  let nextDetailId=0;
 
@@ -631,7 +641,7 @@ export function installContextualHelp(doc=document){
  }
 
  function decorate(control){
-  const anchor=control.closest('label,.control,.sms-model-control')||control;
+  const anchor=control.closest('label,.control,.sms-model-control,.sms-visual-range')||control;
   const existing=controls.get(control);
   if(existing?.anchor===anchor&&existing.help.parentElement===anchor.parentElement)return;
   if(existing){associateDetail(control,existing.id,false);existing.help.remove()}
@@ -647,7 +657,7 @@ export function installContextualHelp(doc=document){
   trigger.setAttribute('aria-description',info[0]);
   helpTriggerOwners.set(trigger,control);
   help.append(trigger);
-  const copy=classicDetails[control.dataset.state]||nativeEntry(control)?.[1]||dynamicEntry(control)?.[1];
+  const copy=classicDetails[classicKey(control)]||nativeEntry(control)?.[1]||dynamicEntry(control)?.[1];
   let id;
   if(copy){
    id='contextualHelpDetail'+(++nextDetailId);
@@ -662,11 +672,14 @@ export function installContextualHelp(doc=document){
   associateDetail(control,id,detailed.checked);
  }
 
- function refresh(){
+ function prune(){
   for(const [control,{help,id}] of controls){
    if(!control.isConnected){associateDetail(control,id,false);help.remove();controls.delete(control)}
   }
-  for(const control of doc.querySelectorAll(selector))decorate(control);
+ }
+ function decorateWithin(root){
+  if(root.matches?.(selector))decorate(root);
+  for(const control of root.querySelectorAll(selector))decorate(control);
  }
  function apply(){
   tooltip.enable(hover.checked);
@@ -683,11 +696,18 @@ export function installContextualHelp(doc=document){
  hover.addEventListener('change',save);
  detailed.addEventListener('change',save);
  apply();
- refresh();
+ decorateWithin(doc.body);
  const observer=new doc.defaultView.MutationObserver(records=>{
-  if(records.some(record=>[...record.addedNodes,...record.removedNodes].some(node=>
-   node.nodeType===1&&(node.matches(selector)||node.querySelector(selector))
-  )))refresh();
+  let removed=false;
+  const added=new Set();
+  for(const {addedNodes,removedNodes} of records){
+   if([...removedNodes].some(node=>node.nodeType===1&&!node.closest('.contextual-help')))removed=true;
+   for(const node of addedNodes){
+    if(node.nodeType===1&&node.isConnected&&!node.closest('.contextual-help'))added.add(node);
+   }
+  }
+  if(removed)prune();
+  for(const node of added)decorateWithin(node);
  });
  observer.observe(doc.body,{childList:true,subtree:true});
 }
