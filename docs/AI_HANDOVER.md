@@ -2,6 +2,10 @@
 
 See the [WT-023 integration checkpoint](PROJECT_STATUS.md#wt-023-integration-checkpoint--23-november-2026) for the current review and CI pointers.
 
+## WT-023B B1 Library view
+
+Templates precede single-level project folders. The index derives folders from `project.id` and versions from `snapshotId`; collapse preferences live in session storage. Opening a saved version uses merged WT-023A #147. Existing template actions retain their destinations and naming behaviour. Template destination selection, naming, resources and cloud UI are follow-ups in the [WT-023 acceptance guide](WT023_NEXT_SLICES_ACCEPTANCE_20261123.md). See #139 and #151 for exact-head verification.
+
 ## WT-023A project persistence foundation
 
 Project folders can derive from `project.id`; saved versions use `snapshotId`. Model IDs and tabs are project-local, and links still pin a Library source and revision. No workspace or vault schema change is needed. Explicit saves and project switches validate and store one complete v1 workspace before publishing the new state. Only active jobs that rely on discarded preparation are marked stale. Historical missing and duplicate snapshot IDs receive stable, non-overlapping IDs on the next successful workspace write. The independent read-only folder-index implementation and its characterization are available from merged #146. See #138 for scope and the implementation PR for exact-head evidence.

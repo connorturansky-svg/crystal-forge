@@ -162,6 +162,9 @@ dialog[aria-label="Review backup"] .sms-actions{flex-wrap:wrap}
 .sms-tool-result small{display:block;font-weight:400;line-height:1.35;color:var(--muted)}
 .sms-tool-result:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
 
+.sms-project-folder{margin-block:.65rem;padding:.65rem;border:1px solid var(--border);border-radius:.6rem}
+.sms-project-folder>summary{cursor:pointer;font-weight:650;overflow-wrap:anywhere}
+
 /* WT-025A: readable everyday controls. Do not change preview/geometry markers. */
 .sms-unified .topbar button{min-height:34px;padding:6px 9px;white-space:normal;overflow-wrap:anywhere}
 .sms-unified .topbar .utility{max-width:100%}

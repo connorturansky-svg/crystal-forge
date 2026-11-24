@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.35 — Find templates and projects in Library
+
+- Browse templates first, then open saved versions from collapsible project folders.
+- See the active project separately from its saved versions. Fold or expand each folder with the keyboard.
+
 ## v0.16.0-dev.35.34 — Save and switch projects safely
 
 - Save the outgoing project and open the selected project in one workspace write. A failed save leaves the current project open.
