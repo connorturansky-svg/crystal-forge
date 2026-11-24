@@ -449,7 +449,8 @@ const titleFrom=el=>el.closest('.control')?.querySelector('label')?.textContent?
 const dynamicSelectors=Object.keys(dynamicHelp);
 const helpTriggerOwners=new WeakMap();
 function dynamicEntry(el){
- const key=dynamicSelectors.find(selector=>el.matches?.(selector));
+ if(el.nodeType!==1)return undefined;
+ const key=dynamicSelectors.find(selector=>el.matches(selector));
  return dynamicHelp[key];
 }
 function settingLabel(el){
@@ -503,7 +504,7 @@ export function installTooltips(doc=document){
  const heading=doc.createElement('strong'),description=doc.createElement('span');
  node.append(heading,description);doc.body.append(node);
  let target=null,timer=0,leaveTimer=0,enabled=true;
- const eligible='button, input:not([type=file]), select, [data-tooltip-body]';
+ const eligible=['button','input:not([type=file])','select','[data-tooltip-body]',...dynamicSelectors].join(',');
  const descriptionIds=el=>el.getAttribute('aria-describedby')?.match(/[^\t\n\f\r ]+/g)||[];
  const clearTimer=()=>{if(timer){clearTimeout(timer);timer=0}};
  const hide=()=>{
@@ -521,6 +522,7 @@ export function installTooltips(doc=document){
  const valid=el=>el&&!el.disabled&&!el.closest('[hidden]')&&el.getClientRects().length>0;
  const position=()=>{
   if(node.hidden||!target)return;
+  if(!valid(target)){hide();return}
   const rect=target.getBoundingClientRect();
   const viewportWidth=doc.documentElement.clientWidth,viewportHeight=doc.documentElement.clientHeight;
   const width=Math.min(300,viewportWidth-22);node.style.maxWidth=width+'px';
@@ -578,6 +580,7 @@ export function installTooltips(doc=document){
   clearTimer();show();
  });
  doc.addEventListener('keydown',e=>{if(e.key==='Escape')hide()},true);
+ doc.addEventListener('close',e=>{if(e.target.contains?.(target))hide()},true);
  doc.addEventListener('scroll',()=>{if(target&&!node.hidden)position()},true);
  window.addEventListener('resize',()=>{if(target)position()});
  return {hide,enable(value){enabled=!!value;if(!enabled)hide()},get enabled(){return enabled}};
@@ -633,7 +636,8 @@ export function installContextualHelp(doc=document){
   trigger.className='contextual-help-trigger';
   trigger.type='button';
   trigger.textContent='?';
-  trigger.setAttribute('aria-label','Help for '+info[0]);
+  trigger.setAttribute('aria-label','Show setting help');
+  trigger.setAttribute('aria-description',info[0]);
   helpTriggerOwners.set(trigger,control);
   help.append(trigger);
   const copy=classicDetails[control.dataset.state]||nativeHelp[control.dataset.modelParam]?.[1]||dynamicEntry(control)?.[1];

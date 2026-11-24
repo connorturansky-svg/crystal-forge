@@ -1,5 +1,7 @@
 # AI handover — read immediately after AGENTS.md
 
+WT-024 owns shared setting help in [tooltips.js](../tooltips.js) and [contextual-help-copy.js](../contextual-help-copy.js). Use the [coverage inventory](WT024_CONTEXTUAL_HELP_COVERAGE.md) and [Issue #152](https://github.com/connorturansky-svg/crystal-forge/issues/152) to find remaining controls. New settings need a semantic registry entry, a meaningful short note and detailed guidance that reflects the actual behaviour. Reuse the shared renderer for new panels and modal fields.
+
 See the [WT-023 integration checkpoint](PROJECT_STATUS.md#wt-023-integration-checkpoint--23-november-2026) for the current review and CI pointers.
 
 ## WT-023B B1 Library view

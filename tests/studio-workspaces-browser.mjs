@@ -237,9 +237,11 @@ try{
   await control.focus();
   await page.waitForFunction(()=>!document.querySelector('#controlTooltip').hidden);
   assert.match(await control.getAttribute('aria-describedby'),/controlTooltip/);
+  assert.match(await control.getAttribute('aria-describedby'),/contextualHelpDetail/);
   await page.keyboard.press('Escape');
   assert(!(await page.locator('#controlTooltip').isVisible()));
-  await help.getByRole('button',{name:/Help for/}).click();
+  assert.match(await control.getAttribute('aria-describedby'),/contextualHelpDetail/);
+  await help.getByRole('button',{name:'Show setting help',exact:true}).click();
   assert(await page.locator('#controlTooltip').isVisible());
  }
  await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{count:5},'WT-024 Crystal'));
