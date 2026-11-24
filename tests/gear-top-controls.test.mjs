@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {GEAR_TOP_PRESETS,newGearTopControl,validateGearTopControl,gearTopPlacementIssue,
  gearTopMesh,withGearTopControls} from '../studio-gear-top-controls.js';
 import {gearGenerator,applyBuildModules} from '../studio-catalogue.js';
+import {findPixelPosition} from '../studio-pixel-builder.js';
 
 const base=gearGenerator.recipe({...gearGenerator.defaultParameters,bore:8,webStyle:'Solid',diameter:100});
 assert.equal(base.gearHost.shaftBore,8);
@@ -66,4 +67,17 @@ assert.throws(withFixings,/existing pixel, fixing or hardware cut/,'New grips mu
 assert.match(gearTopPlacementIssue({...knob,x:0},{
  ...base.gearHost,hardwareExclusions:[{x:0,z:0,radius:7}]
 }),/existing pixel, fixing or hardware cut/,'Explicit hardware footprints block a centred knob.');
+const narrowShoulder={...spindle,x:0,width:36,depth:8,joinMm:2};
+const testStock={outline:[[-25,-20],[25,-20],[25,20],[-25,20]],holes:[],shaftBore:0,topY:8};
+assert.match(gearTopPlacementIssue(narrowShoulder,testStock),/gear edge/,
+ 'The long axis of the actual flared base extends beyond the old estimated ellipse.');
+const socket=findPixelPosition(base,[]);
+const recess={id:'recess',x:24,z:0,diameter:3.4,entryFace:'underside',profile:'Counterbore',recessDiameter:8,recessDepth:2};
+for(const hardware of [{pixelHoles:[socket]},{manualMountHoles:[recess]}]){
+ const cutOnly=applyBuildModules(base,hardware,gearGenerator.capabilities);
+ assert.throws(()=>applyBuildModules(base,{...hardware,gearTopControls:[spindle]},gearGenerator.capabilities),/existing pixel, fixing or hardware cut/);
+ const clear=applyBuildModules(base,{...hardware,gearTopControls:[{...spindle,x:-24}]},gearGenerator.capabilities);
+ assert(cutOnly.negative.length>0);
+ assert.deepEqual(clear.negative.filter(cut=>!cut.gearThroughBore),cutOnly.negative);
+}
 console.log('WT-026 gear top: presets, exact bounds, geometry, collision, stable IDs and bore recipe passed.');

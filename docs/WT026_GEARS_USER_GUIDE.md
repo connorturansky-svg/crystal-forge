@@ -2,7 +2,7 @@
 
 1. Open **Cogs & Gears** in Studio. Choose a wheel type, teeth, body thickness and (if needed) measured shaft bore.
 2. In **Design → Top handles & tactile knobs**, choose a grip starting point. Select **Add selected grip**, or double-click an exposed flat position on the 3D top face to place it there.
-3. Click a grip to select it, then drag to reposition. Alternatively, use exact **X** and **Z** fields; dragging is optional. Red preview means the strengthened base overlaps a shaft opening, other window, neighbouring grip or outer edge; the last valid position is retained.
+3. Click a grip to select it, then drag to reposition. Alternatively, use exact **X** and **Z** fields. The placement check includes the full flared base and clearance around nearby grips, pixel sockets, fixing recesses, windows and the gear edge. Read the warning for the reason a move was refused. The last valid position is retained.
 4. Adjust **Width**, **Depth** and **Height** independently. **Rotation** changes grip orientation.
 5. Profile presets include Straight taper, Bulbous 2/3 (widens toward its upper two-thirds and narrows again), Hourglass, Mushroom, Rounded cap and Flat. Change profile without deleting the grip.
 6. Surface texture options are Smooth, Vertical ribs, Scalloped, Diamond knurl and Horizontal grooves. These represent actual printable geometry, so consider your nozzle and slicer.

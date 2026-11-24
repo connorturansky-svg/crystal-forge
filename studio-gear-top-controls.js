@@ -54,23 +54,24 @@ export function validateGearTopControl(c){
  if(c.join==='None'&&c.joinMm!==0)throw Error('Set join size to zero for no shoulder.');
  return c;
 }
-function radii(c){
- const r=Math.PI*c.rotation/180;
- return {x:c.width/2+(.001+c.joinMm),z:c.depth/2+(.001+c.joinMm),angle:r};
+const ringSegments=96;
+const shoulderScale=c=>1+c.joinMm*2/Math.min(c.width,c.depth);
+function baseFootprint(c){
+ // Use the actual cross-section shape and weld flare. Bound the outward knurl
+ // independently of its phase so validation covers both sides of the weld.
+ const scale=shoulderScale(c)*(c.surface==='Diamond knurl'?1.035:1);
+ const smooth={...c,surface:'Smooth'};
+ return Array.from({length:ringSegments},(_,i)=>outlinePoint(smooth,i*2*Math.PI/ringSegments,0,scale));
 }
-function sample(c,factor=1){
- const {x:rx,z:rz,angle}=radii(c),co=Math.cos(angle),si=Math.sin(angle);
- return Array.from({length:32},(_,i)=>{
-  const t=i*2*Math.PI/32,dx=Math.cos(t)*rx*factor,dz=Math.sin(t)*rz*factor;
-  return [c.x+dx*co-dz*si,c.z+dx*si+dz*co];
- });
+function footprintRadius(c,points=baseFootprint(c)){
+ return Math.max(...points.map(([x,z])=>Math.hypot(x-c.x,z-c.z)));
 }
 export function gearTopPlacementIssue(c,host,others=[]){
  validateGearTopControl(c);
  if(!host?.outline?.length||!Array.isArray(host.holes)||!finite(host.topY,1,100))
   return 'This gear does not expose a supported flat top face.';
  if(!pointInside([c.x,c.z],host.outline))return 'Place the handle on the actual gear top.';
- const boundary=sample(c);
+ const boundary=baseFootprint(c);
  for(const point of boundary){
   if(!pointInside(point,host.outline)||boundaryDistance(point,host.outline)<1)
    return 'Move the grip inward: its strengthened base needs at least 1 mm to the gear edge.';
@@ -90,15 +91,16 @@ export function gearTopPlacementIssue(c,host,others=[]){
    return shaft?'The handle overlaps the central shaft bore. Move it or use a centred knob.':
     'The strengthened handle base overlaps a window or fixing hole.';
  }
+ const radius=footprintRadius(c,boundary);
  for(const other of others){
   if(other.id===c.id)continue;
   validateGearTopControl(other);
   const separation=Math.hypot(c.x-other.x,c.z-other.z);
-  if(separation<Math.max(c.width,c.depth)/2+c.joinMm+Math.max(other.width,other.depth)/2+other.joinMm+1)
+  if(separation<radius+footprintRadius(other)+1)
    return 'This handle overlaps another handle. Move them apart.';
  }
  for(const hardware of host.hardwareExclusions||[]){
-  const clearance=Math.max(c.width,c.depth)/2+c.joinMm+hardware.radius+1;
+  const clearance=radius+hardware.radius+1;
   if(Math.hypot(c.x-hardware.x,c.z-hardware.z)<clearance)
    return 'The grip base overlaps an existing pixel, fixing or hardware cut. Move it or edit the fitting first.';
  }
@@ -133,13 +135,13 @@ function outlinePoint(c,theta,y,scale){
 export function gearTopMesh(c,topY){
  validateGearTopControl(c);
  if(!finite(topY,1,100))throw Error('Invalid gear top height.');
- const n=96, rings=[];
+ const n=ringSegments, rings=[];
  const shoulder=c.joinMm,baseTop=topY-.4;
  // Shoulder is a real lofted, positive gusset, not a cosmetic mesh bevel.
  // A chamfer is 45 degrees in radial section; Round eases the transition.
  if(shoulder>0){
-  rings.push([baseTop,1+shoulder*2/Math.min(c.width,c.depth)]);
-  rings.push([topY+.02,1+shoulder*2/Math.min(c.width,c.depth)]);
+  rings.push([baseTop,shoulderScale(c)]);
+  rings.push([topY+.02,shoulderScale(c)]);
   if(c.join==='Round')for(let i=1;i<=4;i++){
    const t=i/4,r=1+shoulder*(1-t)*(1-t)*2/Math.min(c.width,c.depth);
    rings.push([topY+shoulder*t,r]);

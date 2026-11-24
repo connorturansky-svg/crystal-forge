@@ -37,6 +37,29 @@ try{
  assert.match(await page.locator('#smsModelError').innerText(),/shaft bore/);
  await page.locator('#smsRemoveGearTop').click();
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===0);
+ await page.locator('[data-view=top]').click();
+ await page.waitForFunction(()=>{
+  const {settled,camera,target}=window.__crystalForgeViewMetrics();
+  return settled&&camera[1]>target[1]&&Math.hypot(camera[0]-target[0],camera[2]-target[2])<.1;
+ });
+ const screenAt=async(x,z)=>{
+  const point=await page.evaluate(([x,z])=>window.__sensoryStudio.fittingPointScreen(x,z,'top'),[x,z]);
+  assert(point,'Expected a raycastable top at '+x+','+z);
+  return point;
+ };
+ const placed=await screenAt(22,0);
+ await page.mouse.dblclick(placed.x,placed.y);
+ await page.waitForFunction(()=>Math.abs(window.__sensoryStudio.currentModel.build.gearTopControls?.[0]?.x-22)<.5);
+ const grip=await screenAt(22,0),target=await screenAt(24,8);
+ await page.mouse.move(grip.x,grip.y);
+ await page.mouse.down();
+ await page.mouse.move(target.x,target.y,{steps:6});
+ await page.mouse.up();
+ await page.waitForFunction(()=>Math.abs(window.__sensoryStudio.currentModel.build.gearTopControls?.[0]?.z-8)<.5);
+ await page.locator('[data-gear-top-field="rotation"]').fill('37');
+ await page.locator('[data-gear-top-field="rotation"]').press('Tab');
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0].rotation===37);
+ await page.locator('#smsRemoveGearTop').click();
  await page.locator('#smsGearTopPreset').selectOption('fluted-knob');
  await page.locator('#smsAddGearTop').click();
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.[0]?.kind==='knob');
