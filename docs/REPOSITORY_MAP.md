@@ -3,7 +3,7 @@
 **Source-layout update (first printing-source wave):** seven stable print/production helpers now live under [`src/printing/`](../src/printing/), rather than the repository root. See the [source layout guide](SOURCE_LAYOUT.md) for the exact seven filenames, what stays in the root and future migration rules. The historical status checkpoint below is dated, not a current GitHub PR state.
 
 
-**Current orientation (24 Nov 2026):** #147 transactional saves merged to main at `a385cbdd3d810a012db9e10d0df52c87a7e02269`; #151 Library folders and #148 private backup transport remain dependent draft implementations. This is a dated checkpoint, not a live branch reference. Source-layout PR #161 moves the seven print helpers to `src/printing/` once owner approved. Begin with [current status](PROJECT_STATUS.md), [WT-023 #137](https://github.com/connorturansky-svg/crystal-forge/issues/137), [source layout guide](SOURCE_LAYOUT.md) and [the active PR list](https://github.com/connorturansky-svg/crystal-forge/pulls).
+**Current orientation (24 Nov 2026):** #147 transactional saves and #151 Library B1 merged; main checkpoint `cd194706997ae1bd31d1231e0a2ab1870c9064c6`. B2 destination chooser remains under #139; #148 and #158 remain separate drafts. Check live GitHub state before changing source. See [current status](PROJECT_STATUS.md), [source layout](SOURCE_LAYOUT.md) and [active PRs](https://github.com/connorturansky-svg/crystal-forge/pulls).
 
 ## For a human opening the repository
 
