@@ -8,11 +8,11 @@ import {generateFormation,crystalGeometry,baseGeometry,baseAccentSpecs,baseSurfa
 import {setThreeInstance,prepareFabrication,putSocket,socketRoofStockEnvelope,probeLightPassageSegment,makeCalibrationStrip,makePixelSeatCoupon,splitPreparedMesh,splitPreparedMeshGrid,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon,encodeSTL,saveSTL,save3MF} from '../fabrication-v1.js';
 setThreeInstance(THREE);
 import {planHardware} from '../hardware-layout.js';
-import {planBedAwareSplit} from '../bed-split.js';
+import {planBedAwareSplit} from '../src/printing/bed-split.js';
 import {planWireRoutes} from '../wire-routing.js';
 import {planTargetedLightPaths} from '../targeted-light-paths.js';
 import {planDetachablePlate} from '../detachable-plate.js';
-import {estimateRoofReview} from '../print-advisor.js';
+import {estimateRoofReview} from '../src/printing/print-advisor.js';
 import {PIXEL_PRESETS,normalisePixelProfile,resolvePixelProfile,resolveSocketProfile} from '../pixel-profiles.js';
 
 import {auditLightPassages,lightPassageExportBlock,lightPassageReportEntries} from '../light-passage-inspection.js';

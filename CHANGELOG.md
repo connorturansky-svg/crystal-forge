@@ -58,10 +58,16 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
-## v0.16.0-dev.35.37 — Recover larger private Studio backups
+## v0.16.0-dev.35.38 — Recover larger private Studio backups
 
 - Restore and verify larger model assets and Studio manifests through GitHub's authenticated Git Blob API when the Contents API omits inline data.
 - Preserve existing saved projects and private backup revisions if an oversized asset cannot be read.
+
+## v0.16.0-dev.35.36 — Organised printing source files
+
+- Find the production pack, print-quality checks, Cura model advice and optical reports together in a dedicated printing source folder.
+- Keep all existing model settings, saved projects and STL/3MF output behaviour unchanged; this is a source layout improvement.
+- Preserve SHA-specific GitHub Pages files for both current and older browser tabs while source modules move.
 
 ## v0.16.0-dev.35.35 — Find templates and projects in Library
 

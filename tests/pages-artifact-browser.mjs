@@ -19,7 +19,7 @@ async function exists(path){
 for(const path of ['studio-v3.js','studio-help-diagnostics.js','studio-features.css',
  'studio-model-worker.js','fabrication-worker.js','svg-import/index.js',
  'vendor/three/build/three.module.js','vendor/manifold/manifold.js',
- 'vendor/manifold/manifold.wasm'])await exists(join(root,path));
+ 'vendor/manifold/manifold.wasm','src/printing/production-pack.js'])await exists(join(root,path));
 const index=await readFile(join(site,'index.html'),'utf8');
 assert(index.includes('<base href="./'+prefix+'">'),'The staged entrypoint must use the SHA-scoped release.');
 assert(index.includes('<meta name="studio-release" content="'+sha+'">'));
@@ -76,7 +76,8 @@ try{
  assert.equal(details.build,sha);
  assert.equal(details.base,url(prefix));
  for(const asset of ['vendor/three/build/three.module.js','vendor/manifold/manifold.wasm',
-  'studio-model-worker.js','fabrication-worker.js','svg-import/index.js']){
+  'studio-model-worker.js','fabrication-worker.js','svg-import/index.js',
+  'src/printing/production-pack.js']){
   const response=await page.request.get(url(prefix+asset));
   assert.equal(response.status(),200,'Missing HTTP release asset: '+asset);
   assert((await response.body()).length>0);
