@@ -15,6 +15,15 @@ try{
  await page.locator('#smsNew').click();
  await page.locator('#smsPicker [data-generator="gears"]').click();
  await page.locator('#smsGearTopEditor').waitFor();
+ // Use the same 100 mm solid Gear stock as the manufacturing fixture.
+ const setParameter=async(key,value)=>page.locator(`[data-model-param="${key}"]`).evaluate((control,next)=>{
+  control.value=next;
+  control.dispatchEvent(new Event('input',{bubbles:true}));
+  control.dispatchEvent(new Event('change',{bubbles:true}));
+ },value);
+ await setParameter('diameter','100');
+ await setParameter('webStyle','Solid');
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.diameter===100&&window.__sensoryStudio.currentModel.parameters.webStyle==='Solid');
  assert.match(await page.locator('#smsGearTopHelp').innerText(),/Double-click/);
  await page.locator('#smsAddGearTop').click();
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
