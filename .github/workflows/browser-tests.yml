@@ -126,7 +126,15 @@ jobs:
             node tests/studio-workspaces-browser.mjs &&
             node tests/studio-tool-search-browser.mjs &&
             node tests/mounting-pattern-browser.mjs &&
-            npm run test:browser
+            if [[ "$GITHUB_EVENT_NAME" == pull_request && "$GITHUB_BASE_REF" == main ]] &&
+               ! grep -Fq 'v0.16.0-dev.35.25</span>' /tmp/crystal-forge-before/index.html; then
+              # The separate Seven-builder edge finishing workflow owns those
+              # browser fixtures on PRs to main. Retain the historical before
+              # comparison when testing against the original .35.25 baseline.
+              npm run test:browser:core
+            else
+              npm run test:browser
+            fi
           } > browser-run.log 2>&1
           status=$?
           cat browser-run.log

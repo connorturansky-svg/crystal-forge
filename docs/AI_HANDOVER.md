@@ -1,12 +1,17 @@
 # AI handover — read immediately after AGENTS.md
 
+See the [WT-023 integration checkpoint](PROJECT_STATUS.md#wt-023-integration-checkpoint--23-november-2026) for the current review and CI pointers.
+
 ## WT-023B B1 Library view
 
-Templates precede single-level project folders. The index derives folders from `project.id` and versions from `snapshotId`; collapse preferences live in session storage. Opening a saved version uses WT-023A. Existing template actions keep their destinations and naming behavior. Template destination selection, naming, resources and cloud UI are follow-ups. See #139 and draft #151 for verification and merge dependency.
+Templates precede single-level project folders. The index derives folders from `project.id` and versions from `snapshotId`; collapse preferences live in session storage. Opening a saved version uses merged WT-023A #147. Existing template actions retain their destinations and naming behaviour. Template destination selection, naming, resources and cloud UI are follow-ups in the [WT-023 acceptance guide](WT023_NEXT_SLICES_ACCEPTANCE_20261123.md). See #139 and #151 for exact-head verification.
 
 ## WT-023A project persistence foundation
 
-Project folders can derive from `project.id`; saved versions use `snapshotId`. Model IDs and tabs are project-local, and links still pin a Library source and revision. No workspace or vault schema change is needed. Explicit saves and project switches validate and store one complete v1 workspace before publishing the new state. Only active jobs that rely on discarded preparation are marked stale. Historical missing and duplicate snapshot IDs receive stable, non-overlapping IDs on the next successful workspace write. The independent read-only folder-index implementation and its characterization remain in #146 for owner review. See #138 for scope and the implementation PR for exact-head evidence.
+Project folders can derive from `project.id`; saved versions use `snapshotId`. Model IDs and tabs are project-local, and links still pin a Library source and revision. No workspace or vault schema change is needed. Explicit saves and project switches validate and store one complete v1 workspace before publishing the new state. Only active jobs that rely on discarded preparation are marked stale. Historical missing and duplicate snapshot IDs receive stable, non-overlapping IDs on the next successful workspace write. The independent read-only folder-index implementation and its characterization are available from merged #146. See #138 for scope and the implementation PR for exact-head evidence.
+## WT-025A readable defaults
+
+PR #157 uses the existing workspaces, tool finder and Help dialog. The legibility browser audit follows the seven-builder saved-state and mounting regression from #150. See [readable quick guide](WT025_READABLE_USER_GUIDE.md) and [review steps and limits](WT025A_LEGIBILITY_RELEASE_QA.md). Keep the current Description control until the separate WT-024 work. Review the exact-head screenshots and checks in #157 before release.
 
 ## CURRENT POINTER — after WT-022 C release (22 November 2026)
 

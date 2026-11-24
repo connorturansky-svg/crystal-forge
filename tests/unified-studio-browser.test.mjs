@@ -486,12 +486,24 @@ try{
  }finally{
   await page.evaluate(()=>window.__wt023RestoreStorage());
  }
+ const liveCrystal=await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',
+  {count:3},'Live Crystal before project switch').id);
+ await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ const crystalHeight=page.locator('.sms-palette [data-palette-key=crystal-base-height]');
+ const previousCrystalHeight=await crystalHeight.inputValue();
+ await crystalHeight.press('ArrowRight');
+ const latestCrystalHeight=Number(await crystalHeight.inputValue());
+ assert.notEqual(latestCrystalHeight,Number(previousCrystalHeight));
+ await page.locator('#smsLibrary').click();
  page.once('dialog',dialog=>dialog.accept());
  await open.click();
  assert.equal(await page.locator('#smsProjectTitle').inputValue(),renamedTitle);
  const committedSwitch=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),WORKSPACE_KEY);
  assert.equal(committedSwitch.project.title,renamedTitle);
  assert.equal(committedSwitch.savedProjects.at(-1).title,'Current unsaved title');
+ const outgoingCrystal=committedSwitch.savedProjects.at(-1).models.find(model=>model.id===liveCrystal);
+ assert.equal(Number(outgoingCrystal.parameters.baseHeight),latestCrystalHeight,
+  'The switch captures the latest live Crystal edit in the outgoing snapshot');
  assert.deepEqual(await snapshot(),savedModels);
  await page.locator('#smsLibrary').click();
  assert.equal(await projects.locator('[data-snapshot-id]').count(),savedCount+1);
