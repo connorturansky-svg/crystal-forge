@@ -1,4 +1,4 @@
-import {archiveSummary,reconcileArchive,commitRecovery,RECOVERY_PREFIX} from '../studio-sync-plan.js';
+import {archiveSummary,reconcileArchive,commitRecovery,RECOVERY_PREFIX,projectWorkspaceCandidate} from '../studio-sync-plan.js';
 import {WORKSPACE_KEY} from '../studio-documents.js';
 import {readOrganisation,ensureSnapshotIds,templateProject,mergeOrganisation} from '../studio-organisation.js';
 import assert from 'node:assert/strict';
@@ -130,3 +130,45 @@ assert.equal(restoredModel.build.activePixelProfileId,rescued.id);
 assert.equal(restoredModel.build.pixelHoles[0].profileId,rescued.id);
 assert.equal(restoredModel.build.pixelHoles[0].socketProfile.id,rescued.id);
 console.log('Studio measured-profile JSON/vault round-trips and conflicting-ID non-destructive recovery passed.');
+
+const legacyProject={...structuredClone(project),id:'same-title-other-project'};
+const legacySnapshots=[project,{...project,snapshotId:'kept'},{...legacyProject,snapshotId:'kept'},
+ {...legacyProject,snapshotId:'legacy-snapshot-1'}].map(item=>structuredClone(item));
+const beforeMigration=JSON.stringify(legacySnapshots);
+const migrated=ensureSnapshotIds(structuredClone(legacySnapshots));
+assert.deepEqual(ensureSnapshotIds(JSON.parse(beforeMigration)),migrated);
+assert.deepEqual(ensureSnapshotIds(structuredClone(migrated)),migrated);
+assert.equal(new Set(migrated.map(item=>item.snapshotId)).size,4);
+assert.equal(migrated[1].snapshotId,'kept');
+assert.equal(migrated[3].snapshotId,'legacy-snapshot-1');
+
+const transactionSource={...structuredClone(backupWithProfile),savedProjects:legacySnapshots};
+const target={...legacyProject,snapshotId:'target-snapshot',printJobs:[
+ {id:'built',modelId:'model',revision:1,status:'prepared',preparedRevision:1,requestId:'previous-worker'},
+ {id:'waiting',modelId:'model',revision:1,status:'queued',preparedRevision:null,requestId:null}
+]};
+const transactionBefore=JSON.stringify(transactionSource);
+const transaction=projectWorkspaceCandidate(transactionSource,target);
+assert.equal(JSON.stringify(transactionSource),transactionBefore);
+assert.equal(target.printJobs[0].status,'prepared');
+assert.equal(transaction.project.id,legacyProject.id);
+assert.equal(transaction.project.snapshotId,undefined);
+assert.deepEqual(transaction.project.models,target.models);
+assert.deepEqual(transaction.project.tabs,target.tabs);
+assert.deepEqual(transaction.project.printJobs.map(job=>[job.id,job.modelId,job.revision,job.status]),
+ [['built','model',1,'stale'],['waiting','model',1,'queued']]);
+assert.equal(transaction.savedProjects.at(-1).id,project.id);
+assert.deepEqual(transaction.organisation,transactionSource.organisation);
+assert.deepEqual(transaction.pixelProfiles,[measured]);
+
+const remoteSnapshot={...structuredClone(legacyProject),snapshotId:project.id};
+const recoveredSnapshot=await reconcileArchive(state,{...state,savedProjects:[remoteSnapshot]},{selection:'project:1'});
+assert.deepEqual(recoveredSnapshot.candidate.savedProjects.at(-1),remoteSnapshot,
+ 'A nonconflicting snapshot keeps its ID, even when it equals the local active project ID');
+const collision={...remoteSnapshot,title:'Divergent saved snapshot'};
+const recoveredCollision=await reconcileArchive(recoveredSnapshot.candidate,{...state,savedProjects:[collision]});
+assert.deepEqual(recoveredCollision.candidate.savedProjects.find(item=>item.snapshotId===remoteSnapshot.snapshotId),remoteSnapshot);
+assert(recoveredCollision.candidate.savedProjects.some(item=>item.title==='Divergent saved snapshot (recovered copy)'));
+const roundTrip=await packStudioVault(transaction);
+assert.deepEqual(await unpackStudioVault(roundTrip.manifest,hash=>roundTrip.assets.get(hash)),transaction);
+console.log('WT-023A project switch candidate, stable legacy IDs, distinct namespaces and vault round-trip passed.');

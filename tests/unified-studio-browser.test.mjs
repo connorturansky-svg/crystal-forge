@@ -454,9 +454,56 @@ try{
  assert.equal(await page.locator('#smsProjectTitle').inputValue(),'Current unsaved title');
  assert.equal(await projects.locator('article').count(),savedCount);
  assert.deepEqual(await snapshot(),currentModels);
+ const preSwitch=await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY);
+ const competingSwitch=await page.evaluate(key=>{
+  const newer=JSON.parse(localStorage.getItem(key));
+  newer.project.title='Other tab before project switch';
+  localStorage.setItem(key,JSON.stringify(newer));
+  return JSON.stringify(newer);
+ },WORKSPACE_KEY);
+ page.once('dialog',dialog=>dialog.accept());
+ await open.click();
+ await page.locator('#smsSaveState').filter({hasText:'Project not saved'}).waitFor();
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),competingSwitch);
+ assert.deepEqual(await snapshot(),currentModels);
+ await page.evaluate(({key,bytes})=>localStorage.setItem(key,bytes),{key:WORKSPACE_KEY,bytes:preSwitch});
+ await page.evaluate(key=>{
+  const set=Storage.prototype.setItem;
+  window.__wt023RestoreStorage=()=>{Storage.prototype.setItem=set;delete window.__wt023RestoreStorage;};
+  Storage.prototype.setItem=function(name,value){
+   if(name===key)throw new DOMException('Test quota failure','QuotaExceededError');
+   return set.call(this,name,value);
+  };
+ },WORKSPACE_KEY);
+ try{
+  page.once('dialog',dialog=>dialog.accept());
+  await open.click();
+  await page.locator('#smsSaveState').filter({hasText:'Project not saved'}).waitFor();
+  assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),preSwitch);
+  assert.equal(await page.locator('#smsProjectTitle').inputValue(),'Current unsaved title');
+  assert.equal(await projects.locator('article').count(),savedCount);
+  assert.deepEqual(await snapshot(),currentModels);
+ }finally{
+  await page.evaluate(()=>window.__wt023RestoreStorage());
+ }
+ const liveCrystal=await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',
+  {count:3},'Live Crystal before project switch').id);
+ await page.locator('.sms-workspace-nav [data-tab=build]').click();
+ const crystalHeight=page.locator('.sms-palette [data-palette-key=crystal-base-height]');
+ const previousCrystalHeight=await crystalHeight.inputValue();
+ await crystalHeight.press('ArrowRight');
+ const latestCrystalHeight=Number(await crystalHeight.inputValue());
+ assert.notEqual(latestCrystalHeight,Number(previousCrystalHeight));
+ await page.locator('#smsLibrary').click();
  page.once('dialog',dialog=>dialog.accept());
  await open.click();
  assert.equal(await page.locator('#smsProjectTitle').inputValue(),renamedTitle);
+ const committedSwitch=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),WORKSPACE_KEY);
+ assert.equal(committedSwitch.project.title,renamedTitle);
+ assert.equal(committedSwitch.savedProjects.at(-1).title,'Current unsaved title');
+ const outgoingCrystal=committedSwitch.savedProjects.at(-1).models.find(model=>model.id===liveCrystal);
+ assert.equal(Number(outgoingCrystal.parameters.baseHeight),latestCrystalHeight,
+  'The switch captures the latest live Crystal edit in the outgoing snapshot');
  assert.deepEqual(await snapshot(),savedModels);
  await page.locator('#smsLibrary').click();
  assert.equal(await projects.locator('article').count(),savedCount+1);

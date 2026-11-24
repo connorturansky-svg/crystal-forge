@@ -58,11 +58,16 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
-## v0.16.0-dev.35.34 — Organised printing source files
+## v0.16.0-dev.35.35 — Organised printing source files
 
 - Find the production pack, print-quality checks, Cura model advice and optical reports together in a dedicated printing source folder.
 - Keep all existing model settings, saved projects and STL/3MF output behaviour unchanged; this is a source layout improvement.
 - Preserve SHA-specific GitHub Pages files for both current and older browser tabs while source modules move.
+
+## v0.16.0-dev.35.34 — Save and switch projects safely
+
+- Save the outgoing project and open the selected project in one workspace write. A failed save leaves the current project open.
+- Keep stable snapshot IDs when restoring project backups, with separate copies for conflicting snapshots.
 
 ## v0.16.0-dev.35.33 — Clearer everyday text
 
