@@ -1,6 +1,6 @@
-import {canonical,validateProject,validateModel,WORKSPACE_KEY} from './studio-documents.js';
+import {canonical,validateProject,validateModel,invalidatePrintJob,newId,WORKSPACE_KEY} from './studio-documents.js';
 import {assetHash} from './studio-vault.js';
-import {readOrganisation,mergeOrganisation} from './studio-organisation.js';
+import {readOrganisation,mergeOrganisation,ensureSnapshotIds} from './studio-organisation.js';
 import {normalisePixelProfile} from './pixel-profiles.js';
 
 const copy=structuredClone;
@@ -74,6 +74,8 @@ export async function reconcileArchive(local,source,{mode='merge',selection='all
  validateArchive(local);validateArchive(source);
  if(!['merge','copies'].includes(mode))throw Error('Choose a recovery strategy.');
  const candidate=copy(local),remote=copy(source),refs=new Map();
+ ensureSnapshotIds(candidate.savedProjects);
+ ensureSnapshotIds(remote.savedProjects);
  // Keep current measured profiles, copy conflicting remote IDs and rewire only
  // imported objects. Never replace a local calibrated profile by ID alone.
  if(candidate.pixelProfiles!==undefined||remote.pixelProfiles!==undefined){
@@ -140,15 +142,19 @@ export async function reconcileArchive(local,source,{mode='merge',selection='all
    const mapped=model.link&&refs.get('model:'+model.link.sourceId);
    if(mapped)model.link.sourceId=mapped.slice(6);
   }
-  const existingOriginal=[candidate.project,...candidate.savedProjects].find(item=>keyFor(item)===originalKey);
+  // Snapshot IDs and active project IDs are distinct namespaces.
+  const existingOriginal=project.snapshotId
+   ?candidate.savedProjects.find(item=>item.snapshotId===originalKey)
+   :candidate.project.id===originalKey?candidate.project:undefined;
   if(mode==='merge'&&existingOriginal&&canonical(existingOriginal)===canonical(project)){
    if(existingOriginal.snapshotId)refs.set('project:'+originalKey,'project:'+existingOriginal.snapshotId);
    continue;
   }
-  project.snapshotId=fingerprint;
-  refs.set('project:'+originalKey,'project:'+fingerprint);
+  project.snapshotId=mode==='merge'&&!existingOriginal&&project.snapshotId?project.snapshotId:fingerprint;
+  refs.set('project:'+originalKey,'project:'+project.snapshotId);
   if(existingOriginal){project.id=fingerprint;project.title+=' (recovered copy)';}
-  const existing=candidate.savedProjects.find(item=>item.snapshotId===fingerprint);
+  const existing=candidate.savedProjects.find(item=>item.snapshotId===project.snapshotId);
+  if(existing&&canonical(existing)!==canonical(project))throw Error('A different project snapshot already uses this recovery identity.');
   if(!existing){candidate.savedProjects.push(project);importedProjects++;}
  }
  const metadata=readOrganisation(remote.organisation);
@@ -177,6 +183,26 @@ export async function reconcileArchive(local,source,{mode='merge',selection='all
  return {candidate,importedModels,importedProjects};
 }
 
+// Stage the outgoing snapshot and optional incoming project as one validated
+// workspace. The caller publishes it only after a successful storage write.
+export function projectWorkspaceCandidate(workspace,target){
+ const savedProjects=ensureSnapshotIds(copy(workspace.savedProjects));
+ const saved=copy(workspace.project);
+ delete saved.snapshotId;
+ saved.snapshotId=newId();
+ if(savedProjects.some(item=>item.snapshotId===saved.snapshotId))throw Error('Snapshot ID already exists.');
+ savedProjects.push(saved);
+ const project=target?copy(target):workspace.project;
+ if(target){
+  delete project.snapshotId;
+  for(const job of project.printJobs){
+   if(job.status!=='prepared'&&job.status!=='preparing')continue;
+   invalidatePrintJob(job);
+   delete job.progress;
+  }
+ }
+ return validateArchive({...workspace,project,savedProjects});
+}
 export function assertWorkspaceVersion(storage,expected){
  if(storage.getItem(WORKSPACE_KEY)!==expected)
   throw Error('Another tab saved this workspace. Download a backup of your current edits, then reload to review the newer saved workspace.');
