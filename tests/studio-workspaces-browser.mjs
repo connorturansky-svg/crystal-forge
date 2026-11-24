@@ -250,7 +250,19 @@ try{
  await page.evaluate(()=>window.__sensoryStudio.addModel('gears',{},'WT-024 Gear'));
  await destination('Design').press('Enter');
  await verifyHelp('[data-model-param=teeth]',/finer spacing/);
+ for(const type of ['tactile-tiles','waves','control-caps','characters','light-pods']){
+  await page.evaluate(typeId=>window.__sensoryStudio.addModel(typeId),type);
+  await destination('Design').press('Enter');
+  const fields=page.locator('[data-model-param][data-model-family="'+type+'"]');
+  assert(await fields.count()>0,type+' renders native parameters');
+  assert.equal(await fields.locator('xpath=self::*[contains(@aria-describedby,"contextualHelpDetail")]').count(),
+   await fields.count(),type+' native parameters have contextual detail');
+ }
+ await page.setViewportSize({width:390,height:844});
+ await auditLayout('390px with detailed contextual help');
+ const revision=await page.evaluate(()=>window.__sensoryStudio.currentModel.revision);
  await hoverNotes.uncheck();
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.revision),revision);
  assert(await detailedExplanations.isChecked());
  assert(!(await page.locator('#controlTooltip').isVisible()));
  await page.reload();

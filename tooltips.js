@@ -1,5 +1,5 @@
 /* Crystal Forge control explanations. One accessible tooltip for the whole app. */
-import {classicDetails,nativeHelp,dynamicHelp} from './contextual-help-copy.js';
+import {classicDetails,nativeHelp,nativeFamilyHelp,dynamicHelp} from './contextual-help-copy.js';
 const SETTINGS={
  "curaQualityType": ["curaQualityType","Choose the Cura base quality family needed for an imported profile to appear."],
  "autoBedSplit": ["autoBedSplit","Split models exceeding the selected printer bed into straight-cut printable pieces."],
@@ -457,11 +457,14 @@ function settingLabel(el){
  const label=el.closest?.('label')||el.parentElement?.querySelector('label');
  return label&&Array.from(label.childNodes).filter(node=>node.nodeType===3).map(node=>node.textContent.trim()).filter(Boolean).join(' ');
 }
+function nativeEntry(el){
+ const {modelFamily,modelParam}=el.dataset;
+ return nativeFamilyHelp[modelFamily]?.[modelParam]||nativeHelp[modelParam];
+}
 function lookup(el){
  if(el.dataset.tooltipTitle&&el.dataset.tooltipBody)return [el.dataset.tooltipTitle,el.dataset.tooltipBody];
- if(el.dataset.modelParam&&Object.hasOwn(nativeHelp,el.dataset.modelParam)){
-  return [settingLabel(el)||el.dataset.modelParam,nativeHelp[el.dataset.modelParam][0]];
- }
+ const nativeParameter=nativeEntry(el);
+ if(nativeParameter)return [settingLabel(el)||el.dataset.modelParam,nativeParameter[0]];
  const dynamic=dynamicEntry(el);
  if(dynamic)return [settingLabel(el)||'Setting',dynamic[0]];
  if(el.dataset.state&&SETTINGS[el.dataset.state])return SETTINGS[el.dataset.state];
@@ -528,11 +531,15 @@ export function installTooltips(doc=document){
   const width=Math.min(300,viewportWidth-22);node.style.maxWidth=width+'px';
   const box=node.getBoundingClientRect();
   let x=rect.left+rect.width/2-box.width/2;
+  let y=rect.bottom+8;
   const panel=target.closest('.left,.right,.sms-controls');
-  if(panel){const bounds=panel.getBoundingClientRect();if(bounds.right+box.width+22<viewportWidth)x=bounds.right+11;else if(bounds.left-box.width-11>0)x=bounds.left-box.width-11;}
-  x=Math.max(11,Math.min(viewportWidth-box.width-11,x));
-  let y=panel?rect.top:rect.bottom+11;
-  if(y+box.height>viewportHeight-9)y=rect.top-box.height-11;
+  if(panel){
+   const bounds=panel.getBoundingClientRect();
+   if(bounds.right+box.width+18<viewportWidth){x=bounds.right+8;y=rect.top}
+   else if(bounds.left-box.width-18>0){x=bounds.left-box.width-8;y=rect.top}
+  }
+  if(y===rect.bottom+8&&y+box.height>viewportHeight-9)y=rect.top-box.height-8;
+  x=Math.max(9,Math.min(viewportWidth-box.width-9,x));
   y=Math.max(9,Math.min(viewportHeight-box.height-9,y));
   node.style.left=Math.round(x)+'px';node.style.top=Math.round(y)+'px';
  };
@@ -582,7 +589,7 @@ export function installTooltips(doc=document){
  doc.addEventListener('keydown',e=>{if(e.key==='Escape')hide()},true);
  doc.addEventListener('close',e=>{if(e.target.contains?.(target))hide()},true);
  doc.addEventListener('scroll',()=>{if(target&&!node.hidden)position()},true);
- window.addEventListener('resize',()=>{if(target)position()});
+ doc.defaultView.addEventListener('resize',()=>{if(target)position()});
  return {hide,enable(value){enabled=!!value;if(!enabled)hide()},get enabled(){return enabled}};
 }
 
@@ -640,7 +647,7 @@ export function installContextualHelp(doc=document){
   trigger.setAttribute('aria-description',info[0]);
   helpTriggerOwners.set(trigger,control);
   help.append(trigger);
-  const copy=classicDetails[control.dataset.state]||nativeHelp[control.dataset.modelParam]?.[1]||dynamicEntry(control)?.[1];
+  const copy=classicDetails[control.dataset.state]||nativeEntry(control)?.[1]||dynamicEntry(control)?.[1];
   let id;
   if(copy){
    id='contextualHelpDetail'+(++nextDetailId);

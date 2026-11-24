@@ -747,11 +747,12 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const editableState=typeId==='crystals'?adapter.createCrystals(p):{};
   const model=createModel({name:name||g.displayName,typeId,parameters:p,editableState});addModel(project,model);switchModel(model.id);return model;
  }
- function control(schema,p){
+ function control(schema,p,family){
   const key=esc(schema.key),label=esc(schema.label||schema.key),value=p[schema.key];
-  if(schema.type==='select')return '<label>'+label+'<select data-model-param="'+key+'">'+schema.options.map(o=>'<option '+(o===value?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select></label>';
-  if(schema.type==='boolean')return '<label><input type="checkbox" data-model-param="'+key+'" '+(value?'checked':'')+'> '+label+'</label>';
-  return '<div class="sms-model-control"><label>'+label+'<output data-value-for="'+key+'">'+esc(value)+' '+esc(schema.unit||'')+'</output></label><input type="range" data-model-param="'+key+'" min="'+schema.min+'" max="'+schema.max+'" step="'+(schema.step||.1)+'" value="'+value+'"></div>';
+  const helpScope=' data-model-family="'+esc(family)+'"';
+  if(schema.type==='select')return '<label>'+label+'<select data-model-param="'+key+'"'+helpScope+'>'+schema.options.map(o=>'<option '+(o===value?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select></label>';
+  if(schema.type==='boolean')return '<label><input type="checkbox" data-model-param="'+key+'"'+helpScope+' '+(value?'checked':'')+'> '+label+'</label>';
+  return '<div class="sms-model-control"><label>'+label+'<output data-value-for="'+key+'">'+esc(value)+' '+esc(schema.unit||'')+'</output></label><input type="range" data-model-param="'+key+'"'+helpScope+' min="'+schema.min+'" max="'+schema.max+'" step="'+(schema.step||.1)+'" value="'+value+'"></div>';
  }
  function details(title,descriptor,html){return '<details class="sms-panel-details"><summary>'+esc(title)+'<small>'+esc(descriptor)+'</small></summary><div>'+html+'</div></details>';}
  function designSections(generator,model){
@@ -778,9 +779,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const output=groups.map(([title,description,pattern])=>{
    const controls=[...remaining].filter(field=>pattern.test(field.key));
    controls.forEach(field=>remaining.delete(field));
-   return controls.length?details(title,description,controls.map(field=>control(field,model.parameters)).join('')):'';
+   return controls.length?details(title,description,controls.map(field=>control(field,model.parameters,generator.typeId)).join('')):'';
   });
-  if(remaining.size)output.push(details('Fine adjustments','Adjust the seed or other generator settings.',[...remaining].map(field=>control(field,model.parameters)).join('')));
+  if(remaining.size)output.push(details('Fine adjustments','Adjust the seed or other generator settings.',[...remaining].map(field=>control(field,model.parameters,generator.typeId)).join('')));
   return (family?control(family,model.parameters):'')+output.join('');
  }
  const nativeGuideChoices=new Map();
@@ -1624,6 +1625,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const bend=document.createElement('label');
   bend.textContent='Minimum bend radius (mm) ';
   const bendInput=document.createElement('input');
+  bendInput.dataset.nativeBendRadius='';
   bendInput.type='number';bendInput.min='1';bendInput.max='60';bendInput.step='any';
   bendInput.value=settings.minBendRadius??5;bendInput.disabled=!!model.link;
   bendInput.onchange=()=>{

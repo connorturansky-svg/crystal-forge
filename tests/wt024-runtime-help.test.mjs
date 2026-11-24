@@ -25,6 +25,7 @@ test('classic and native control copy uses explicit registry entries',()=>{
  }
  assert.match(classicDetails.count,/few crystals/);
  assert.match(nativeHelp.teeth[1],/mating gear/);
+ assert.match(describeControl({dataset:{modelFamily:'control-caps',modelParam:'diameter'}})[1],/width of the control cap/);
  assert.match(dynamicHelp['[data-pixel-field=rotation]'][1],/cable/);
  assert.equal(describeControl({dataset:{},id:'uncatalogued',closest:()=>null,getAttribute:()=>null}),null);
 });

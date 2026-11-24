@@ -183,7 +183,38 @@ export const nativeHelp = {
  z: ["Moves the design forwards or backwards across the work surface.","Use a measured offset to align with the installation footprint, then recheck how far it sits from the front and back edges."],
 };
 
+export const nativeFamilyHelp = {
+ 'control-caps': {
+  diameter: ['Sets the outside width of the control cap.', 'Choose a width that is easy to grip and clears neighbouring controls. Check clearance with the cap installed and turned through its full range.'],
+  depth: ['Sets the front-to-back size of an oval cap.', 'Use it to make an oval grip narrower or deeper. Compare both dimensions against the surrounding panel before printing.'],
+ },
+ waves: {
+  width: ['Sets the overall length of the wave part.', 'Measure the longest side of the intended footprint. Check where the waves meet the ends before placing fittings.'],
+  depth: ['Sets the shorter footprint dimension of the wave part.', 'Adjust the width across the base to fit the intended panel. Check both end and side clearances in top view.'],
+  thickness: ['Sets the minimum thickness beneath the waves.', 'Increase this to leave more material under valleys or near a cut. Check the thinnest area in a sliced section.'],
+ },
+ characters: {
+  depth: ['Sets the front-to-back depth of the raised character.', 'Use a shallow relief for a panel or more depth for a larger raised shape. Compare how much the character projects from its mounting surface.'],
+ },
+};
+
 export const dynamicHelp = {
+ '[data-native-bend-radius]': ['Sets the smallest permitted curve in the cable route.', 'Use a bend radius that your real cable can follow without strain. A wider bend needs more room around a socket or opening.'],
+ '[data-pattern-field=alignment]': ['Chooses how the centre of the pattern is aligned.', 'Use Model centre when the holes should be centred on the part. Choose a centreline or Custom offset when matching an off-centre fixing.'],
+ '[data-pattern-field=kind]': ['Chooses a straight line, circle or rectangular grid of holes.', 'Choose the arrangement that matches the measured fixing points. The available spacing and rotation controls depend on the selected layout.'],
+ '[data-pattern-field=profile]': ['Chooses the type of fixing used by every hole in the pattern.', 'Match the cut shape to the screws, magnets or inserts being installed. Check recess size and entry face on the prepared model.'],
+ '[data-pattern-field=entryFace]': ['Chooses the face where the patterned fixing openings begin.', 'Select the face through which you will insert the hardware. Inspect the cut direction and remaining stock in the prepared model.'],
+ '[data-edge-length=input]': ['Sets the cable available between the entrance and the first pixel.', 'Measure this lead separately from the cable between pixels. Check it reaches the first housing along the full curved groove.'],
+ '[data-edge-length=output]': ['Sets the cable available between the last pixel and the exit.', 'Measure the lead after the final pixel and allow for bends. Leave enough cable beyond the part to reach the next connection.'],
+ '[data-wire-end-x]': ['Sets the sideways position of this cable outlet.', 'Move it towards the next connection while keeping enough material along the edge. Inspect the resulting curve before printing.'],
+ '[data-wire-end-z]': ['Sets the front-to-back position of this cable outlet.', 'Compare the new outlet position with the cable path and mounting surface. Check that the cable can follow the bend without being pinched.'],
+ '[data-pixel-edge]': ['Connects the selected pixel to the entrance or exit of the string.', 'Mark the first pixel as Input and the last as Output. For a string with one pixel, choose Both so the lead can enter and leave the part.'],
+ '[data-tab-u]': ['Moves this fixing tab along the perimeter of the base.', 'Adjust the position to line up with your bracket or strap. Check for clashes with nearby tabs and cable exits.'],
+ '#shapePresetSelect': ['Chooses a preset for the crystal shape.', 'Select a starting shape and apply it when you want to change several shape settings together. Select a crystal first to work on only that crystal.'],
+ '#templateSelect': ['Chooses a saved design to use as a starting point.', 'Pick a template close to the shape or layout you need so you can begin with its saved settings and then make your own edits.'],
+ '#savedProjectSelect': ['Chooses a named project saved in this browser.', 'Select the project you want to review or resume. Check the project name and version when several copies have similar names.'],
+ '#fitResultSelect': ['Selects the hole that best fits the real LED in a printed sample.', 'Test insertion and removal with the actual LED. Choose the matching labelled hole so its measured allowance can be applied to the project.'],
+
  '[data-build-wire-pitch]': ['Selects the available cable length between pixels.', 'Choose the spacing on the real pixel string. Studio measures the curved route between pixel centres, so two evenly spaced sockets can still need more cable to follow a bend.'],
  '[data-build-wire-custom]': ['Sets a measured cable length in millimetres.', 'Measure between the centres of two connected pixels. Use this value when your string differs from the preset lengths.'],
  '[data-build-wire-width]': ['Sets the width of the groove for the cable.', 'Measure the cable over its insulation. Keep enough material between the widened groove and any neighbouring openings.'],
