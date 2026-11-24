@@ -260,8 +260,17 @@ try{
   assert.equal(await fields.locator('xpath=self::*[contains(@aria-describedby,"contextualHelpDetail")]').count(),
    await fields.count(),type+' native parameters have contextual detail');
  }
+ for(const [workspace,selector] of [['Home','#smsHomeSearch'],['Library','#smsSearch'],['Print Centre','#smsPrinter']]){
+  await destination(workspace).press('Enter');
+  await page.locator(selector+'[aria-describedby*="contextualHelpDetail"]').waitFor({state:'attached',timeout:4000});
+ }
+ await destination('Design').press('Enter');
  await page.setViewportSize({width:390,height:844});
  await auditLayout('390px with detailed contextual help');
+ await page.setViewportSize({width:720,height:475});
+ await page.evaluate(()=>{document.documentElement.style.fontSize='200%'});
+ await auditLayout('200% text with detailed contextual help');
+ await page.evaluate(()=>{document.documentElement.style.fontSize=''});
  const revision=await page.evaluate(()=>window.__sensoryStudio.currentModel.revision);
  await hoverNotes.uncheck();
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.revision),revision);
