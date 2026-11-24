@@ -1,13 +1,13 @@
 # Repository map — start here before opening 100 files
 
-This index describes actual paths on `main` as inspected **22 November 2026** (after merged #132 and #134). Use [Current work](PROJECT_STATUS.md) for active milestone pointers; links to files here are stable. Never substitute old roadmap prose for source inspection.
+**Current orientation (23 Nov 2026):** main `d2ee1ab84ea41d363d9448df436732a286bf2c54` includes merged CI efficiency #131, approved WT-023 architecture #144, and independent test-only project-index prework #146. Codex's data-layer #147 is still a **draft** and behind main; the next feature milestone is [WT-023B #139](https://github.com/connorturansky-svg/crystal-forge/issues/139), not a new WT-023A architecture exercise. Start at [Codex fast start](WT023_CODEX_FAST_START.md) and [status](PROJECT_STATUS.md). Recheck live GitHub before changing code; archived WT-021 and WT-022 entries remain historical.
 
 ## For a human opening the repository
 
 | Want to… | Start here |
 | --- | --- |
 | Run the current Studio | [GitHub Pages app](https://connorturansky-svg.github.io/crystal-forge/) |
-| See what's being developed | [Current work](PROJECT_STATUS.md), [WT-022 #127](https://github.com/connorturansky-svg/crystal-forge/issues/127), [open PRs](https://github.com/connorturansky-svg/crystal-forge/pulls) |
+| See what's being developed | [Current work](PROJECT_STATUS.md), [WT-023 #137](https://github.com/connorturansky-svg/crystal-forge/issues/137), [open PRs](https://github.com/connorturansky-svg/crystal-forge/pulls) |
 | Understand the seven model families | [Project vision](PROJECT_VISION.md), [features](FEATURE_SPECIFICATIONS.md), [parity matrix](MODEL_BUILDER_PARITY.md) |
 | Find the correct editor control | In the app, use the workspace currently deployed; Pixels/Wiring/Mounting navigation is live on `main` from merged #132; global phrase search is now on `main` via merged #134 |
 | Prepare an STL/3MF print | [Testing & physical QA](TESTING.md), [Cura guidance](CURA_PROFILE_GENERATOR.md), [physical #10](https://github.com/connorturansky-svg/crystal-forge/issues/10) |
@@ -25,7 +25,7 @@ This index describes actual paths on `main` as inspected **22 November 2026** (a
 | WT-022 grouped line/radial/grid mounts | `mounting-pattern.js`, `mounting-pattern-editor.js`, `mounting-pattern-viewport.js`, `tests/mounting-pattern*.mjs` |
 | Cabling and print fit | `wire-routing.js`, `pixel-string-routing.js`, `studio-native-routing.js`, `pixel-spacing-snap.js`, `studio-pixel-fit.js` |
 | Real manufacturing, not just preview | `fabrication-v1.js`, `fabrication-worker.js`, `studio-model-worker.js`, `studio-material-export.js`, `studio-edge-finish.js` |
-| Library, saved state and recovery | `studio-documents.js`, `project-library.js`, `studio-sync-plan.js`, `github-vault.js`, [backup guidance](BACKUP_RECOVERY.md) |
+| Library, saved state and recovery | `studio-documents.js`, `studio-organisation.js`, `studio-sync-plan.js`, `studio-vault.js`, `studio-migration.js`, `github-vault.js` (legacy Crystal), [backup guidance](BACKUP_RECOVERY.md), [WT-023 fast start](WT023_CODEX_FAST_START.md) |
 | Find-a-tool search | `studio-tool-finder.js`, `sensory-studio.js`; full tool registry/matcher in `studio-tool-registry.js` and `studio-tool-search-core.js` from #133, now in `main` via merged #134 |
 | Print export settings/Cura | `cura-profiles.js`, `production-pack.js`, `studio-material-export.js`, `tests/cura-profiles.test.mjs` |
 
@@ -47,7 +47,7 @@ Only call a check **passed** when it actually executed on the exact branch/PR SH
 
 ## Documentation: what's current versus historic
 
-- Current owner task: [WT-022 #127](https://github.com/connorturansky-svg/crystal-forge/issues/127) + [current work](PROJECT_STATUS.md).
+- Current owner-approved Library/cloud milestone: [WT-023 #137](https://github.com/connorturansky-svg/crystal-forge/issues/137), next feature [#139](https://github.com/connorturansky-svg/crystal-forge/issues/139) after #147 source/data integration; WT-022 #127 is prior navigation/search scope.
 - Engineering constraints: [AGENTS.md](../AGENTS.md), [architecture](ARCHITECTURE.md), [testing](TESTING.md).
 - Former WT-021 specifics: `docs/WT021_*.md`, `prompts/START_HERE.md` and `prompts/active/WT021_*.md`: retain for provenance, but treat dated instructions as historical.
 - Long chronology: [AI handover](AI_HANDOVER.md), [roadmap](ROADMAP.md), [development history](DEVELOPMENT_HISTORY.md); do not restart superseded branches on the basis of these records.

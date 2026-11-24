@@ -35,12 +35,20 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Classify PR scope (fail closed on unknown diffs)
+        id: scope
+        env:
+          CI_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node tests/helpers/ci-scope.mjs
       - name: Install pinned dependencies
+        if: steps.scope.outputs.run_heavy == 'true'
         run: npm install --no-audit --no-fund
       - name: Exercise real Manifold WASM meshes
+        if: steps.scope.outputs.run_heavy == 'true'
         id: smoke
         continue-on-error: true
         run: |
@@ -60,19 +68,19 @@ jobs:
           npm run test:benchmark > benchmark-run.log 2>&1
           cat benchmark-run.log
       - name: Upload benchmark log
-        if: always()
+        if: always() && steps.scope.outputs.run_heavy == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: crystal-forge-performance-benchmark
           path: benchmark-run.log
           if-no-files-found: ignore
       - name: Upload full fabrication test log
-        if: always()
+        if: always() && steps.scope.outputs.run_heavy == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: fabrication-test-log
           path: fabrication-run.log
           if-no-files-found: ignore
       - name: Fail on real geometry and benchmark errors
-        if: steps.smoke.outcome != 'success' || steps.benchmark.outcome != 'success'
+        if: steps.scope.outputs.run_heavy == 'true' && (steps.smoke.outcome != 'success' || steps.benchmark.outcome != 'success')
         run: exit 1

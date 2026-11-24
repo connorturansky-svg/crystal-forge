@@ -58,15 +58,26 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
-## v0.16.0-dev.35.34 — Recover larger private Studio backups
+## v0.16.0-dev.35.37 — Recover larger private Studio backups
 
 - Restore and verify larger model assets and Studio manifests through GitHub's authenticated Git Blob API when the Contents API omits inline data.
 - Preserve existing saved projects and private backup revisions if an oversized asset cannot be read.
 
-## v0.16.0-dev.35.33 — Save and switch projects safely
+## v0.16.0-dev.35.35 — Find templates and projects in Library
+
+- Browse templates first, then open saved versions from collapsible project folders.
+- See the active project separately from its saved versions. Fold or expand each folder with the keyboard.
+
+## v0.16.0-dev.35.34 — Save and switch projects safely
 
 - Save the outgoing project and open the selected project in one workspace write. A failed save leaves the current project open.
 - Keep stable snapshot IDs when restoring project backups, with separate copies for conflicting snapshots.
+
+## v0.16.0-dev.35.33 — Clearer everyday text
+
+- Increase main editor text and label sizes so controls are easier to read without zooming.
+- Make Help, What’s New, setting notes and tool-search explanations larger with more breathing room.
+- Keep the same tools, model settings and printable geometry. You can still use browser zoom and light or dark mode.
 
 ## v0.16.0-dev.35.32 — Find Support-Free Shoulders
 

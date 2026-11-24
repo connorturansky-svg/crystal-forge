@@ -92,3 +92,8 @@ assert.throws(()=>migrateLegacyStorage(malformed)); assert.equal(malformed.getIt
 assert.throws(()=>importProject({...p,schemaVersion:99}));
 assert.throws(()=>importProject({...p,tabs:['missing']}));
 console.log('Studio documents: isolation, revision guards, links, legacy recovery and quota failures passed.');
+
+// WT-023A non-mutating active/snapshot grouping and private-vault preservation.
+await import('./wt023-project-index.test.mjs');
+// Long-lived regression: seven-builder identity and saved-project state cannot disappear.
+await import('./wt023-postmerge-regressions.test.mjs');

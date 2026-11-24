@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import {mkdir} from 'node:fs/promises';
+import {WORKSPACE_KEY} from '../studio-documents.js';
 import {chromium} from 'playwright';
 
 const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
@@ -77,5 +79,147 @@ try{
   assert.equal(await destination('Wiring').getAttribute('aria-current'),'step');
   assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.generator.typeId),family);
  }
+
+ // End-to-end post-merge protection: navigation may not merely keep a model
+ // alive in memory. All builders and the real mounting edit must survive a
+ // serialized v1 save and a full new document load on the same browser.
+ await page.waitForFunction(key=>{
+  const raw=localStorage.getItem(key);
+  if(!raw)return false;
+  try{
+   const data=JSON.parse(raw),types=new Set(data.project.models.map(x=>x.generator.typeId));
+   return ['gears','crystals','tactile-tiles','waves','control-caps','characters','light-pods']
+    .every(type=>types.has(type)) &&
+    data.project.models.some(model=>model.generator.typeId==='gears' &&
+      model.build.manualMountHoles?.length===1);
+  }catch{return false;}
+ },WORKSPACE_KEY,{timeout:15000});
+ const saved=await page.evaluate(key=>{
+  const state=JSON.parse(localStorage.getItem(key)),project=state.project;
+  return {id:project.id,tabs:[...project.tabs],activeTab:project.activeTab,
+   models:project.models.map(m=>({id:m.id,name:m.name,type:m.generator.typeId,
+    revision:m.revision,pixelHoles:m.build.pixelHoles?.length??0,
+    mountingHoles:m.build.manualMountHoles?.length??0})),
+   jobs:project.printJobs.map(j=>({id:j.id,revision:j.revision,status:j.status})),
+   savedSnapshots:(state.savedProjects||[]).map(p=>p.snapshotId)};
+ },WORKSPACE_KEY);
+ await page.reload();
+ await page.waitForFunction(()=>window.__sensoryStudio);
+ const reloaded=await page.evaluate(key=>{
+  const state=JSON.parse(localStorage.getItem(key)),project=state.project;
+  return {id:project.id,tabs:[...project.tabs],activeTab:project.activeTab,
+   models:project.models.map(m=>({id:m.id,name:m.name,type:m.generator.typeId,
+    revision:m.revision,pixelHoles:m.build.pixelHoles?.length??0,
+    mountingHoles:m.build.manualMountHoles?.length??0})),
+   jobs:project.printJobs.map(j=>({id:j.id,revision:j.revision,status:j.status})),
+   savedSnapshots:(state.savedProjects||[]).map(p=>p.snapshotId)};
+ },WORKSPACE_KEY);
+ assert.deepEqual(reloaded,saved,
+  'Seven builders, real mounting placement, tab order and job revisions survive reload');
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.project.id),saved.id);
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.id),saved.activeTab);
+ console.log('Post-merge Studio cross-builder saved state, model tabs and real mount placement survived reload.');
+ // WT-025A: check actual rendered legibility, not merely that CSS contains token names.
+ await destination('Design').press('Enter');
+ await page.locator('#smsFindTools').fill('mounting grid');
+ await page.locator('.sms-tool-result').first().waitFor();
+ const textSize=selector=>page.evaluate(selector=>{
+  const element=document.querySelector(selector);
+  return element?Number.parseFloat(getComputedStyle(element).fontSize):null;
+ },selector);
+ assert((await textSize('body'))>=16,'Default main text is at least 16px');
+ assert((await textSize('.sms-tool-finder>label'))>=15,'Find-tools label is readable');
+ assert((await textSize('.sms-tool-finder>p'))>=14,'Find-tools guidance is readable');
+ assert((await textSize('.sms-tool-result'))>=15,'Tool search results are readable');
+ await page.locator('#smsFindTools').fill('');
+ // Check computed foreground/background contrast in the real active theme.
+ const contrast=async(foreground,background)=>page.evaluate(({foreground,background})=>{
+  const channels=s=>{
+   const match=s.match(/rgba?\(([^)]+)\)/);
+   if(!match)throw Error('Missing computed RGB colour: '+s);
+   return match[1].split(',').slice(0,3).map(v=>Number.parseFloat(v.trim())/255);
+  };
+  const luminance=s=>channels(s).reduce((total,v,i)=>{
+   const linear=v<=.04045?v/12.92:((v+.055)/1.055)**2.4;
+   return total+linear*[.2126,.7152,.0722][i];
+  },0);
+  const fg=luminance(getComputedStyle(document.querySelector(foreground)).color);
+  const bg=luminance(getComputedStyle(document.querySelector(background)).backgroundColor);
+  return (Math.max(fg,bg)+.05)/(Math.min(fg,bg)+.05);
+ },{foreground,background});
+ const auditContrast=async()=>{
+  const label=await contrast('.sms-tool-finder>label','.sms-tool-finder');
+  const note=await contrast('.sms-tool-finder>p','.sms-tool-finder');
+  assert(label>=4.5&&note>=4.5,
+   'Tool finder primary/secondary text must meet 4.5:1 contrast: '+JSON.stringify({label,note}));
+ };
+ await mkdir('qa',{recursive:true});
+ const auditLayout=async(label)=>{
+  const overflow=await page.evaluate(()=>{
+   const width=document.documentElement.clientWidth,scroll=document.documentElement.scrollWidth;
+   if(scroll<=innerWidth+1)return null;
+   return {width,scroll,offenders:[...document.querySelectorAll('body *')].filter(el=>{
+    const rect=el.getBoundingClientRect();
+    return rect.width&&rect.right>width+2;
+   }).slice(0,24).map(el=>[el.tagName,el.id,String(el.className).slice(0,100),Math.round(el.getBoundingClientRect().right)])};
+  });
+  assert.equal(overflow,null,label+' must not create horizontal page overflow: '+JSON.stringify(overflow));
+ };
+ const savedModel=await page.evaluate(()=>window.__sensoryStudio.currentModel.id);
+ for(const width of [1440,390]){
+  await page.setViewportSize({width,height:width===390?844:950});
+  for(const workspace of ['Home','Library','Design','Build','Pixels','Wiring','Mounting','Print Centre']){
+   await destination(workspace).press('Enter');
+   assert.equal(await destination(workspace).getAttribute('aria-current'),'step');
+   assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.id),savedModel);
+   await auditLayout(width+'px '+workspace);
+  }
+  await destination('Design').press('Enter');
+  await page.locator('#smsFindTools').fill('mounting grid');
+  await page.locator('#smsFindTools').press('ArrowDown');
+  const result=page.locator('.sms-tool-result').first();
+  assert(await result.evaluate(el=>document.activeElement===el&&el.matches(':focus-visible')&&
+   getComputedStyle(el).outlineStyle==='solid'&&parseFloat(getComputedStyle(el).outlineWidth)>=2),
+   'Keyboard search results display a visible focus ring');
+  await page.screenshot({path:'qa/unified-wt025-legibility-'+width+'.png'});
+  await result.press('Escape');
+  await auditLayout(width+'px tool finder');
+ }
+ for(const theme of ['initial','alternate']){
+  if(theme==='alternate')await page.locator('#themeBtn').click();
+  await auditContrast();
+  assert((await textSize('.sms-tool-finder>label'))>=15,'Readable labels survive theme changes');
+  assert((await textSize('body'))>=16,'Readable main text survives theme changes');
+  await page.locator('#changelogBtn').click();
+  assert(await page.locator('#infoChangelog').isVisible(),'What’s New remains available');
+  assert((await textSize('.dialog-body'))>=16,'Release notes are readable at default zoom');
+  assert((await contrast('#infoChangelog','.dialog'))>=4.5,'Release notes meet normal-text contrast');
+  await page.locator('#infoTabHelp').click();
+  assert(await page.locator('#infoHelp').isVisible());
+  assert((await textSize('#infoHelp'))>=16,'Help paragraphs are readable');
+  await auditLayout('390px Help '+theme);
+  await page.locator('#closeInfo').click();
+ }
+ // A 720 CSS-pixel viewport at 2x DPR models the reflow of a 1440-pixel
+ // desktop at 200% browser zoom. Check text-only enlargement separately.
+ const cdp=await page.context().newCDPSession(page);
+ await cdp.send('Emulation.setDeviceMetricsOverride',{width:720,height:475,deviceScaleFactor:2,mobile:false});
+ await page.locator('#changelogBtn').click();
+ await page.locator('#infoTabHelp').click();
+ assert(await page.locator('#infoHelp').isVisible());
+ await auditLayout('200% equivalent Help');
+ await page.screenshot({path:'qa/unified-wt025-legibility-200-reflow.png'});
+ await page.locator('#closeInfo').click();
+ await auditLayout('200% equivalent Design');
+ await cdp.send('Emulation.clearDeviceMetricsOverride');
+ await page.setViewportSize({width:720,height:475});
+ await page.evaluate(()=>{document.documentElement.style.fontSize='200%';});
+ assert((await textSize('body'))>=32&&(await textSize('.sms-tool-finder>label'))>=30,
+  '200% text sizing scales the main UI and tool-finder labels');
+ await page.locator('#changelogBtn').click();
+ assert((await textSize('.dialog-body'))>=32,'Help and release text scales with browser text sizing');
+ await auditLayout('200% text-only What’s New');
+ await page.locator('#closeInfo').click();
+ await page.evaluate(()=>{document.documentElement.style.fontSize='';});
  console.log('WT-022 workspaces: keyboard, retained model, actual mounting gesture and narrow navigation passed');
 }finally{await browser.close();}

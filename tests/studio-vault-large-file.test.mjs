@@ -64,3 +64,44 @@ assert.equal(bad.sha,null,'Failed large-asset recovery must not acknowledge a re
 assert.deepEqual(workspace.project,project,'Failed cloud read must not mutate the original workspace');
 
 console.log('Large private GitHub Studio assets and manifest: authenticated Git blob fallback, hash checks, non-destructive errors and upload passed.');
+
+// Fail closed even if GitHub returns the requested blob SHA with altered JSON.
+const largeAsset=[...files.entries()].find(([path,file])=>path.includes('/assets/')&&file.size>1_000_000);
+assert(largeAsset);
+const assetSha=largeAsset[1].sha;
+const originalBlob=blobs.get(assetSha);
+const altered=JSON.parse(Buffer.from(originalBlob.content,'base64').toString('utf8'));
+altered.name='Changed without matching Studio asset hash';
+const corruptBlob={...originalBlob,content:Buffer.from(JSON.stringify(altered),'utf8').toString('base64')};
+const corruptClient={async request(path,opts){
+ if(path==='/git/blobs/'+assetSha)return corruptBlob;
+ return client.request(path,opts);
+}};
+const guarded=new StudioVault(corruptClient);
+const before=JSON.stringify(workspace),writesBefore=uploads.length;
+await assert.rejects(()=>guarded.pull(),/integrity check/);
+assert.equal(guarded.sha,null);
+assert.equal(guarded.busy,false);
+guarded.sha=files.get(STUDIO_MANIFEST).sha;
+const acknowledged=guarded.sha;
+await assert.rejects(()=>guarded.push(workspace),/different contents/);
+assert.equal(guarded.sha,acknowledged);
+assert.equal(guarded.busy,false);
+assert.equal(uploads.length,writesBefore);
+assert.equal(JSON.stringify(workspace),before);
+for(const variant of ['missing','encoding','invalid-sha']){
+ const failingClient={async request(path,opts){
+  if(path==='/contents/'+STUDIO_MANIFEST&&variant==='invalid-sha')return {...files.get(STUDIO_MANIFEST),sha:'../not-a-sha',download_url:'https://example.invalid/never'};
+  if(path==='/git/blobs/'+files.get(STUDIO_MANIFEST).sha){
+   if(variant==='missing')return null;
+   if(variant==='encoding')return {...blobs.get(files.get(STUDIO_MANIFEST).sha),encoding:'utf-8'};
+  }
+  return client.request(path,opts);
+ }};
+ const reader=new StudioVault(failingClient);
+ await assert.rejects(()=>reader.pull(),/valid Git blob SHA|unreadable via the Git blob API/);
+ assert.equal(reader.sha,null);
+ assert.equal(reader.busy,false);
+ assert.equal(uploads.length,writesBefore);
+}
+console.log('Large backup integrity, acknowledged revision preservation and failure paths passed.');

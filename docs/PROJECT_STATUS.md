@@ -1,5 +1,27 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
+## WT-023 integration checkpoint — 23 November 2026
+
+Main at this reconciliation is `b18ff81ee954a2dbb3a257e313b9d1d7354280d5`. It includes the #157 readability release and #160 acceptance guide alongside #150, #153, #155, #156 and #159. [#147](https://github.com/connorturansky-svg/crystal-forge/pull/147) carries project persistence as v0.16.0-dev.35.34. On main-targeted PRs the dedicated seven-builder edge workflow owns browser edge coverage, leaving the core browser workflow time for the rest of the regression suite. Use [#147’s checks](https://github.com/connorturansky-svg/crystal-forge/pull/147/checks) for current exact-head CI. After approval, follow the [WT-023 acceptance guide](WT023_NEXT_SLICES_ACCEPTANCE_20261123.md) to reconcile drafts #151 and #148 independently.
+
+## Post-merge current status — 23 November 2026
+
+**Main (audited):** `d2ee1ab84ea41d363d9448df436732a286bf2c54`, after owner-approved merges [#131](https://github.com/connorturansky-svg/crystal-forge/pull/131), [#144](https://github.com/connorturansky-svg/crystal-forge/pull/144), [#146](https://github.com/connorturansky-svg/crystal-forge/pull/146). [GitHub Pages deploy](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45087743682) and [static tests](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45087743661) passed on this exact main. Browser/fabrication push runs were still running when checked; no unobserved pass is claimed. The new CI classifier was confirmed on #144's documentation-only run: required workflow checks succeeded but Chrome/Manifold heavyweight steps correctly skipped. Do not mistake skipped docs-only work for physical validation.
+
+**Codex in review:** [WT-023A #147](https://github.com/connorturansky-svg/crystal-forge/pull/147), head `8773200f48797c7366b8789de3bd03ab2961c4ff`, **draft, not merged**. Six old-head CI suites passed. Since main has advanced with 24 commits, the owner needs an exact-current-main reconciliation + fresh checks before approving. #147 implements transactional project-switch persistence, legacy snapshot IDs and data recovery. The live Crystal scene is captured when entering Home/Library; independent source review downgraded an earlier speculative last-edit-loss concern.
+
+**Next Codex feature:** [WT-023B #139](https://github.com/connorturansky-svg/crystal-forge/issues/139): *Templates first, collapsible one-level Projects grouped by ID, active vs saved revisions*. Prefer a narrow B1 display-only vertical slice before building the full template destination chooser (B2). May be a dependent draft off #147, but cannot merge until #147 is approved and CI refreshed. The verified read-only selector on main is under `tests/helpers/wt023-project-index.mjs`—do not directly import test helpers into production; relocate/derive pure production code with appropriate tests only when implementing B1.
+
+**Independent cloud QA:** [#148](https://github.com/connorturansky-svg/crystal-forge/pull/148), stacked on #147 and **draft**. This adds an authenticated Git Blob fallback for >1 MB private assets and a matching mocked regression. Static/edge/native/fabrication/measured-profile checks passed, full browser was in progress when checked. **Never merge #148 before #147**; first de-stack onto an accepted main and reconcile app release history.
+
+**Owner decisions:** Collapsible single-level project folders; one active project with `Project : Model` tabs; shared versioned pixel/printer presets with project selection; manual, conflict-safe sync to a private GitHub repository. No PIN or hosted login in this milestone. Owner approves every merge. [#10 physical print trials](https://github.com/connorturansky-svg/crystal-forge/issues/10) remain required; UI/CI cannot certify actual printed fit.
+
+[Codex fast-start](WT023_CODEX_FAST_START.md) · [approved blueprint](WT023_LIBRARY_CLOUD_BLUEPRINT.md) · [source map](REPOSITORY_MAP.md)
+
+---
+
+### Historical WT-022 checkpoint below (retained for evidence; not an active Codex task)
+
 **Snapshot:** 22 November 2026, after merged [WT-022 search release #134](https://github.com/connorturansky-svg/crystal-forge/pull/134). **Not a live dashboard.** Recheck [main](https://github.com/connorturansky-svg/crystal-forge/commits/main), [open PRs](https://github.com/connorturansky-svg/crystal-forge/pulls), [Issues](https://github.com/connorturansky-svg/crystal-forge/issues) and [Actions](https://github.com/connorturansky-svg/crystal-forge/actions).
 
 ## One-minute orientation

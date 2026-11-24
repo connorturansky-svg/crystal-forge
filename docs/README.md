@@ -2,6 +2,10 @@
 
 This index groups existing documents by purpose **without moving their original paths**. Changing old filenames would invalidate earlier PRs, issue references and pinned Codex instructions. Start with [current project status](PROJECT_STATUS.md) and the [repository map](REPOSITORY_MAP.md); [the old WT-021 prompt](../prompts/START_HERE.md) is now historical.
 
+## Planned UX: two-level help (WT-024, not yet released)
+
+[WT-024 issue #152](https://github.com/connorturansky-svg/crystal-forge/issues/152) proposes independently switchable **Hover notes** and **Detailed explanations** beside controls throughout all eight workspaces and seven model families. **This is a research/implementation plan, not a current live feature.** Read the [approved UX and engineering blueprint](WT024_HELP_SYSTEM_BLUEPRINT.md), [control coverage audit](WT024_HELP_COVERAGE_AUDIT.md), [Codex/agent fast start](WT024_CODEX_FAST_START.md) and [future user-guide draft](WT024_HELP_USER_GUIDE_DRAFT.md). Current in-app Help and the live Descriptions button remain authoritative until implementation is reviewed and merged.
+
 ## 1. Current delivery, contributor navigation and Codex restart
 
 | Document | Purpose |
