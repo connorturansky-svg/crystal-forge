@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'native-precision-controls.js'
+      - 'tooltips.js'
+      - 'contextual-help-copy.js'
       - 'sensory-studio.js'
       - 'sensory-studio.css'
       - 'tests/native-precision-browser.mjs'
@@ -12,6 +14,8 @@ on:
     branches: [main]
     paths:
       - 'native-precision-controls.js'
+      - 'tooltips.js'
+      - 'contextual-help-copy.js'
       - 'sensory-studio.js'
       - 'sensory-studio.css'
       - 'tests/native-precision-browser.mjs'

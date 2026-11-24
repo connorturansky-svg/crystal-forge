@@ -446,19 +446,23 @@ const OTHER={
 const titleFrom=el=>el.closest('.control')?.querySelector('label')?.textContent?.trim().replace(/\s+/g,' ').replace(/\d+(?:\.\d+)?(?:%|mm|°)?$/,'').trim()||
  el.closest('.checks')?.textContent?.trim().replace(/\s+/g,' ')||
  el.textContent?.trim().replace(/\s+/g,' ')||'Control';
-const dynamicSelectors=Object.keys(dynamicHelp).map(key=>'['+key+']');
+const dynamicSelectors=Object.keys(dynamicHelp);
+const helpTriggerOwners=new WeakMap();
 function dynamicEntry(el){
- const key=Object.keys(dynamicHelp).find(attribute=>el.hasAttribute(attribute));
+ const key=dynamicSelectors.find(selector=>el.matches?.(selector));
  return dynamicHelp[key];
+}
+function settingLabel(el){
+ const label=el.closest?.('label')||el.parentElement?.querySelector('label');
+ return label&&Array.from(label.childNodes).filter(node=>node.nodeType===3).map(node=>node.textContent.trim()).filter(Boolean).join(' ');
 }
 function lookup(el){
  if(el.dataset.tooltipTitle&&el.dataset.tooltipBody)return [el.dataset.tooltipTitle,el.dataset.tooltipBody];
  if(el.dataset.modelParam&&Object.hasOwn(nativeHelp,el.dataset.modelParam)){
-  const label=el.closest('label')||el.parentElement?.querySelector('label');
-  return [label?.firstChild?.textContent?.trim()||el.dataset.modelParam,nativeHelp[el.dataset.modelParam][0]];
+  return [settingLabel(el)||el.dataset.modelParam,nativeHelp[el.dataset.modelParam][0]];
  }
  const dynamic=dynamicEntry(el);
- if(dynamic)return [el.closest('label')?.firstChild?.textContent?.trim()||'Setting',dynamic[0]];
+ if(dynamic)return [settingLabel(el)||'Setting',dynamic[0]];
  if(el.dataset.state&&SETTINGS[el.dataset.state])return SETTINGS[el.dataset.state];
  if(el.id&&BUTTONS[el.id])return BUTTONS[el.id];
  if(el.id&&SETTINGS[el.id])return SETTINGS[el.id];
@@ -488,6 +492,7 @@ const MOUNT_EXPLANATIONS={
  'Ceiling mount':'Nominal fixing features, not a load-rated suspension system. Use certified hardware and independent safety retention.'
 };
 export function describeControl(el){
+ if(helpTriggerOwners.has(el))return describeControl(helpTriggerOwners.get(el));
  const info=lookup(el);
  if(el?.dataset?.state==='mount')return ['Mount: '+el.value,MOUNT_EXPLANATIONS[el.value]||info?.[1]];
  return info;
@@ -511,6 +516,7 @@ export function installTooltips(doc=document){
    }
   }
   node.hidden=true;target=null;
+  if(node.parentNode!==doc.body)doc.body.append(node);
  };
  const valid=el=>el&&!el.disabled&&!el.closest('[hidden]')&&el.getClientRects().length>0;
  const position=()=>{
@@ -531,6 +537,8 @@ export function installTooltips(doc=document){
  const show=()=>{
   timer=0;if(!enabled||!valid(target))return;
   const content=describeControl(target);if(!content)return;
+  const host=target.closest('dialog[open]')||doc.body;
+  if(node.parentNode!==host)host.append(node);
   heading.textContent=content[0];description.textContent=content[1];
   node.hidden=false;
   const ids=descriptionIds(target);
@@ -550,7 +558,7 @@ export function installTooltips(doc=document){
  doc.addEventListener('pointerout',e=>{
   if(target&&target.contains(e.target)&&!target.contains(e.relatedTarget)&&target!==doc.activeElement){
    if(node.hidden)hide();
-   else leaveTimer=setTimeout(hide,300);
+   else if(!node.contains(e.relatedTarget))leaveTimer=setTimeout(hide,300);
   }
  });
  node.addEventListener('pointerenter',()=>clearTimeout(leaveTimer));
@@ -570,7 +578,7 @@ export function installTooltips(doc=document){
   clearTimer();show();
  });
  doc.addEventListener('keydown',e=>{if(e.key==='Escape')hide()},true);
- doc.addEventListener('scroll',()=>{if(target){if(!node.hidden)position();else hide()}},true);
+ doc.addEventListener('scroll',()=>{if(target&&!node.hidden)position()},true);
  window.addEventListener('resize',()=>{if(target)position()});
  return {hide,enable(value){enabled=!!value;if(!enabled)hide()},get enabled(){return enabled}};
 }
@@ -600,12 +608,23 @@ export function installContextualHelp(doc=document){
  const settings=readHelpPreferences(storage);
  const selector=['[data-state]','[data-model-param]',...dynamicSelectors].join(',');
  const controls=new Map();
+ let nextDetailId=0;
+
+ function associateDetail(control,id,enabled){
+  if(!id)return;
+  const before=control.getAttribute('aria-describedby')?.split(/\s+/).filter(Boolean)||[];
+  const after=before.filter(value=>value!==id);
+  if(enabled)after.push(id);
+  if(before.join(' ')===after.join(' '))return;
+  if(after.length)control.setAttribute('aria-describedby',after.join(' '));
+  else control.removeAttribute('aria-describedby');
+ }
 
  function decorate(control){
   const anchor=control.closest('label,.control,.sms-model-control')||control;
   const existing=controls.get(control);
   if(existing?.anchor===anchor&&existing.help.parentElement===anchor.parentElement)return;
-  existing?.help.remove();
+  if(existing){associateDetail(control,existing.id,false);existing.help.remove()}
   const info=describeControl(control);
   if(!info?.[1])return;
   const help=doc.createElement('div');
@@ -615,23 +634,26 @@ export function installContextualHelp(doc=document){
   trigger.type='button';
   trigger.textContent='?';
   trigger.setAttribute('aria-label','Help for '+info[0]);
-  trigger.dataset.tooltipTitle=info[0];
-  trigger.dataset.tooltipBody=info[1];
+  helpTriggerOwners.set(trigger,control);
   help.append(trigger);
   const copy=classicDetails[control.dataset.state]||nativeHelp[control.dataset.modelParam]?.[1]||dynamicEntry(control)?.[1];
+  let id;
   if(copy){
+   id='contextualHelpDetail'+(++nextDetailId);
    const explanation=doc.createElement('p');
+   explanation.id=id;
    explanation.className='contextual-help-detail';
    explanation.textContent=copy;
    help.append(explanation);
   }
   anchor.after(help);
-  controls.set(control,{anchor,help});
+  controls.set(control,{anchor,help,id});
+  associateDetail(control,id,detailed.checked);
  }
 
  function refresh(){
-  for(const [control,{help}] of controls){
-   if(!control.isConnected){help.remove();controls.delete(control)}
+  for(const [control,{help,id}] of controls){
+   if(!control.isConnected){associateDetail(control,id,false);help.remove();controls.delete(control)}
   }
   for(const control of doc.querySelectorAll(selector))decorate(control);
  }
@@ -639,6 +661,7 @@ export function installContextualHelp(doc=document){
   tooltip.enable(hover.checked);
   doc.body.classList.toggle('show-hover-notes',hover.checked);
   doc.body.classList.toggle('show-detailed-explanations',detailed.checked);
+  for(const [control,{id}] of controls)associateDetail(control,id,detailed.checked);
  }
  function save(){
   apply();
