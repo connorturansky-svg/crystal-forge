@@ -541,14 +541,16 @@ export function installTooltips(doc=document){
   const width=Math.min(300,viewportWidth-22);node.style.maxWidth=width+'px';
   const box=node.getBoundingClientRect();
   let x=rect.left+rect.width/2-box.width/2;
-  let y=rect.bottom+8;
+  const above=rect.top-box.height-8;
+  const workspace=target.closest('.sms-workspace-nav');
+  let y=workspace&&above>=9?above:rect.bottom+8;
   const panel=target.closest('.left,.right,.sms-controls');
   if(panel){
    const bounds=panel.getBoundingClientRect();
    if(bounds.right+box.width+18<viewportWidth){x=bounds.right+8;y=rect.top}
    else if(bounds.left-box.width-18>0){x=bounds.left-box.width-8;y=rect.top}
   }
-  if(y===rect.bottom+8&&y+box.height>viewportHeight-9)y=rect.top-box.height-8;
+  if(y===rect.bottom+8&&y+box.height>viewportHeight-9)y=above;
   x=Math.max(9,Math.min(viewportWidth-box.width-9,x));
   y=Math.max(9,Math.min(viewportHeight-box.height-9,y));
   node.style.left=Math.round(x)+'px';node.style.top=Math.round(y)+'px';
@@ -599,7 +601,7 @@ export function installTooltips(doc=document){
  doc.addEventListener('keydown',e=>{if(e.key==='Escape')hide()},true);
  doc.addEventListener('close',e=>{if(e.target.contains?.(target))hide()},true);
  doc.addEventListener('scroll',()=>{if(target&&!node.hidden)position()},true);
- doc.defaultView.addEventListener('resize',()=>{if(target)position()});
+ doc.defaultView.addEventListener('resize',hide);
  return {hide,enable(value){enabled=!!value;if(!enabled)hide()},get enabled(){return enabled}};
 }
 
