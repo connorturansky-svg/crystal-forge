@@ -58,11 +58,26 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
-## v0.16.0-dev.35.34 — Tactile cog grips and off-centre handles
+## v0.16.0-dev.35.36 — Tactile cog grips and off-centre handles
 
 - Add ten Gear-top grip starting points, including offset crank spindles, fluted/knurled dials, rounded rectangular handles and tactile profiles with independent width, depth and height.
 - Double-click a flat cog face or choose Add grip, drag or edit exact X/Z coordinates, and get explicit feedback when a strengthened base overlaps a shaft bore, window or gear edge.
 - Prepare a real Boolean-fused model with round or chamfered grip roots and a continuous measured centre shaft bore through a combined centred knob. Edit all source settings later; bearing-mounted handles, arbitrary Cap-model fusion and physical strength qualification remain future work.
+## v0.16.0-dev.35.35 — Find templates and projects in Library
+
+- Browse templates first, then open saved versions from collapsible project folders.
+- See the active project separately from its saved versions. Fold or expand each folder with the keyboard.
+
+## v0.16.0-dev.35.34 — Save and switch projects safely
+
+- Save the outgoing project and open the selected project in one workspace write. A failed save leaves the current project open.
+- Keep stable snapshot IDs when restoring project backups, with separate copies for conflicting snapshots.
+
+## v0.16.0-dev.35.33 — Clearer everyday text
+
+- Increase main editor text and label sizes so controls are easier to read without zooming.
+- Make Help, What’s New, setting notes and tool-search explanations larger with more breathing room.
+- Keep the same tools, model settings and printable geometry. You can still use browser zoom and light or dark mode.
 
 ## v0.16.0-dev.35.32 — Find Support-Free Shoulders
 

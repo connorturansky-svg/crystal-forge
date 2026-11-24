@@ -36,10 +36,17 @@ export function readOrganisation(value){
  return {version:1,collections,items,templates};
 }
 export function ensureSnapshotIds(projects){
- const ids=new Set();
- for(const project of projects){
-  if(!id(project.snapshotId)||ids.has(project.snapshotId))project.snapshotId=newId();
-  ids.add(project.snapshotId);
+ const reserved=new Set(projects.map(project=>project.snapshotId).filter(id));
+ const seen=new Set();
+ for(const [index,project] of projects.entries()){
+  if(!id(project.snapshotId)||seen.has(project.snapshotId)){
+   const base='legacy-snapshot-'+(index+1);
+   let next=base,suffix=1;
+   while(reserved.has(next))next=base+'-'+suffix++;
+   project.snapshotId=next;
+   reserved.add(next);
+  }
+  seen.add(project.snapshotId);
  }
  return projects;
 }

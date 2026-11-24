@@ -12,4 +12,6 @@
 
 **Keyboard and accessibility:** Tab through labelled controls, type measured values and press Tab to apply. Messages explain invalid positions; the operation does not depend on colour alone. Editable source data remains in saved project JSON.
 
+To reuse a setup, save the project in Library and choose **Save as reusable template** on its saved version. Open saved versions from their project folders. A saved version retains the grip settings from the moment it was saved.
+
 **Current scope:** All grips are integral printable pieces, not separately freely spinning bearing-mounted handles. Arbitrary saved Control Cap-to-Gear fusion, raised/curved mounting faces and general-purpose per-edge CAD fillets are follow-on work; do not assume a printed grip is rated for hand force or safe for young children.

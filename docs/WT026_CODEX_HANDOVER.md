@@ -1,8 +1,7 @@
 # WT-026 developer and Codex handover
 
 **Branch:** feat/wt026-gear-top-controls — implementation draft, owner approval required before merge.
-**Base when created:** main 5a17cf80fb5b5abccefc103d958a341b8d513a8d; check current main and open PRs before further edits.
-**Other development lanes:** PR #147 project persistence, #151 stacked Library, #156 WT-024 help inventory, #157 WT-025 legibility, #153 help design. Do not touch those branches or overwrite their work.
+**Reconciled base:** main `cd194706997ae1bd31d1231e0a2ab1870c9064c6`, including #147 project persistence, #151 Library folders, and #157 readable controls. The browser core runs the Gear fixture first and the separate edge-finishing workflow still runs the edge browser coverage.
 
 ## Current implementation
 
@@ -15,8 +14,8 @@
 
 ## Review tasks before declaring merge-ready
 
-1. Fetch branch and latest main; validate all ESM files parse. The branch was written through the connected GitHub API, so **do not presume local tests were executed**.
-2. Run exact-head npm run test:static, npm test, npm run test:browser; inspect actual CI job IDs and logs.
+1. Run `node tests/gear-top-controls.test.mjs` and `node tests/gear-top-manifold.test.mjs` for placement and connected-solid regressions. Shaft probe, STL and 3MF export run against real prepared Manifold geometry.
+2. Use the [PR checks](https://github.com/connorturansky-svg/crystal-forge/pull/158/checks) for the current commit's static, fabrication, Chromium, profile, precision and edge results.
 3. Check Manifold in unusual Gear outlines, openwork, dual-material and rounded/diamond profiles. Any nonmanifold, inverted/degenerate triangles or broken bore must fail, not be hidden behind a preview.
 4. Check drag pointer capture/release, top-view/ISO double-click, invalid-hole feedback, cancellation rollback, keyboard-only use and 390 px/200% zoom.
 5. Verify physical intersections against manual mount recesses, pixel seats, serial tracks and raised gear geometry. Current surface eligibility is deliberately limited; improve fail-closed behaviour rather than guessing safe surfaces.

@@ -1,6 +1,6 @@
 # Crystal Forge — readable quick guide
 
-> **Current app guidance, checked against main 23 November 2026.** The legibility upgrades and “Since your last visit” feature described in [WT-025 #154](https://github.com/connorturansky-svg/crystal-forge/issues/154) are **PLANNED, NOT YET AVAILABLE**. The universal two-level hover/inline help in [WT-024 #152](https://github.com/connorturansky-svg/crystal-forge/issues/152) is also **PLANNED**. Do not look for these controls yet.
+> **Release candidate v0.16.0-dev.35.33 ([PR #157](https://github.com/connorturansky-svg/crystal-forge/pull/157)).** The readable defaults described below apply to this candidate. Universal two-level help and “Since your last visit” are separate planned updates.
 
 ## Find something without searching through menus
 
@@ -15,12 +15,18 @@ The eight workspace names are **Home, Library, Design, Build, Pixels, Wiring, Mo
 
 The **Features** tab under Help provides a visual list of model builders and available actions. Use it if you are unsure what Crystal Forge can do.
 
+## Find projects and templates in the Library
+
+In the WT-023B B1 candidate (#151), Templates appears first. Projects contains one expandable folder per project, with the active project marked separately from its saved versions. Use Tab to reach a folder heading and Enter or Space to open or fold it. Open a saved version through its Open project action. The current project is saved as a recoverable copy before switching. Folder expansion is remembered within the browser tab, including on reload.
+
+Saved models and the existing favourites and collection filters remain available. Template destinations still use the established actions. The planned destination chooser will be implemented separately under #139.
+
 ## Read about a setting or an update
 
-- The currently deployed app has a **Descriptions** button for a persistent help panel, plus some short hover/focus notes. The future two-checkbox system is not shipped.
+- Use **Descriptions** to show the persistent help panel. Some settings also display a short note when you hover or focus them.
 - Select **Help** for the current usage instructions and keyboard shortcuts.
 - Select **What's new** for the newest released notes, unreleased/draft notes and older history. **The existing page is not yet a “since you last visited” summary**. Treat notes marked *Unreleased* as plans, not live capabilities.
-- A small screen or long description may require scrolling. Use the browser's own zoom or text settings when needed; some controls may still be dense until the new readability work ships.
+- At a narrow width, scroll within the workspace or dialog to reach longer lists. Use the browser’s zoom or default text size to enlarge the interface. Press Tab to see where focus is, then Enter or Space to activate a focused control.
 
 ## Make a print file without losing your work
 
@@ -32,6 +38,6 @@ The **Features** tab under Help provides a visual list of model builders and ava
 
 ## What future releases should add
 
-The proposed **Readable display** improvements aim to increase text size, spacing and contrast while preserving working controls. A future **Since your last visit** area will summarise shipped changes in ordinary language, help you locate moved tools and let you mark updates as read. These will be explained here and in the in-app Help only when implementation is merged, Pages deployment is verified and the owner approves release.
+A future **Since your last visit** area will summarise shipped changes in ordinary language, help you locate moved tools and let you mark updates as read. These will be explained here and in the in-app Help only when implementation is merged, Pages deployment is verified and the owner approves release.
 
 **Need to give feedback?** In [WT-025 issue #154](https://github.com/connorturansky-svg/crystal-forge/issues/154), report the workspace, exact label that is hard to read or find, your browser/zoom and what you expected. You do not need to understand the code.

@@ -23,6 +23,9 @@ for(const [preset,x] of [['fluted-knob',0],['knurled-dial',0],['offset-spindle',
  assert.equal(stls.length,1,preset);
  assert(threeMF.length>250,preset+' genuine 3MF');
  const body=new wasm.Manifold(manufactured.bodies[0].mesh);
+ const components=body.decompose();
+ assert.equal(components.length,1,preset+' handle and wheel form one connected solid');
+ for(const component of components)component.delete();
  const height=recipe.bounds.height+4;
  // Re-test the through opening against a slightly smaller cylindrical probe
  // spanning the full print height. Touching a zero-volume surface is allowed.

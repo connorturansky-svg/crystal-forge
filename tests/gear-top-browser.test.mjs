@@ -46,6 +46,40 @@ try{
  await page.waitForFunction(()=>!window.__sensoryStudio.currentModel.build.gearTopControls?.length);
  await page.locator('#smsRedo').click();
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
+ const original=await page.evaluate(()=>{
+  const {project,currentModel}=window.__sensoryStudio;
+  return {projectId:project.id,modelId:currentModel.id,grips:currentModel.build.gearTopControls};
+ });
+ await page.locator('#smsDuplicate').press('Enter');
+ await page.waitForFunction(id=>window.__sensoryStudio.currentModel.id!==id,original.modelId);
+ assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls),original.grips);
+ await page.locator('#smsProjectTitle').fill('WT-026 retained grips');
+ await page.locator('#smsProjectTitle').press('Tab');
+ await page.locator('#smsLibrary').click();
+ await page.locator('#smsSaveProject').click();
+ const saved=page.locator('#smsSavedProjects [data-snapshot-id]').filter({hasText:'WT-026 retained grips'}).first();
+ await saved.waitFor();
+ const snapshotId=await saved.getAttribute('data-snapshot-id');
+ page.once('dialog',dialog=>dialog.accept('WT-026 grip template'));
+ await saved.getByRole('button',{name:'Save as reusable template'}).press('Enter');
+ await page.locator('#smsTemplates').press('Enter');
+ page.once('dialog',dialog=>dialog.accept());
+ await page.getByRole('button',{name:'Create project from template'}).press('Enter');
+ await page.waitForFunction(id=>window.__sensoryStudio.project.id!==id,original.projectId);
+ const assertRetained=async()=>{
+  const models=await page.evaluate(()=>window.__sensoryStudio.project.models.filter(model=>model.generator.typeId==='gears').map(model=>model.build.gearTopControls));
+  assert.deepEqual(models,[original.grips,original.grips]);
+ };
+ await assertRetained();
+ await page.reload({waitUntil:'commit'});
+ await page.waitForFunction(()=>window.__sensoryStudio);
+ await assertRetained();
+ await page.locator('#smsLibrary').click();
+ await page.locator('#smsLibraryAll').press('Enter');
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator(`[data-snapshot-id="${snapshotId}"]`).getByRole('button',{name:'Open project WT-026 retained grips'}).press('Enter');
+ await page.waitForFunction(id=>window.__sensoryStudio.project.id===id,original.projectId);
+ await assertRetained();
  assert.equal(errors.length,0,'No uncaught errors: '+errors.join('; '));
- console.log('WT-026 Chromium: add, exact XYZ sizing, shaft collision rollback and undo/redo passed.');
+ console.log('WT-026 Chromium: exact sizing, rollback, undo/redo, duplication, reusable template, reload and snapshot switching passed.');
 }finally{await browser.close();}
