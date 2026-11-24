@@ -56,6 +56,8 @@ jobs:
           mkdir -p "$release/vendor"
           cp _site/*.js _site/*.css "$release/"
           cp -R _site/svg-import "$release/"
+          # Nested source must stay with root modules under the SAME release SHA.
+          if [ -d _site/src ]; then cp -R _site/src "$release/"; fi
           npm install --prefix "$RUNNER_TEMP/crystal-forge-vendor" --no-save --no-package-lock --ignore-scripts three@0.165.0 manifold-3d@3.5.4
           vendor="$RUNNER_TEMP/crystal-forge-vendor/node_modules"
           mkdir -p "$release/vendor/three" "$release/vendor/manifold"

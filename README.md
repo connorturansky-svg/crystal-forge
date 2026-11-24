@@ -4,7 +4,9 @@
 
 **Need a clearer starting point?** Read the [plain-English Studio quick guide](docs/WT025_READABLE_USER_GUIDE.md) for current controls, finding tools, understanding What's New and preserving your designs.
 
-**Accessibility work (PLANNED, not in the app yet):** [WT-025 legibility and easy-to-read updates #154](https://github.com/connorturansky-svg/crystal-forge/issues/154) has a [detailed design/acceptance blueprint](docs/WT025_LEGIBILITY_CHANGE_AWARENESS_SPEC.md), [Codex/AI fast start](docs/WT025_CODEX_FAST_START.md) and [human-friendly PR review guide](docs/WT025_HUMAN_FIRST_PR_CHECKLIST.md). It complements, rather than replaces, [WT-024 universal setting explanations #152](https://github.com/connorturansky-svg/crystal-forge/issues/152) / [draft plan #153](https://github.com/connorturansky-svg/crystal-forge/pull/153). Nothing in these planning docs claims shipped features or changes the live Pages app.
+**Finding the code:** Open the [source folder guide](docs/SOURCE_LAYOUT.md) to find printing, geometry, hardware, Library and UI modules without searching through every root file. The [repository map](docs/REPOSITORY_MAP.md) links features to their actual implementation; nested source moves are gradual to protect GitHub Pages and older browser sessions.
+
+**Accessibility work (readability foundation merged in #157; further improvements planned):** [WT-025 legibility and easy-to-read updates #154](https://github.com/connorturansky-svg/crystal-forge/issues/154) has a [detailed design/acceptance blueprint](docs/WT025_LEGIBILITY_CHANGE_AWARENESS_SPEC.md), [Codex/AI fast start](docs/WT025_CODEX_FAST_START.md) and [human-friendly PR review guide](docs/WT025_HUMAN_FIRST_PR_CHECKLIST.md). It complements, rather than replaces, [WT-024 universal setting explanations #152](https://github.com/connorturansky-svg/crystal-forge/issues/152) / [draft plan #153](https://github.com/connorturansky-svg/crystal-forge/pull/153). Nothing in these planning docs claims shipped features or changes the live Pages app.
 
 ## Current development — WT-022 (22 November 2026 snapshot)
 

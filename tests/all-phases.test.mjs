@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import {generateFormation} from '../geometry-v3.js';
 import {SHAPE_PRESETS,applyShapePreset,snapHardwarePoint,snapHardwareCoordinate} from '../design-workflows.js';
-import {planSplitJoints} from '../split-joints.js';
-import {assessOpticalAccess,opticalAuditCSV} from '../optical-audit.js';
-import {assessPrintQuality,printChecklistText} from '../print-quality.js';
-import {buildProductionPack} from '../production-pack.js';
+import {planSplitJoints} from '../src/printing/split-joints.js';
+import {assessOpticalAccess,opticalAuditCSV} from '../src/printing/optical-audit.js';
+import {assessPrintQuality,printChecklistText} from '../src/printing/print-quality.js';
+import {buildProductionPack} from '../src/printing/production-pack.js';
 import {resolvePixelProfile} from '../pixel-profiles.js';
 
 const settings={

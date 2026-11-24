@@ -1,13 +1,13 @@
-import {lightPassageReportEntries} from './light-passage-inspection.js';
+import {lightPassageReportEntries} from '../../light-passage-inspection.js';
 /* One archive for practical fabrication handoff.
  * Zip uses the same store-only ZIP encoder as Cura profiles, with binary STL.
  */
-import {zipProfileEntries,createCuraProfile} from './cura-profiles.js';
+import {zipProfileEntries,createCuraProfile} from '../../cura-profiles.js';
 import {assessPrintQuality,printChecklistText} from './print-quality.js';
 import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
-import {planHardware} from './hardware-layout.js';
-import {buildPixelStringMap} from './pixel-string-export.js';
-import {resolvePixelProfile} from './pixel-profiles.js';
+import {planHardware} from '../../hardware-layout.js';
+import {buildPixelStringMap} from '../../pixel-string-export.js';
+import {resolvePixelProfile} from '../../pixel-profiles.js';
 const csv=rows=>rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(',')).join('\r\n')+'\r\n';
 export function buildProductionPack({settings,crystals,report,stlBytes,extraFiles=[],assemblyWarnings=[],splitManifest=null}){
  if(!report?.ready||!(stlBytes instanceof Uint8Array)||stlBytes.length<84)

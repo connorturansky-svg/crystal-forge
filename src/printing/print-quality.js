@@ -1,8 +1,8 @@
 /* Print assurance — engineering prompts rather than a slicer simulation.
  * Runs entirely from current design data. No unsupported Cura claims.
  */
-import {calculateCuraSettings} from './cura-profiles.js';
-import {planHardware} from './hardware-layout.js';
+import {calculateCuraSettings} from '../../cura-profiles.js';
+import {planHardware} from '../../hardware-layout.js';
 import {estimateRoofReview} from './print-advisor.js';
 const finite=(v,fallback)=>Number.isFinite(Number(v))?Number(v):fallback;
 const ceil=(v)=>Math.ceil(v*10)/10;

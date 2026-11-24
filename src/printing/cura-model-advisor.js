@@ -2,8 +2,8 @@
  * Never changes printer hardware or filament by itself; Cura inspection and
  * physical testing remain necessary. All dimensions in mm.
  */
-import {crystalEndRatios} from './geometry-v3.js';
-import {calculateCuraSettings} from './cura-profiles.js';
+import {crystalEndRatios} from '../../geometry-v3.js';
+import {calculateCuraSettings} from '../../cura-profiles.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export function adviseCuraForModel(crystals=[],settings={}){
  const s=settings,options=s.printer==='Ultimaker 3 Extended'?[.25,.4,.8]:s.printer==='Ultimaker 2+'?[.25,.4,.6,.8]:[];

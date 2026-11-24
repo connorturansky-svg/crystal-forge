@@ -52,6 +52,17 @@ export async function preserveRelease({sourceRoot,siteRoot,oldSha,currentSha}){
    copied++;
   }
   if(copied<10)throw Error('Old release contains too few app modules; refusing incomplete snapshot.');
+  // Keep SHA-specific nested first-party modules with old browser tabs.
+  // Versions predating the src/ layout have no such folder.
+  const nested=join(sourceRoot,'src');
+  const nestedInfo=await stat(nested).catch(error=>{
+   if(error.code==='ENOENT')return null;
+   throw error;
+  });
+  if(nestedInfo){
+   if(!nestedInfo.isDirectory())throw Error('Historical src path must be a directory.');
+   await cp(nested,join(staging,'src'),{recursive:true});
+  }
   await cp(join(sourceRoot,'svg-import'),join(staging,'svg-import'),{recursive:true});
   await cp(join(current,'vendor'),join(staging,'vendor'),{recursive:true});
   for(const path of ['studio-v3.js','fabrication-worker.js','svg-import/index.js',
