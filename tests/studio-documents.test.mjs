@@ -97,3 +97,6 @@ console.log('Studio documents: isolation, revision guards, links, legacy recover
 await import('./wt023-project-index.test.mjs');
 // Long-lived regression: seven-builder identity and saved-project state cannot disappear.
 await import('./wt023-postmerge-regressions.test.mjs');
+
+// WT-023C drawer data contract (independent of visual implementation).
+await import('./wt023-model-drawer-contract.test.mjs');
