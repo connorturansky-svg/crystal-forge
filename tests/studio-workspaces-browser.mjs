@@ -221,5 +221,39 @@ try{
  await auditLayout('200% text-only What’s New');
  await page.locator('#closeInfo').click();
  await page.evaluate(()=>{document.documentElement.style.fontSize='';});
+ // WT-024 uses the same shared renderer for existing and generated controls.
+ const hoverNotes=page.getByRole('checkbox',{name:'Hover Notes',exact:true});
+ const detailedExplanations=page.getByRole('checkbox',{name:'Detailed Explanations',exact:true});
+ assert(await hoverNotes.isChecked());
+ assert(!(await detailedExplanations.isChecked()));
+ await detailedExplanations.check();
+ await destination('Design').press('Enter');
+ async function verifyHelp(selector,copy){
+  await reveal(selector);
+  const control=page.locator(selector);
+  const help=control.locator('xpath=ancestor-or-self::*[self::label or contains(concat(" ",normalize-space(@class)," ")," control ") or contains(concat(" ",normalize-space(@class)," ")," sms-model-control ")][1]/following-sibling::*[1]');
+  assert.match(await help.locator('.contextual-help-detail').textContent(),copy);
+  assert(await help.locator('.contextual-help-detail').isVisible());
+  await control.focus();
+  await page.waitForFunction(()=>!document.querySelector('#controlTooltip').hidden);
+  assert.match(await control.getAttribute('aria-describedby'),/controlTooltip/);
+  await page.keyboard.press('Escape');
+  assert(!(await page.locator('#controlTooltip').isVisible()));
+  await help.getByRole('button',{name:/Help for/}).click();
+  assert(await page.locator('#controlTooltip').isVisible());
+ }
+ await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{count:5},'WT-024 Crystal'));
+ await destination('Design').press('Enter');
+ await verifyHelp('[data-state=count]',/few crystals/);
+ await page.evaluate(()=>window.__sensoryStudio.addModel('gears',{},'WT-024 Gear'));
+ await destination('Design').press('Enter');
+ await verifyHelp('[data-model-param=teeth]',/finer spacing/);
+ await hoverNotes.uncheck();
+ assert(await detailedExplanations.isChecked());
+ assert(!(await page.locator('#controlTooltip').isVisible()));
+ await page.reload();
+ await page.waitForFunction(()=>window.__sensoryStudio);
+ assert(!(await hoverNotes.isChecked()));
+ assert(await detailedExplanations.isChecked());
  console.log('WT-022 workspaces: keyboard, retained model, actual mounting gesture and narrow navigation passed');
 }finally{await browser.close();}

@@ -58,6 +58,10 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.37 — Read guidance beside settings
+- Use Hover Notes to see short help with a mouse, keyboard or question-mark button.
+- Use Detailed Explanations to read longer guidance beside supported settings. Set each option independently and keep your choices between visits.
+
 ## v0.16.0-dev.35.36 — Organised printing source files
 
 - Find the production pack, print-quality checks, Cura model advice and optical reports together in a dedicated printing source folder.

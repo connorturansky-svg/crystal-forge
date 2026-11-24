@@ -1,5 +1,21 @@
 /* Crystal Forge control explanations. One accessible tooltip for the whole app. */
+import {classicDetails,nativeHelp,dynamicHelp} from './contextual-help-copy.js';
 const SETTINGS={
+ "curaQualityType": ["curaQualityType","Choose the Cura base quality family needed for an imported profile to appear."],
+ "autoBedSplit": ["autoBedSplit","Split models exceeding the selected printer bed into straight-cut printable pieces."],
+ "edgeManualMounts": ["edgeManualMounts","Include eligible manual through-holes while generating perimeter fixing tabs."],
+ "socketConical": ["socketConical","Give eligible underside LED sockets a conical ceiling for base-down printing."],
+ "wireAllowOverLength": ["wireAllowOverLength","Keep an over-length cable route as an explicitly warned exception instead of automatically refusing it."],
+ "wireVaulted": ["wireVaulted","Request a roofed wire-track cross-section where enough surrounding material exists."],
+ "wireShowLengths": ["wireShowLengths","Show calculated cable lengths on the model next to the planned links."],
+ "edgeFinishSteps": ["edgeFinishSteps","Legacy setting: the verified chamfer currently uses one step."],
+ "edgeFinishScope": ["edgeFinishScope","Legacy setting: the current supported finish is limited to eligible top edges."],
+ "edgeFinishStyle": ["edgeFinishStyle","Legacy setting: current edge finishing uses the supported chamfer, not arbitrary rounding."],
+ "tipStyle": ["Tip style","Choose rounded, blunt or flat ends for the printed crystals."],
+ "edgeFinishEnabled": ["Edge finishing","Bevel supported exposed top rims."],
+ "edgeFinishAmount": ["Bevel amount","Set how much plastic the bevel takes off an eligible top rim."],
+ "requireAccessiblePassages": ["Require light passages","Check for a clear route from fitted LEDs into the crystal before export."],
+ "wireDirectionArrows": ["Cable direction arrows","Show the order in which the cable reaches the pixels."],
  "count": [
   "Crystal count",
   "How many crystals generate in the formation. Increasing the number can affect print size and preparation time."
@@ -281,7 +297,6 @@ const BUTTONS={
   "Help",
   "Opens the full help guide and keyboard shortcuts."
  ],
- "descriptionsBtn": ["Descriptions panel","Display a persistent explanation card for whichever control you hover, focus or change."],
  "changelogBtn": [
   "What’s new",
   "Shows version history and recent development changes."
@@ -431,8 +446,19 @@ const OTHER={
 const titleFrom=el=>el.closest('.control')?.querySelector('label')?.textContent?.trim().replace(/\s+/g,' ').replace(/\d+(?:\.\d+)?(?:%|mm|°)?$/,'').trim()||
  el.closest('.checks')?.textContent?.trim().replace(/\s+/g,' ')||
  el.textContent?.trim().replace(/\s+/g,' ')||'Control';
+const dynamicSelectors=Object.keys(dynamicHelp).map(key=>'['+key+']');
+function dynamicEntry(el){
+ const key=Object.keys(dynamicHelp).find(attribute=>el.hasAttribute(attribute));
+ return dynamicHelp[key];
+}
 function lookup(el){
  if(el.dataset.tooltipTitle&&el.dataset.tooltipBody)return [el.dataset.tooltipTitle,el.dataset.tooltipBody];
+ if(el.dataset.modelParam&&Object.hasOwn(nativeHelp,el.dataset.modelParam)){
+  const label=el.closest('label')||el.parentElement?.querySelector('label');
+  return [label?.firstChild?.textContent?.trim()||el.dataset.modelParam,nativeHelp[el.dataset.modelParam][0]];
+ }
+ const dynamic=dynamicEntry(el);
+ if(dynamic)return [el.closest('label')?.firstChild?.textContent?.trim()||'Setting',dynamic[0]];
  if(el.dataset.state&&SETTINGS[el.dataset.state])return SETTINGS[el.dataset.state];
  if(el.id&&BUTTONS[el.id])return BUTTONS[el.id];
  if(el.id&&SETTINGS[el.id])return SETTINGS[el.id];
@@ -471,12 +497,12 @@ export function installTooltips(doc=document){
  node.id='controlTooltip';node.className='control-tooltip';node.setAttribute('role','tooltip');node.hidden=true;
  const heading=doc.createElement('strong'),description=doc.createElement('span');
  node.append(heading,description);doc.body.append(node);
- let target=null,timer=0,enabled=true;
+ let target=null,timer=0,leaveTimer=0,enabled=true;
  const eligible='button, input:not([type=file]), select, [data-tooltip-body]';
  const descriptionIds=el=>el.getAttribute('aria-describedby')?.match(/[^\t\n\f\r ]+/g)||[];
  const clearTimer=()=>{if(timer){clearTimeout(timer);timer=0}};
  const hide=()=>{
-  clearTimer();
+  clearTimer();clearTimeout(leaveTimer);
   if(!node.hidden&&target){
    const ids=descriptionIds(target),remaining=ids.filter(id=>id!==node.id);
    if(remaining.length!==ids.length){
@@ -513,7 +539,7 @@ export function installTooltips(doc=document){
  };
  const prepare=(el,delay)=>{
   if(!enabled||!valid(el))return hide();
-  if(target===el){if(!node.hidden)position();return}
+  if(target===el){clearTimeout(leaveTimer);if(!node.hidden)position();return}
   hide();target=el;timer=setTimeout(show,delay);
  };
  doc.addEventListener('pointerover',e=>{
@@ -522,17 +548,112 @@ export function installTooltips(doc=document){
   if(el)prepare(el,440);
  });
  doc.addEventListener('pointerout',e=>{
-  if(target&&e.target===target&&!target.contains(e.relatedTarget))hide();
+  if(target&&target.contains(e.target)&&!target.contains(e.relatedTarget)&&target!==doc.activeElement){
+   if(node.hidden)hide();
+   else leaveTimer=setTimeout(hide,300);
+  }
+ });
+ node.addEventListener('pointerenter',()=>clearTimeout(leaveTimer));
+ node.addEventListener('pointerleave',e=>{
+  if(target!==doc.activeElement&&!target?.contains(e.relatedTarget))hide();
  });
  doc.addEventListener('focusin',e=>{
   const el=e.target.closest?.(eligible);
   if(el)prepare(el,240);
  });
  doc.addEventListener('focusout',e=>{if(target&&(target===e.target||target.contains(e.target)))hide()});
- doc.addEventListener('pointerdown',()=>hide(),true);
+ doc.addEventListener('pointerdown',e=>{if(!node.contains(e.target)&&!e.target.closest?.('.contextual-help-trigger'))hide()},true);
+ doc.addEventListener('click',e=>{
+  const trigger=e.target.closest?.('.contextual-help-trigger');
+  if(!trigger||!enabled)return;
+  if(target!==trigger){hide();target=trigger}
+  clearTimer();show();
+ });
  doc.addEventListener('keydown',e=>{if(e.key==='Escape')hide()},true);
  doc.addEventListener('scroll',()=>{if(target){if(!node.hidden)position();else hide()}},true);
  window.addEventListener('resize',()=>{if(target)position()});
  return {hide,enable(value){enabled=!!value;if(!enabled)hide()},get enabled(){return enabled}};
 }
 
+
+export const HELP_PREFERENCES_KEY='crystal-forge-contextual-help-v1';
+
+export function readHelpPreferences(storage){
+ const defaults={hover:true,detailed:false};
+ try{
+  const value=storage.getItem(HELP_PREFERENCES_KEY);
+  if(value===null)return {...defaults,detailed:storage.getItem('crystal-forge-descriptions')==='on'};
+  const saved=JSON.parse(value);
+  return {
+   hover:typeof saved?.hover==='boolean'?saved.hover:defaults.hover,
+   detailed:typeof saved?.detailed==='boolean'?saved.detailed:defaults.detailed
+  };
+ }catch{return defaults}
+}
+
+export function installContextualHelp(doc=document){
+ const hover=doc.getElementById('hoverNotes');
+ const detailed=doc.getElementById('detailedExplanations');
+ const tooltip=installTooltips(doc);
+ let storage;
+ try{storage=doc.defaultView.localStorage}catch{}
+ const settings=readHelpPreferences(storage);
+ const selector=['[data-state]','[data-model-param]',...dynamicSelectors].join(',');
+ const controls=new Map();
+
+ function decorate(control){
+  const anchor=control.closest('label,.control,.sms-model-control')||control;
+  const existing=controls.get(control);
+  if(existing?.anchor===anchor&&existing.help.parentElement===anchor.parentElement)return;
+  existing?.help.remove();
+  const info=describeControl(control);
+  if(!info?.[1])return;
+  const help=doc.createElement('div');
+  help.className='contextual-help';
+  const trigger=doc.createElement('button');
+  trigger.className='contextual-help-trigger';
+  trigger.type='button';
+  trigger.textContent='?';
+  trigger.setAttribute('aria-label','Help for '+info[0]);
+  trigger.dataset.tooltipTitle=info[0];
+  trigger.dataset.tooltipBody=info[1];
+  help.append(trigger);
+  const copy=classicDetails[control.dataset.state]||nativeHelp[control.dataset.modelParam]?.[1]||dynamicEntry(control)?.[1];
+  if(copy){
+   const explanation=doc.createElement('p');
+   explanation.className='contextual-help-detail';
+   explanation.textContent=copy;
+   help.append(explanation);
+  }
+  anchor.after(help);
+  controls.set(control,{anchor,help});
+ }
+
+ function refresh(){
+  for(const [control,{help}] of controls){
+   if(!control.isConnected){help.remove();controls.delete(control)}
+  }
+  for(const control of doc.querySelectorAll(selector))decorate(control);
+ }
+ function apply(){
+  tooltip.enable(hover.checked);
+  doc.body.classList.toggle('show-hover-notes',hover.checked);
+  doc.body.classList.toggle('show-detailed-explanations',detailed.checked);
+ }
+ function save(){
+  apply();
+  try{storage.setItem(HELP_PREFERENCES_KEY,JSON.stringify({hover:hover.checked,detailed:detailed.checked}))}catch{}
+ }
+ hover.checked=settings.hover;
+ detailed.checked=settings.detailed;
+ hover.addEventListener('change',save);
+ detailed.addEventListener('change',save);
+ apply();
+ refresh();
+ const observer=new doc.defaultView.MutationObserver(records=>{
+  if(records.some(record=>[...record.addedNodes,...record.removedNodes].some(node=>
+   node.nodeType===1&&(node.matches(selector)||node.querySelector(selector))
+  )))refresh();
+ });
+ observer.observe(doc.body,{childList:true,subtree:true});
+}
