@@ -1,3 +1,4 @@
+import {revealLibraryActions} from './helpers/library-actions.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 
@@ -93,6 +94,7 @@ try{
  await saved.waitFor();
  const snapshotId=await saved.getAttribute('data-snapshot-id');
  page.once('dialog',dialog=>dialog.accept('WT-026 grip template'));
+ await revealLibraryActions(saved);
  await saved.getByRole('button',{name:'Save as reusable template'}).press('Enter');
  await page.locator('#smsTemplates').press('Enter');
  page.once('dialog',dialog=>dialog.accept());
@@ -109,7 +111,9 @@ try{
  await page.locator('#smsLibrary').click();
  await page.locator('#smsLibraryAll').press('Enter');
  page.once('dialog',dialog=>dialog.accept());
- await page.locator(`[data-snapshot-id="${snapshotId}"]`).getByRole('button',{name:'Open project WT-026 retained grips'}).press('Enter');
+ const reopened=page.locator(`[data-snapshot-id="${snapshotId}"]`);
+ await revealLibraryActions(reopened);
+ await reopened.getByRole('button',{name:'Open project WT-026 retained grips'}).press('Enter');
  await page.waitForFunction(id=>window.__sensoryStudio.project.id===id,original.projectId);
  await assertRetained();
  assert.equal(errors.length,0,'No uncaught errors: '+errors.join('; '));

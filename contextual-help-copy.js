@@ -208,6 +208,7 @@ export const nativeFamilyHelp = {
 };
 
 export const dynamicHelp = {
+ '[data-drawer-zoom]': ['Changes thumbnail and card size without changing model data.','Choose a smaller size to fit more open models in the viewport, or a larger size to inspect the saved previews. The choice is remembered in this browser and does not change your model, camera zoom or print settings.'],
  "[data-gear-top-field=\"x\"]": ["Move the grip left or right.","Keep the flared root on solid stock and clear of shaft openings."],
  "[data-gear-top-field=\"z\"]": ["Move the grip forward or backward.","Use an offset position for a crank spindle; check clearance from holes."],
  "[data-gear-top-field=\"width\"]": ["Set grip width.","Wider grips need more solid material around their base."],

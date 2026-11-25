@@ -72,6 +72,16 @@ try{
  assert(!(await page.evaluate(()=>window.__sensoryStudio.project.tabs)).includes(id));
  await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
  await mkdir('qa',{recursive:true});
+ const zoom=body.getByRole('slider',{name:'Thumbnail size'});
+ const zoomKey='crystal-forge.models-drawer.zoom.v1';
+ const beforeZoom=await storage();
+ await zoom.press('Home');assert.equal(await zoom.inputValue(),'1');
+ const small=await drawer.evaluate(el=>getComputedStyle(el).getPropertyValue('--md-thumb-size'));
+ await zoom.press('End');assert.equal(await zoom.inputValue(),'5');
+ const big=await drawer.evaluate(el=>getComputedStyle(el).getPropertyValue('--md-thumb-size'));
+ assert(parseFloat(big)>parseFloat(small));
+ assert.equal(await storage(),beforeZoom,'Thumbnail size must not modify project storage');
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),zoomKey),'5');
  for(const width of [390,768,1440]){
   await page.setViewportSize({width,height:950});
   await filter.fill('');
@@ -79,13 +89,28 @@ try{
   assert(host&&d&&d.x>=host.x-1&&d.x+d.width<=host.x+host.width+1);
   assert(Math.abs(d.height-host.height/3)<=8||d.height===144);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-  await page.screenshot({path:'qa/wt023c-drawer-'+width+'.png'});
+  for(const size of ['Home','End']){
+   await zoom.press(size);
+   const geometry=await body.locator('.md-card').evaluateAll(cards=>cards.map(card=>{
+    const name=card.querySelector('.md-name-title'),pick=card.querySelector('.md-pick'),actions=card.querySelector('.md-actions');
+    const n=name.getBoundingClientRect(),p=pick.getBoundingClientRect(),a=actions.getBoundingClientRect(),c=card.getBoundingClientRect();
+    return {nameWidth:n.width,nameHeight:n.height,lineHeight:parseFloat(getComputedStyle(name).lineHeight),pickBottom:p.bottom,actionsTop:a.top,cardLeft:c.left,cardRight:c.right,actionsLeft:a.left,actionsRight:a.right};
+   }));
+   for(const g of geometry){
+    assert(g.nameWidth>=48,'Readable model name needs horizontal space');
+    assert(g.nameHeight<=g.lineHeight+2,'Model name must not wrap letter by letter');
+    assert(g.actionsTop>=g.pickBottom-1,'Actions must not overlap name/thumbnail');
+    assert(g.actionsLeft>=g.cardLeft-1&&g.actionsRight<=g.cardRight+1,'Actions must fit card');
+   }
+   await page.screenshot({path:'qa/wt023c-drawer-'+width+'-'+size+'.png'});
+  }
  }
  await page.reload({waitUntil:'commit'});
  await page.waitForFunction(()=>window.__sensoryStudio);
  await page.locator('.sms-workspace-nav [data-tab=design]').click();
  assert.equal(await toggle.getAttribute('aria-expanded'),'false');
  assert((await models()).some(model=>model.id===id&&model.name==='Crystal renamed'));
+ await toggle.click();assert.equal(await zoom.inputValue(),'5','Density survives reload');await filter.press('Escape');
  // Some historical Crystal records lack the editable source, even with an old image attached.
  const snapshot=JSON.parse(await storage());
  const missing=snapshot.project.models.find(model=>model.id===id);
