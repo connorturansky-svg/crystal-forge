@@ -53,3 +53,5 @@ vault.connected=true;vault.reconciled=true;vault.auto=true;vault.token='private-
 vault.disconnect();
 assert.equal(vault.token,'');assert.equal(vault.auto,false,'Disconnect pauses auto-sync');
 console.log('PR11 production hardening: cache invalidation, data preservation and cloud-import rollback passed');
+
+await import('./architecture-boundaries.test.mjs');

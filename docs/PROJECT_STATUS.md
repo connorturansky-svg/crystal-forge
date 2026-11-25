@@ -1,6 +1,10 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
-## ChatGPT handover — 25 November 2026
+## Current PR-led backlog — 25 November 2026
+
+Owner requested issues be consolidated into implementation PRs. Open delivery lanes: #169 Models drawer; #174 Info/Help; #175 Library B2b; #158 Gear grips; #176 model colours and viewport layers (supersedes #167/#171); #177 shared resources/private backups; structural and production QA on the accompanying branch. Original issue bodies remain acceptance references, not proof of delivery. See [structural audit](STRUCTURAL_PARITY_QA_20261125.md). #10 physical tests, #33 owner administration and #51 held modular assembly require separate owner decisions/evidence. Always verify live PR head and CI. No auto-merge.
+
+## Historical ChatGPT handover — 25 November 2026
 
 Main audited at `66994cc98d3ef9bd68ef38161fd7a2b78fef8dbb`. The owner merged [B2a #172](https://github.com/connorturansky-svg/crystal-forge/pull/172). Main carries v0.16.0-dev.35.42. Its runtime head `cba402317d40bd09a0dd228a1257ebf0c4c0fb88` passed all six substantive [PR workflows](https://github.com/connorturansky-svg/crystal-forge/pull/172/checks). Persistence #147, project folders #151, private backup #148, Models drawer #164/#166 and contextual Help #163 are integrated. See [AI_HANDOVER.md](AI_HANDOVER.md) for source and test commands.
 
