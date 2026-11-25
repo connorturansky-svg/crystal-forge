@@ -1134,7 +1134,6 @@ function closeInfo(){
  returnFocus?.focus();
 }
 $('helpBtn').onclick=()=>showInfo('help');
-$('changelogBtn').onclick=()=>showInfo('changelog');
 $('closeInfo').onclick=closeInfo;
 for(const [i,button] of infoTabs.entries()){
  button.onclick=()=>showInfoTab(button.dataset.info);

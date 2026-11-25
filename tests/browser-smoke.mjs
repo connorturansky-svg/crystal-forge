@@ -49,7 +49,8 @@ try{
  await page.locator('#helpBtn').click();
  assert(await page.locator('#infoOverlay:not([hidden])').count(),'Help modal opens');
  await page.locator('#closeInfo').click();
- await page.locator('#changelogBtn').click();
+ await page.locator('#helpBtn').click();
+ await page.locator('#infoTabChangelog').click();
  assert(await page.locator('[data-info-pane="changelog"]:not([hidden])').count(),'Changelog opens');
  await page.locator('#closeInfo').click();
  console.log('Theme, Help and Changelog verified');

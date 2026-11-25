@@ -125,7 +125,7 @@ try{
  assert.equal(await page.locator('.sms-split,.sms-more').count(),0);
  assert.equal(await page.locator('.brand').innerText(),'Pixel Model Maker');
  assert((await page.locator('.version').boundingBox()).y>(await page.locator('.brand').boundingBox()).y);
- for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','hoverNotes','detailedExplanations','changelogBtn','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
+ for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','hoverNotes','detailedExplanations','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
   assert(await page.locator('#'+id).isVisible(),id+' is directly available');
  const leftPanel=page.locator('#smsTools'),rightPanel=page.locator('#smsPrecision'),bottom=page.locator('#smsModelsDrawer');
  assert.equal(Math.round((await rightPanel.boundingBox()).width),335);
@@ -168,10 +168,15 @@ try{
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.id),id);
  await page.locator('#advancedBtn').click();
  await page.locator('#simpleBtn').click();
- for(const id of ['helpBtn','changelogBtn']){
+ assert.equal(await page.locator('#changelogBtn').count(),0);
+ assert.equal(await page.locator('#helpBtn').innerText(),'Info');
+ for(const id of ['helpBtn']){
   await page.locator('#'+id).click();
   assert(await page.locator('#infoOverlay').isVisible());
+  await page.locator('#infoTabChangelog').click();
+  assert(await page.locator('#infoChangelog').isVisible());
   await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'helpBtn');
   assert.equal(await page.locator('#infoOverlay').isVisible(),false);
  }
  const hoverNotes=page.getByRole('checkbox',{name:'Hover Notes',exact:true});

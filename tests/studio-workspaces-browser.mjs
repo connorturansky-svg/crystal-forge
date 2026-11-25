@@ -190,7 +190,8 @@ try{
   await auditContrast();
   assert((await textSize('.sms-tool-finder>label'))>=15,'Readable labels survive theme changes');
   assert((await textSize('body'))>=16,'Readable main text survives theme changes');
-  await page.locator('#changelogBtn').click();
+  await page.locator('#helpBtn').click();
+ await page.locator('#infoTabChangelog').click();
   assert(await page.locator('#infoChangelog').isVisible(),'What’s New remains available');
   assert((await textSize('.dialog-body'))>=16,'Release notes are readable at default zoom');
   assert((await contrast('#infoChangelog','.dialog'))>=4.5,'Release notes meet normal-text contrast');
@@ -204,7 +205,8 @@ try{
  // desktop at 200% browser zoom. Check text-only enlargement separately.
  const cdp=await page.context().newCDPSession(page);
  await cdp.send('Emulation.setDeviceMetricsOverride',{width:720,height:475,deviceScaleFactor:2,mobile:false});
- await page.locator('#changelogBtn').click();
+ await page.locator('#helpBtn').click();
+ await page.locator('#infoTabChangelog').click();
  await page.locator('#infoTabHelp').click();
  assert(await page.locator('#infoHelp').isVisible());
  await auditLayout('200% equivalent Help');
@@ -216,7 +218,8 @@ try{
  await page.evaluate(()=>{document.documentElement.style.fontSize='200%';});
  assert((await textSize('body'))>=32&&(await textSize('.sms-tool-finder>label'))>=30,
   '200% text sizing scales the main UI and tool-finder labels');
- await page.locator('#changelogBtn').click();
+ await page.locator('#helpBtn').click();
+ await page.locator('#infoTabChangelog').click();
  assert((await textSize('.dialog-body'))>=32,'Help and release text scales with browser text sizing');
  await auditLayout('200% text-only What’s New');
  await page.locator('#closeInfo').click();

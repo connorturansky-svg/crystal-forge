@@ -58,6 +58,9 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.43 — Find help and releases in Info
+- Open Info to reach the Help guide, searchable Features and What’s new from one toolbar button. The question-mark keyboard shortcut still opens Help.
+
 ## v0.16.0-dev.35.42 — Browse compact Library cards
 
 - Browse model and project previews in compact cards. Hover, tab to Actions or tap it to open, copy or organise an item. Press Escape to close the actions.

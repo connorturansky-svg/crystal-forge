@@ -294,12 +294,8 @@ const BUTTONS={
   "Switches between light and dark application themes."
  ],
  "helpBtn": [
-  "Help",
-  "Opens the full help guide and keyboard shortcuts."
- ],
- "changelogBtn": [
-  "What’s new",
-  "Shows version history and recent development changes."
+  "Info",
+  "Opens the Help guide, searchable Features and What’s new release history in one dialog."
  ],
  "saveBtn": [
   "Save project",
@@ -486,7 +482,7 @@ function lookup(el){
  if(el.dataset.tool)return TOOLS[el.dataset.tool];
  if(el.dataset.look)return LOOKS[el.dataset.look];
  if(el.dataset.colour)return ['Crystal colour','Changes the preview crystal material colour, not the colour of your printed filament.'];
- if(el.dataset.info)return [el.dataset.info==='help'?'Help':'Version history','Switch the currently displayed information panel.'];
+ if(el.dataset.info)return [({help:'Help guide',features:'Features',changelog:'Version history'}[el.dataset.info]||'Studio information'),'Switch the currently displayed information panel.'];
  if(el.dataset.holeAxis)return ['Hole '+el.dataset.holeAxis.toUpperCase()+' position','Set a physical LED or mounting-hole position in millimetres. Invalid entries are flagged red.'];
  if(el.dataset.removeHole)return ['Remove hole','Delete this manually placed hardware hole.'];
  if(el.id==='loadFile')return null;

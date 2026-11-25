@@ -20,7 +20,7 @@ try{
  const snapshot=()=>page.evaluate(()=>JSON.stringify(window.__sensoryStudio.project.models));
  const saved=await snapshot();
  const buildCount=await page.evaluate(()=>window.__sensoryStudio.metrics.previewBuilds);
- const trigger=page.locator('#changelogBtn');
+ const trigger=page.locator('#helpBtn');
  const dialog=page.locator('#infoOverlay');
  const tab=name=>dialog.getByRole('tab',{name,exact:true});
  const openFeatures=async()=>{
@@ -28,6 +28,10 @@ try{
   await tab('Features').click();
  };
  await trigger.click();
+ assert.equal(await trigger.innerText(),'Info');
+ assert.equal(await page.locator('#changelogBtn').count(),0);
+ assert(await tab('Help guide').getAttribute('aria-selected')==='true');
+ await tab('What’s new').click();
  assert(await tab('What’s new').getAttribute('aria-selected')==='true');
  assert(await dialog.getByLabel('Unreleased changes').isVisible());
  await dialog.getByText('Earlier releases',{exact:true}).click();

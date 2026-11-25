@@ -1,0 +1,5 @@
+# WT-025 / WT-024 interface polish — implementation checkpoint
+
+Refs #154 and #152. This is one shared implementation branch for the owner’s interface refinements, not a second Help registry. Baseline main `66994cc98d3ef9bd68ef38161fd7a2b78fef8dbb` includes #163 and #172. First checkpoint: replace duplicate toolbar actions with one visible Info entry to the existing accessible dialog; preserve feature search, tabs, Escape and focus return. Keep `helpBtn` as stable internal ID. Existing default Help tab retained intentionally.
+
+Tests changed: browser smoke, features keyboard journey, workspace legibility and unified Studio toolbar. No local execution in GitHub API mode; exact-head CI is required. Remaining checkpoints in this same PR: audit native titles and effective off states, reduce repeated triggers, verify clean defaults/migration and the deployed-only since-last-visit summary. Do not merge a partial checkpoint. Coordinate release version with #169 and #158; reconcile current main before final review. No project, geometry or export changes.
