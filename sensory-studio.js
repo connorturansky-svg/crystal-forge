@@ -766,11 +766,20 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  }
  function showModelInfo(id,preview){
   const model=findModel(project,id),dialog=document.createElement('dialog');
+  const profileIds=new Set([model.build.activePixelProfileId,
+   ...((model.build.pixelHoles||[]).flatMap(hole=>[hole.profileId,hole.socketProfile?.id]))]);
+  if(model.generator.typeId==='crystals'){
+   profileIds.add(model.parameters.pixelProfileId);
+   for(const hole of model.parameters.manualPixelHoles||[])profileIds.add(hole.profileId);
+  }
+  const names=new Map(fittingProfiles().map(profile=>[profile.id,profile.name]));
+  const pixelProfiles=[...profileIds].filter(Boolean).map(id=>names.get(id)||id);
   const fields={
    Project:project.title,Family:registry.get(model.generator.typeId)?.displayName||model.generator.typeId,
    Source:model.link?'Linked model '+model.link.sourceId+' · revision '+model.link.revision:'Independent model · revision '+model.revision,
    Created:model.createdAt,Modified:model.updatedAt,
-   'Pixel profiles':[...new Set((model.build.pixelHoles||[]).map(hole=>hole.profileId||hole.socketProfile?.id).filter(Boolean))].join(', ')||'No explicit profile dependencies',
+   'Pixel profiles':pixelProfiles.join(', ')||'No explicit profile dependencies',
+   Printer:model.printerOverrides?.printer||project.printer?.printer||'Project default',
    'Preview status':preview
   };
   const title=document.createElement('h2');title.textContent=model.name||'Unnamed model';
