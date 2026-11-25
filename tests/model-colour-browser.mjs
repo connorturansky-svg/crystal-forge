@@ -44,7 +44,10 @@ try{
  const legacy=await browser.newPage({viewport:{width:1440,height:950}});
  await legacy.goto(url+(url.includes('?')?'&':'?')+'legacy=1');
  await legacy.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('Ready'));
- await legacy.locator('#customModelColour').click();
+ await legacy.locator('[data-tab="design"]').click();
+ const classicColour=legacy.locator('#customModelColour');
+ await classicColour.evaluate(el=>{for(let parent=el.parentElement;parent;parent=parent.parentElement){if(parent.tagName==='DETAILS')parent.open=true;}});
+ await classicColour.click();
  const classic=legacy.getByRole('dialog',{name:'Primary model colour'});
  await classic.locator('[data-model-colour-hex]').fill('#000000');
  await classic.getByRole('button',{name:'Apply colour',exact:true}).click();
