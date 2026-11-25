@@ -58,6 +58,10 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.48 — Modular fabrication registration foundation (candidate)
+
+- Opt in to registered automatic bed splitting for eligible solid Crystal plinths. The cancellable background check creates matching sockets, named separate dowels and assembly instructions in the production ZIP, or refuses an unverified layout.
+
 ## v0.16.0-dev.35.43 — Adjustable, readable Models drawer
 
 - Adjust Thumbnail size from compact to large; the number of columns adapts to the viewport width.

@@ -1,0 +1,27 @@
+# WT-011 modular fabrication — active implementation
+
+Owner dispatch 25 November 2026 supersedes the former Codex-only hold in #51. Baseline 6a81f9c55a1d8037080dacc5a66f5a69f828da3b. No automatic merge.
+
+## First checkpoint
+
+An isolated Manifold grid registration engine in src/printing/registered-grid-assembly.js partitions the prepared mesh in original Y-up coordinates, checks cell count, printer size, volume and connected stock, attempts two stock-enveloped matched sockets per neighbouring cell pair, subtracts real cutters and returns separate dowels. It fails the entire registered operation rather than offer incomplete joints. Tests use an actual four-cell solid, check mesh reconstruction, deterministic joints, and reject thin/disconnected stock. No UI/export path is wired yet. Results are candidates until exact-head CI passes.
+
+## Remaining acceptance
+
+- Validate actual cross-sections of both STL and 3MF, negative controls for existing LED, mounting, wire and internal cavities, multi-axis adjacent joints, asymmetrical beds, performance and cleanup.
+- Restrict first UI integration to supported Crystal solid plinths; preserve existing plain split and manual single-cut routes. Never silently fall back to unregistered parts if registration was requested. Reuse the authoritative prepared revision and printer dimensions. Reject stale asynchronous results.
+- Create individually named printable parts and dowels, matching joint IDs, placement/orientation diagram, real stock and clearance report, assembly manifest, BOM and fit coupon. Keep unregistered geometry explicitly labelled.
+- Browser Print workflow: preview, opt-in, cancellation, refusal reason, regeneration, ZIP content and persisted project compatibility. Preserve all seven families; do not enable unsupported native topology by default.
+- Physical coupons and Cura inspection remain manual. No strength, child-safety, overhead or printed-fit certification. See #10. If arbitrary topology, automatic connector placement or browser performance prove unreliable, document the measured limitation and hold that capability for a separate targeted task; do not weaken checks to pass.
+
+## Pack checkpoint
+
+`src/printing/registered-assembly-pack.js` converts the real returned meshes to existing binary STL production-pack inputs, with unique stable filenames, validated part/joint/dowel references, original coordinates and explicit physical-test warnings. Test fixtures check all 12 binary STLs and reference coverage; this is not yet mounted in the live Print UI. The next integration must recheck the prepared revision after the async WASM load and fail without any ZIP if the requested registered assembly cannot be verified. Coupon and independent STL/3MF sectional measurements remain outstanding.
+
+## Print integration checkpoint
+
+Opt-in `autoBedRegistration` is false by default and only available with automatic bed splitting. The existing production ZIP path calls a cancellable worker, with stock checks limited to the plinth height, 120-second timeout, stale source/settings rejection after each asynchronous step, and no silent plain-split fallback. Existing manual and plain splitting remain intact. Browser and actual exported-section verification required before review. Physical fit remains unverified.
+
+## Assembly pack guide and fit coupons
+
+The worker now creates up to three clearance samples per used seam axis using the matching blind-bore depth and cutter resolution. The ZIP includes a schematic SVG seam map, named part/dowel references, a BOM and a dry-fit/physical acceptance guide. It explicitly distinguishes the joined reference STL from printable grid parts. Physical fit is not inferred from software. The new exact-head tests must pass before review; end-to-end real Crystal ZIP, section verification and physical trials remain outstanding.
