@@ -768,7 +768,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const model=findModel(project,id),dialog=document.createElement('dialog');
   const fields={
    Project:project.title,Family:registry.get(model.generator.typeId)?.displayName||model.generator.typeId,
-   Source:model.link?'Linked model '+model.link.id+' · revision '+model.link.revision:'Independent model · revision '+model.revision,
+   Source:model.link?'Linked model '+model.link.sourceId+' · revision '+model.link.revision:'Independent model · revision '+model.revision,
    Created:model.createdAt,Modified:model.updatedAt,
    'Pixel profiles':[...new Set((model.build.pixelHoles||[]).map(hole=>hole.profileId||hole.socketProfile?.id).filter(Boolean))].join(', ')||'No explicit profile dependencies',
    'Preview status':preview
