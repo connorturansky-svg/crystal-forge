@@ -77,7 +77,9 @@ try{
  await page.locator('#model-tab-'+first).click();assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.width),92.5);
  const builds=await page.evaluate(()=>window.__sensoryStudio.metrics.previewBuilds);
  await page.locator('#model-tab-'+second).click();await page.locator('#model-tab-'+first).click();assert.equal(await page.evaluate(()=>window.__sensoryStudio.metrics.previewBuilds),builds,'Unchanged tabs reuse their preview resources.');
- await page.locator('#smsSaveModel').click();await page.locator('#smsLibrary').click();await page.locator('#smsSavedModels button').filter({hasText:'Linked copy'}).first().click();
+ await page.locator('#smsSaveModel').click();await page.locator('#smsLibrary').click();
+ await page.locator('#smsSavedModels .sms-library-actions-toggle').first().click();
+ await page.locator('#smsSavedModels button').filter({hasText:'Linked copy'}).first().click();
  assert(await page.evaluate(()=>!!window.__sensoryStudio.currentModel.link));await page.locator('#smsBreak').click();assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.link),null);
  await add('gears');
  for(const [type,preset,key,value] of [
@@ -94,7 +96,10 @@ try{
  }
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.registry.list().filter(generator=>generator.category!=='Imports').length),7);
  await page.locator('#model-tab-'+first+' .close-tab').click();assert(await page.evaluate(id=>window.__sensoryStudio.project.models.some(m=>m.id===id),first));
- await page.locator('#smsLibrary').click();await page.locator('#smsProjectModels .sms-tile').filter({hasText:'Tactile Texture Tiles'}).first().getByRole('button',{name:'Open',exact:true}).click();
+ await page.locator('#smsLibrary').click();
+ const tileCard=page.locator('#smsProjectModels .sms-tile').filter({hasText:'Tactile Texture Tiles'}).first();
+ await tileCard.locator('.sms-library-actions-toggle').click();
+ await tileCard.getByRole('button',{name:'Open',exact:true}).click();
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.id),first);
  await page.locator('#smsBuild').click();
  await page.locator('.sms-panel-details > summary').filter({hasText:'Pixel holes'}).click();

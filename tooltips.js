@@ -649,7 +649,7 @@ export function installContextualHelp(doc=document){
  function decorate(control){
   // Repeated drawer actions expose their short note on hover/focus; the
   // drawer filter and naming fields receive adjacent detailed guidance.
-  if(control.matches('.md-card button,.md-header button'))return;
+  if(control.matches('.md-card button,.md-header button,.sms-library-actions-toggle'))return;
   const anchor=control.closest('label,.control,.sms-model-control,.sms-visual-range')||control;
   const existing=controls.get(control);
   if(existing?.anchor===anchor&&existing.help.parentElement===anchor.parentElement)return;

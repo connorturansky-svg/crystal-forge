@@ -1,4 +1,5 @@
 import {listProjectFolders} from './studio-project-index.js';
+import {libraryCard} from './src/ui/library-card.mjs';
 import {createModelDrawer,createPreviewQueue} from './src/ui/model-drawer.mjs';
 import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive,assertWorkspaceVersion,projectWorkspaceCandidate} from './studio-sync-plan.js';
 import {readMeshFile,importedMeshRecipe,MAX_MESH_BYTES} from './studio-mesh-import.js';
@@ -2663,7 +2664,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const generator=registry.list().find(g=>g.typeId===model.generator.typeId);
    tile.dataset.modelTheme=model.generator.typeId;
    tile.innerHTML='<h3>'+esc(model.name)+'</h3><p class="sms-descriptor">'+esc(generator?.displayName||model.generator.typeId)+' · revision '+(libraryRecord?.versions.at(-1).revision||model.revision)+'</p><div class="sms-actions"></div>';
-   tile.prepend(savedModelPicture(model,libraryRecord?'library':project.id));
+   const preview=savedModelPicture(model,libraryRecord?'library':project.id);
    const actions=tile.querySelector('.sms-actions');
    const action=(name,fn)=>{const b=document.createElement('button');b.textContent=name;b.onclick=fn;actions.append(b);};
    if(!libraryRecord){action('Open',()=>switchModel(model.id));action('Save to library',()=>{saveModel(model);renderLibraryCards();});
@@ -2676,6 +2677,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     if(libraryRecord.versions.length>1)action('Older revision',()=>{const versions=libraryRecord.versions;const chosen=prompt('Revision to open ('+versions.map(v=>v.revision).join(', ')+')',String(versions.at(-2).revision));if(chosen){const m=insertLibraryModel(project,state.library,libraryRecord.id,{revision:Number(chosen)});switchModel(m.id);}});
    }
    action('Export editable JSON',()=>adapter.download(new Blob([JSON.stringify(model,null,2)],{type:'application/json'}),model.generator.typeId+'-model.json'));
+   libraryCard(overlay,tile,preview,actions,tile.querySelector('h3'));
    root.append(tile);
   }
   state.library.filter(r=>includesItem('model',r.id)&&matches(r.versions.at(-1).model)).forEach(r=>card(r.versions.at(-1).model,$('smsSavedModels'),r));
@@ -2718,7 +2720,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const cover=saved.models[0];
    const count=saved.models.length;
    tile.innerHTML='<h3>'+esc(saved.title)+'</h3><p class="sms-descriptor">'+'Saved version '+version+' · '+count+' '+(count===1?'model':'models')+'</p><div class="sms-actions"><button type="button">Open project</button></div>';
-   tile.prepend(cover?savedModelPicture(cover,saved.snapshotId):modelPicture(null));
+   const preview=cover?savedModelPicture(cover,saved.snapshotId):modelPicture(null);
    const button=tile.querySelector('.sms-actions button');
    button.setAttribute('aria-label','Open project '+saved.title);
    button.onclick=()=>{
@@ -2744,6 +2746,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    tile.querySelector('.sms-actions').append(rename);
    organisationActions(tile.querySelector('.sms-actions'),'project',saved.snapshotId);
    tile.append(status);
+   libraryCard(overlay,tile,preview,tile.querySelector('.sms-actions'),tile.querySelector('h3'));
    root.append(tile);
  }
  function renderBuiltInTemplates(section){
@@ -2754,12 +2757,15 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const tile=document.createElement('article');tile.className='sms-tile sms-picker-tile';tile.dataset.modelTheme=family.typeId;
    const button=document.createElement('button');button.type='button';button.className='sms-picker-choice';
    button.setAttribute('aria-label','New '+family.displayName+' from template');
-   button.append(startingPointPicture(family),family.displayName);
+   button.textContent='Create model';
    button.onclick=()=>{
     const create=name=>{add(family.typeId,null,name);document.querySelector('.workspace-tabs [data-tab=design]').click();};
     if(shell)requestModelName('Name new model',family.displayName,create);else create(family.displayName);
    };
-   tile.append(button);grid.append(tile);
+   const title=document.createElement('h3');title.textContent=family.displayName;
+   const actions=document.createElement('div');actions.className='sms-actions';actions.append(button);
+   tile.append(title,actions);
+   libraryCard(overlay,tile,startingPointPicture(family),actions,title);grid.append(tile);
   }
   if(!grid.childElementCount)return;
   const heading=document.createElement('h2');heading.textContent='Built-in templates';
@@ -2778,7 +2784,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const status=document.createElement('p');
    status.textContent=source?(template.kind==='model'?'Model · revision '+template.revision:'Project template'):'Unavailable source';
    const cover=template.kind==='model'?source:source?.models[0];
-   tile.append(cover?savedModelPicture(cover,template.sourceId):modelPicture(null),title,status);
+   const preview=cover?savedModelPicture(cover,template.sourceId):modelPicture(null);
+   tile.append(title,status);
    const controls=document.createElement('div');controls.className='sms-actions';tile.append(controls);
    const action=(name,handler)=>{
     const button=document.createElement('button');button.type='button';button.textContent=name;button.onclick=handler;controls.append(button);
@@ -2791,6 +2798,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     saveProjectSnapshot(templateProject(source));
    });
    action('Remove template',()=>{if(confirm('Remove this template? Its source stays in the Library.'))editOrganisation(next=>{next.templates=next.templates.filter(t=>t.id!==template.id);});});
+   libraryCard(overlay,tile,preview,controls,title);
    grid.append(tile);
   }
   if(!grid.childElementCount)grid.textContent='No matching templates. Save a model or project as a reusable template to get started.';
