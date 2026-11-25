@@ -40,7 +40,7 @@ Saved models and the existing favourites and collection filters remain available
 
 ## What future releases should add
 
-A future **Since your last visit** area will summarise shipped changes in ordinary language, help you locate moved tools and let you mark updates as read. These will be explained here and in the in-app Help only when implementation is merged, Pages deployment is verified and the owner approves release.
+In the WT-025 interface-polish candidate, **Info → What’s new** shows current version highlights or changes since the most recent version you explicitly marked as read. Select **Mark this version as read** to acknowledge them. Opening Info alone does not mark anything as read. Draft notes remain separate. The small dot on Info indicates unread version notes. Deployment and final checks are pending owner review.
 
 **Need to give feedback?** In [WT-025 issue #154](https://github.com/connorturansky-svg/crystal-forge/issues/154), report the workspace, exact label that is hard to read or find, your browser/zoom and what you expected. You do not need to understand the code.
 
@@ -62,3 +62,5 @@ Use **New model** to pick a starting point, then review the suggested name. Prev
 Select **Info** in the toolbar, then choose Help guide, Features or What’s new. Press Escape to close and return to the toolbar. The `?` keyboard shortcut still opens the Help guide. Hover Notes and Detailed Explanations remain separate settings.
 
 New browsers start with both optional help switches off. Turn on Hover Notes for short hints or Detailed Explanations for inline guidance; use both if preferred. Existing choices are retained. A disabled action can still explain why it is blocked.
+
+When both help modes are on, desktop controls that already show an inline explanation hide the redundant question button. Touch devices retain the button; keyboard focus and mouse hover still show short guidance.

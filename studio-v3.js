@@ -1,4 +1,5 @@
 import {installFeatureCatalogue} from './studio-features.js';
+import {installInfoReleaseSummary} from './src/ui/info-release-summary.mjs';
 import {makePixelReplicaRecipe} from './pixel-replica.js';
 import {prepareRecipe} from './studio-geometry.js';
 import {makeRoutedSocketSpecimen} from './studio-catalogue.js';
@@ -1134,6 +1135,7 @@ function closeInfo(){
  returnFocus?.focus();
 }
 $('helpBtn').onclick=()=>showInfo('help');
+installInfoReleaseSummary();
 $('closeInfo').onclick=closeInfo;
 for(const [i,button] of infoTabs.entries()){
  button.onclick=()=>showInfoTab(button.dataset.info);

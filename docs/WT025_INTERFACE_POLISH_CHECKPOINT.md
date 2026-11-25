@@ -8,3 +8,8 @@ Tests changed: browser smoke, features keyboard journey, workspace legibility an
 ## Checkpoint 2 — preference and native-title behaviour
 
 Fresh browsers now start with both optional help controls off, while explicit v1 choices and the legacy Descriptions on/off choice are migrated. The shared registry suppresses ordinary native HTML title hints when hover is off, including newly inserted controls and title changes, restores their latest text when enabled, and keeps existing accessible names/blocked-action reasons. Tests explicitly enable hover when that is what they exercise. Disabled-action reasons remain available intentionally. Remaining: reduce redundant question marks, deployed-only visit summary, verify exact-head CI and manual accessibility/visual gaps. No local browser execution.
+
+
+## Checkpoint 3 — lower-density help and release highlights
+
+A non-touch desktop hides extra question buttons only when both modes are enabled and that setting has inline guidance; coarse pointers retain touch help. The version highlights read the running build’s generated current/archived release notes, not the unreleased section. Read state is one browser-local key per acknowledged version, explicitly written only by the user; earlier tabs cannot overwrite newer markers. Missing/corrupt/blocked storage is handled conservatively, with no fabricated read status. First visits show the current version only. This is an acknowledgement-based summary, not a remote deployment detector or automatic classification of historical notes. Added pure tests and real browser Info/keyboard and help-density assertions. Final exact-head CI, manual screen-reader/visual checks and release-version coordination remain mandatory.

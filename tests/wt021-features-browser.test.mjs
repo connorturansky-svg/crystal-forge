@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {studioFeatures} from '../studio-features.js';
+import {RELEASE_READ_PREFIX} from '../src/ui/info-release-summary.mjs';
 
 const browser=await chromium.launch({
  headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
@@ -34,6 +35,29 @@ try{
  await tab('What’s new').click();
  assert(await tab('What’s new').getAttribute('aria-selected')==='true');
  assert(await dialog.getByLabel('Unreleased changes').isVisible());
+ const summary=dialog.locator('#infoReleaseSummary');
+ assert(await summary.isVisible());
+ assert(await trigger.getAttribute('data-info-unread')!==null);
+ assert.equal(await summary.locator('#infoReleaseSummaryList>li').count(),1);
+ assert(!await summary.getByText('Unreleased WT-021 draft',{exact:true}).count());
+ const readKey=await page.evaluate(prefix=>prefix+document.querySelector('.version').textContent.trim().slice(1),RELEASE_READ_PREFIX);
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),readKey),null,'Opening Info does not acknowledge changes');
+ await summary.getByRole('button',{name:'Mark this version as read'}).click();
+ assert.equal(await page.evaluate(key=>localStorage.getItem(key),readKey),'read');
+ assert.equal(await trigger.getAttribute('data-info-unread'),null);
+ assert.match(await summary.locator('h3').innerText(),/up to date/);
+ assert.equal(await snapshot(),saved);
+ // Simulate a peer-tab update after an earlier release has been read.
+ await page.evaluate(({key,prefix})=>{
+  localStorage.removeItem(key);
+  const previous=document.querySelector('#infoChangelog .release-archive > details.release > summary').textContent.match(/^v([^ ]+)/)[1];
+  localStorage.setItem(prefix+previous,'read');
+  window.dispatchEvent(new StorageEvent('storage',{key,newValue:null,storageArea:localStorage}));
+ },{key:readKey,prefix:RELEASE_READ_PREFIX});
+ assert.match(await summary.locator('h3').innerText(),/since your last acknowledgement/);
+ assert.equal(await summary.locator('#infoReleaseSummaryList>li').count(),1);
+ await summary.getByRole('button',{name:'Mark this version as read'}).click();
+ assert.equal(await trigger.getAttribute('data-info-unread'),null);
  await dialog.getByText('Earlier releases',{exact:true}).click();
  assert(await dialog.locator('.release-archive details').first().isVisible());
  await tab('What’s new').focus();

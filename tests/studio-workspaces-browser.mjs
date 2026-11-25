@@ -245,8 +245,13 @@ try{
   await page.keyboard.press('Escape');
   assert(!(await page.locator('#controlTooltip').isVisible()));
   assert.match(await control.getAttribute('aria-describedby'),/contextualHelpDetail/);
-  await help.getByRole('button',{name:'Show setting help',exact:true}).click();
+  const trigger=help.locator('.contextual-help-trigger');
+  assert(!(await trigger.isVisible()),'Inline guidance removes redundant desktop question button');
+  await detailedExplanations.uncheck();
+  await trigger.click();
   assert(await page.locator('#controlTooltip').isVisible());
+  await page.keyboard.press('Escape');
+  await detailedExplanations.check();
  }
  await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{count:5},'WT-024 Crystal'));
  await destination('Design').press('Enter');
