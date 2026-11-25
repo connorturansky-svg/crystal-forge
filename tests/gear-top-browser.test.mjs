@@ -97,8 +97,12 @@ try{
  await revealLibraryActions(saved);
  await saved.getByRole('button',{name:'Save as reusable template'}).press('Enter');
  await page.locator('#smsTemplates').press('Enter');
+ const template=page.locator('#smsReusableTemplates article').filter({has:page.getByRole('heading',{name:'WT-026 grip template',exact:true})});
+ await revealLibraryActions(template);
+ const create=template.getByRole('button',{name:'Create project from template',exact:true});
+ await create.waitFor();
  page.once('dialog',dialog=>dialog.accept());
- await page.getByRole('button',{name:'Create project from template'}).press('Enter');
+ await create.press('Enter');
  await page.waitForFunction(id=>window.__sensoryStudio.project.id!==id,original.projectId);
  const assertRetained=async()=>{
   const models=await page.evaluate(()=>window.__sensoryStudio.project.models.filter(model=>model.generator.typeId==='gears').map(model=>model.build.gearTopControls));
