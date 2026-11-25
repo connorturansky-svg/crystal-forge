@@ -3467,7 +3467,13 @@ try{
   const first={...savedProject,snapshotId:'version-1'};
   const second={...savedProject,snapshotId:'version-2'};
   const workspace={schemaVersion:1,project:activeProject,savedProjects:[first,second],library:[],legacyTemplates:[]};
-  const targetPage=await browser.newPage({viewport:{width:390,height:844}});
+  // The isolated Library fixture must not compete with the preceding long-lived WebGL renderer.
+  assert.deepEqual(errors,[]);
+  await page.close();
+  const isolatedBrowser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
+  const targetPage=await isolatedBrowser.newPage({viewport:{width:390,height:844}});
+  targetPage.on('pageerror',error=>errors.push(error.message));
+  page=targetPage;
   try{
    await targetPage.addInitScript(({key,workspace})=>{
     if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(workspace));
@@ -3505,7 +3511,7 @@ try{
    assert.deepEqual(await modelIds(),['shared-model']);
    await targetPage.reload({waitUntil:'commit'});
    await targetPage.waitForFunction(()=>window.__sensoryStudio?.project.id==='other-project');
-  }finally{await targetPage.close();}
+  }finally{await isolatedBrowser.close();}
  }
  assert.deepEqual(errors,[]);
  console.log('Unified Home, Design, Build, Library and Quick Print screenshots captured.');
