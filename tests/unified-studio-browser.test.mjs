@@ -428,7 +428,7 @@ try{
  await river.getByRole('button',{name:'Save as reusable template'}).press('Enter');
  await page.locator('#smsTemplates').press('Enter');
  const starter=page.getByRole('button',{name:'Create project from template'});
- await page.getByRole('button',{name:'Actions for River starter',exact:true}).click();
+ await page.locator('#smsReusableTemplates').getByRole('button',{name:'Actions for River starter',exact:true}).click();
  await starter.waitFor();
  page.once('dialog',dialog=>dialog.dismiss());
  await starter.press('Enter');
@@ -562,7 +562,7 @@ try{
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.link),null);
  const previousProject=await page.evaluate(()=>window.__sensoryStudio.project.id);
  await page.locator('#smsLibrary').click();
- await page.getByRole('button',{name:'Actions for River starter',exact:true}).click();
+ await page.locator('#smsReusableTemplates').getByRole('button',{name:'Actions for River starter',exact:true}).click();
  page.once('dialog',dialog=>dialog.accept());
  await page.getByRole('button',{name:'Create project from template'}).press('Enter');
  assert.notEqual(await page.evaluate(()=>window.__sensoryStudio.project.id),previousProject);
