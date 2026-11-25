@@ -41,6 +41,7 @@ export function verifyRegisteredGridAssembly(wasm){
   const split=hold(cube.subtract(cavity)),splitMesh=mesh(split);
   assert.throws(()=>createRegisteredGridAssembly(wasm,splitMesh,planBedAwareSplit({mesh:splitMesh,printerLimit:[65,65,40]})),/disconnected/);
   assert.throws(()=>createRegisteredGridAssembly(wasm,source,plan,{clearance:0}),/dimensions/);
+  assert.throws(()=>createRegisteredGridAssembly(wasm,source,plan,{maxJointY:4}),/stock/);
   console.log('Registered grid assembly: four closed cells, eight paired bores and separate dowels, deterministic and unsafe stock refused.');
  }finally{for(const s of solids.reverse())s.delete();}
 }

@@ -20,10 +20,11 @@ function raw(part){
 const size=box=>box.max.map((v,i)=>v-box.min[i]);
 const cell=(point,cuts)=>cuts.filter(v=>point>v).length;
 const id=(x,z)=>'part-X'+(x+1)+'-Z'+(z+1);
-export function createRegisteredGridAssembly(wasm,mesh,plan,{diameter=5,depth=7,clearance=.25,wall=2}={}){
+export function createRegisteredGridAssembly(wasm,mesh,plan,{diameter=5,depth=7,clearance=.25,wall=2,maxJointY=Infinity}={}){
  limits(plan);
  if(!mesh?.points?.length||!mesh?.triangles?.length||mesh.points.length%3||mesh.triangles.length%3||!Array.from(mesh.points).every(finite))fail('Prepared mesh required.');
  if(![diameter,depth,clearance,wall].every(finite)||diameter<3||diameter>8||depth<3||depth>12||clearance<.1||clearance>.6||wall<2||wall>5)fail('Choose supported registration dimensions.');
+ if(maxJointY!==Infinity&&(!finite(maxJointY)||maxJointY<=0))fail('Invalid registration height limit.');
  const owned=[],hold=v=>(owned.push(v),v);
  const single=(body,label)=>{solid(body,label);const bodies=body.decompose().map(hold);if(bodies.length!==1)fail(label+' has disconnected stock.');};
  const radius=(diameter+clearance)/2,guard=radius+wall;
@@ -61,7 +62,7 @@ export function createRegisteredGridAssembly(wasm,mesh,plan,{diameter=5,depth=7,
     if(!right)continue;
     const cut=axis==='x'?plan.cutsX[left.x]:plan.cutsZ[left.z],i=axisIndex[axis],j=i===0?2:0;
     const lo=Math.max(left.box.min[j],right.box.min[j])+guard,hi=Math.min(left.box.max[j],right.box.max[j])-guard;
-    const ylo=Math.max(left.box.min[1],right.box.min[1])+guard,yhi=Math.min(left.box.max[1],right.box.max[1])-guard;
+    const ylo=Math.max(left.box.min[1],right.box.min[1])+guard,yhi=Math.min(left.box.max[1],right.box.max[1],maxJointY)-guard;
     if(hi<lo||yhi<ylo||left.box.min[i]>cut-depth-wall||right.box.max[i]<cut+depth+wall)fail('Insufficient joint stock at '+left.key+' / '+right.key);
     const samples=(a,b,n)=>Array.from({length:n},(_,k)=>a+(b-a)*(k+.5)/n);
     const positions=[];

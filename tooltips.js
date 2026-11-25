@@ -3,6 +3,7 @@ import {classicDetails,nativeHelp,nativeFamilyHelp,dynamicHelp} from './contextu
 const SETTINGS={
  "curaQualityType": ["curaQualityType","Choose the Cura base quality family needed for an imported profile to appear."],
  "autoBedSplit": ["autoBedSplit","Split models exceeding the selected printer bed into straight-cut printable pieces."],
+ "autoBedRegistration": ["autoBedRegistration","Request matched sockets and separate dowels in a solid plinth; unsafe layouts fail without exporting a ZIP."],
  "edgeManualMounts": ["edgeManualMounts","Include eligible manual through-holes while generating perimeter fixing tabs."],
  "socketConical": ["socketConical","Give eligible underside LED sockets a conical ceiling for base-down printing."],
  "wireAllowOverLength": ["wireAllowOverLength","Keep an over-length cable route as an explicitly warned exception instead of automatically refusing it."],

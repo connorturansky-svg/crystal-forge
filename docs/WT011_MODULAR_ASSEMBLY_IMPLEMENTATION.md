@@ -17,3 +17,7 @@ An isolated Manifold grid registration engine in src/printing/registered-grid-as
 ## Pack checkpoint
 
 `src/printing/registered-assembly-pack.js` converts the real returned meshes to existing binary STL production-pack inputs, with unique stable filenames, validated part/joint/dowel references, original coordinates and explicit physical-test warnings. Test fixtures check all 12 binary STLs and reference coverage; this is not yet mounted in the live Print UI. The next integration must recheck the prepared revision after the async WASM load and fail without any ZIP if the requested registered assembly cannot be verified. Coupon and independent STL/3MF sectional measurements remain outstanding.
+
+## Print integration checkpoint
+
+Opt-in `autoBedRegistration` is false by default and only available with automatic bed splitting. The existing production ZIP path calls a cancellable worker, with stock checks limited to the plinth height, 120-second timeout, stale source/settings rejection after each asynchronous step, and no silent plain-split fallback. Existing manual and plain splitting remain intact. Browser and actual exported-section verification required before review. Physical fit remains unverified.

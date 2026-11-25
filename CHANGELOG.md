@@ -60,7 +60,7 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 ## v0.16.0-dev.35.48 — Modular fabrication registration foundation (candidate)
 
-- Add a conservative Manifold-verified grid registration engine for development; not yet available in the print interface.
+- Opt in to registered automatic bed splitting for eligible solid Crystal plinths. The cancellable background check creates matching sockets, named separate dowels and assembly instructions in the production ZIP, or refuses an unverified layout.
 
 ## v0.16.0-dev.35.42 — Browse compact Library cards
 

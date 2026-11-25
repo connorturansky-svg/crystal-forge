@@ -51,7 +51,7 @@ const defaults={
   edgeFinishEnabled:false,edgeFinishStyle:'Chamfer',edgeFinishScope:'Top edges',edgeFinishAmount:0.5,edgeFinishSteps:1,
   baseType:'integrated',baseHeight:25,baseDome:0,baseEdgeRadius:0,baseProfile:'Plinth + dome',domeFalloff:1.8,sideWall:100,baseWidth:3,baseStyle:'Fitted',undersideAccess:false,baseVault:false,vaultSupportPitch:25,wallThickness:1.2,lightPorts:false,lightPortDiameter:3.2,lightPortReach:55,
   wireAllowOverLength:false,
-  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,socketConical:false,socketSupportFreeShoulders:false,socketShoulderAngle:45,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,autoBedSplit:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',pixelStringSpacing:50,pixelSnapMaxMove:5,wireMinBendRadius:5,wireInputTailLength:0,wireOutputTailLength:0,wireDirectionArrows:true,wireShowLengths:true,wirePairSpacing:7,wireWidth:3,wireDepth:2,wireVaulted:false,wireSlack:0,manualEdgeTabs:null,edgeManualMounts:false,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
+  showPixels:false,pixelCount:1,pixelProfileId:'gumdrop',pixelProfiles:[],lightingMode:'single',glowPreview:false,glowColour:'0x77c4ff',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:0,socketConical:false,socketSupportFreeShoulders:false,socketShoulderAngle:45,fitCalibration:null,fitCouponLast:null,fitCouponStyle:'stepped',cutSockets:true,hollowCrystals:false,targetedLightPaths:false,lightBoreDiameter:4,lightReach:85,pixelPlacement:'auto',manualPixelHoles:[],mountPlacement:'auto',manualMountHoles:[],splitParts:false,autoBedSplit:false,autoBedRegistration:false,splitX:0,splitAlignment:false,splitPinDiameter:5,splitPinDepth:7,splitPinClearance:.25,plateThickness:4,mountPlateThickness:4.5,mount:'None',mountHoleDiameter:4.5,mountHoleDepth:9,mountSpacing:40,wireChannels:false,wireExit:true,wireMode:'string',pixelStringSpacing:50,pixelSnapMaxMove:5,wireMinBendRadius:5,wireInputTailLength:0,wireOutputTailLength:0,wireDirectionArrows:true,wireShowLengths:true,wirePairSpacing:7,wireWidth:3,wireDepth:2,wireVaulted:false,wireSlack:0,manualEdgeTabs:null,edgeManualMounts:false,tabCount:4,tabHolesPerTab:2,tabHoleDiameter:4.5,tabThickness:5,tabWall:3,
   printer:'Ultimaker 3 Extended',printerX:220,printerY:220,printerZ:220,curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaQualityType:'auto',curaIntent:'light',overhang:45,preserveLocked:true,snap:true,hardwareSnap:false,hardwareSnapStep:5,
   colour:0x8bbcff,mode:'simple',floatView:false,hardwareColourMode:false,evenLighting:true
 };
@@ -208,6 +208,7 @@ function requiredPixelBaseHeight(){
  return Math.ceil(depth*2)/2;
 }
 function syncForm(){
+ const registration=document.querySelector('[data-state=autoBedRegistration]');if(registration)registration.disabled=!s.autoBedSplit;
  refreshPixelProfileOptions();
  if(s.lightingMode==='single')s.pixelCount=1;
  if(s.lightingMode==='none')s.pixelCount=0;
@@ -811,7 +812,7 @@ document.querySelectorAll('[data-family-weight]').forEach(input=>input.addEventL
  generate();snapshot();
 }));
 const regenKeys=new Set(['count','height','width','seed','pattern','spacing','leanMode','leanAmount','angleRandomness','familyMix']);
-const previewKeys=new Set(['pixelSnapMaxMove','fitCouponStyle','hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','autoBedSplit','splitX']);
+const previewKeys=new Set(['pixelSnapMaxMove','fitCouponStyle','hardwareSnap','hardwareSnapStep','splitAlignment','splitPinDiameter','splitPinDepth','splitPinClearance','curaNozzle','curaMaterial','curaQuality','curaIntent','showPixels','glowPreview','glowColour','studioBrightness','preserveLocked','snap','splitParts','autoBedSplit','autoBedRegistration','splitX']);
 document.querySelectorAll('[data-state]').forEach(e=>{
  e.addEventListener('input',()=>{
   const key=e.dataset.state,value=e.type==='checkbox'?e.checked:(e.type==='number'||e.type==='range')?Number(e.value):e.value;
@@ -829,6 +830,7 @@ document.querySelectorAll('[data-state]').forEach(e=>{
    s[key==='autoBedSplit'?'splitParts':'autoBedSplit']=false;
    syncForm();
   }
+  if(key==='autoBedSplit'&&!value)syncForm();
   if(key==='familyMix')$('familyWeightsControls').hidden=value!=='Mixed';
   if(key==='pixelFit'&&s.fitCalibration){s.fitCalibration=null;syncFitCalibration()}
    if(key==='pixelProfileId'){
@@ -1545,11 +1547,35 @@ $('detachablePlateBtn').onclick=()=>{
   }).catch(err=>alert(err.message)).finally(()=>{button.disabled=false});
  }catch(e){button.disabled=false;alert(e.message)}
 };
+let cancelRegisteredAssembly=null;
+function runRegisteredAssembly(mesh,plan,options){
+ return new Promise((resolve,reject)=>{
+  const worker=new Worker(new URL('./src/printing/registered-assembly-worker.js',import.meta.url),{type:'module'});
+  const cancel=$('cancelAssemblyBtn');
+  let timer,finished=false;
+  const end=(error,result)=>{
+   if(finished)return;finished=true;
+   clearTimeout(timer);worker.terminate();cancel.hidden=true;cancelRegisteredAssembly=null;
+   if(error)reject(error);else resolve(result);
+  };
+  cancelRegisteredAssembly=()=>end(Error('Registered assembly cancelled. No production ZIP was created.'));
+  cancel.hidden=false;
+  timer=setTimeout(()=>end(Error('Registered assembly exceeded its time limit. Try fewer pieces or plain splitting.')),120000);
+  worker.onmessage=event=>event.data?.error?end(Error(event.data.error)):end(null,event.data.result);
+  worker.onerror=()=>end(Error('Registered assembly worker failed. No ZIP was created.'));
+  worker.onmessageerror=()=>end(Error('Registered assembly worker returned unreadable data.'));
+  try{worker.postMessage({mesh,plan,options});}catch(error){end(error);}
+ });
+}
+$('cancelAssemblyBtn').onclick=()=>cancelRegisteredAssembly?.();
 $('productionPackBtn').onclick=async()=>{
  if(!verifyPrepared())return;
  const button=$('productionPackBtn');button.disabled=true;
  try{
+  const requestedReport=manufacturingReport,requestedMesh=manufacturingMesh,requestedState=JSON.stringify({s,crystals});
+  const assertCurrent=()=>{if(manufacturingReport!==requestedReport||manufacturingMesh!==requestedMesh||preparedSource!==sourceHash()||requestedState!==JSON.stringify({s,crystals}))throw Error('Model or print settings changed during export. Prepare or retry; no ZIP was created.');};
   const assemblyFiles=[],assemblyWarnings=[],wasm=await loadManifold();
+  assertCurrent();
    let splitManifest=null;
   if(s.mount==='Detachable plate'){
    const plan=planDetachablePlate(s,planHardware(crystals,s));
@@ -1565,6 +1591,14 @@ $('productionPackBtn').onclick=async()=>{
    if(splitPlan.needed){
     $('prepareStatus').textContent='Splitting prepared model into '+splitPlan.pieceCount+' printer-bed-sized parts…';
     await new Promise(resolve=>requestAnimationFrame(resolve));
+    assertCurrent();
+    if(s.autoBedRegistration){
+     if(s.baseType!=='integrated'||s.baseVault||s.hollowCrystals||Number(s.baseHeight)<14)throw Error('Registered splitting currently requires an integrated solid plinth at least 14 mm high, without vault or whole-model hollowing. Disable registration explicitly to use plain splitting.');
+     $('prepareStatus').textContent='Checking matching socket stock and separate dowels in background…';
+     const result=await runRegisteredAssembly(requestedReport.mesh,splitPlan,{diameter:Number(s.splitPinDiameter),depth:Number(s.splitPinDepth),clearance:Number(s.splitPinClearance),maxJointY:Number(s.baseHeight)});
+     assertCurrent();assemblyFiles.push(...result.extraFiles);assemblyWarnings.push(...result.assemblyWarnings);splitManifest=result.splitManifest;
+     $('prepareStatus').textContent='Registered assembly verified in software. Review the named pieces and dowels in Cura.';
+    }else{
     const parts=splitPreparedMeshGrid(wasm,manufacturingReport.mesh,splitPlan);
      splitManifest={...splitPlan,parts:parts.map(part=>({
       file:'auto-bed-part-'+String(part.index).padStart(2,'0')+'.stl',
@@ -1579,6 +1613,7 @@ $('productionPackBtn').onclick=async()=>{
      ' X cut(s) and '+splitPlan.cutsZ.length+' Z cut(s), 8 mm bed clearance'+
      (splitPlan.rotatedOnBed?'; rotate pieces 90 degrees on Cura bed':'')+'.');
     assemblyWarnings.push('Auto split parts have NO alignment connectors or certified joints. Test joining, adhesive, access and mechanical retention before assembly.');
+    }
    }else assemblyWarnings.push('Automatic bed split: original model fits this printer; no extra pieces needed.');
   }else if(s.splitParts){
    const layout=planSplitJoints(s,planHardware(crystals,s),s.splitX);
@@ -1597,11 +1632,12 @@ $('productionPackBtn').onclick=async()=>{
    }
    assemblyWarnings.push(...layout.messages);
   }
+  assertCurrent();
   const release=buildProductionPack({settings:s,crystals,report:manufacturingReport,
    stlBytes:encodeSTL(manufacturingMesh.geometry),extraFiles:assemblyFiles,assemblyWarnings,splitManifest});
   download(new Blob([release.bytes],{type:'application/zip'}),release.filename);
   setStatus('Downloaded production pack · '+release.files.length+' files'+(release.curaIncluded?' including Cura profile':' (no compatible Cura profile)'));
- }catch(error){console.error(error);alert('Production pack failed: '+error.message)}
+ }catch(error){console.error(error);$('prepareStatus').textContent='Production pack not created: '+error.message;alert('Production pack failed: '+error.message)}
  finally{button.disabled=false}
 };
 $('stlBtn').onclick=()=>{
