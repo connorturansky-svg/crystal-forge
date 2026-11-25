@@ -74,6 +74,7 @@ try{
  await page.evaluate(()=>{document.documentElement.style.fontSize=''});
  await page.locator('#themeBtn').click();
  await toggle.click();
+ await page.locator('#controlTooltip').filter({hasText:'Actions for Compact card witness'}).waitFor();
  await actions.getByRole('button',{name:'Linked copy',exact:true}).click();
  const link=await page.evaluate(()=>window.__sensoryStudio.currentModel.link);
  assert(link?.sourceId&&link.revision===1);

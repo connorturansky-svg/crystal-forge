@@ -547,7 +547,9 @@ export function installTooltips(doc=document){
   // In a modal the focused field is often immediately above Create/Save.
   // Prefer an outside edge or the space above the field so help never
   // covers the next action directly beneath that field.
-  let y=(workspace||modal)&&above>=9?above:rect.bottom+8;
+  const libraryCaption=target.closest('.sms-library-caption');
+  let y=libraryCaption?libraryCaption.getBoundingClientRect().top-box.height-8:
+   (workspace||modal)&&above>=9?above:rect.bottom+8;
   const panel=modal||target.closest('.left,.right,.sms-controls');
   if(panel){
    const bounds=panel.getBoundingClientRect();

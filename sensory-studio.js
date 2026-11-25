@@ -84,6 +84,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  if(modelDrawer){
   modelDrawer.root.id='smsModelsDrawer';
   modelDrawer.grid.id='smsTabs';
+  const drawerResize=new ResizeObserver(()=>{
+   overlay.style.setProperty('--library-drawer-height',modelDrawer.root.getBoundingClientRect().height+'px');
+  });
+  drawerResize.observe(modelDrawer.root);
   const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href='./src/ui/model-drawer.css';document.head.append(stylesheet);
  }
  const inspection=shell?createLightInspector({THREE,scene,camera,
