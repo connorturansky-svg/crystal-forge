@@ -2658,10 +2658,13 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     publish:({candidate,switchProject,modelId})=>{
      clearTimeout(saveTimer);dirty=false;$('smsSaveState').textContent='Saved locally';
      state.savedProjects=candidate.savedProjects;
-     if(switchProject){replaceProject(candidate.project,{persist:false});return;}
-     // Retain current model/job object identities and prepared runtime caches.
-     addModel(project,findModel(candidate.project,modelId));
-     switchModel(modelId,{persist:false,capture:false});
+     if(switchProject){replaceProject(candidate.project,{persist:false});}
+     else{
+      // Retain current model/job object identities and prepared runtime caches.
+      addModel(project,findModel(candidate.project,modelId));
+      switchModel(modelId,{persist:false,capture:false});
+     }
+     if(request.source.kind==='built-in')document.querySelector('.workspace-tabs [data-tab=design]').click();
     }
    });
   }});

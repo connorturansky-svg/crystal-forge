@@ -672,6 +672,8 @@ try{
   await page.locator('#smsLibrary').click();
  await savedCog.locator('.sms-library-actions-toggle').click();
   await savedCog.getByRole('button',{name:'Independent copy'}).click();
+  await page.getByRole('dialog',{name:'Choose model destination'}).getByRole('button',{name:'Add model',exact:true}).click();
+  await page.getByRole('dialog',{name:'Choose model destination'}).waitFor({state:'hidden'});
   assert.deepEqual((await crystal()).parameters,editedCog.parameters);
   console.log('WT-021 Library templates start fresh and saved variants preserve their edits');
  }
