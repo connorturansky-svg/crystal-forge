@@ -535,6 +535,37 @@ try{
  await page.locator('#showManufacturing').check();
  assert(await page.locator('[data-state="autoBedSplit"]').count(),
   'Auto bed splitting controls available in Print workspace');
+ const registered=page.locator('[data-state="autoBedRegistration"]');
+ const plain=page.locator('[data-state="autoBedSplit"]');
+ assert(await registered.isDisabled(),'Registration is disabled until automatic splitting is requested');
+ await plain.check();
+ assert(await registered.isEnabled(),'Registration becomes an explicit opt-in');
+ await registered.check();
+ assert(await page.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.autoBedRegistration===true),'Registration preference persists');
+ await registered.uncheck();await plain.uncheck();
+ assert(await registered.isDisabled(),'Plain split remains independently available');
+ // Exercise the real module worker, not a mocked ZIP or main-thread Manifold.
+ const workerEvidence=await page.evaluate(async()=>{
+  const THREE=await import('three');
+  const geometry=new THREE.BoxGeometry(100,20,100).translate(50,10,50);
+  const mesh={points:new Float32Array(geometry.attributes.position.array),triangles:new Uint32Array(geometry.index.array)};
+  geometry.dispose();
+  const plan={ready:true,needed:true,pieceCount:4,cutsX:[50],cutsZ:[50],usableX:57,usableZ:57,printerLimit:[65,65,40],rotatedOnBed:false};
+  const run=options=>new Promise((resolve,reject)=>{
+   const w=new Worker(new URL('./src/printing/registered-assembly-worker.js',document.baseURI),{type:'module'});
+   const timer=setTimeout(()=>{w.terminate();reject(Error('Registered assembly worker timed out'));},60000);
+   w.onmessage=e=>{clearTimeout(timer);w.terminate();resolve(e.data);};
+   w.onerror=e=>{clearTimeout(timer);w.terminate();reject(Error(e.message));};
+   w.postMessage({mesh,plan,options});
+  });
+  const success=await run({maxJointY:20});
+  const failure=await run({maxJointY:4});
+  return {success:success.result&&{parts:success.result.splitManifest.parts.length,joints:success.result.splitManifest.joints.length,files:success.result.extraFiles.length,valid:success.result.extraFiles.every(x=>x.bytes instanceof Uint8Array&&x.bytes.length>84)},error:success.error||null,refusal:failure.error||null};
+ });
+ assert.deepEqual(workerEvidence.success,{parts:4,joints:8,files:12,valid:true},JSON.stringify(workerEvidence));
+ assert.match(workerEvidence.refusal||'',/stock|sockets/i);
+ console.log('Real registered assembly module worker produces 12 named STL files and refuses thin stock');
+
 
  // Re-preparing while the merged manufacturing mesh is visible must retain
  // the actual base and all crystals rather than exporting preview-hidden parts.
