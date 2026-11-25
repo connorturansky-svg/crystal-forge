@@ -1,4 +1,5 @@
 import {listProjectFolders} from './studio-project-index.js';
+import {libraryCard} from './src/ui/library-card.mjs';
 import {createModelDrawer,createPreviewQueue} from './src/ui/model-drawer.mjs';
 import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive,assertWorkspaceVersion,projectWorkspaceCandidate} from './studio-sync-plan.js';
 import {readMeshFile,importedMeshRecipe,MAX_MESH_BYTES} from './studio-mesh-import.js';
@@ -83,6 +84,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  if(modelDrawer){
   modelDrawer.root.id='smsModelsDrawer';
   modelDrawer.grid.id='smsTabs';
+  const drawerResize=new ResizeObserver(()=>{
+   overlay.style.setProperty('--library-drawer-height',modelDrawer.root.getBoundingClientRect().height+'px');
+  });
+  drawerResize.observe(modelDrawer.root);
   const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href='./src/ui/model-drawer.css';document.head.append(stylesheet);
  }
  const inspection=shell?createLightInspector({THREE,scene,camera,
@@ -744,6 +749,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  }
  function requestModelName(title,suggestion,accept,focusAfter=()=>newModelControl){
   const dialog=document.createElement('dialog'),form=document.createElement('form');
+  dialog.dataset.modelNaming='';
   const heading=document.createElement('h2');heading.textContent=title;
   const label=document.createElement('label');label.textContent='Model name ';
   const input=document.createElement('input');input.required=true;input.maxLength=100;input.value=suggestion;
@@ -876,11 +882,12 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const editableState=typeId==='crystals'?adapter.createCrystals(p):{};
   const model=createModel({name:name||g.displayName,typeId,parameters:p,editableState});addModel(project,model);switchModel(model.id);return model;
  }
- function control(schema,p){
+ function control(schema,p,family){
   const key=esc(schema.key),label=esc(schema.label||schema.key),value=p[schema.key];
-  if(schema.type==='select')return '<label>'+label+'<select data-model-param="'+key+'">'+schema.options.map(o=>'<option '+(o===value?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select></label>';
-  if(schema.type==='boolean')return '<label><input type="checkbox" data-model-param="'+key+'" '+(value?'checked':'')+'> '+label+'</label>';
-  return '<div class="sms-model-control"><label>'+label+'<output data-value-for="'+key+'">'+esc(value)+' '+esc(schema.unit||'')+'</output></label><input type="range" data-model-param="'+key+'" min="'+schema.min+'" max="'+schema.max+'" step="'+(schema.step||.1)+'" value="'+value+'"></div>';
+  const helpScope=' data-model-family="'+esc(family)+'"';
+  if(schema.type==='select')return '<label>'+label+'<select data-model-param="'+key+'"'+helpScope+'>'+schema.options.map(o=>'<option '+(o===value?'selected':'')+'>'+esc(o)+'</option>').join('')+'</select></label>';
+  if(schema.type==='boolean')return '<label><input type="checkbox" data-model-param="'+key+'"'+helpScope+' '+(value?'checked':'')+'> '+label+'</label>';
+  return '<div class="sms-model-control"><label>'+label+'<output data-value-for="'+key+'">'+esc(value)+' '+esc(schema.unit||'')+'</output></label><input type="range" data-model-param="'+key+'"'+helpScope+' min="'+schema.min+'" max="'+schema.max+'" step="'+(schema.step||.1)+'" value="'+value+'"></div>';
  }
  function details(title,descriptor,html){return '<details class="sms-panel-details"><summary>'+esc(title)+'<small>'+esc(descriptor)+'</small></summary><div>'+html+'</div></details>';}
  function designSections(generator,model){
@@ -907,9 +914,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const output=groups.map(([title,description,pattern])=>{
    const controls=[...remaining].filter(field=>pattern.test(field.key));
    controls.forEach(field=>remaining.delete(field));
-   return controls.length?details(title,description,controls.map(field=>control(field,model.parameters)).join('')):'';
+   return controls.length?details(title,description,controls.map(field=>control(field,model.parameters,generator.typeId)).join('')):'';
   });
-  if(remaining.size)output.push(details('Fine adjustments','Adjust the seed or other generator settings.',[...remaining].map(field=>control(field,model.parameters)).join('')));
+  if(remaining.size)output.push(details('Fine adjustments','Adjust the seed or other generator settings.',[...remaining].map(field=>control(field,model.parameters,generator.typeId)).join('')));
   return (family?control(family,model.parameters):'')+output.join('');
  }
  const nativeGuideChoices=new Map();
@@ -1753,6 +1760,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const bend=document.createElement('label');
   bend.textContent='Minimum bend radius (mm) ';
   const bendInput=document.createElement('input');
+  bendInput.dataset.nativeBendRadius='';
   bendInput.type='number';bendInput.min='1';bendInput.max='60';bendInput.step='any';
   bendInput.value=settings.minBendRadius??5;bendInput.disabled=!!model.link;
   bendInput.onchange=()=>{
@@ -2319,7 +2327,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     renderActivePixelProfile(controls,model);
     const origin=document.querySelector('[data-state="showPixels"]');
     const label=document.createElement('label'),toggle=document.createElement('input'),status=document.createElement('output');
-    toggle.type='checkbox';toggle.checked=origin.checked;toggle.disabled=!!model.link;
+    toggle.type='checkbox';toggle.dataset.crystalFitPreview='';toggle.checked=origin.checked;toggle.disabled=!!model.link;
     toggle.onchange=()=>origin.click();
     label.append(toggle,' Show physical pixels and socket cutters');
     status.dataset.buildFitPreviewStatus='';status.setAttribute('aria-live','polite');
@@ -2395,7 +2403,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    for(const key of keys){
     const field=family.parameterSchema.find(item=>item.key===key);if(!field)continue;
     if(field.type==='number'){
-     visualRange(controls,field,parameters[key],value=>apply(key,Number(value)),!!model.link);
+     visualRange(controls,{...field,helpFamily:model.generator.typeId},parameters[key],value=>apply(key,Number(value)),!!model.link);
     }else if(field.type==='select'){
      const group=document.createElement('fieldset'),legend=document.createElement('legend');legend.textContent=field.label;group.append(legend);
      for(const option of field.options){
@@ -2658,9 +2666,12 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   function card(model,root,libraryRecord=null){
    const tile=document.createElement('article');tile.className='sms-tile';
    const generator=registry.list().find(g=>g.typeId===model.generator.typeId);
+   const current=!libraryRecord&&model.id===project.activeTab;
+   const status=[current?'Current model':'',!libraryRecord&&model.link?'Linked copy':''].filter(Boolean).join(' · ');
+   if(current)tile.setAttribute('aria-current','true');
    tile.dataset.modelTheme=model.generator.typeId;
-   tile.innerHTML='<h3>'+esc(model.name)+'</h3><p class="sms-descriptor">'+esc(generator?.displayName||model.generator.typeId)+' · revision '+(libraryRecord?.versions.at(-1).revision||model.revision)+'</p><div class="sms-actions"></div>';
-   tile.prepend(savedModelPicture(model,libraryRecord?'library':project.id));
+   tile.innerHTML='<h3>'+esc(model.name)+'</h3><p class="sms-descriptor">'+esc(generator?.displayName||model.generator.typeId)+' · revision '+(libraryRecord?.versions.at(-1).revision||model.revision)+(status?' · '+status:'')+'</p><div class="sms-actions"></div>';
+   const preview=savedModelPicture(model,libraryRecord?'library':project.id);
    const actions=tile.querySelector('.sms-actions');
    const action=(name,fn)=>{const b=document.createElement('button');b.textContent=name;b.onclick=fn;actions.append(b);};
    if(!libraryRecord){action('Open',()=>switchModel(model.id));action('Save to library',()=>{saveModel(model);renderLibraryCards();});
@@ -2673,6 +2684,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     if(libraryRecord.versions.length>1)action('Older revision',()=>{const versions=libraryRecord.versions;const chosen=prompt('Revision to open ('+versions.map(v=>v.revision).join(', ')+')',String(versions.at(-2).revision));if(chosen){const m=insertLibraryModel(project,state.library,libraryRecord.id,{revision:Number(chosen)});switchModel(m.id);}});
    }
    action('Export editable JSON',()=>adapter.download(new Blob([JSON.stringify(model,null,2)],{type:'application/json'}),model.generator.typeId+'-model.json'));
+   libraryCard(overlay,tile,preview,actions,tile.querySelector('h3'));
    root.append(tile);
   }
   state.library.filter(r=>includesItem('model',r.id)&&matches(r.versions.at(-1).model)).forEach(r=>card(r.versions.at(-1).model,$('smsSavedModels'),r));
@@ -2715,7 +2727,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const cover=saved.models[0];
    const count=saved.models.length;
    tile.innerHTML='<h3>'+esc(saved.title)+'</h3><p class="sms-descriptor">'+'Saved version '+version+' · '+count+' '+(count===1?'model':'models')+'</p><div class="sms-actions"><button type="button">Open project</button></div>';
-   tile.prepend(cover?savedModelPicture(cover,saved.snapshotId):modelPicture(null));
+   const preview=cover?savedModelPicture(cover,saved.snapshotId):modelPicture(null);
    const button=tile.querySelector('.sms-actions button');
    button.setAttribute('aria-label','Open project '+saved.title);
    button.onclick=()=>{
@@ -2741,6 +2753,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    tile.querySelector('.sms-actions').append(rename);
    organisationActions(tile.querySelector('.sms-actions'),'project',saved.snapshotId);
    tile.append(status);
+   libraryCard(overlay,tile,preview,tile.querySelector('.sms-actions'),tile.querySelector('h3'));
    root.append(tile);
  }
  function renderBuiltInTemplates(section){
@@ -2751,12 +2764,15 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const tile=document.createElement('article');tile.className='sms-tile sms-picker-tile';tile.dataset.modelTheme=family.typeId;
    const button=document.createElement('button');button.type='button';button.className='sms-picker-choice';
    button.setAttribute('aria-label','New '+family.displayName+' from template');
-   button.append(startingPointPicture(family),family.displayName);
+   button.textContent='Create model';
    button.onclick=()=>{
     const create=name=>{add(family.typeId,null,name);document.querySelector('.workspace-tabs [data-tab=design]').click();};
     if(shell)requestModelName('Name new model',family.displayName,create);else create(family.displayName);
    };
-   tile.append(button);grid.append(tile);
+   const title=document.createElement('h3');title.textContent=family.displayName;
+   const actions=document.createElement('div');actions.className='sms-actions';actions.append(button);
+   tile.append(title,actions);
+   libraryCard(overlay,tile,startingPointPicture(family),actions,title);grid.append(tile);
   }
   if(!grid.childElementCount)return;
   const heading=document.createElement('h2');heading.textContent='Built-in templates';
@@ -2775,7 +2791,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const status=document.createElement('p');
    status.textContent=source?(template.kind==='model'?'Model · revision '+template.revision:'Project template'):'Unavailable source';
    const cover=template.kind==='model'?source:source?.models[0];
-   tile.append(cover?savedModelPicture(cover,template.sourceId):modelPicture(null),title,status);
+   const preview=cover?savedModelPicture(cover,template.sourceId):modelPicture(null);
+   tile.append(title,status);
    const controls=document.createElement('div');controls.className='sms-actions';tile.append(controls);
    const action=(name,handler)=>{
     const button=document.createElement('button');button.type='button';button.textContent=name;button.onclick=handler;controls.append(button);
@@ -2788,6 +2805,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     saveProjectSnapshot(templateProject(source));
    });
    action('Remove template',()=>{if(confirm('Remove this template? Its source stays in the Library.'))editOrganisation(next=>{next.templates=next.templates.filter(t=>t.id!==template.id);});});
+   libraryCard(overlay,tile,preview,controls,title);
    grid.append(tile);
   }
   if(!grid.childElementCount)grid.textContent='No matching templates. Save a model or project as a reusable template to get started.';

@@ -1,6 +1,10 @@
 # Model appearance — full colour picker (#170)
 
-Owner request, 25 November 2026. Source baseline ff495743be918b761e17ee3bc87264d64b00b4a2. Planning only; coordinate shared UI owners #158 Gear and #163 Help and corrective drawer #169 before implementation. Do not change any of their branches.
+Owner request, 25 November 2026. Source baseline ff495743be918b761e17ee3bc87264d64b00b4a2. Isolated reusable picker checkpoint; runtime integration remains pending. coordinate shared UI owners #158 Gear and #163 Help and corrective drawer #169 before implementation. Do not change any of their branches.
+
+## Implementation checkpoint
+
+`src/ui/model-colour.mjs` provides exact RGB parsing, formatting, validated fallbacks, material role updates and 22 named swatches. `src/ui/model-colour-control.mjs` and its scoped CSS implement the reusable explicit-Apply dialog. Pure tests are included in the existing exact-controls suite. This checkpoint does not mount the control in any builder, change rendering, or implement native undo history. Integrate after shared runtime owners reconcile. Do not merge as a finished feature.
 
 ## Source audit and design
 - Classic: index.html #colours is a fixed set of buttons with data-colour numeric hex strings. studio-v3.js syncForm matches Number(dataset.colour) to s.colour; existing click handler assigns Number, syncForm, rebuild, snapshot. Saved source uses numeric parameters.colour. updateAppearance manages lighting/selection/wireframe, not a replacement material picker. crystalStartingPointPreview in studio-crystal-presets.js reads settings.colour using nullish fallback; preserve zero and legacy saved values.

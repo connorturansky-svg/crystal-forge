@@ -1,4 +1,5 @@
 import {WORKSPACE_KEY} from '../studio-documents.js';
+import {revealLibraryActions} from './helpers/library-actions.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -124,7 +125,7 @@ try{
  assert.equal(await page.locator('.sms-split,.sms-more').count(),0);
  assert.equal(await page.locator('.brand').innerText(),'Pixel Model Maker');
  assert((await page.locator('.version').boundingBox()).y>(await page.locator('.brand').boundingBox()).y);
- for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','descriptionsBtn','changelogBtn','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
+ for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','hoverNotes','detailedExplanations','changelogBtn','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
   assert(await page.locator('#'+id).isVisible(),id+' is directly available');
  const leftPanel=page.locator('#smsTools'),rightPanel=page.locator('#smsPrecision'),bottom=page.locator('#smsModelsDrawer');
  assert.equal(Math.round((await rightPanel.boundingBox()).width),335);
@@ -173,10 +174,17 @@ try{
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#infoOverlay').isVisible(),false);
  }
- const descriptions=page.locator('#descriptionsBtn');
- const described=await descriptions.getAttribute('aria-pressed');
- await descriptions.click();assert.notEqual(await descriptions.getAttribute('aria-pressed'),described);
- await descriptions.click();
+ const hoverNotes=page.getByRole('checkbox',{name:'Hover Notes',exact:true});
+ const explanations=page.getByRole('checkbox',{name:'Detailed Explanations',exact:true});
+ const hoverEnabled=await hoverNotes.isChecked(),detailEnabled=await explanations.isChecked();
+ await explanations.setChecked(!detailEnabled);
+ assert.equal(await explanations.isChecked(),!detailEnabled);
+ assert.equal(await hoverNotes.isChecked(),hoverEnabled);
+ await hoverNotes.setChecked(!hoverEnabled);
+ assert.equal(await hoverNotes.isChecked(),!hoverEnabled);
+ assert.equal(await explanations.isChecked(),!detailEnabled);
+ await hoverNotes.setChecked(hoverEnabled);
+ await explanations.setChecked(detailEnabled);
  const [savedBackup]=await Promise.all([page.waitForEvent('download'),page.locator('#saveBtn').click()]);
  assert.match(savedBackup.suggestedFilename(),/\.json$/);
  await Promise.all([page.waitForEvent('filechooser'),page.locator('#loadBtn').click()]);
@@ -405,6 +413,7 @@ try{
  page.once('dialog',dialog=>dialog.accept('Thawmor'));
  await page.locator('#smsCollectionNew').press('Enter');
  await page.locator('#smsLibraryAll').press('Enter');
+ await revealLibraryActions(river);
  await river.getByText('Collections',{exact:true}).press('Enter');
  await river.getByRole('checkbox',{name:'Thawmor'}).check();
  await river.getByRole('button',{name:'☆ Favourite'}).click();
@@ -415,9 +424,11 @@ try{
  assert.equal(await river.count(),1);
  await shot('wt015-collection');
  page.once('dialog',dialog=>dialog.accept('River starter'));
+ await revealLibraryActions(river);
  await river.getByRole('button',{name:'Save as reusable template'}).press('Enter');
  await page.locator('#smsTemplates').press('Enter');
  const starter=page.getByRole('button',{name:'Create project from template'});
+ await page.locator('#smsReusableTemplates').getByRole('button',{name:'Actions for River starter',exact:true}).click();
  await starter.waitFor();
  page.once('dialog',dialog=>dialog.dismiss());
  await starter.press('Enter');
@@ -425,6 +436,7 @@ try{
  await shot('wt015-templates');
  await page.locator('#smsLibraryAll').press('Enter');
  await page.setViewportSize({width:740,height:880});
+ await revealLibraryActions(river);
  assert(await river.getByRole('button',{name:'Open project River workshop'}).isVisible());
  await river.scrollIntoViewIfNeeded();
  await shot('wt007-project-gallery-mobile');
@@ -447,6 +459,7 @@ try{
  }
  assert.deepEqual(await snapshot(),currentModels);
  await search.fill('river workshop');
+ await revealLibraryActions(river);
  const renamedTitle='Tide & <Light> 🌊';
  page.once('dialog',dialog=>dialog.accept('  '+renamedTitle+'  '));
  await rename.click();
@@ -465,6 +478,7 @@ try{
  await renamed.scrollIntoViewIfNeeded();
  assert.equal(await renamed.locator('img').getAttribute('src'),thumbnail);
  const open=renamed.getByRole('button',{name:'Open project '+renamedTitle});
+ await revealLibraryActions(renamed);
  page.once('dialog',dialog=>dialog.dismiss());
  await open.click();
  assert.equal(await page.locator('#smsProjectTitle').inputValue(),'Current unsaved title');
@@ -511,6 +525,7 @@ try{
  const latestCrystalHeight=Number(await crystalHeight.inputValue());
  assert.notEqual(latestCrystalHeight,Number(previousCrystalHeight));
  await page.locator('#smsLibrary').click();
+ await revealLibraryActions(renamed);
  page.once('dialog',dialog=>dialog.accept());
  await open.click();
  assert.equal(await page.locator('#smsProjectTitle').inputValue(),renamedTitle);
@@ -523,24 +538,31 @@ try{
  assert.deepEqual(await snapshot(),savedModels);
  await page.locator('#smsLibrary').click();
  assert.equal(await projects.locator('[data-snapshot-id]').count(),savedCount+1);
+ await revealLibraryActions(projects.locator('article').filter({has:page.getByRole('heading',{name:'Current unsaved title',exact:true})}).first());
  assert(await projects.getByRole('button',{name:'Open project Current unsaved title'}).isVisible());
  const sourceCard=page.locator('#smsProjectModels article').first();
  const sourceName=await sourceCard.locator('h3').textContent();
+ await revealLibraryActions(sourceCard);
  await sourceCard.getByRole('button',{name:'Save to library',exact:true}).click();
  const sourceSaved=page.locator('#smsSavedModels article').filter({has:page.getByRole('heading',{name:sourceName,exact:true})});
+ await revealLibraryActions(sourceSaved);
  await sourceSaved.getByRole('button',{name:'☆ Favourite'}).click();
  page.once('dialog',dialog=>dialog.accept('Pinned model starter'));
+ await revealLibraryActions(sourceSaved);
  await sourceSaved.getByRole('button',{name:'Save as reusable template'}).press('Enter');
  await page.locator('#smsTemplates').press('Enter');
  const pinned=page.locator('article').filter({has:page.getByRole('heading',{name:'Pinned model starter',exact:true})});
+ await revealLibraryActions(pinned);
  await pinned.getByRole('button',{name:'Linked copy',exact:true}).click();
  const link=await page.evaluate(()=>window.__sensoryStudio.currentModel.link);
  assert.equal(link.revision,1);
  await page.locator('#smsLibrary').click();
+ await revealLibraryActions(pinned);
  await pinned.getByRole('button',{name:'Independent copy',exact:true}).click();
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.link),null);
  const previousProject=await page.evaluate(()=>window.__sensoryStudio.project.id);
  await page.locator('#smsLibrary').click();
+ await page.locator('#smsReusableTemplates').getByRole('button',{name:'Actions for River starter',exact:true}).click();
  page.once('dialog',dialog=>dialog.accept());
  await page.getByRole('button',{name:'Create project from template'}).press('Enter');
  assert.notEqual(await page.evaluate(()=>window.__sensoryStudio.project.id),previousProject);
@@ -1259,6 +1281,7 @@ try{
  };
  const openFitProject=async title=>{
   await page.locator('#smsLibrary').click();
+  await revealLibraryActions(page.locator('#smsSavedProjects article').filter({has:page.getByRole('heading',{name:title,exact:true})}).first());
   page.once('dialog',dialog=>dialog.accept());
   await page.getByRole('button',{name:'Open project '+title,exact:true}).first().click();
   assert.equal(await page.locator('#smsProjectTitle').inputValue(),title);
@@ -2794,8 +2817,10 @@ try{
   await page.locator('#smsLibrary').click();
   await page.locator('#smsLibraryAll').click();
   const projectCard=page.locator('#smsProjectModels article').filter({has:page.getByRole('heading',{name:witness,exact:true})}).first();
+  await revealLibraryActions(projectCard);
   await projectCard.getByRole('button',{name:'Save to library',exact:true}).click();
   const libraryCard=page.locator('#smsSavedModels article').filter({has:page.getByRole('heading',{name:witness,exact:true})});
+  await revealLibraryActions(libraryCard);
   await libraryCard.getByRole('button',{name:'Linked copy',exact:true}).click();
   const linked=await modelState();
   assert.equal(linked.link.revision,1);
@@ -2803,6 +2828,7 @@ try{
   await buildTab.click();
   assert(await tabProfile.isDisabled());
   await page.locator('#smsLibrary').click();
+  await revealLibraryActions(libraryCard);
   await libraryCard.getByRole('button',{name:'Independent copy',exact:true}).click();
   const independent=await modelState();
   assert.equal(independent.link,null);
@@ -2837,6 +2863,7 @@ try{
   assert(await job.locator('[data-job-stl]').isDisabled());
   assert(await job.locator('[data-job-3mf]').isDisabled());
   await page.locator('#smsLibrary').click();
+  await revealLibraryActions(projectCard);
   await projectCard.getByRole('button',{name:'Save to library',exact:true}).click();
    await openModels();
    await page.locator('#model-tab-'+linked.id).click();
@@ -3450,7 +3477,7 @@ try{
    assert.equal(await folders.count(),2);
    assert.match(await folders.locator('summary').first().innerText(),/Same name.*Active project/);
    assert.equal(await folders.filter({has:targetPage.locator('[data-snapshot-id="version-1"]')}).locator('[data-snapshot-id]').count(),2);
-   assert.equal(await targetPage.locator('#smsBuiltInTemplates button').count(),7);
+ assert.equal(await targetPage.locator('#smsBuiltInTemplates .sms-library-actions button').count(),7);
    assert(await targetPage.locator('#smsTemplateSection').evaluate(section=>section.nextElementSibling.id==='smsProjectsSection'));
    const folder=folders.filter({has:targetPage.locator('[data-snapshot-id="version-1"]')});
    const summary=folder.locator(':scope > summary');
@@ -3463,7 +3490,8 @@ try{
    await summary.press('Enter');
    await targetPage.screenshot({path:'qa/unified-wt023b-library-narrow.png'});
    targetPage.once('dialog',dialog=>dialog.accept());
-   await folder.locator('[data-snapshot-id="version-2"]').getByRole('button',{name:'Open project Same name',exact:true}).press('Enter');
+ await revealLibraryActions(folder.locator('[data-snapshot-id="version-2"]'));
+ await folder.locator('[data-snapshot-id="version-2"]').getByRole('button',{name:'Open project Same name',exact:true}).press('Enter');
    const switched=JSON.parse(await storage());
    assert.equal(switched.project.id,'other-project');
    assert.deepEqual({...switched.project.models[0],thumbnail:null},second.models[0],

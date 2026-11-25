@@ -1,6 +1,21 @@
 # AI handover — read immediately after AGENTS.md
 
+## Resume from GitHub
+
+Start with [project status and priority order](PROJECT_STATUS.md#chatgpt-handover--25-november-2026). Fetch live main, check issue and branch ownership, and verify Actions against the exact PR head before requesting owner review. The owner approves merges. B2a merged in #172. B2b remains unstarted and requires owner dispatch.
+
+- Library rendering and preview callbacks live in `sensory-studio.js`. Card disclosure and CSS are in `src/ui/library-card.mjs` and `src/ui/library-card.css`. Scroll clearance follows the actual Models drawer height. Shared Help uses `tooltips.js` and `contextual-help-copy.js`.
+- For B2b, trace `renderLibraryCards`, `renderBuiltInTemplates`, `renderTemplates`, `saveProjectSnapshot` and `replaceProject` in `sensory-studio.js`, then `projectWorkspaceCandidate` and stale-write protection in `studio-sync-plan.js`. Preserve stable project, snapshot and source revision IDs. Follow the [B2b acceptance packet](WT023_PROJECT_LIBRARY_IMPLEMENTATION.md#b2b--project-browser-and-destination-transaction).
+- Install dependencies and serve the repository root with `python -m http.server 4321`. Set `CRYSTAL_FORGE_BROWSER_EXECUTABLE` for an installed Chromium executable. Run `npm run test:static`, `npm test` and `npm run test:browser` for runtime changes. Focused UI commands run `node tests/wt023-compact-library-browser.mjs`, `node tests/wt023-model-drawer-browser.mjs` and `node tests/wt024-help-browser.mjs`. Verify release parity with `node tests/release-metadata.mjs`. See [TESTING.md](TESTING.md).
+
+
+WT-024 owns shared setting help in [tooltips.js](../tooltips.js) and [contextual-help-copy.js](../contextual-help-copy.js). Use the [coverage inventory](WT024_CONTEXTUAL_HELP_COVERAGE.md) and [Issue #152](https://github.com/connorturansky-svg/crystal-forge/issues/152) to track authored coverage. The focused Chromium audit runs from `tests/wt024-help-browser.mjs` and checks the seven-family/eight-workspace matrix, preferences, drawer filter and model naming. New settings need a semantic registry entry, a meaningful short note and detailed guidance that reflects the actual behaviour. Reuse the shared renderer for new panels and modal fields. Check PR #163 for current-head CI.
+
 See the [WT-023 integration checkpoint](PROJECT_STATUS.md#wt-023-integration-checkpoint--23-november-2026) for the current review and CI pointers.
+
+## WT-023B2a compact Library cards
+
+The [Library card helper](../src/ui/library-card.mjs) reveals the existing model, project and template controls. The callbacks and preview queue remain owned by `sensory-studio.js`. Keep preview status and Retry reachable and keep display preferences outside the saved workspace. The card disclosure uses the shared WT-024 help registry. [#139](https://github.com/connorturansky-svg/crystal-forge/issues/139) tracks acceptance. B2b project inspection and destination selection follow owner review. Info consolidation is tracked separately under [#154](https://github.com/connorturansky-svg/crystal-forge/issues/154).
 
 ## WT-023B B1 Library view
 
