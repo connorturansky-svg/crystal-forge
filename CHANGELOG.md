@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.37 — Browse open models in the viewport
+
+- Open the Models drawer from the bottom of the viewport to find, switch, reorder, rename or close open models.
+- Name a new model before adding it. Use Info to check its project, source and revision.
+- See previews generated from the saved model when its card comes into view. Retry a preview when it cannot render.
+
 ## v0.16.0-dev.35.36 — Organised printing source files
 
 - Find the production pack, print-quality checks, Cura model advice and optical reports together in a dedicated printing source folder.

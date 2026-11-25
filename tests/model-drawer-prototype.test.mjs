@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createProject,createModel,addModel,closeTab,reorderTabs} from '../studio-documents.js';
-import {modelRows,filterRows,reorderOpen,createPreviewQueue} from './fixtures/model-drawer/drawer.mjs';
+import {modelRows,filterRows,reorderOpen,createPreviewQueue} from '../src/ui/model-drawer.mjs';
 const project=createProject({id:'test-drawer',title:'Wonder'});
 for(let i=0;i<120;i++)addModel(project,createModel({id:'m'+i,name:i===0?'Red & blue':'Model '+i,typeId:'crystals'}));
 const before=JSON.stringify(project),rows=modelRows(project);

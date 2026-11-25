@@ -1,5 +1,11 @@
 # WT-023C · Models drawer — implementation handover
-**Owner issue #140; branch candidate, not integrated.** Baseline f52cdbcc (merged #147/#151/#157/#161). Coordinate #163 Help, #158 Gear, #148 backup, #162 Layers. Claim one branch; do not open a replacement PR.
+**Owner issue #140 and implementation PR #164.** The default Studio mounts the candidate in the 3D viewport and generates previews from saved source data. Use the PR checks to verify the current commit. Starting base f52cdbcc includes #147/#151/#157/#161.
+
+## Using the drawer
+
+Choose **Models** at the bottom of the viewport. Search the open entries or select a tile to switch. Press Escape to close the drawer. Alt+arrow reorders the focused tile. **Close** removes its open entry while preserving the saved model. **Info** shows its project, family and source revision. Choose **New model**, pick a starting point and confirm or edit the suggested name.
+
+The tested preview path reconstructs the saved design, including Crystal's stored editable cluster. Missing geometry gives a reason and Retry. Previews show editable design geometry. Use the prepared mesh in Print Centre for fabrication review. The notes below document the original integration checklist.
 
 ## Start here (10 minutes)
 1. Read #140 owner refinement and this page. Run the isolated fixture: `node tests/model-drawer-prototype.test.mjs`; serve repo on 4321, open `/tests/fixtures/model-drawer/index.html?large`; run `node tests/model-drawer-prototype-browser.mjs`.

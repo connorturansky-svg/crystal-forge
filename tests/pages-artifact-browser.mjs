@@ -86,6 +86,7 @@ try{
  await page.screenshot({path:'qa/pages-artifact-startup.png'});
  await page.locator('#smsHomeNew').click();
  await page.locator('#smsPicker [data-generator="tactile-tiles"]').click();
+  await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
  await page.locator('.sms-workspace-nav [data-tab=build]').click();
  assert(await page.locator('#viewport canvas').isVisible());
  await page.locator('#smsSend').click();

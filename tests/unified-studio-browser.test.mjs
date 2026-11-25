@@ -6,6 +6,12 @@ import * as THREE from 'three';
 import {STLLoader} from 'three/addons/loaders/STLLoader.js';
 const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
 let page=await browser.newPage({viewport:{width:1440,height:1000},acceptDownloads:true});
+async function openModels(){
+ const visibility=page.locator('#smsModelsDrawer');
+ if(!await visibility.isVisible())await page.locator('.sms-workspace-nav [data-tab=design]').click();
+ const toggle=visibility.getByRole('button',{name:/Models \(/});
+ if(await toggle.getAttribute('aria-expanded')==='false')await toggle.click();
+}
 const errors=[];page.on('pageerror',error=>errors.push(error.message));
 try{
  const url=process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321';
@@ -107,6 +113,7 @@ try{
  await shot('home');
  await page.locator('#smsHomeNew').click();
  await page.locator('#smsPicker [data-generator="control-caps"]').click();
+ await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
  const id=await page.evaluate(()=>window.__sensoryStudio.currentModel.id);
  const viewer=page.locator('#viewport');
  assert(await viewer.locator('canvas').isVisible());
@@ -219,6 +226,7 @@ try{
  assert.equal(images.size,6,'Six distinct rendered gear previews');
  await shot('gear-gallery');
  await page.locator('#smsPicker [data-preset="turbine"]').click();
+ await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
  await page.locator('.sms-workspace-nav [data-tab=design]').click();
  const range=page.locator('.sms-palette [data-palette-key=diameter]');
  const beforeDiameter=await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.diameter);
@@ -260,6 +268,7 @@ try{
  assert.equal(await partSlider.inputValue(),'0');
  await page.locator('#smsNew').click();
  await page.locator('#smsPicker [data-generator=crystals]').click();
+ await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
  await page.locator('.sms-workspace-nav [data-tab=design]').click();
  await page.getByText('Crystal starting points — creates a new model',{exact:true}).click();
  await page.getByRole('button',{name:'Crescent geode',exact:true}).click();
@@ -268,6 +277,7 @@ try{
  await shot('crystal-palette');
  await page.locator('#smsNew').click();
  await page.locator('#smsPicker [data-generator="tactile-tiles"]').click();
+ await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
  await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  const pixelPalette=page.locator('.sms-palette');
  await pixelPalette.getByRole('button',{name:'Add pixel automatically',exact:true}).click();
@@ -364,17 +374,19 @@ try{
  await page.locator('#smsLibrary').click();
  const savedModels=await snapshot();
  assert(savedModels.length>=2);
- const thumbnail=await page.evaluate(()=>window.__sensoryStudio.project.models.find(model=>model.thumbnail?.startsWith('data:image/'))?.thumbnail);
- assert(thumbnail);
  await page.locator('#smsSaveProject').click();
  const projects=page.locator('#smsSavedProjects');
  const river=projects.locator('[data-snapshot-id]').filter({has:page.getByRole('heading',{name:'River workshop',exact:true})});
  assert.match(await river.innerText(),new RegExp(savedModels.length+' models'));
- assert.equal(await river.locator('img').getAttribute('src'),thumbnail);
+ await river.scrollIntoViewIfNeeded();
+ const thumbnail=await river.locator('img').getAttribute('src');
+ assert(thumbnail?.startsWith('data:image/'));
  await nameProject('No preview workshop');
  await page.evaluate(()=>window.__sensoryStudio.project.models.forEach(model=>{model.thumbnail=null;}));
  await page.locator('#smsSaveProject').click();
- assert.match(await projects.locator('[data-snapshot-id]').filter({hasText:'No preview workshop'}).innerText(),/Preview unavailable/);
+ const withoutCachedPreview=projects.locator('[data-snapshot-id]').filter({hasText:'No preview workshop'});
+ await withoutCachedPreview.scrollIntoViewIfNeeded();
+ assert.equal(await withoutCachedPreview.locator('img').getAttribute('src'),thumbnail,'Saved geometry can recreate a missing cached preview');
  await nameProject('Current unsaved title');
  const currentModels=await snapshot();
  const savedCount=await projects.locator('[data-snapshot-id]').count();
@@ -441,12 +453,14 @@ try{
  const renamed=projects.locator('[data-snapshot-id]').filter({has:page.getByRole('heading',{name:renamedTitle,exact:true})});
  assert.equal(await renamed.count(),1);
  assert.match(await renamed.innerText(),new RegExp(savedModels.length+' models'));
+ await renamed.scrollIntoViewIfNeeded();
  assert.equal(await renamed.locator('img').getAttribute('src'),thumbnail);
  assert.equal(await page.locator('#smsProjectTitle').inputValue(),'Current unsaved title');
  await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
  await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
  await page.locator('#smsLibrary').click();
  assert.equal(await projects.locator('[data-snapshot-id]').count(),savedCount);
+ await renamed.scrollIntoViewIfNeeded();
  assert.equal(await renamed.locator('img').getAttribute('src'),thumbnail);
  const open=renamed.getByRole('button',{name:'Open project '+renamedTitle});
  page.once('dialog',dialog=>dialog.dismiss());
@@ -567,7 +581,8 @@ try{
  await shot('wt016-restored-copy');
  await restoreFile.setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{corrupt')});
  await page.getByText('Could not read backup', {exact:false}).waitFor();
- await page.locator('#model-tab-'+id).click();
+  await openModels();
+  await page.locator('#model-tab-'+id).click();
  await page.locator('#themeBtn').click();await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
  assert(await page.locator('body.theme-dark').count());
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.id),id);
@@ -948,6 +963,7 @@ try{
   const quilt=page.locator('#smsPicker [data-preset=quilt]');
   assert.notEqual(await preset.locator('img').getAttribute('src'),await quilt.locator('img').getAttribute('src'));
   await preset.click();
+  await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
   await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   const palette=page.locator('.sms-palette');
   const serial=palette.getByRole('group',{name:'Serial LED string'});
@@ -996,6 +1012,7 @@ try{
   const rotor=page.locator('#smsPicker [data-preset=forked-rotor]');
   assert.notEqual(await fork.locator('img').getAttribute('src'),await rotor.locator('img').getAttribute('src'));
   await fork.click();
+  await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
   await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   assert(await serial.locator('[data-native-route]').isDisabled());
   assert.match(await serial.innerText(),/solid decorative gear/);
@@ -1076,6 +1093,7 @@ try{
   const low=page.locator('#smsPicker [data-preset=beacon-low]');
   assert.notEqual(await tall.locator('img').getAttribute('src'),await low.locator('img').getAttribute('src'));
   await tall.click();
+  await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
   await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
   assert(await serial.locator('[data-native-route]').isDisabled());
  }
@@ -1205,7 +1223,8 @@ try{
  const localModel=await page.evaluate(()=>window.__sensoryStudio.currentModel);
  assert.equal(localModel.build.pixelHoles[0].followProfileClearance,false);
  const switchFitModel=async id=>{
-  await page.locator('[id="model-tab-'+id+'"]').click();
+   await openModels();
+   await page.locator('[id="model-tab-'+id+'"]').click();
   await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
  };
  const checkFitDownloads=async(model,diameter)=>{
@@ -1445,17 +1464,19 @@ try{
  await shot('wt017-seven-families-build');
  await page.setViewportSize({width:390,height:844});
  await page.locator('.sms-workspace-nav [data-tab=design]').click();
- assert(await page.locator('#smsModelRail #smsNew').isVisible());
+ assert(await page.locator('#smsModelsDrawer #smsNew').isVisible());
  assert(await page.locator('#smsTools header button').isVisible());
  assert(await page.locator('#smsPrecision header button').isVisible());
- const bottomTabs=page.locator('#smsModelRail #smsTabs');
- assert(await bottomTabs.evaluate(node=>node.scrollWidth>node.clientWidth));
- const last=bottomTabs.getByRole('tab').last(),lastId=await last.getAttribute('id');
+ await openModels();
+ const bottomTabs=page.locator('#smsModelsDrawer #smsTabs');
+ assert(await bottomTabs.evaluate(node=>node.scrollHeight>node.clientHeight));
+ const last=bottomTabs.locator('[data-action=select]').last(),lastId=await last.getAttribute('id');
  await last.press('Alt+ArrowLeft');
- assert.equal(await bottomTabs.getByRole('tab').nth(-2).getAttribute('id'),lastId);
+ assert.equal(await bottomTabs.locator('[data-action=select]').nth(-2).getAttribute('id'),lastId);
  await bottomTabs.locator('#'+lastId).press('Alt+ArrowRight');
- await bottomTabs.evaluate(node=>{node.scrollLeft=node.scrollWidth;});
- assert(await bottomTabs.evaluate(node=>node.scrollLeft>0));
+ await bottomTabs.evaluate(node=>{node.scrollTop=node.scrollHeight;});
+ assert(await bottomTabs.evaluate(node=>node.scrollTop>0));
+ await bottomTabs.locator('#'+lastId).press('Escape');
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1));
  await shot('wt014-narrow');
  for(const width of [1440,1280,768,390]){
@@ -2791,7 +2812,8 @@ try{
    .filter(model=>ids.includes(model.id)).map(model=>[model.id,model.build.backingTabs[0].recessDepth])),
    [original.id,linked.id,independent.id]);
   assert.deepEqual(copies,{[original.id]:3,[linked.id]:3,[independent.id]:2.75});
-  await page.locator('#model-tab-'+original.id).click();
+   await openModels();
+   await page.locator('#model-tab-'+original.id).click();
   await buildTab.click();
   await page.getByRole('button',{name:'Render actual model',exact:true}).click();
   const originalInspector=page.locator('#smsLightInspector');
@@ -2813,7 +2835,8 @@ try{
   assert(await job.locator('[data-job-3mf]').isDisabled());
   await page.locator('#smsLibrary').click();
   await projectCard.getByRole('button',{name:'Save to library',exact:true}).click();
-  await page.locator('#model-tab-'+linked.id).click();
+   await openModels();
+   await page.locator('#model-tab-'+linked.id).click();
   assert.equal((await modelState()).build.backingTabs[0].recessDepth,3);
   await page.getByRole('button',{name:'Accept library revision 2'}).click();
   assert.equal((await modelState()).link.revision,2);
@@ -2856,7 +2879,8 @@ try{
   await position.press('ArrowRight');
   assert.deepEqual(await modelState(),inspected);
   await inspector.getByRole('button',{name:'Close inspection'}).click();
-  await page.locator('#model-tab-'+original.id).click();
+   await openModels();
+   await page.locator('#model-tab-'+original.id).click();
   await printTab.click();
   const originalJobId=await page.evaluate(id=>window.__sensoryStudio.project.printJobs.find(item=>item.modelId===id).id,original.id);
   const originalJob=page.locator('[data-print-job="'+originalJobId+'"]');

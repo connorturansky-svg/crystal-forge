@@ -29,6 +29,7 @@ try{
   if(index===0)await page.locator('#smsHomeNew').click();
   else await page.locator('#smsNew').click();
   await page.locator('#smsPicker [data-generator="'+family+'"]').click();
+   await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
   await page.locator('.sms-workspace-nav [data-tab=build]').click();
   const toggle=page.locator('.sms-palette [data-edge-finish=enabled]');
   await toggle.waitFor({state:'visible'});

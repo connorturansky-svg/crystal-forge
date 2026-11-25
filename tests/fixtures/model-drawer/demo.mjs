@@ -1,4 +1,4 @@
-import {createModelDrawer} from './drawer.mjs';
+import {createModelDrawer} from '../../../src/ui/model-drawer.mjs';
 import {createProject,createModel,addModel,openTab,closeTab,reorderTabs,editModel} from '../../../studio-documents.js';
 const project=createProject({id:'drawer-demo',title:'Demo project'});
 const names=['Mini_Red','Big_Blue','Big_Red','Yellow','Big_Yellow','long_red','Mini_Yellow','Mini_Yellow_2','long_yellow'];

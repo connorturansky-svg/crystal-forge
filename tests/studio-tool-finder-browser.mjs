@@ -16,6 +16,7 @@ try{
    await page.goto(url,{waitUntil:'domcontentloaded'});
    await page.locator('#smsHomeNew').click();
    await page.locator(`#smsPicker [data-generator="${family}"]`).click();
+    await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
    if(dark)await page.locator('#themeBtn').click();
    const search=page.getByRole('searchbox',{name:'Find tools and downloads'});
    const results=page.getByRole('group',{name:'Matching tool shortcuts'}).getByRole('button');
