@@ -64,3 +64,5 @@ Select **Info** in the toolbar, then choose Help guide, Features or What’s new
 New browsers start with both optional help switches off. Turn on Hover Notes for short hints or Detailed Explanations for inline guidance; use both if preferred. Existing choices are retained. A disabled action can still explain why it is blocked.
 
 When both help modes are on, desktop controls that already show an inline explanation hide the redundant question button. Touch devices retain the button; keyboard focus and mouse hover still show short guidance.
+
+New release highlights use plain-text labels such as New, Changed and Moved to make the changes easier to scan. Older notes retain their original wording. Use the existing Help guide, Features or global tool search to locate a control.

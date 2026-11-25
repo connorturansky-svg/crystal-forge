@@ -39,6 +39,8 @@ try{
  assert(await summary.isVisible());
  assert(await trigger.getAttribute('data-info-unread')!==null);
  assert.equal(await summary.locator('#infoReleaseSummaryList>li').count(),1);
+ assert.match(await summary.locator('#infoReleaseSummaryList').innerText(),/Moved — Open Info/);
+ assert.match(await summary.locator('#infoReleaseSummaryList').innerText(),/New — Read version highlights/);
  assert(!await summary.getByText('Unreleased WT-021 draft',{exact:true}).count());
  const readKey=await page.evaluate(prefix=>prefix+document.querySelector('.version').textContent.trim().slice(1),RELEASE_READ_PREFIX);
  assert.equal(await page.evaluate(key=>localStorage.getItem(key),readKey),null,'Opening Info does not acknowledge changes');
@@ -141,6 +143,13 @@ try{
  assert(bounds.x>=0&&bounds.x+bounds.width<=390);
  assert(await search.isVisible()&&await category.isVisible());
  await dialog.screenshot({path:'qa/unified-wt021-features-mobile.png'});
+ await page.keyboard.press('Escape');
+ await page.reload();
+ await page.waitForFunction(()=>window.__sensoryStudio);
+ assert.equal(await trigger.getAttribute('data-info-unread'),null,'Acknowledgement survives reload');
+ await trigger.click();
+ await tab('What’s new').click();
+ assert.match(await summary.locator('h3').innerText(),/up to date/);
  await page.keyboard.press('Escape');
  assert.deepEqual(errors,[]);
  console.log('UX-01 catalogue: family and workspace actions, state preservation, filters, graphics, focus and themes passed.');

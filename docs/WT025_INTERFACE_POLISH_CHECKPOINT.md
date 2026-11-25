@@ -13,3 +13,8 @@ Fresh browsers now start with both optional help controls off, while explicit v1
 ## Checkpoint 3 — lower-density help and release highlights
 
 A non-touch desktop hides extra question buttons only when both modes are enabled and that setting has inline guidance; coarse pointers retain touch help. The version highlights read the running build’s generated current/archived release notes, not the unreleased section. Read state is one browser-local key per acknowledged version, explicitly written only by the user; earlier tabs cannot overwrite newer markers. Missing/corrupt/blocked storage is handled conservatively, with no fabricated read status. First visits show the current version only. This is an acknowledgement-based summary, not a remote deployment detector or automatic classification of historical notes. Added pure tests and real browser Info/keyboard and help-density assertions. Final exact-head CI, manual screen-reader/visual checks and release-version coordination remain mandatory.
+
+
+## Checkpoint 4 — final acceptance hardening
+
+The current release notes have authored Moved/Changed/New labels. The summary supports all five specified categories, leaves unclassified historical notes unchanged and does not guess what old changes meant. A cross-tab acknowledgement restores focus if it hides the focused Mark as read button. Browser tests exercise touch with both modes enabled and read-state persistence across reload. Existing Help/Features navigation remains authoritative; historical notes do not invent deep links. No local browser execution or manual screen-reader claim. The current candidate is not a verified public deployment.

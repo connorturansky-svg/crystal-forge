@@ -2,6 +2,11 @@
 // this app build; the separate unreleased section is never a summary source.
 export const RELEASE_READ_PREFIX='crystal-forge-info-read-v1:';
 export const releaseReadKey=version=>RELEASE_READ_PREFIX+version;
+// Categories are editorial metadata in release notes, never inferred from wording.
+export function splitReleaseNote(note){
+ const match=note.match(/^(New|Changed|Moved|Fixed|Important) — (.+)$/);
+ return match?{category:match[1],text:match[2]}:{category:null,text:note};
+}
 export function unreadReleaseEntries(entries,storage){
  if(!entries.length)return {entries:[],available:false,previous:null};
  try{
@@ -34,6 +39,7 @@ export function installInfoReleaseSummary(doc=document){
   notice.textContent=unread?'Version notes not yet marked as read.':'Version notes marked as read.';
   heading.textContent=state.previous&&unread?'Changes since your last acknowledgement':unread?'Highlights of this version':'You’re up to date with this version';
   status.textContent=!state.available?'Read preferences cannot be accessed in this browser.':state.previous&&unread?'Previously marked as read: v'+state.previous+'.':unread?'New here, or no previous read marker is available. You can review the complete history below.':'You can still browse the release history below.';
+  const restoreFocus=!unread&&doc.activeElement===ack;
   ack.hidden=!unread;
   ack.disabled=!state.available;
   list.replaceChildren();
@@ -41,10 +47,15 @@ export function installInfoReleaseSummary(doc=document){
    const item=doc.createElement('li');
    const title=doc.createElement('strong');title.textContent='v'+entry.version+' — '+entry.title;
    const notes=doc.createElement('ul');
-   for(const note of entry.notes){const line=doc.createElement('li');line.textContent=note;notes.append(line);}
+   for(const note of entry.notes){
+    const line=doc.createElement('li'),{category,text}=splitReleaseNote(note);
+    if(category){const label=doc.createElement('strong');label.textContent=category+' — ';line.append(label);}
+    line.append(doc.createTextNode(text));notes.append(line);
+   }
    item.append(title,notes);list.append(item);
   }
   root.hidden=false;
+  if(restoreFocus)heading.focus();
  }
  ack.addEventListener('click',()=>{
   try{

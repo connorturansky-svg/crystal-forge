@@ -123,9 +123,12 @@ try{
  await touch.goto(url);
  await touch.waitForFunction(()=>window.__sensoryStudio&&document.querySelector('#smsModelsDrawer'),null,{timeout:60000});
  await touch.locator('#hoverNotes').check();
+ await touch.locator('#detailedExplanations').check();
  await touch.evaluate(()=>window.__sensoryStudio.addModel('gears',null,'Touch help fixture'));
  const touchDrawer=touch.locator('#smsModelsDrawer');
  await touchDrawer.getByRole('button',{name:/Models \(/}).tap();
+ assert(await touchDrawer.locator('.md-search + .contextual-help .contextual-help-detail').isVisible());
+ assert(await touchDrawer.locator('.md-search + .contextual-help button').isVisible(),'Both modes retain the touch trigger');
  await touchDrawer.locator('.md-search + .contextual-help button').tap();
  await touch.locator('#controlTooltip').waitFor();
  assert.match(await touch.locator('#controlTooltip').innerText(),/Filters the open models/);
