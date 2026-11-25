@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {makeRegisteredFitCoupons} from '../src/printing/registered-fit-coupons.js';
+import {registeredAssemblyGuide} from '../src/printing/registered-assembly-guide.js';
 import {registeredAssemblyPackInputs} from '../src/printing/registered-assembly-pack.js';
 import {createRegisteredGridAssembly} from '../src/printing/registered-grid-assembly.js';
 import {planBedAwareSplit} from '../src/printing/bed-split.js';
@@ -21,8 +23,15 @@ export function verifyRegisteredGridAssembly(wasm){
    assert(Math.abs(result.volume()-item.volume)<.1);
   }
   assert(out.parts.reduce((v,p)=>v+p.volume,0)<cube.volume(),'Actual socket material removed');
-  const pack=registeredAssemblyPackInputs(THREE,out);
-  assert.equal(pack.extraFiles.length,12);
+  const coupons=makeRegisteredFitCoupons(wasm,out);
+  assert.equal(coupons.length,6);
+  const pack=registeredAssemblyPackInputs(THREE,out,coupons);
+  assert.equal(pack.extraFiles.length,18);
+  assert.equal(pack.splitManifest.fitCoupons.length,6);
+  const guide=registeredAssemblyGuide(pack.splitManifest,pack.extraFiles);
+  assert.equal(guide.length,3);
+  assert(guide[0][1].includes('joint-01')&&guide[1][1].includes('part-X1-Z1')&&guide[2][1].includes('Fit coupon,6'));
+  assert.throws(()=>registeredAssemblyGuide(pack.splitManifest,pack.extraFiles.slice(1)),/reference invalid/);
   assert.equal(pack.splitManifest.parts.length,4);
   assert.equal(pack.splitManifest.dowels.length,8);
   assert.equal(pack.splitManifest.physicalFitVerified,false);

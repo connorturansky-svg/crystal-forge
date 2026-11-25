@@ -21,3 +21,7 @@ An isolated Manifold grid registration engine in src/printing/registered-grid-as
 ## Print integration checkpoint
 
 Opt-in `autoBedRegistration` is false by default and only available with automatic bed splitting. The existing production ZIP path calls a cancellable worker, with stock checks limited to the plinth height, 120-second timeout, stale source/settings rejection after each asynchronous step, and no silent plain-split fallback. Existing manual and plain splitting remain intact. Browser and actual exported-section verification required before review. Physical fit remains unverified.
+
+## Assembly pack guide and fit coupons
+
+The worker now creates up to three clearance samples per used seam axis using the matching blind-bore depth and cutter resolution. The ZIP includes a schematic SVG seam map, named part/dowel references, a BOM and a dry-fit/physical acceptance guide. It explicitly distinguishes the joined reference STL from printable grid parts. Physical fit is not inferred from software. The new exact-head tests must pass before review; end-to-end real Crystal ZIP, section verification and physical trials remain outstanding.

@@ -1,3 +1,4 @@
+import {registeredAssemblyGuide} from './registered-assembly-guide.js';
 import {lightPassageReportEntries} from '../../light-passage-inspection.js';
 /* One archive for practical fabrication handoff.
  * Zip uses the same store-only ZIP encoder as Cura profiles, with binary STL.
@@ -66,6 +67,7 @@ export function buildProductionPack({settings,crystals,report,stlBytes,extraFile
   if(!Array.isArray(splitManifest.parts)||!splitManifest.parts.length)
    throw Error('Automatic bed split manifest requires numbered physical parts');
   assets.push(['05_Assembly/bed-split-layout.json',JSON.stringify(splitManifest,null,2)]);
+  if(splitManifest.joints?.length)assets.push(...registeredAssemblyGuide(splitManifest,extraFiles));
  }
  const condensed={status:report.status,bounds:report.bounds,printerFits:report.printerFits,
   triangleCount:report.triangleCount,volumeMm3:report.volumeMm3,

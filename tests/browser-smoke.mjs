@@ -562,9 +562,9 @@ try{
   const failure=await run({maxJointY:4});
   return {success:success.result&&{parts:success.result.splitManifest.parts.length,joints:success.result.splitManifest.joints.length,files:success.result.extraFiles.length,valid:success.result.extraFiles.every(x=>x.bytes instanceof Uint8Array&&x.bytes.length>84)},error:success.error||null,refusal:failure.error||null};
  });
- assert.deepEqual(workerEvidence.success,{parts:4,joints:8,files:12,valid:true},JSON.stringify(workerEvidence));
+ assert.deepEqual(workerEvidence.success,{parts:4,joints:8,files:18,valid:true},JSON.stringify(workerEvidence));
  assert.match(workerEvidence.refusal||'',/stock|sockets/i);
- console.log('Real registered assembly module worker produces 12 named STL files and refuses thin stock');
+ console.log('Real registered assembly module worker produces 18 named STL files (including six fit coupons) and refuses thin stock');
 
 
  // Re-preparing while the merged manufacturing mesh is visible must retain
