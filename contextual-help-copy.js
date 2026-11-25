@@ -208,6 +208,7 @@ export const nativeFamilyHelp = {
 };
 
 export const dynamicHelp = {
+ '[data-drawer-zoom]': ['Changes thumbnail and card size without changing model data.','Choose a smaller size to fit more open models in the viewport, or a larger size to inspect the saved previews. The choice is remembered in this browser and does not change your model, camera zoom or print settings.'],
  "[data-model-colour-picker]": ["Choose an exact display colour.","Use the system colour picker for visual selection; Apply commits the choice."],
  "[data-model-colour-hex]": ["Enter six hexadecimal digits.","For example #000000 selects pure black. Invalid values are rejected; Cancel preserves the original colour."],
  "#customModelColour, [data-model-colour-role]": ["Choose any exact model display colour.","Pick a named swatch, use the colour picker or enter six hexadecimal digits. Apply commits one model edit; Cancel changes nothing. The display colour is separate from LED glow and does not establish actual filament colour."],

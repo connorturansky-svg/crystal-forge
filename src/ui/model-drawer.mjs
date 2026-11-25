@@ -1,4 +1,11 @@
-// Isolated candidate UI. No project writes or renderer imports; integrate via callbacks.
+// Isolated drawer UI. No project writes or renderer imports; integrate via callbacks.
+export const DRAWER_ZOOM_KEY='crystal-forge.models-drawer.zoom.v1';
+const ZOOM_SIZES=[[13,3.25],[15,3.75],[18,4.5],[21,5.25],[24,6.25]];
+const ZOOM_LABELS=['Small','Compact','Medium','Large','Extra large'];
+export function normaliseDrawerZoom(raw){
+ const n=typeof raw==='number'?raw:typeof raw==='string'&&/^[1-5]$/.test(raw)?Number(raw):NaN;
+ return Number.isInteger(n)&&n>=1&&n<=5?n:3;
+}
 export function modelRows(project) {
  const byId=new Map(project.models.map(m=>[m.id,m]));
  return project.tabs.map(id=>byId.get(id)).filter(Boolean).map(m=>({
@@ -47,7 +54,24 @@ export function createModelDrawer(host, {getProject, select, close, add, rename,
  const body=el('div','md-body');body.id='md-drawer-body';body.hidden=true;
  toggle.setAttribute('aria-controls',body.id);toggle.setAttribute('aria-expanded','false');
  const search=el('input','md-search');search.type='search';search.placeholder='Find an open model';search.setAttribute('aria-label','Find an open model');
- const grid=el('div','md-grid');grid.setAttribute('role','list');body.append(search,grid);root.append(header,body);host.append(root);
+ const grid=el('div','md-grid');grid.setAttribute('role','list');
+ const controls=el('div','md-controls'),zoomLabel=el('label','md-zoom','Thumbnail size');
+ const zoom=el('input');zoom.type='range';zoom.min='1';zoom.max='5';zoom.step='1';
+ zoom.dataset.drawerZoom='true';zoom.setAttribute('aria-label','Thumbnail size');
+ const zoomOutput=el('output');zoomOutput.setAttribute('aria-hidden','true');zoomLabel.append(zoom,zoomOutput);
+ controls.append(search,zoomLabel);body.append(controls,grid);root.append(header,body);host.append(root);
+ let initialZoom=3;
+ try{initialZoom=normaliseDrawerZoom(d.defaultView?.localStorage.getItem(DRAWER_ZOOM_KEY));}catch{}
+ function applyZoom(raw,persist=false){
+  const level=normaliseDrawerZoom(raw),[card,thumb]=ZOOM_SIZES[level-1];
+  root.style.setProperty('--md-card-min',card+'rem');
+  root.style.setProperty('--md-thumb-size',thumb+'rem');
+  zoom.value=String(level);zoomOutput.textContent=String(level);
+  zoom.setAttribute('aria-valuetext',ZOOM_LABELS[level-1]);
+  if(persist)try{d.defaultView?.localStorage.setItem(DRAWER_ZOOM_KEY,String(level));}catch{}
+ }
+ applyZoom(initialZoom);
+ zoom.addEventListener('input',()=>applyZoom(zoom.value,true));
  let open=false,generation=0,observer=null,projectId;
  const queue=previewQueue||createPreviewQueue(renderPreview);
  const setOpen=(value,focus=true)=>{
@@ -71,16 +95,19 @@ export function createModelDrawer(host, {getProject, select, close, add, rename,
   for(const row of cards){
    const card=el('div','md-card');card.dataset.modelId=row.id;card.setAttribute('role','listitem');
    const selected=row.id===project.activeTab;card.classList.toggle('md-active',selected);
-   const thumb=el('span','md-thumb','Preview pending');
-   const name=el('span','md-name',row.name),pick=button('',()=>select(row.id));pick.className='md-pick';pick.dataset.action='select';pick.setAttribute('aria-label',row.label);if(selected)pick.setAttribute('aria-current','true');
+   const thumb=el('span','md-thumb','Pending');
+   const status=el('div','md-preview-status');status.hidden=true;
+   const name=el('span','md-name'),nameTitle=el('span','md-name-title',row.name),pick=button('',()=>select(row.id));
+   nameTitle.title=row.name;name.append(nameTitle);pick.className='md-pick';pick.dataset.action='select';pick.setAttribute('aria-label',row.label);if(selected)pick.setAttribute('aria-current','true');
    pick.id='model-tab-'+row.id;
    pick.append(thumb,name);if(row.preparing)name.append(el('small','','Preparing'));if(selected)name.append(el('small','','Active'));
    const renameButton=button('Rename',()=>rename(row.id));renameButton.dataset.action='rename';renameButton.setAttribute('aria-label','Rename '+row.label);
    const closeButton=button('×',()=>close(row.id));closeButton.dataset.action='close';closeButton.setAttribute('aria-label','Close '+row.label);
    const retry=button('Retry preview',()=>load());retry.hidden=true;retry.dataset.action='retry';
-   card.append(pick,renameButton);
-   if(info){const details=button('Info',()=>info(row.id,thumb.querySelector('img')?'Ready':thumb.textContent));details.dataset.action='info';details.setAttribute('aria-label','Information about '+row.label);card.append(details);}
-   card.append(closeButton,retry);
+   const actions=el('div','md-actions');actions.append(renameButton);
+   card.append(pick,status,actions);
+   if(info){const details=button('Info',()=>info(row.id,thumb.querySelector('img')?'Ready':status.textContent||thumb.textContent));details.dataset.action='info';details.setAttribute('aria-label','Information about '+row.label);actions.append(details);}
+   actions.append(retry,closeButton);
    const move=target=>{reorder(reorderOpen(rows.map(r=>r.id),row.id,target));};
    pick.draggable=true;pick.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',row.id));
    card.addEventListener('dragover',e=>e.preventDefault());card.addEventListener('drop',e=>{e.preventDefault();const from=e.dataTransfer.getData('text/plain');if(rows.some(r=>r.id===from))reorder(reorderOpen(rows.map(r=>r.id),from,row.id));});
@@ -98,15 +125,16 @@ export function createModelDrawer(host, {getProject, select, close, add, rename,
    });
    async function load(){
     const current=()=>open&&generation===epoch&&card.isConnected;
-    if(!current())return;retry.hidden=true;thumb.textContent='Loading preview';
+    if(!current())return;retry.hidden=true;status.hidden=true;status.textContent='';thumb.textContent='Loading';
+    const fail=message=>{thumb.textContent='Unavailable';status.textContent=message;status.hidden=false;retry.hidden=false;};
     try{
      const key=previewKey(project,row),model=project.models.find(x=>x.id===row.id);
      const result=await queue.request(key,{projectId:project.id,modelId:row.id,revision:row.revision,model},current);
      if(!current())return;
-     if(!result){thumb.textContent='Preview deferred';retry.hidden=false;return;}
-     const img=el('img');img.alt='';img.src=result.src;img.decoding='async';img.onerror=()=>{if(current()){queue.invalidate(key);thumb.textContent='Preview image invalid';retry.hidden=false;}};
+     if(!result){fail('Preview deferred');return;}
+     const img=el('img');img.alt='';img.src=result.src;img.decoding='async';img.onerror=()=>{if(current()){queue.invalidate(key);fail('Preview image invalid');}};
      thumb.replaceChildren(img);
-    }catch(error){if(current()){thumb.textContent=error.message||'Preview unavailable';retry.hidden=false;}}
+    }catch(error){if(current()){fail(error.message||'Preview unavailable');}}
    }
    loaders.set(card,load);grid.append(card);if(observer)observer.observe(card);else if(cards.indexOf(row)<12)load();else retry.hidden=false;
   }

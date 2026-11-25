@@ -52,6 +52,12 @@ try{
  const filter=drawer.getByRole('searchbox');
  const explanation=drawer.locator('.md-search + .contextual-help .contextual-help-detail');
  assert.match(await explanation.innerText(),/without changing your project/);
+ const density=drawer.getByRole('slider',{name:'Thumbnail size'});
+ const densityHelp=drawer.locator('.md-zoom + .contextual-help .contextual-help-detail');
+ assert.match(await densityHelp.innerText(),/does not change your model/);
+ await density.press('Home');assert.equal(await density.inputValue(),'1');
+ await density.press('End');assert.equal(await density.inputValue(),'5');
+ assert(await drawer.locator('.md-grid').evaluate(el=>el.clientHeight>0),'Help must leave the model list reachable');
  await filter.focus();
  await page.locator('#controlTooltip').waitFor();
  await page.keyboard.press('Escape');

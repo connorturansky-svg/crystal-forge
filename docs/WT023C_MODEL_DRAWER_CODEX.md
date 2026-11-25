@@ -1,6 +1,10 @@
 # WT-023C · Models drawer — implementation handover
 **Owner issue #140 and implementation PR #164.** The default Studio mounts the candidate in the 3D viewport and generates previews from saved source data. Use the PR checks to verify the current commit. Starting base f52cdbcc includes #147/#151/#157/#161.
 
+## Density correction (25 November 2026, proposed)
+
+The owner reported single-letter wrapping on the deployed drawer. The corrective candidate separates the full-width selection area from the Rename/Info/Close row, uses a responsive minimum card width and a five-position **Thumbnail size** slider (Small to Extra large). The choice persists only in browser view preferences, not project documents. Names are horizontally ellipsised with full accessible name and title. Preview failure reasons remain visible with Retry. Use real browser geometry assertions and screenshots at 390/768/1440px, both density extremes and 200% zoom; verify no underlying storage changes. Reconciled with merged #163 Help; provisional release .35.43. The thumbnail slider uses the shared Help registry; its explanatory text scrolls within the controls region so the model grid remains reachable. Do not merge until exact-head checks and owner visual inspection.
+
 ## Using the drawer
 
 Choose **Models** at the bottom of the viewport. Search the open entries or select a tile to switch. Press Escape to close the drawer. Alt+arrow reorders the focused tile. **Close** removes its open entry while preserving the saved model. **Info** shows its project, family and source revision. Choose **New model**, pick a starting point and confirm or edit the suggested name.

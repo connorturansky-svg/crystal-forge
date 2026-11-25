@@ -33,7 +33,7 @@ try{
  }
  assert.equal(await page.locator('.collapsible-section[open]').count(),0,'Sections start closed.');
  assert((await page.locator('.section-descriptor').first().innerText()).length>10);
- await page.locator('.left details.collapsible-section').first().locator('summary').first().click();
+ await page.locator('.left details.collapsible-section').filter({has:page.locator('output[data-out="count"]')}).locator('summary').first().click();
  await page.locator('output[data-out="count"]').click();await page.locator('[data-exact-input="count"]').fill('19');await page.locator('[data-exact-input="count"]').press('Enter');
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.count===19);
  await page.locator('output[data-out="count"]').click();await page.locator('[data-exact-input="count"]').fill('30');await page.locator('[data-exact-input="count"]').press('Escape');
