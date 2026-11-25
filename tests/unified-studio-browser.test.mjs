@@ -3463,7 +3463,7 @@ try{
    await summary.press('Enter');
    await targetPage.screenshot({path:'qa/unified-wt023b-library-narrow.png'});
    targetPage.once('dialog',dialog=>dialog.accept());
-   await folder.locator('[data-snapshot-id="version-2"] button').first().press('Enter');
+   await folder.locator('[data-snapshot-id="version-2"]').getByRole('button',{name:'Open project Same name',exact:true}).press('Enter');
    const switched=JSON.parse(await storage());
    assert.equal(switched.project.id,'other-project');
    assert.deepEqual({...switched.project.models[0],thumbnail:null},second.models[0],
