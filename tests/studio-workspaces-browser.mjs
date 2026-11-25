@@ -227,7 +227,8 @@ try{
  // WT-024 uses the same shared renderer for existing and generated controls.
  const hoverNotes=page.getByRole('checkbox',{name:'Hover Notes',exact:true});
  const detailedExplanations=page.getByRole('checkbox',{name:'Detailed Explanations',exact:true});
- assert(await hoverNotes.isChecked());
+ assert(!(await hoverNotes.isChecked()));
+ await hoverNotes.check();
  assert(!(await detailedExplanations.isChecked()));
  await detailedExplanations.check();
  await destination('Design').press('Enter');

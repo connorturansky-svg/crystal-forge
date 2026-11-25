@@ -60,3 +60,5 @@ Use **New model** to pick a starting point, then review the suggested name. Prev
 ## Finding information
 
 Select **Info** in the toolbar, then choose Help guide, Features or What’s new. Press Escape to close and return to the toolbar. The `?` keyboard shortcut still opens the Help guide. Hover Notes and Detailed Explanations remain separate settings.
+
+New browsers start with both optional help switches off. Turn on Hover Notes for short hints or Detailed Explanations for inline guidance; use both if preferred. Existing choices are retained. A disabled action can still explain why it is blocked.

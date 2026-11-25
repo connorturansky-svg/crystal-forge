@@ -10,6 +10,7 @@ try{
  const url=new URL(process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321');url.searchParams.set('layout','legacy');
  await page.goto(url.href,{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.__sensoryStudio,null,{timeout:60000});
+ await page.locator('#hoverNotes').check();
  {
   const control=page.locator('#themeBtn');
   const tooltip=page.getByRole('tooltip');

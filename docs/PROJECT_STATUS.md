@@ -1,6 +1,28 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
-WT-024 contextual help is in development on `feat/wt024-contextual-help`. See the [candidate coverage and known gaps](WT024_CONTEXTUAL_HELP_COVERAGE.md) alongside [Issue #152](https://github.com/connorturansky-svg/crystal-forge/issues/152).
+## ChatGPT handover — 25 November 2026
+
+Main audited at `66994cc98d3ef9bd68ef38161fd7a2b78fef8dbb`. The owner merged [B2a #172](https://github.com/connorturansky-svg/crystal-forge/pull/172). Main carries v0.16.0-dev.35.42. Its runtime head `cba402317d40bd09a0dd228a1257ebf0c4c0fb88` passed all six substantive [PR workflows](https://github.com/connorturansky-svg/crystal-forge/pull/172/checks). Persistence #147, project folders #151, private backup #148, Models drawer #164/#166 and contextual Help #163 are integrated. See [AI_HANDOVER.md](AI_HANDOVER.md) for source and test commands.
+
+| Open PR | Hold and continuation |
+|---|---|
+| [#169 Models drawer density and thumbnail zoom](https://github.com/connorturansky-svg/crystal-forge/pull/169) | Draft with conflicts. Five substantive workflows passed old head `6522d776`. Its owner must reconcile current main, shared Help and release metadata after .42. |
+| [#158 Gear grips](https://github.com/connorturansky-svg/crystal-forge/pull/158) | Conflicts with main. Its old head `a6f9038b` passed the observed substantive workflows. Its owner needs to reconcile shared runtime and release files and rerun geometry, exports and browser checks. |
+| [#167 Viewport Layers](https://github.com/connorturansky-svg/crystal-forge/pull/167) | Planning packet with conflicts. Reconcile it or fold its useful acceptance criteria into [#162](https://github.com/connorturansky-svg/crystal-forge/issues/162) before runtime dispatch. |
+| [#171 Model colour picker](https://github.com/connorturansky-svg/crystal-forge/pull/171) | Planning packet with conflicts. Reconcile it or fold its useful acceptance criteria into [#170](https://github.com/connorturansky-svg/crystal-forge/issues/170) before runtime dispatch. |
+
+### Next-session priorities
+
+1. Stabilise the Models drawer in [#169](https://github.com/connorturansky-svg/crystal-forge/pull/169) and [#140](https://github.com/connorturansky-svg/crystal-forge/issues/140). Verify narrow and wide widths, 200% zoom, both themes, long names, keyboard/touch, genuine previews and Retry, WT-024 help and Library actions with the drawer expanded.
+2. After owner dispatch, implement B2b under [#139](https://github.com/connorturansky-svg/crystal-forge/issues/139). Use the [existing packet](WT023_PROJECT_LIBRARY_IMPLEMENTATION.md#b2b--project-browser-and-destination-transaction) for read-only saved-version inspection and a single durable destination write. Validate exact IDs, cancel, quota failure, competing tabs and preservation of historical snapshots.
+3. Reconcile the existing Gear implementation [#158](https://github.com/connorturansky-svg/crystal-forge/pull/158) before overlapping geometry or viewport work. Preserve previously valid designs and rerun measured clearances and actual STL/3MF export fixtures.
+
+Resources [#141](https://github.com/connorturansky-svg/crystal-forge/issues/141), private backups [#142](https://github.com/connorturansky-svg/crystal-forge/issues/142), Info and Help polish [#154](https://github.com/connorturansky-svg/crystal-forge/issues/154) and [#152](https://github.com/connorturansky-svg/crystal-forge/issues/152), and production evidence [#79](https://github.com/connorturansky-svg/crystal-forge/issues/79) remain in their existing issues. The owner retains physical Cura and print sign-off under [#10](https://github.com/connorturansky-svg/crystal-forge/issues/10). Manual screen-reader QA remains outstanding. One local Chromium tool-search timeout passed on isolated rerun and hosted Chromium passed. If it recurs, capture the mounting preset and setup state before changing search behaviour.
+
+## Historical checkpoints
+
+Use the live GitHub refs and current handover when resuming. The entries below record previous integration states.
+
 
 ## WT-023 integration checkpoint — 23 November 2026
 

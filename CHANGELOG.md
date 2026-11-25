@@ -60,6 +60,7 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 ## v0.16.0-dev.35.43 — Find help and releases in Info
 - Open Info to reach the Help guide, searchable Features and What’s new from one toolbar button. The question-mark keyboard shortcut still opens Help.
+- New browsers start with both optional help switches off. Existing choices are retained, and Hover Notes also controls ordinary browser title hints while keeping critical blocked-action reasons available.
 
 ## v0.16.0-dev.35.42 — Browse compact Library cards
 
