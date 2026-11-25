@@ -25,3 +25,5 @@ assert.match(parsePrecisionNumber('Infinity',{key:'diameter',min:25,max:180}).er
 console.log('Exact values: legacy and native decimal, bounds and integer validation passed.');
 
 await import('./model-colour.test.mjs');
+
+await import('./viewport-layers.test.mjs');
