@@ -17,7 +17,9 @@ The **Features** tab under Help provides a visual list of model builders and ava
 
 ## Find projects and templates in the Library
 
-In the WT-023B B1 candidate (#151), Templates appears first. Projects contains one expandable folder per project, with the active project marked separately from its saved versions. Use Tab to reach a folder heading and Enter or Space to open or fold it. Open a saved version through its Open project action. The current project is saved as a recoverable copy before switching. Folder expansion is remembered within the browser tab, including on reload.
+Templates appears first. Projects contains one expandable folder per project, with the active project marked separately from its saved versions. Use Tab to reach a folder heading and Enter or Space to open or fold it. Open a saved version through its Open project action. The current project is saved as a recoverable copy before switching. Folder expansion is remembered within the browser tab, including on reload.
+
+Library cards show a preview and the item name. Hover over a card or tab to **Actions** to find its commands. On a touchscreen, tap **Actions**. Press Escape to close the commands and return to **Actions**. If a preview could not load, use **Retry** on the card.
 
 Saved models and the existing favourites and collection filters remain available. Template destinations still use the established actions. The planned destination chooser will be implemented separately under #139.
 
