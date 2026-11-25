@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## WT-023B2b candidate (draft; not shipped)
+
+See [Library destination user guide and handover](WT023B2B_LIBRARY_DESTINATIONS.md) for the isolated candidate builder, chooser, guarded-write publication and regression commands. The existing Library and workspace stores remain authoritative. Check issue #139 and the live draft before resuming; exact-head CI and owner approval remain required.
+
 ## Resume from GitHub
 
 Start with [project status and priority order](PROJECT_STATUS.md#chatgpt-handover--25-november-2026). Fetch live main, check issue and branch ownership, and verify Actions against the exact PR head before requesting owner review. The owner approves merges. B2a merged in #172. B2b remains unstarted and requires owner dispatch.

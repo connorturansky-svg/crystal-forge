@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.45 — Choose where Library models belong
+
+- Inspect the models and project defaults of a saved project version without opening it.
+- Choose the current project, an exact saved version or a named new project when adding a Library model or starting point.
+- Confirm the model name and source revision; linked copies stay pinned. A cancelled or failed destination change leaves existing work in place.
+
 ## v0.16.0-dev.35.42 — Browse compact Library cards
 
 - Browse model and project previews in compact cards. Hover, tab to Actions or tap it to open, copy or organise an item. Press Escape to close the actions.
