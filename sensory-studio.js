@@ -217,7 +217,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    }
    if(!reason&&focusControl([selector]))return '';
    if(!reason&&crystal&&item.crystalSetup&&focusControl([item.crystalSetup]))return item.setupMessage;
-   if(item.prepare&&focusControl(['#smsPrintCurrent button','#smsJobs [data-job-prepare]']))
+   if(item.prepare&&focusControl(['#smsPrintCurrent [data-prepare-current]','#smsJobs [data-job-prepare]']))
     return 'Prepare the current model to enable '+item.label+'.';
    const nav=Array.from(document.querySelectorAll('.workspace-tabs button')).find(button=>button.textContent===item.workspace);
    nav?.focus();
@@ -2963,7 +2963,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     const name=document.createElement('strong');name.textContent=model.name;
     card.append(savedModelPicture(model,project.id),name);
     if(!project.printJobs.some(job=>job.modelId===model.id)){
-     const start=document.createElement('button');start.textContent='Prepare current model';
+     const start=document.createElement('button');start.textContent='Prepare current model';start.dataset.prepareCurrent='';
      start.onclick=()=>prepare(enqueue(model.id).id);card.append(start);
     }
    }
@@ -3277,7 +3277,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const {action,family}=feature;
   if(action==='family'){renderPicker(registry.get(family));picker.showModal();return;}
   if(action==='library'){showLibrary();$('smsSearch')?.focus();return;}
-  if(action==='print'){showPrint();shell.focusAfterNavigation(['#smsPrintCurrent button','#smsExpandPrint']);return;}
+  if(action==='print'){showPrint();shell.focusAfterNavigation(['#smsPrintCurrent [data-prepare-current]','#smsExpandPrint']);return;}
   if(action==='search'){
    document.querySelector('.workspace-tabs [data-tab=design]').click();
    shell.focusAfterNavigation(['#smsFindTools']);return;
