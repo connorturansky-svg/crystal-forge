@@ -27,3 +27,5 @@ assert(profileReferencedInModel({generator:{typeId:'tactile-tiles'},build:{pixel
 assert(profileReferencedInModel({generator:{typeId:'crystals'},parameters:{pixelProfileId:'custom-cal-3'}},'custom-cal-3'));
 assert(!profileReferencedInModel({generator:{typeId:'tactile-tiles'},build:{pixelHoles:[]}},'custom-cal-3'));
 console.log('Profile capacity, non-eviction, over-cap legacy preservation, deletion target and model-reference checks passed.');
+
+await import('./project-resources-backup.test.mjs');
