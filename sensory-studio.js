@@ -1,10 +1,12 @@
 import {listProjectFolders} from './studio-project-index.js';
 import {libraryCard} from './src/ui/library-card.mjs';
+import {commitLibraryDestination,NEW_PROJECT_PRINTER} from './src/ui/library-destination.mjs';
+import {openLibraryDestination} from './src/ui/library-destination-dialog.mjs';
 import {createModelDrawer,createPreviewQueue} from './src/ui/model-drawer.mjs';
 import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive,assertWorkspaceVersion,projectWorkspaceCandidate} from './studio-sync-plan.js';
 import {readMeshFile,importedMeshRecipe,MAX_MESH_BYTES} from './studio-mesh-import.js';
 import {parseSvgArtwork,createSvgImport,MAX_SVG_BYTES} from './svg-import/index.js';
-import {readOrganisation,organisationName,ensureSnapshotIds,templateProject} from './studio-organisation.js';
+import {readOrganisation,organisationName,ensureSnapshotIds} from './studio-organisation.js';
 import {createLightInspector} from './studio-light-inspector.js';
 import {lightPassageExportBlock,lightPassageReportEntries} from './light-passage-inspection.js';
 import {renderPixelProfileDiagram} from './pixel-profile-diagram.js';
@@ -15,7 +17,7 @@ import {mountPatternEditor} from './mounting-pattern-editor.js';
 import {mountPatternViewport} from './mounting-pattern-viewport.js';
 import {createModel,addModel,findModel,openTab,closeTab,reorderTabs,duplicateModel,editModel,
  queueModel,beginPreparation,finishPreparation,cancelPreparation,canExport,resolveJobPrinter,movePrintJob,invalidatePrintJob,saveLibraryRevision,
- insertLibraryModel,availableLinkedUpdate,acceptLinkedUpdate,breakLink,modelFingerprint,validateProject,WORKSPACE_KEY,newId} from './studio-documents.js';
+ availableLinkedUpdate,acceptLinkedUpdate,breakLink,modelFingerprint,validateProject,WORKSPACE_KEY,newId} from './studio-documents.js';
 import {makeCatalogue,applyBuildModules,generators} from './studio-catalogue.js';
 import {normaliseEdgeFinish,EDGE_FINISH_DEFAULTS} from './studio-edge-finish.js';
 import {previewRecipe,disposeGroup,nativeFittingPreviews,prepareRecipe} from './studio-geometry.js';
@@ -52,7 +54,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  state.pixelProfiles=copy(adapter.pixelFitProfiles?.()||state.pixelProfiles||[]);
  state.organisation=readOrganisation(state.organisation);
  let collectionFilter='',favouritesOnly=false,templatesOnly=false;
- project.printer={printer:'Ultimaker 3 Extended',curaNozzle:.4,curaMaterial:'PLA',curaQuality:60,curaIntent:'balanced',...project.printer};
+ project.printer={...NEW_PROJECT_PRINTER,...project.printer};
  const crystalAdapter={typeId:'crystals',typeVersion:1,displayName:'Crystal Clusters',category:'Lighting',defaultParameters:adapter.formationDefaults(),
   parameterSchema:[],presets:crystalStartingPoints(adapter.formationDefaults()),capabilities:{supportsBase:true,supportsLEDs:true,supportsMounting:true,supportsTactileSurfaces:false,supportsMechanisms:false,supportsDualMaterial:false,supportsPartSplitting:true},
   validateParameters:p=>({valid:!!p,errors:[],parameters:p}),generatePreview:()=>adapter.capture(),
@@ -525,9 +527,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const c=cache.get(currentId);if(c?.group)c.group.removeFromParent();if(c)c.view={camera:camera.position.toArray(),target:orbit.target.toArray()};
   }
  }
- function switchModel(id){
+ function switchModel(id,{persist=true,capture=true}={}){
   if(id===currentId&&mode==='model'){renderEditor();return;}
-  cancelPixelGesture();endPixelPlacement();editors.cancel();remember();switching=true;
+  cancelPixelGesture();endPixelPlacement();editors.cancel();remember({capture});switching=true;
   try{
    const model=findModel(project,id);currentId=id;openTab(project,id);mode='model';overlay.hidden=true;
    document.body.classList.toggle('sms-generic-mode',model.generator.typeId!=='crystals');
@@ -536,7 +538,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    if(model.generator.typeId==='crystals'){
     adapter.activate(model,cache.get(id)?.fingerprint===modelFingerprint(model)?cache.get(id):null);
    }else showGeneric(model);
-   renderTabs();renderEditor();save();
+   renderTabs();renderEditor();if(persist)save();
    if($('smsIndependentCrystal'))setCrystalReadonly(model.generator.typeId==='crystals'&&!!model.link);
   }catch(error){panel.hidden=false;document.body.classList.add('sms-sidebar-mode');panel.innerHTML='<p class="sms-error">'+esc(error.message)+'</p><p>The document is preserved. Export a backup before recovery.</p>';}
   finally{switching=false;}
@@ -2643,6 +2645,52 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    editOrganisation(next=>next.templates.push({id:newId(),name:organisationName(input),kind,sourceId:id,...(kind==='model'?{revision}:{})}));
   });
  }
+ function chooseLibraryDestination(source,suggestion,{linked=false,revisions=[]}={}){
+  openLibraryDestination(state,{source,suggestion,linked,revisions,commit:request=>{
+   commitLibraryDestination(state,request,{
+    createBuiltIn:(typeId,name)=>{
+     const family=registry.get(typeId);
+     if(!family||['svg-artwork','imported-mesh'].includes(typeId))throw Error('This starting point is unavailable.');
+     const parameters=copy(family.defaultParameters);
+     return createModel({name,typeId,parameters,editableState:typeId==='crystals'?adapter.createCrystals(parameters):{}});
+    },
+    writeWorkspace,
+    publish:({candidate,switchProject,modelId})=>{
+     clearTimeout(saveTimer);dirty=false;$('smsSaveState').textContent='Saved locally';
+     state.savedProjects=candidate.savedProjects;
+     if(switchProject){replaceProject(candidate.project,{persist:false});return;}
+     // Retain current model/job object identities and prepared runtime caches.
+     addModel(project,findModel(candidate.project,modelId));
+     switchModel(modelId,{persist:false,capture:false});
+    }
+   });
+  }});
+ }
+ function chooseSavedModel(record,revision,linked=false,revisions=[]){
+  const version=record?.versions.find(v=>v.revision===revision);
+  if(!version){adapter.status('The selected Library revision is unavailable.');return;}
+  chooseLibraryDestination({kind:'library',sourceId:record.id,revision},version.model.name,{linked,revisions});
+ }
+ function inspectSavedProject(saved){
+  const opener=document.activeElement,dialog=document.createElement('dialog');
+  dialog.dataset.libraryInspection='';dialog.setAttribute('aria-label','Inspect saved project');
+  const heading=document.createElement('h2');heading.textContent=saved.title;
+  const summary=document.createElement('p');summary.textContent='Saved project version · '+saved.models.length+' models · read only. Opening this preview does not switch projects.';
+  const defaults=document.createElement('p');
+  defaults.textContent='Printer: '+(saved.printer?.printer||'Not specified')+' · Hardware profiles: '+(saved.hardwareProfiles?.length||0)+' · Material profiles: '+(saved.materialProfiles?.length||0);
+  const grid=document.createElement('div');grid.className='sms-grid';
+  for(const model of saved.models){
+   const card=document.createElement('article');card.className='sms-tile';
+   const name=document.createElement('h3');name.textContent=model.name;
+   const details=document.createElement('p');details.textContent=(registry.get(model.generator.typeId)?.displayName||model.generator.typeId)+' · revision '+model.revision+(model.link?' · linked source revision '+model.link.revision:'');
+   card.append(name,savedModelPicture(model,saved.snapshotId),details);grid.append(card);
+  }
+  if(!saved.models.length)grid.textContent='This version contains no models.';
+  const close=document.createElement('button');close.type='button';close.textContent='Close inspection';close.onclick=()=>dialog.close();
+  dialog.append(heading,summary,defaults,grid,close);document.body.append(dialog);
+  dialog.addEventListener('close',()=>{dialog.remove();if(opener?.isConnected&&document.activeElement===document.body)opener.focus({preventScroll:true});},{once:true});
+  dialog.showModal();close.focus();
+ }
  function renderLibraryCards(){
   overlay.innerHTML='<h1>Your model library</h1><section id="smsTemplateSection" aria-labelledby="smsTemplateHeading"><h2 id="smsTemplateHeading">Templates</h2><section id="smsBuiltInTemplates"></section><h3>Reusable templates</h3><div id="smsReusableTemplates" class="sms-grid"></div></section><section id="smsProjectsSection" aria-labelledby="smsProjectsHeading"><h2 id="smsProjectsHeading">Projects</h2><div id="smsSavedProjects"></div></section><section id="smsSavedModelsSection" aria-labelledby="smsSavedModelsHeading"><h2 id="smsSavedModelsHeading">Saved models</h2><div id="smsSavedModels" class="sms-grid"></div></section>';
   const org=state.organisation;
@@ -2678,10 +2726,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     action('Save as new model…',()=>{if(saveModelAs(model))renderLibraryCards();});
     action('Duplicate',()=>{const m=duplicateModel(project,model.id);switchModel(m.id);});}
    else{
-    action('Independent copy',()=>{const m=insertLibraryModel(project,state.library,libraryRecord.id);switchModel(m.id);});
-    action('Linked copy',()=>{const m=insertLibraryModel(project,state.library,libraryRecord.id,{linked:true});switchModel(m.id);});
+    action('Independent copy',()=>chooseSavedModel(libraryRecord,libraryRecord.versions.at(-1).revision));
+    action('Linked copy',()=>chooseSavedModel(libraryRecord,libraryRecord.versions.at(-1).revision,true));
     organisationActions(actions,'model',libraryRecord.id,libraryRecord.versions.at(-1).revision);
-    if(libraryRecord.versions.length>1)action('Older revision',()=>{const versions=libraryRecord.versions;const chosen=prompt('Revision to open ('+versions.map(v=>v.revision).join(', ')+')',String(versions.at(-2).revision));if(chosen){const m=insertLibraryModel(project,state.library,libraryRecord.id,{revision:Number(chosen)});switchModel(m.id);}});
+    if(libraryRecord.versions.length>1)action('Older revision',()=>chooseSavedModel(libraryRecord,libraryRecord.versions.at(-2).revision,false,libraryRecord.versions));
    }
    action('Export editable JSON',()=>adapter.download(new Blob([JSON.stringify(model,null,2)],{type:'application/json'}),model.generator.typeId+'-model.json'));
    libraryCard(overlay,tile,preview,actions,tile.querySelector('h3'));
@@ -2750,7 +2798,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     if(title===saved.title)return;
     saved.title=title;save();renderLibraryCards();
    };
-   tile.querySelector('.sms-actions').append(rename);
+   const inspect=document.createElement('button');inspect.type='button';inspect.textContent='Inspect version';
+   inspect.setAttribute('aria-label','Inspect saved project '+saved.title);inspect.onclick=()=>inspectSavedProject(saved);
+   tile.querySelector('.sms-actions').append(inspect,rename);
    organisationActions(tile.querySelector('.sms-actions'),'project',saved.snapshotId);
    tile.append(status);
    libraryCard(overlay,tile,preview,tile.querySelector('.sms-actions'),tile.querySelector('h3'));
@@ -2765,10 +2815,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const button=document.createElement('button');button.type='button';button.className='sms-picker-choice';
    button.setAttribute('aria-label','New '+family.displayName+' from template');
    button.textContent='Create model';
-   button.onclick=()=>{
-    const create=name=>{add(family.typeId,null,name);document.querySelector('.workspace-tabs [data-tab=design]').click();};
-    if(shell)requestModelName('Name new model',family.displayName,create);else create(family.displayName);
-   };
+   button.onclick=()=>chooseLibraryDestination({kind:'built-in',typeId:family.typeId},family.displayName);
    const title=document.createElement('h3');title.textContent=family.displayName;
    const actions=document.createElement('div');actions.className='sms-actions';actions.append(button);
    tile.append(title,actions);
@@ -2797,13 +2844,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const action=(name,handler)=>{
     const button=document.createElement('button');button.type='button';button.textContent=name;button.onclick=handler;controls.append(button);
    };
-   if(source&&template.kind==='model')for(const [name,linked] of [['Independent copy',false],['Linked copy',true]])action(name,()=>{
-    const model=insertLibraryModel(project,state.library,template.sourceId,{revision:template.revision,linked});switchModel(model.id);
-   });
-   if(source&&template.kind==='project')action('Create project from template',()=>{
-    if(!confirm('Create a new project from this template? Your current project will be saved as a recoverable copy.'))return;
-    saveProjectSnapshot(templateProject(source));
-   });
+   if(source&&template.kind==='model')for(const [name,linked] of [['Independent copy',false],['Linked copy',true]])action(name,()=>
+    chooseLibraryDestination({kind:'library',sourceId:template.sourceId,revision:template.revision},source.name,{linked}));
+   if(source&&template.kind==='project')action('Create project from template',()=>
+    chooseLibraryDestination({kind:'project-template',projectId:source.id,snapshotId:source.snapshotId},template.name));
    action('Remove template',()=>{if(confirm('Remove this template? Its source stays in the Library.'))editOrganisation(next=>{next.templates=next.templates.filter(t=>t.id!==template.id);});});
    libraryCard(overlay,tile,preview,controls,title);
    grid.append(tile);
@@ -3203,7 +3247,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(target)replaceProject(candidate.project);
   return true;
  }
- function replaceProject(next){
+ function replaceProject(next,{persist=true}={}){
   if(modelDrawer?.open)modelDrawer.setOpen(false,false);
   cancelPixelGesture();endPixelPlacement();editors.cancel();remember({capture:false});
   for(const worker of workers.values())worker.terminate();workers.clear();prepared.clear();histories.clear();
@@ -3215,7 +3259,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   Object.assign(project,next);
   $('smsProjectTitle').value=project.title;
   const modelId=project.activeTab||project.models[0]?.id;
-  if(modelId)switchModel(modelId);else showHome();
+  if(modelId)switchModel(modelId,{persist,capture:false});else showHome();
  }
  async function importFile(event){
   const file=event.target.files[0];if(!file)return;event.target.value='';

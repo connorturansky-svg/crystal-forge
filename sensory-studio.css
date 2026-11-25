@@ -184,3 +184,12 @@ dialog[aria-label="Review backup"] .sms-actions{flex-wrap:wrap}
 @media(max-width:600px){
  .sms-tool-finder-results{max-height:min(40dvh,320px)}
 }
+
+/* Destination and saved-version inspection remain scrollable on narrow displays. */
+dialog[data-library-destination],dialog[data-library-inspection]{box-sizing:border-box;width:min(42rem,calc(100% - 24px));max-width:calc(100% - 24px);max-height:calc(100% - 24px);overflow:auto;overflow-wrap:anywhere}
+dialog[data-library-destination] form{display:grid;gap:.75rem;min-width:0}
+dialog[data-library-destination] label{display:grid;gap:.35rem;min-width:0}
+dialog[data-library-destination] label[hidden]{display:none}
+dialog[data-library-destination] input,dialog[data-library-destination] select{box-sizing:border-box;width:100%;min-width:0;max-width:100%;font:inherit;padding:.5rem;background:var(--panel2);color:var(--ink);border:1px solid var(--border);border-radius:.4rem}
+dialog[data-library-destination] [role=alert]:empty{display:none}
+dialog[data-library-inspection] .sms-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr))}

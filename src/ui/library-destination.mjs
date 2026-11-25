@@ -1,5 +1,5 @@
 // Build complete Library destination candidates without mutating live documents.
-import {addModel,createProject,insertLibraryModel,validateModel,newId} from '../../studio-documents.js';
+import {addModel,createProject,insertLibraryModel,validateModel,newId,openTab} from '../../studio-documents.js';
 import {projectWorkspaceCandidate,validateArchive} from '../../studio-sync-plan.js';
 import {templateProject} from '../../studio-organisation.js';
 
@@ -29,6 +29,8 @@ export function libraryDestinationCandidate(workspace,{source,destination,modelN
   const target=templateProject(exactSnapshot(workspace,source.projectId,source.snapshotId));
   target.title=nameOf(projectName,'project name');
   target.updatedAt=new Date().toISOString();
+  for(const job of target.printJobs)delete job.progress;
+  if(!target.activeTab&&target.models.length)openTab(target,target.models[0].id);
   return {candidate:projectWorkspaceCandidate(workspace,target),switchProject:true,modelId:target.activeTab};
  }
  const name=nameOf(modelName,'model name');
