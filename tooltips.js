@@ -543,8 +543,12 @@ export function installTooltips(doc=document){
   let x=rect.left+rect.width/2-box.width/2;
   const above=rect.top-box.height-8;
   const workspace=target.closest('.sms-workspace-nav');
-  let y=workspace&&above>=9?above:rect.bottom+8;
-  const panel=target.closest('.left,.right,.sms-controls');
+  const modal=target.closest('dialog[open]');
+  // In a modal the focused field is often immediately above Create/Save.
+  // Prefer an outside edge or the space above the field so help never
+  // covers the next action directly beneath that field.
+  let y=(workspace||modal)&&above>=9?above:rect.bottom+8;
+  const panel=modal||target.closest('.left,.right,.sms-controls');
   if(panel){
    const bounds=panel.getBoundingClientRect();
    if(bounds.right+box.width+18<viewportWidth){x=bounds.right+8;y=rect.top}

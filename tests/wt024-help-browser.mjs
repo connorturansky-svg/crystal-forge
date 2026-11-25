@@ -62,6 +62,10 @@ try{
  await page.locator('#smsPicker [data-generator=gears]').click();
  const naming=page.getByRole('dialog',{name:'Name new model'});
  assert.match(await naming.locator('.contextual-help-detail').innerText(),/meaningful name/);
+ // The auto-focused name field can already have a visible tooltip when a
+ // person moves to the modal action. The next action must remain clickable.
+ await naming.getByRole('textbox',{name:'Model name'}).focus();
+ await page.locator('#controlTooltip').waitFor();
  await naming.getByRole('button',{name:'Cancel'}).click();
  const auditModal=async(modal)=>{
   await modal.waitFor();
