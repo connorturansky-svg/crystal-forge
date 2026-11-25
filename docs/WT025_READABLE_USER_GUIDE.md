@@ -1,6 +1,6 @@
 # Crystal Forge — readable quick guide
 
-> **Release candidate v0.16.0-dev.35.33 ([PR #157](https://github.com/connorturansky-svg/crystal-forge/pull/157)).** The readable defaults described below apply to this candidate. Universal two-level help and “Since your last visit” are separate planned updates.
+> **Release candidate v0.16.0-dev.35.33 ([PR #157](https://github.com/connorturansky-svg/crystal-forge/pull/157)).** The readable defaults described below apply to this candidate. “Since your last visit” is a separate planned update.
 
 ## Find something without searching through menus
 
@@ -41,6 +41,11 @@ Saved models and the existing favourites and collection filters remain available
 A future **Since your last visit** area will summarise shipped changes in ordinary language, help you locate moved tools and let you mark updates as read. These will be explained here and in the in-app Help only when implementation is merged, Pages deployment is verified and the owner approves release.
 
 **Need to give feedback?** In [WT-025 issue #154](https://github.com/connorturansky-svg/crystal-forge/issues/154), report the workspace, exact label that is hard to read or find, your browser/zoom and what you expected. You do not need to understand the code.
+
+## Read help beside a setting
+
+In the WT-024 candidate, turn on **Hover Notes** and hover over or focus a setting. On a touch screen, select the question-mark button. Press Escape to dismiss a note. Turn on **Detailed Explanations** to show longer guidance for supported settings. The two options work independently, and your browser remembers your choices.
+
 ## Models drawer
 
 Open **Models** at the bottom of the 3D viewport. The list contains the current project's open models. It closes when you reload Studio. While open, type in **Find an open model** to narrow the list without changing saved data.

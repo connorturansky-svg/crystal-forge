@@ -148,11 +148,24 @@ try{
 
  console.log('Individual shaping, green selection, floating view and bottom snap verified');
  // PR4 controls: contextual help, full hill and saved pixel profiles.
- await page.locator('#descriptionsBtn').click();
- assert.equal(await page.locator('#descriptionsBtn').getAttribute('aria-pressed'),'true');
+ const detailedExplanations=page.getByRole('checkbox',{name:'Detailed Explanations',exact:true});
+ await detailedExplanations.check();
+ assert(await detailedExplanations.isChecked());
  await page.locator('[data-tab="build"]').click();
- await page.locator('[data-state="mount"]').selectOption('Magnet inserts');
- assert((await page.locator('#contextHelpBody').innerText()).includes('magnets'),'Mounting description shown');
+ const mountChoice=page.locator('[data-state="mount"]');
+ await mountChoice.selectOption('Magnet inserts');
+ const inlineMount=await mountChoice.evaluate(control=>{
+  const id=control.getAttribute('aria-describedby').split(/\s+/).find(value=>value.startsWith('contextualHelpDetail'));
+  return document.getElementById(id)?.textContent;
+ });
+ assert.match(inlineMount,/magnet sits in a blind pocket/,'Mounting explanation shown beside its setting');
+ await mountChoice.evaluate(control=>control.blur());
+ await mountChoice.focus();
+ await page.waitForFunction(()=>{
+  const tooltip=document.getElementById('controlTooltip');
+  return !tooltip.hidden&&tooltip.textContent.includes('magnets');
+ });
+ await page.keyboard.press('Escape');
  await page.locator('[data-state="baseProfile"]').selectOption('Full dome / hill');
  await page.locator('[data-state="sideWall"]').evaluate(el=>{el.value='20';el.dispatchEvent(new Event('input',{bubbles:true}))});
  await page.waitForTimeout(250);
@@ -177,8 +190,8 @@ try{
  assert(pixelState.pixelProfileId.startsWith('custom-'),'Custom profile selected');
  assert(pixelState.pixelProfiles.some(p=>p.id===pixelState.pixelProfileId&&p.bodyDiameter===13.5),'Custom profile persisted');
  await page.locator('[data-state="pixelProfileId"]').selectOption('gumdrop');
- await page.locator('#descriptionsBtn').click();
- assert.equal(await page.locator('#descriptionsBtn').getAttribute('aria-pressed'),'false');
+ await detailedExplanations.uncheck();
+ assert(!(await detailedExplanations.isChecked()));
  // PR5: adjustable underside grooves, mirrored guide count and CSV.
  await page.locator('[data-tab="build"]').click();
  await page.locator('[data-state="wireChannels"]').check();
