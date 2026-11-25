@@ -18,6 +18,7 @@ try{
  await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
  const card=page.locator('#smsSavedModels article').filter({has:page.getByRole('heading',{name:'Compact card witness',exact:true})});
  await card.scrollIntoViewIfNeeded();
+ assert.equal(await page.locator('#smsProjectModels [aria-current=true]').count(),1);
  const preview=card.locator('.sms-library-artwork img');
  const image=await preview.getAttribute('src');
  assert(image?.startsWith('data:image/'));
@@ -33,6 +34,7 @@ try{
  assert(!await detail.isVisible());
  await page.locator('#hoverNotes').check();
  await card.scrollIntoViewIfNeeded();
+ await page.locator('#hoverNotes').blur();
  const before=await storage();
  assert(!await actions.isVisible());
  await card.hover();assert(await actions.isVisible());

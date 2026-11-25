@@ -2662,8 +2662,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   function card(model,root,libraryRecord=null){
    const tile=document.createElement('article');tile.className='sms-tile';
    const generator=registry.list().find(g=>g.typeId===model.generator.typeId);
+   const current=!libraryRecord&&model.id===project.activeTab;
+   const status=[current?'Current model':'',!libraryRecord&&model.link?'Linked copy':''].filter(Boolean).join(' · ');
+   if(current)tile.setAttribute('aria-current','true');
    tile.dataset.modelTheme=model.generator.typeId;
-   tile.innerHTML='<h3>'+esc(model.name)+'</h3><p class="sms-descriptor">'+esc(generator?.displayName||model.generator.typeId)+' · revision '+(libraryRecord?.versions.at(-1).revision||model.revision)+'</p><div class="sms-actions"></div>';
+   tile.innerHTML='<h3>'+esc(model.name)+'</h3><p class="sms-descriptor">'+esc(generator?.displayName||model.generator.typeId)+' · revision '+(libraryRecord?.versions.at(-1).revision||model.revision)+(status?' · '+status:'')+'</p><div class="sms-actions"></div>';
    const preview=savedModelPicture(model,libraryRecord?'library':project.id);
    const actions=tile.querySelector('.sms-actions');
    const action=(name,fn)=>{const b=document.createElement('button');b.textContent=name;b.onclick=fn;actions.append(b);};

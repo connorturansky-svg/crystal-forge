@@ -20,3 +20,5 @@
 .sms-library-caption>.contextual-help:has(.contextual-help-detail){max-inline-size:100%;overflow-wrap:anywhere}
 .show-detailed-explanations .sms-library-caption>.contextual-help{flex-basis:100%}
 .sms-library-card :is(button,summary):focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+.sms-library-card[aria-current=true]{border-color:var(--teal)}
