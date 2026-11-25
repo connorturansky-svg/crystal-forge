@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.43 — Adjustable, readable Models drawer
+
+- Adjust Thumbnail size from compact to large; the number of columns adapts to the viewport width.
+- Keep model names on a readable horizontal line and move Rename, Info and Close into a separate action row. Long names remain available through their full accessible label and title.
+- Remember thumbnail size separately from project data. Real saved-source previews and retry messages are preserved. The size control uses the shared contextual Help system.
+
 ## v0.16.0-dev.35.42 — Browse compact Library cards
 
 - Browse model and project previews in compact cards. Hover, tab to Actions or tap it to open, copy or organise an item. Press Escape to close the actions.

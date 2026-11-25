@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {createProject,createModel,addModel,closeTab,reorderTabs} from '../studio-documents.js';
-import {modelRows,filterRows,reorderOpen,createPreviewQueue} from '../src/ui/model-drawer.mjs';
+import {modelRows,filterRows,reorderOpen,createPreviewQueue,normaliseDrawerZoom} from '../src/ui/model-drawer.mjs';
+for(const value of [null,undefined,'',0,6,1.5,'3.5','garbage',' 2 '])assert.equal(normaliseDrawerZoom(value),3);
+for(let n=1;n<=5;n++){assert.equal(normaliseDrawerZoom(n),n);assert.equal(normaliseDrawerZoom(String(n)),n);}
 const project=createProject({id:'test-drawer',title:'Wonder'});
 for(let i=0;i<120;i++)addModel(project,createModel({id:'m'+i,name:i===0?'Red & blue':'Model '+i,typeId:'crystals'}));
 const before=JSON.stringify(project),rows=modelRows(project);
