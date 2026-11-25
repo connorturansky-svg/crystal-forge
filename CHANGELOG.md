@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.40 — Adjustable, readable Models drawer
+
+- Adjust Thumbnail size from compact to large; the number of columns adapts to the viewport width.
+- Keep model names on a readable horizontal line and move Rename, Info and Close into a separate action row. Long names remain available through their full accessible label and title.
+- Remember thumbnail size separately from project data. Real saved-source previews and retry messages are unchanged in meaning.
+
 ## v0.16.0-dev.35.39 — Browse open models in the viewport
 
 - Open the Models drawer from the bottom of the viewport to find, switch, reorder, rename or close open models.
