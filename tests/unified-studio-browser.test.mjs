@@ -126,11 +126,13 @@ try{
  assert((await page.locator('.version').boundingBox()).y>(await page.locator('.brand').boundingBox()).y);
  for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','descriptionsBtn','changelogBtn','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
   assert(await page.locator('#'+id).isVisible(),id+' is directly available');
- const leftPanel=page.locator('#smsTools'),rightPanel=page.locator('#smsPrecision'),bottom=page.locator('#smsModelRail');
+ const leftPanel=page.locator('#smsTools'),rightPanel=page.locator('#smsPrecision'),bottom=page.locator('#smsModelsDrawer');
  assert.equal(Math.round((await rightPanel.boundingBox()).width),335);
  assert((await leftPanel.boundingBox()).x<(await viewer.boundingBox()).x);
  assert((await rightPanel.boundingBox()).x>(await viewer.boundingBox()).x);
- assert((await bottom.boundingBox()).y>=(await viewer.boundingBox()).y+(await viewer.boundingBox()).height-1);
+ const drawerBounds=await bottom.boundingBox(),viewportBounds=await page.locator('.viewarea').boundingBox();
+ assert(drawerBounds.x>=viewportBounds.x-1&&drawerBounds.x+drawerBounds.width<=viewportBounds.x+viewportBounds.width+1);
+ assert(Math.abs(drawerBounds.y+drawerBounds.height-viewportBounds.y-viewportBounds.height)<2);
  assert.equal(await viewer.locator('.sms-palette').count(),0);
  const leftEdge=page.getByRole('separator',{name:'Resize design and build'});
  const rightEdge=page.getByRole('separator',{name:'Resize precision settings'});

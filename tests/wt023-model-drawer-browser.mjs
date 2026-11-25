@@ -100,6 +100,30 @@ try{
  await tile('Crystal renamed').getByText('Saved Crystal geometry is missing.').waitFor();
  await tile('Crystal renamed').getByRole('button',{name:'Retry preview'}).click();
  await tile('Crystal renamed').getByText('Saved Crystal geometry is missing.').waitFor();
+ await filter.press('Escape');
+ await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
+ const large=JSON.parse(await storage()),seed=large.project.models.find(model=>model.generator.typeId==='tactile-tiles');
+ while(large.project.models.length<105){
+  const n=large.project.models.length,model=structuredClone(seed);
+  model.id='wt023-drawer-bulk-'+n;model.name='Bulk model '+n;model.thumbnail=null;
+  large.project.models.push(model);
+ }
+ large.project.tabs=large.project.models.map(model=>model.id);
+ large.project.activeTab=seed.id;
+ await page.evaluate(({key,large})=>localStorage.setItem(key,JSON.stringify(large)),{key:WORKSPACE_KEY,large});
+ await page.reload({waitUntil:'commit'});
+ await page.waitForFunction(()=>window.__sensoryStudio?.project.tabs.length===105);
+ await toggle.press('Space');
+ assert.equal(await body.locator('[data-model-id]').count(),105);
+ assert(await drawer.locator('.md-grid').evaluate(el=>el.scrollHeight>el.clientHeight));
+ await filter.fill('Bulk model 104');
+ await tile('Bulk model 104').locator('img').waitFor();
+ assert.equal(await body.locator('[data-model-id]').count(),1);
+ await page.locator('#themeBtn').click();
+ await page.evaluate(()=>{document.body.style.zoom='200%';});
+ assert(await filter.isVisible());
+ await filter.press('Escape');
+ assert(await toggle.evaluate(el=>document.activeElement===el));
  assert.deepEqual(errors,[]);
- console.log('WT-023C Chromium: seven real saved previews, create/cancel, info, rename, reorder, close, reload and retry passed.');
+ console.log('WT-023C Chromium: seven real saved previews, create/cancel, info, rename, reorder, close, reload, retry and 105 open records passed.');
 }finally{await browser.close();}

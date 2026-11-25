@@ -475,7 +475,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  if(!project.models.length)addModel(project,createModel({name:snapshot.settings.title||'Crystal Mine',typeId:'crystals',parameters:snapshot.settings,editableState:{crystals:snapshot.crystals,selectedId:snapshot.selectedId}}));
  if(!project.tabs.length)openTab(project,project.models[0].id);
  $('smsProjectTitle').value=project.title;
- $('smsProjectTitle').onchange=()=>{project.title=$('smsProjectTitle').value.trim()||'Untitled project';save();};
+ $('smsProjectTitle').onchange=()=>{project.title=$('smsProjectTitle').value.trim()||'Untitled project';modelDrawer?.update();save();};
  $('smsReload').onclick=()=>{
   try{
    saveImmediately();
@@ -2204,6 +2204,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     const family=registry.get(model.generator.typeId).displayName;
     if(![model.name,family].some(value=>value.toLowerCase().includes(query)))continue;
     const item=document.createElement('button');item.className='sms-tile';
+    item.setAttribute('aria-label',model.name);
     item.append(savedModelPicture(model,project.id,{allowRetry:false}),model.name);
     item.onclick=()=>switchModel(model.id);root.append(item);
    }
@@ -2702,7 +2703,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const count=saved.models.length;
    tile.innerHTML='<h3>'+esc(saved.title)+'</h3><p class="sms-descriptor">'+'Saved version '+version+' · '+count+' '+(count===1?'model':'models')+'</p><div class="sms-actions"><button type="button">Open project</button></div>';
    tile.prepend(cover?savedModelPicture(cover,saved.snapshotId):modelPicture(null));
-   const button=tile.querySelector('button');
+   const button=tile.querySelector('.sms-actions button');
    button.setAttribute('aria-label','Open project '+saved.title);
    button.onclick=()=>{
     if(!confirm('Open this saved project? Your current project will be kept as a saved copy.'))return;

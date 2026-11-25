@@ -41,3 +41,10 @@ Saved models and the existing favourites and collection filters remain available
 A future **Since your last visit** area will summarise shipped changes in ordinary language, help you locate moved tools and let you mark updates as read. These will be explained here and in the in-app Help only when implementation is merged, Pages deployment is verified and the owner approves release.
 
 **Need to give feedback?** In [WT-025 issue #154](https://github.com/connorturansky-svg/crystal-forge/issues/154), report the workspace, exact label that is hard to read or find, your browser/zoom and what you expected. You do not need to understand the code.
+## Models drawer
+
+Open **Models** at the bottom of the 3D viewport. The list contains the current project's open models. It closes when you reload Studio. While open, type in **Find an open model** to narrow the list without changing saved data.
+
+Choose a model to switch to it. Use **Rename**, **Info** or **Close** on its tile. **Close** removes the open entry while keeping the model in the project. Use Alt+arrow on a model button to reorder it, or Escape to close the drawer and return focus to Models.
+
+Use **New model** to pick a starting point, then review the suggested name. Previews load when their tiles come into view. If a preview fails, read the reason and use **Retry preview**.
