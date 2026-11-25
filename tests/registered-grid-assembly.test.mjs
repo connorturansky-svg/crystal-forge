@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {registeredAssemblyPackInputs} from '../src/printing/registered-assembly-pack.js';
 import {createRegisteredGridAssembly} from '../src/printing/registered-grid-assembly.js';
 import {planBedAwareSplit} from '../src/printing/bed-split.js';
 export function verifyRegisteredGridAssembly(wasm){
@@ -19,6 +21,19 @@ export function verifyRegisteredGridAssembly(wasm){
    assert(Math.abs(result.volume()-item.volume)<.1);
   }
   assert(out.parts.reduce((v,p)=>v+p.volume,0)<cube.volume(),'Actual socket material removed');
+  const pack=registeredAssemblyPackInputs(THREE,out);
+  assert.equal(pack.extraFiles.length,12);
+  assert.equal(pack.splitManifest.parts.length,4);
+  assert.equal(pack.splitManifest.dowels.length,8);
+  assert.equal(pack.splitManifest.physicalFitVerified,false);
+  assert(pack.splitManifest.joints.every(j=>pack.extraFiles.some(f=>f.path===j.dowelFile)));
+  for(const f of pack.extraFiles){
+   const dv=new DataView(f.bytes.buffer,f.bytes.byteOffset,f.bytes.byteLength);
+   assert.equal(f.bytes.length,84+50*dv.getUint32(80,true));
+   assert(dv.getUint32(80,true)>0);
+  }
+  assert.throws(()=>registeredAssemblyPackInputs(THREE,{...out,pins:out.pins.slice(1)}),/joint|dowel/i);
+
   const again=createRegisteredGridAssembly(wasm,source,plan);assert.deepEqual(again.joints,out.joints);
   const thin=hold(wasm.Manifold.cube([100,5,100])),thinMesh=mesh(thin);
   assert.throws(()=>createRegisteredGridAssembly(wasm,thinMesh,planBedAwareSplit({mesh:thinMesh,printerLimit:[65,65,40]})),/stock|sockets/);

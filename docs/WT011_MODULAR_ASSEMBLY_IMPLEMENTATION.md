@@ -13,3 +13,7 @@ An isolated Manifold grid registration engine in src/printing/registered-grid-as
 - Create individually named printable parts and dowels, matching joint IDs, placement/orientation diagram, real stock and clearance report, assembly manifest, BOM and fit coupon. Keep unregistered geometry explicitly labelled.
 - Browser Print workflow: preview, opt-in, cancellation, refusal reason, regeneration, ZIP content and persisted project compatibility. Preserve all seven families; do not enable unsupported native topology by default.
 - Physical coupons and Cura inspection remain manual. No strength, child-safety, overhead or printed-fit certification. See #10. If arbitrary topology, automatic connector placement or browser performance prove unreliable, document the measured limitation and hold that capability for a separate targeted task; do not weaken checks to pass.
+
+## Pack checkpoint
+
+`src/printing/registered-assembly-pack.js` converts the real returned meshes to existing binary STL production-pack inputs, with unique stable filenames, validated part/joint/dowel references, original coordinates and explicit physical-test warnings. Test fixtures check all 12 binary STLs and reference coverage; this is not yet mounted in the live Print UI. The next integration must recheck the prepared revision after the async WASM load and fail without any ZIP if the requested registered assembly cannot be verified. Coupon and independent STL/3MF sectional measurements remain outstanding.
