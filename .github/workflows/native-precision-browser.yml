@@ -4,17 +4,29 @@ on:
     branches: [main]
     paths:
       - 'native-precision-controls.js'
+      - 'tooltips.js'
+      - 'contextual-help-copy.js'
       - 'sensory-studio.js'
       - 'sensory-studio.css'
       - 'tests/native-precision-browser.mjs'
+      - 'tests/wt024-help-browser.mjs'
+      - 'index.html'
+      - 'src/ui/**'
+      - '**/*.js'
       - '.github/workflows/native-precision-browser.yml'
   push:
     branches: [main]
     paths:
       - 'native-precision-controls.js'
+      - 'tooltips.js'
+      - 'contextual-help-copy.js'
       - 'sensory-studio.js'
       - 'sensory-studio.css'
       - 'tests/native-precision-browser.mjs'
+      - 'tests/wt024-help-browser.mjs'
+      - 'index.html'
+      - 'src/ui/**'
+      - '**/*.js'
       - '.github/workflows/native-precision-browser.yml'
   workflow_dispatch:
 concurrency:
@@ -25,7 +37,7 @@ permissions:
 jobs:
   native-precision:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,6 +72,11 @@ jobs:
         run: |
           set -o pipefail
           node tests/native-precision-browser.mjs 2>&1 | tee qa/native-precision-browser.log
+      - name: Test contextual help across builders and workspaces
+        timeout-minutes: 15
+        run: |
+          set -o pipefail
+          node tests/wt024-help-browser.mjs 2>&1 | tee qa/wt024-help-browser.log
       - name: Save browser screenshots and reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -70,4 +87,5 @@ jobs:
             qa/precision-*.png
             qa/native-precision-browser.log
             qa/native-precision-host.log
+            qa/wt024-help-browser.log
           if-no-files-found: warn

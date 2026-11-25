@@ -29,7 +29,7 @@ import {saveTemplate,readTemplates,findTemplate,deleteTemplate} from './project-
 import {GitHubVault,captureVault,mergeVault} from './github-vault.js';
 import {manufacturingFingerprint} from './manufacturing-fingerprint.js';
 import {saveNamedProject,listSavedProjects,loadNamedProject,deleteNamedProject} from './project-library.js';
-import {installTooltips,describeControl} from './tooltips.js';
+import {installContextualHelp} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile,resolveSocketProfile,socketShoulderRise} from './pixel-profiles.js';
 import {planPixelProfileSave,planPixelProfileDelete} from './studio-profile-safety.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
@@ -1795,30 +1795,7 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Delete'&&selectedId){crystals=crystals.filter(c=>c.id!==selectedId);selectedId=null;rebuild();snapshot()}
 });
 syncForm();rebuild();snapshot();
-installTooltips();
-const descriptionsKey='crystal-forge-descriptions';
-let descriptionsEnabled=false;
-try{descriptionsEnabled=localStorage.getItem(descriptionsKey)==='on'}catch(e){}
-function showDescription(el){
- if(!descriptionsEnabled)return;
- const info=describeControl(el);if(!info)return;
- $('contextHelpTitle').textContent=info[0];
- $('contextHelpBody').textContent=info[1];
-}
-function toggleDescriptionsUI(){
- $('contextHelp').hidden=!descriptionsEnabled;
- document.body.classList.toggle('descriptions-active',descriptionsEnabled);
- $('descriptionsBtn').setAttribute('aria-pressed',String(descriptionsEnabled));
- $('descriptionsBtn').textContent=descriptionsEnabled?'ⓘ Descriptions: On':'ⓘ Descriptions';
- if(descriptionsEnabled)showDescription(document.querySelector('[data-state="mount"]'));
- try{localStorage.setItem(descriptionsKey,descriptionsEnabled?'on':'off')}catch(e){}
-}
-$('descriptionsBtn').onclick=()=>{descriptionsEnabled=!descriptionsEnabled;toggleDescriptionsUI()};
-for(const kind of ['pointerover','focusin','change'])
- document.addEventListener(kind,e=>{
-  const el=e.target.closest?.('button,input,select');if(el)showDescription(el);
- });
-toggleDescriptionsUI();
+installContextualHelp();
 installExactValueEditors();
 // Keep the classic lighting card intact before installing collapsible sections.
 if(classicLayout){
