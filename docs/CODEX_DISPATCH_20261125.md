@@ -21,6 +21,10 @@
 
 Active runtime PRs #158 Gear and #163 Help are independent existing assignments. No new runtime task may overwrite or duplicate these. Start with source and exact-head evidence, not generic rewrites. The owner approves merges.
 
+## Owner refinement — 25 November 2026
+
+Read the [expanded project-centred Library implementation packet](WT023_PROJECT_LIBRARY_IMPLEMENTATION.md): B2a compact image-led tiles with hover/focus/touch actions; B2b project browser and transactional destination chooser; then D1/D2 and E1/E2. Owner screenshot exposed the drawer formatting defect; separate runtime correction #169 adds responsive density and thumbnail size. Arbitrary model colours are now tracked under #170 with independent planning PR #171. These new requirements do not restart #164/#166 or expand active #158/#163.
+
 ## B2 — ready-to-dispatch once shared ownership cleared
 
 **Codex:** Implement #139 B2 on fresh main, single focused PR. Read existing `WT023_NEXT_SLICES_ACCEPTANCE_20261123.md` B2, but note its C1/C2 are now merged. Reuse the new naming dialog and drawer rather than rewriting them. Audit `sensory-studio.js` renderLibraryCards (around 2638), renderBuiltInTemplates (2746), renderTemplates (2766), saveProjectSnapshot/replaceProject (3173), `studio-sync-plan.js` projectWorkspaceCandidate/assertWorkspaceVersion and `studio-organisation.js` templateProject. Current built-in template opens naming then add directly to active project; saved-model and reusable model template actions insert immediately into active project; project template creates a fresh project via safe switch. Current target switch saves outgoing snapshot and invalidates target prepared jobs whose runtime meshes are not retained.
