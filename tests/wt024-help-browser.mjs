@@ -96,10 +96,13 @@ try{
  assert(await hover.isChecked());assert(await detailed.isChecked());
  assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),HELP_PREFERENCES_KEY),{hover:true,detailed:true});
  assert.deepEqual(errors,[]);
+ // Release the seven-builder renderer and preview cache before starting the
+ // independent touch fixture; hosted software WebGL has a tight context budget.
+ await context.close();
  const touchContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});
  const touch=await touchContext.newPage();
  await touch.goto(url);
- await touch.waitForFunction(()=>window.__sensoryStudio);
+ await touch.waitForFunction(()=>window.__sensoryStudio&&document.querySelector('#smsModelsDrawer'),null,{timeout:60000});
  await touch.evaluate(()=>window.__sensoryStudio.addModel('gears',null,'Touch help fixture'));
  const touchDrawer=touch.locator('#smsModelsDrawer');
  await touchDrawer.getByRole('button',{name:/Models \(/}).tap();
