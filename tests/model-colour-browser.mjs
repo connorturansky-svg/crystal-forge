@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
+const url=process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321';
+try{
+ const context=await browser.newContext({viewport:{width:1440,height:950}});
+ const page=await context.newPage(),errors=[];
+ page.on('pageerror',error=>errors.push(error.message));
+ await page.goto(url);await page.waitForFunction(()=>window.__sensoryStudio);
+ const current=()=>page.evaluate(()=>JSON.parse(JSON.stringify(window.__sensoryStudio.currentModel)));
+ for(const family of ['tactile-tiles','gears','waves','control-caps','characters','light-pods']){
+  await page.evaluate(f=>window.__sensoryStudio.addModel(f,null,'Colour '+f),family);
+  await page.getByRole('navigation',{name:'Workspaces'}).getByRole('button',{name:'Design',exact:true}).press('Enter');
+  const opener=page.locator('[data-model-colour-role=primary]');
+  const before=await current();
+  await opener.click();
+  const dialog=page.getByRole('dialog',{name:'Primary model colour'});
+  await dialog.locator('[data-model-colour-hex]').fill('#000000');
+  await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
+  assert.equal((await current()).revision,before.revision);
+  await opener.click();
+  await dialog.locator('[data-model-colour-hex]').fill('#000000');
+  await dialog.getByRole('button',{name:'Apply colour',exact:true}).click();
+  await dialog.waitFor({state:'hidden'});
+  assert.equal((await current()).materials.primary.colour,0,family);
+  assert.match(await opener.innerText(),/#000000/);
+  await page.locator('#smsGlobalUndo').click();
+  assert.deepEqual((await current()).materials,before.materials);
+  await page.locator('#smsGlobalRedo').click();
+  assert.equal((await current()).materials.primary.colour,0);
+  await opener.click();
+  await dialog.locator('[data-model-colour-hex]').fill('#123ABC');
+  await dialog.getByRole('button',{name:'Apply colour',exact:true}).click();
+  assert.equal((await current()).materials.primary.colour,0x123abc);
+ }
+ await page.setViewportSize({width:390,height:850});
+ await page.locator('[data-model-colour-role=primary]').click();
+ const dialog=page.getByRole('dialog',{name:'Primary model colour'});
+ assert((await dialog.boundingBox()).width<=390);
+ await page.keyboard.press('Escape');
+ await dialog.waitFor({state:'hidden'});
+ assert.deepEqual(errors,[]);
+ await context.close();
+ const legacy=await browser.newPage({viewport:{width:1440,height:950}});
+ await legacy.goto(url+(url.includes('?')?'&':'?')+'legacy=1');
+ await legacy.waitForFunction(()=>document.querySelector('#status')?.textContent?.includes('Ready'));
+ await legacy.locator('#customModelColour').click();
+ const classic=legacy.getByRole('dialog',{name:'Primary model colour'});
+ await classic.locator('[data-model-colour-hex]').fill('#000000');
+ await classic.getByRole('button',{name:'Apply colour',exact:true}).click();
+ assert.equal(await legacy.evaluate(()=>JSON.parse(localStorage.getItem('crystal-forge-v3')).settings.colour),0);
+ await legacy.close();
+ console.log('Model appearance browser: six native families, black, exact HEX, undo/redo, cancel, narrow dialog and classic Crystal persisted.');
+}finally{await browser.close();}

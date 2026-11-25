@@ -208,6 +208,8 @@ export const nativeFamilyHelp = {
 };
 
 export const dynamicHelp = {
+ "[data-model-colour-picker]": ["Choose an exact display colour.","Use the system colour picker for visual selection; Apply commits the choice."],
+ "[data-model-colour-hex]": ["Enter six hexadecimal digits.","For example #000000 selects pure black. Invalid values are rejected; Cancel preserves the original colour."],
  "#customModelColour, [data-model-colour-role]": ["Choose any exact model display colour.","Pick a named swatch, use the colour picker or enter six hexadecimal digits. Apply commits one model edit; Cancel changes nothing. The display colour is separate from LED glow and does not establish actual filament colour."],
  '.sms-library-actions-toggle': ['Shows the available actions for this Library item.','Reveal actions to open, copy, organise or save a model or project. Escape dismisses the action panel without editing the saved item.'],
  '#smsImport': ['Selects a Studio backup or older Crystal project to review.','Choose the editable JSON backup you want to restore. Review the projects and revisions before confirming; a file selection alone does not replace your current project.'],
