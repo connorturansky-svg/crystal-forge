@@ -457,7 +457,7 @@ function dynamicEntry(el){
 function settingLabel(el){
  const label=el.closest?.('label')||el.parentElement?.querySelector('label');
  const caption=label&&Array.from(label.childNodes).filter(node=>node.nodeType===3).map(node=>node.textContent.trim()).filter(Boolean).join(' ');
- return caption||el.getAttribute?.('aria-label');
+ return caption||el.getAttribute?.('aria-label')||(el.tagName==='BUTTON'?el.textContent.trim():undefined);
 }
 function nativeEntry(el){
  const {modelFamily,modelParam,paletteKey}=el.dataset;
@@ -643,6 +643,9 @@ export function installContextualHelp(doc=document){
  }
 
  function decorate(control){
+  // Repeated drawer actions expose their short note on hover/focus; the
+  // drawer filter and naming fields receive adjacent detailed guidance.
+  if(control.matches('.md-card button,.md-header button'))return;
   const anchor=control.closest('label,.control,.sms-model-control,.sms-visual-range')||control;
   const existing=controls.get(control);
   if(existing?.anchor===anchor&&existing.help.parentElement===anchor.parentElement)return;
@@ -655,8 +658,7 @@ export function installContextualHelp(doc=document){
   trigger.className='contextual-help-trigger';
   trigger.type='button';
   trigger.textContent='?';
-  trigger.setAttribute('aria-label','Show setting help');
-  trigger.setAttribute('aria-description',info[0]);
+  trigger.setAttribute('aria-label','Show setting help for '+(info[0]||settingLabel(control)||'this control'));
   helpTriggerOwners.set(trigger,control);
   help.append(trigger);
   const copy=classicDetails[classicKey(control)]||nativeEntry(control)?.[1]||dynamicEntry(control)?.[1];
@@ -695,8 +697,18 @@ export function installContextualHelp(doc=document){
  }
  hover.checked=settings.hover;
  detailed.checked=settings.detailed;
+ try{
+  if(storage.getItem(HELP_PREFERENCES_KEY)===null)storage.setItem(HELP_PREFERENCES_KEY,JSON.stringify(settings));
+ }catch{}
  hover.addEventListener('change',save);
  detailed.addEventListener('change',save);
+ doc.defaultView.addEventListener('storage',event=>{
+  if(event.key!==HELP_PREFERENCES_KEY&&event.key!==null)return;
+  const updated=readHelpPreferences(storage);
+  hover.checked=updated.hover;
+  detailed.checked=updated.detailed;
+  apply();
+ });
  apply();
  decorateWithin(doc.body);
  const observer=new doc.defaultView.MutationObserver(records=>{

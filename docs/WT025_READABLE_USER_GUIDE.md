@@ -45,3 +45,11 @@ A future **Since your last visit** area will summarise shipped changes in ordina
 ## Read help beside a setting
 
 In the WT-024 candidate, turn on **Hover Notes** and hover over or focus a setting. On a touch screen, select the question-mark button. Press Escape to dismiss a note. Turn on **Detailed Explanations** to show longer guidance for supported settings. The two options work independently, and your browser remembers your choices.
+
+## Models drawer
+
+Open **Models** at the bottom of the 3D viewport. The list contains the current project's open models. It closes when you reload Studio. While open, type in **Find an open model** to narrow the list without changing saved data.
+
+Choose a model to switch to it. Use **Rename**, **Info** or **Close** on its tile. **Close** removes the open entry while keeping the model in the project. Use Alt+arrow on a model button to reorder it, or Escape to close the drawer and return focus to Models.
+
+Use **New model** to pick a starting point, then review the suggested name. Previews load when their tiles come into view. If a preview fails, read the reason and use **Retry preview**.

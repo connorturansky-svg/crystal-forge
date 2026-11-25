@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createProject,createModel,addModel,findModel,openTab,closeTab,reorderTabs,
- duplicateModel,editModel,queueModel,resolveJobPrinter,movePrintJob,invalidatePrintJob,beginPreparation,finishPreparation,cancelPreparation,canExport,
+ duplicateModel,editModel,modelFingerprint,queueModel,resolveJobPrinter,movePrintJob,invalidatePrintJob,beginPreparation,finishPreparation,cancelPreparation,canExport,
  saveLibraryRevision,insertLibraryModel,availableLinkedUpdate,acceptLinkedUpdate,breakLink,
  exportProject,importProject,WORKSPACE_KEY,BACKUP_KEY,LEGACY_KEYS} from '../studio-documents.js';
 import {migrateLegacySnapshot,migrateLegacyStorage} from '../studio-migration.js';
@@ -97,3 +97,79 @@ console.log('Studio documents: isolation, revision guards, links, legacy recover
 await import('./wt023-project-index.test.mjs');
 // Long-lived regression: seven-builder identity and saved-project state cannot disappear.
 await import('./wt023-postmerge-regressions.test.mjs');
+
+
+// WT-023C drawer document contracts salvaged from #165 after #164 merged.
+// These are synthetic document records, not real geometry or UI acceptance.
+{
+ const families=['crystals','tactile-tiles','gears','waves','control-caps','characters','light-pods'];
+ const makeDrawerProject=(count,id='drawer-project-A')=>{
+  const project=createProject({id,title:'Drawer regression',now});
+  for(let i=0;i<count;i++)addModel(project,createModel({
+   id:'drawer-'+i,name:i<2?'Same model':'Model '+i,typeId:families[i%families.length],
+   parameters:{width:90+i},now
+  }));
+  if(count){
+   const prepared=queueModel(project,'drawer-0',{jobId:'drawer-job'});
+   assert.equal(finishPreparation(project,beginPreparation(project,prepared.id,'drawer-ticket')),true);
+  }
+  return project;
+ };
+ const evidence=project=>JSON.stringify({id:project.id,models:project.models,printJobs:project.printJobs,
+  printer:project.printer,hardwareProfiles:project.hardwareProfiles,materialProfiles:project.materialProfiles});
+ for(const count of [0,1,9,105]){
+  const project=makeDrawerProject(count),before=evidence(project),ids=[...project.tabs];
+  assert.equal(new Set(ids).size,count);
+  if(count){
+   assert(canExport(project,'drawer-job'));
+   openTab(project,ids[0]);
+   reorderTabs(project,[...ids].reverse());
+   assert.equal(project.activeTab,ids[0]);
+   closeTab(project,ids[0]);
+   if(count>1)assert(project.tabs.includes(project.activeTab));
+   for(const id of ids)closeTab(project,id);
+   assert.deepEqual(project.tabs,[]);
+   assert.equal(project.activeTab,null);
+   assert.equal(evidence(project),before,'Closing tabs must not delete models or prepared jobs');
+   assert(canExport(project,'drawer-job'));
+   for(const id of ids)openTab(project,id);
+   assert.deepEqual(project.tabs,ids);
+   const order=JSON.stringify(project);
+   assert.throws(()=>reorderTabs(project,[...ids,'missing']),/exactly/);
+   assert.equal(JSON.stringify(project),order,'Invalid reorder must be atomic');
+  }
+  assert.equal(evidence(project),before);
+  assert.deepEqual(importProject(exportProject(project)),project);
+ }
+ // Merged drawer rename calls editModel: name-only changes retain geometry
+ // fingerprint, advance revision and invalidate prepared output pinned to it.
+ const a=makeDrawerProject(9),b=makeDrawerProject(9,'drawer-project-B');
+ assert.equal(a.title,b.title);
+ assert.equal(a.models[0].id,b.models[0].id);
+ assert.equal(a.models[0].name,a.models[1].name);
+ assert.equal(new Set(a.models.map(m=>m.generator.typeId)).size,families.length);
+ assert.throws(()=>createModel({id:'blank',name:'  ',typeId:'crystals',now}),/name/i);
+ const model=findModel(a,'drawer-0'),fingerprint=modelFingerprint(model),revision=model.revision;
+ editModel(a,model.id,{name:'Long Unicode model — lumière ✨'},{now});
+ assert.equal(model.id,'drawer-0');
+ assert.equal(model.revision,revision+1);
+ assert.equal(modelFingerprint(model),fingerprint);
+ assert.equal(a.printJobs[0].status,'stale');
+ assert.equal(canExport(a,'drawer-job'),false);
+ assert.equal(canExport(b,'drawer-job'),true,'Other project with same model ID keeps its prepared job');
+ const sourceBefore=modelFingerprint(findModel(b,'drawer-0'));
+ editModel(b,'drawer-0',{parameters:{width:999}},{now});
+ assert.notEqual(modelFingerprint(findModel(b,'drawer-0')),sourceBefore);
+ assert.equal(modelFingerprint(model),fingerprint);
+ // Existing linked-source tests cover edit refusal and upgrades; additionally
+ // exercise close-tab preserving the actual pinned model and Library contents.
+ const pinnedLibrary=[];
+ saveLibraryRevision(pinnedLibrary,findModel(a,'drawer-1'));
+ const copy=insertLibraryModel(a,pinnedLibrary,'drawer-1',{linked:true,id:'drawer-linked',now});
+ const pinned=JSON.stringify(pinnedLibrary),pinnedModel=JSON.stringify(copy);
+ closeTab(a,copy.id);
+ assert.equal(JSON.stringify(findModel(a,copy.id)),pinnedModel);
+ assert.equal(JSON.stringify(pinnedLibrary),pinned);
+ assert.deepEqual(importProject(exportProject(a)),a);
+ console.log('WT-023C drawer document contracts: bulk close/reopen, atomic reorder, rename/job revision and linked-source preservation passed.');
+}

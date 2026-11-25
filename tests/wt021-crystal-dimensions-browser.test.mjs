@@ -648,6 +648,7 @@ try{
   const template=page.getByRole('button',{name:'New Cogs & Gears from template',exact:true});
   await page.locator('#smsLibrary').click();
   await template.click();
+  await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
   await page.waitForFunction(()=>!window.__crystalForgePlacementMetrics().routeGuidesVisible);
   const firstCog=await crystal();
   assert.equal(firstCog.generator.typeId,'gears');
@@ -661,6 +662,7 @@ try{
   const savedCog=page.locator('#smsSavedModels article').filter({hasText:'Cog: Connors new one'});
   await savedCog.waitFor();
   await template.click();
+  await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
   const freshCog=await crystal();
   assert.notEqual(freshCog.id,firstCog.id);
   assert.deepEqual(freshCog.parameters,firstCog.parameters);

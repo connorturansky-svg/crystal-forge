@@ -47,7 +47,7 @@ export const TOOL_FINDER_ITEMS=Object.freeze([
   control:'#smsJobs [data-job-3mf]',prepare:true},
  {id:'prepare',label:'Prepare printable mesh',workspace:'Print Centre',aliases:['render actual model','print preview','manufacturing geometry'],
   description:'Prepare the current model using the manufacturing pipeline.',
-  control:'#smsPrintCurrent button, #smsJobs [data-job-prepare]'},
+  control:'#smsPrintCurrent [data-prepare-current], #smsJobs [data-job-prepare]'},
  {id:'library',label:'Save project to Library',workspace:'Library',aliases:['save to library','store project','saved models'],
   description:'Find the project save action in Library.',control:'#smsSaveProject',noModel:true}
 ]);

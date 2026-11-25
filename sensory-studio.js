@@ -1,4 +1,5 @@
 import {listProjectFolders} from './studio-project-index.js';
+import {createModelDrawer,createPreviewQueue} from './src/ui/model-drawer.mjs';
 import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive,assertWorkspaceVersion,projectWorkspaceCandidate} from './studio-sync-plan.js';
 import {readMeshFile,importedMeshRecipe,MAX_MESH_BYTES} from './studio-mesh-import.js';
 import {parseSvgArtwork,createSvgImport,MAX_SVG_BYTES} from './svg-import/index.js';
@@ -42,7 +43,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  delete project.snapshotId; // Snapshot identity belongs only to the saved Library copy.
  renderer.localClippingEnabled=true;
  const unified=new URLSearchParams(location.search).get('layout')!=='legacy';
- let printExpanded=false,quickPrintThumbnail=null;
+ let printExpanded=false;
  const printSizes=new WeakMap();
  state.savedProjects??=[];
  ensureSnapshotIds(state.savedProjects);
@@ -70,7 +71,20 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  bar.append(modelDimensions);
  const panel=document.createElement('div');panel.id='smsEditor';panel.className='sms-controls';panel.hidden=true;document.querySelector('.left').prepend(panel);
  const overlay=document.createElement('div');overlay.className='sms-overlay';overlay.hidden=true;overlay.id='smsOverlay';document.querySelector('.viewarea').style.position='relative';document.querySelector('.viewarea').append(overlay);
+ const newModelControl=$('smsNew');
  const shell=unified?setupShell():null;
+ const savedPreviewQueue=createPreviewQueue(renderSavedPreview);
+ const modelDrawer=shell?createModelDrawer(document.querySelector('.viewarea'),{
+  getProject:()=>project,select:switchModel,close:closeModel,newControl:newModelControl,
+  rename:renameDrawerModel,info:showModelInfo,previewQueue:savedPreviewQueue,
+  reorder:ids=>{reorderTabs(project,ids);renderTabs();save();},
+  previewKey:(owner,row)=>savedPreviewKey(owner.id,findModel(owner,row.id))
+ }):null;
+ if(modelDrawer){
+  modelDrawer.root.id='smsModelsDrawer';
+  modelDrawer.grid.id='smsTabs';
+  const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href='./src/ui/model-drawer.css';document.head.append(stylesheet);
+ }
  const inspection=shell?createLightInspector({THREE,scene,camera,
   prepare:modelId=>{if(active()?.id===modelId)captureCrystal();prepare(enqueue(modelId).id);},
   cancel:modelId=>{const job=project.printJobs.find(item=>item.modelId===modelId);if(job?.status==='preparing'){cancelPreparation(project,job.id);delete job.progress;discardPrintResult(job.id);save();renderJobs();renderTabs();}}}):null;
@@ -98,8 +112,6 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const home=button('⌂ Home',()=>showHome(),'smsHome');
   const undoButton=button('↶ Undo',()=>shellUndo(-1),'smsGlobalUndo');
   const redoButton=button('↷ Redo',()=>shellUndo(1),'smsGlobalRedo');
-  const rail=document.createElement('aside');rail.className='sms-rail';rail.id='smsModelRail';rail.setAttribute('aria-label','Models');
-  rail.append($('smsTabs'),$('smsNew'));
   const centre=document.createElement('section');centre.className='sms-centre';centre.append(viewer,overlay);
   const palette=document.createElement('section');palette.className='sms-palette';palette.id='smsVisualPalette';palette.setAttribute('aria-label','Visual choices');
   function side(name,id,...contents){
@@ -205,7 +217,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    }
    if(!reason&&focusControl([selector]))return '';
    if(!reason&&crystal&&item.crystalSetup&&focusControl([item.crystalSetup]))return item.setupMessage;
-   if(item.prepare&&focusControl(['#smsPrintCurrent button','#smsJobs [data-job-prepare]']))
+   if(item.prepare&&focusControl(['#smsPrintCurrent [data-prepare-current]','#smsJobs [data-job-prepare]']))
     return 'Prepare the current model to enable '+item.label+'.';
    const nav=Array.from(document.querySelectorAll('.workspace-tabs button')).find(button=>button.textContent===item.workspace);
    nav?.focus();
@@ -297,7 +309,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    }
    if(persist)try{localStorage.setItem(preferenceKey,JSON.stringify(view));}catch{}
   }
-  layout.prepend(tools.region,grips[0],centre,grips[1],precision.region,rail);
+  layout.prepend(tools.region,grips[0],centre,grips[1],precision.region);
   applyPanels(false);
   window.addEventListener('resize',()=>applyPanels(false));
   document.addEventListener('keydown',event=>{
@@ -334,7 +346,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    if(preset)button.dataset.preset=preset.id;else button.dataset.generator=family.typeId;
    const label=document.createElement('span');label.textContent=preset?.name||family.displayName;
    button.append(preset?presetPicture(family,preset):startingPointPicture(family),label);
-   button.onclick=()=>{picker.close();add(family.typeId,preset?.parameters,preset?.name);};
+   button.onclick=()=>{
+    picker.close();
+    if(!shell){add(family.typeId,preset?.parameters,preset?.name);return;}
+    requestModelName('Name new model',preset?.name||family.displayName,name=>add(family.typeId,preset?.parameters,name));
+   };
    tile.append(button);
    if(!preset&&family.presets.length){
     const variants=document.createElement('button');variants.type='button';variants.textContent='Browse '+family.presets.length+' starting points';
@@ -459,7 +475,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  if(!project.models.length)addModel(project,createModel({name:snapshot.settings.title||'Crystal Mine',typeId:'crystals',parameters:snapshot.settings,editableState:{crystals:snapshot.crystals,selectedId:snapshot.selectedId}}));
  if(!project.tabs.length)openTab(project,project.models[0].id);
  $('smsProjectTitle').value=project.title;
- $('smsProjectTitle').onchange=()=>{project.title=$('smsProjectTitle').value.trim()||'Untitled project';save();};
+ $('smsProjectTitle').onchange=()=>{project.title=$('smsProjectTitle').value.trim()||'Untitled project';modelDrawer?.update();save();};
  $('smsReload').onclick=()=>{
   try{
    saveImmediately();
@@ -527,7 +543,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    if(c?.group)disposeGroup(c.group);
    const recipe=applyBuildModules(generator.recipe(model.parameters),model.build,generator.capabilities,{preview:true});
    const group=previewRecipe(THREE,recipe,[model.materials.primary?.colour||0x88bbff,model.materials.secondary?.colour||0xffcf70]);previewBuilds++;c={kind:'generic',group,fingerprint,view:c?.view,routing:recipe.nativeRouting,recipe};cache.set(model.id,c);
-   model.thumbnail=thumbnail(group);
+   if(!shell)model.thumbnail=thumbnail(group);
    if(recipe.edgeFinish?.enabled)refreshChamferPreview(model,c);
   }
   scene.add(c.group);
@@ -557,7 +573,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    });
    for(const child of c.group.children)if(child.isMesh&&!child.userData.previewOnly)child.visible=false;
    c.group.add(...surfaces);
-   model.thumbnail=thumbnail(c.group);
+   if(!shell)model.thumbnail=thumbnail(c.group);
    report(result.report.warnings.find(message=>/^(No top rim|Some top rims|Top chamfer skipped)/.test(message))||'Showing prepared chamfer geometry.');
   }catch(error){
    if(cache.get(model.id)===c)report('Chamfer preview unavailable. '+error.message);
@@ -668,6 +684,115 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   }catch{return null;}
   finally{if(group)disposeGroup(group);}
  }
+ function savedPreviewKey(projectId,model){
+  return JSON.stringify(['saved-design-v1',projectId,model.id,model.revision,model.link,modelFingerprint(model)]);
+ }
+ function renderSavedPreview({model,revision}){
+  if(!model||model.revision!==revision)throw Error('Model changed. Retry preview.');
+  const generator=registry.get(model.generator.typeId);
+  if(!generator)throw Error('This model source is unsupported.');
+  let group;
+  try{
+   if(model.generator.typeId==='crystals'){
+    const crystals=model.editableState?.crystals;
+    if(!Array.isArray(crystals)||!crystals.length)throw Error('Saved Crystal geometry is missing.');
+    group=crystalStartingPointPreview(THREE,{...generator.defaultParameters,...model.parameters},crystals);
+   }else{
+    const recipe=applyBuildModules(generator.recipe(model.parameters),model.build,generator.capabilities,{preview:true});
+    group=previewRecipe(THREE,recipe,[model.materials?.primary?.colour||0x88bbff,model.materials?.secondary?.colour||0xffcf70]);
+   }
+   const src=thumbnail(group);
+   if(!src)throw Error('3D preview could not render. Retry when graphics are available.');
+   return {src};
+  }finally{if(group)disposeGroup(group);}
+ }
+ function savedModelPicture(model,ownerId,{allowRetry=true}={}){
+  const root=document.createElement('div');
+  root.className='sms-saved-preview';
+  const status=modelPicture(null),retry=document.createElement('button');
+  status.textContent='Preview pending';retry.type='button';retry.textContent='Retry preview';retry.hidden=true;
+  root.append(status);
+  if(allowRetry)root.append(retry);
+  const load=async()=>{
+   retry.hidden=true;status.textContent='Loading preview';
+   try{
+    const revision=model.revision,key=savedPreviewKey(ownerId,model);
+    const current=()=>root.isConnected&&model.revision===revision;
+    const result=await savedPreviewQueue.request(key,{model,revision},current);
+    if(!current())return;
+    if(!result)throw Error('Preview deferred. Retry when ready.');
+    const img=modelPicture(result.src);
+    img.onerror=()=>{savedPreviewQueue.invalidate(key);img.replaceWith(status);status.textContent='Preview image invalid';retry.hidden=false;};
+    status.replaceWith(img);
+   }catch(error){if(root.isConnected){status.hidden=false;status.textContent=error.message||'Preview unavailable';retry.hidden=false;}}
+  };
+  retry.onclick=load;
+  let observer;
+  if(typeof IntersectionObserver==='function'){
+   observer=new IntersectionObserver(entries=>{
+    if(entries.some(entry=>entry.isIntersecting)){observer.disconnect();load();}
+   });
+   observer.observe(root);
+  }else setTimeout(load,0);
+  return root;
+ }
+ function renameDrawerModel(id){
+  const model=findModel(project,id);
+  if(model.link){adapter.status('Make an independent variant before renaming a linked model.');return;}
+  requestModelName('Rename model',model.name,name=>{editModel(project,id,{name});renderTabs();save();},
+   ()=>document.getElementById('model-tab-'+id));
+ }
+ function requestModelName(title,suggestion,accept,focusAfter=()=>newModelControl){
+  const dialog=document.createElement('dialog'),form=document.createElement('form');
+  dialog.dataset.modelNaming='';
+  const heading=document.createElement('h2');heading.textContent=title;
+  const label=document.createElement('label');label.textContent='Model name ';
+  const input=document.createElement('input');input.required=true;input.maxLength=100;input.value=suggestion;
+  const create=document.createElement('button');create.textContent=title==='Rename model'?'Save name':'Create model';
+  const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.onclick=()=>dialog.close();
+  input.oninput=()=>input.setCustomValidity('');
+  form.onsubmit=event=>{
+   event.preventDefault();
+   const name=input.value.trim();
+   if(!name){input.setCustomValidity('Enter a model name.');input.reportValidity();return;}
+   accept(name);dialog.close();
+  };
+  label.append(input);form.append(heading,label,create,cancel);dialog.append(form);
+  dialog.setAttribute('aria-label',title);document.body.append(dialog);
+  dialog.addEventListener('close',()=>{
+   dialog.remove();
+   if(document.activeElement===document.body)focusAfter()?.focus({preventScroll:true});
+  },{once:true});
+  dialog.showModal();input.select();
+ }
+ function showModelInfo(id,preview){
+  const model=findModel(project,id),dialog=document.createElement('dialog');
+  const profileIds=new Set([model.build.activePixelProfileId,
+   ...((model.build.pixelHoles||[]).flatMap(hole=>[hole.profileId,hole.socketProfile?.id]))]);
+  if(model.generator.typeId==='crystals'){
+   profileIds.add(model.parameters.pixelProfileId);
+   for(const hole of model.parameters.manualPixelHoles||[])profileIds.add(hole.profileId);
+  }
+  const names=new Map(fittingProfiles().map(profile=>[profile.id,profile.name]));
+  const pixelProfiles=[...profileIds].filter(Boolean).map(id=>names.get(id)||id);
+  const fields={
+   Project:project.title,Family:registry.get(model.generator.typeId)?.displayName||model.generator.typeId,
+   Source:model.link?'Linked model '+model.link.sourceId+' · revision '+model.link.revision:'Independent model · revision '+model.revision,
+   Created:model.createdAt,Modified:model.updatedAt,
+   'Pixel profiles':pixelProfiles.join(', ')||'No explicit profile dependencies',
+   Printer:model.printerOverrides?.printer||project.printer?.printer||'Project default',
+   'Preview status':preview
+  };
+  const title=document.createElement('h2');title.textContent=model.name||'Unnamed model';
+  const list=document.createElement('dl');
+  for(const [label,value] of Object.entries(fields)){
+   const term=document.createElement('dt'),description=document.createElement('dd');
+   term.textContent=label;description.textContent=value||'Unknown';list.append(term,description);
+  }
+  const close=document.createElement('button');close.type='button';close.textContent='Close model information';close.onclick=()=>dialog.close();
+  dialog.setAttribute('aria-label','Model information');dialog.append(title,list,close);document.body.append(dialog);
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});dialog.showModal();close.focus();
+ }
  const isModelThumbnail=src=>typeof src==='string'&&/^data:image\/(png|jpeg|webp);base64,/.test(src);
  function modelPicture(src){
   if(isModelThumbnail(src)){
@@ -723,11 +848,16 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    if(mode==='model'&&stage==='build'&&control.dataset.workspace===buildWorkspace)control.setAttribute('aria-current','step');
    else control.removeAttribute('aria-current');
   }
+  if(modelDrawer){
+   if(modelDrawer.root.dataset.mode!==mode&&mode!=='model'&&modelDrawer.open)modelDrawer.setOpen(false,false);
+   modelDrawer.root.dataset.mode=mode;
+   modelDrawer.update();
+   return;
+  }
   const root=$('smsTabs');root.replaceChildren();
   for(const id of project.tabs){const model=findModel(project,id),button=document.createElement('button');button.role='tab';button.dataset.modelTheme=model.generator.typeId;button.id='model-tab-'+id;button.setAttribute('aria-selected',String(currentId===id&&mode==='model'));button.tabIndex=currentId===id?0:-1;
    button.textContent=model.name+(project.printJobs.some(j=>j.modelId===id&&j.status==='preparing')?' ⏳':'');button.draggable=true;
    button.setAttribute('aria-label',model.name);
-   if(shell)button.prepend(modelPicture(model.thumbnail||(model.id===currentId&&model.generator.typeId==='crystals'?thumbnail(adapter.previewGroup()):null)));
    const close=document.createElement('span');close.textContent='×';close.className='close-tab';close.setAttribute('aria-hidden','true');button.append(close);
    button.onclick=e=>{if(e.target===close){closeModel(id);return;}switchModel(id);};
    button.title='Double-click to rename. Drag or use Alt+Up/Down to reorder. Delete closes the tab.';
@@ -2089,7 +2219,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    for(const model of [...project.models].reverse()){
     const family=registry.get(model.generator.typeId).displayName;
     if(![model.name,family].some(value=>value.toLowerCase().includes(query)))continue;
-    const item=document.createElement('button');item.className='sms-tile';item.append(modelPicture(model.thumbnail||(model.id===currentId&&model.generator.typeId==='crystals'?thumbnail(adapter.previewGroup()):null)),model.name);item.onclick=()=>switchModel(model.id);root.append(item);
+    const item=document.createElement('button');item.className='sms-tile';
+    item.setAttribute('aria-label',model.name);
+    item.append(savedModelPicture(model,project.id,{allowRetry:false}),model.name);
+    item.onclick=()=>switchModel(model.id);root.append(item);
    }
    for(const saved of state.savedProjects.filter(item=>item.title.toLowerCase().includes(query))){
     const item=document.createElement('button');item.textContent='Open project: '+saved.title;item.onclick=()=>{if(!confirm('Open this project and save a copy of the current project?'))return;saveProjectSnapshot(saved);};root.append(item);
@@ -2409,7 +2542,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  }
  function undo(delta){const h=histories.get(currentId),next=(h?.index??0)+delta;if(!h||next<0||next>=h.items.length)return;h.index=next;commit(copy(h.items[next]),{history:false});renderEditor();}
  function saveModel(model){
-  try{if(model.generator.typeId==='crystals'&&model.id===currentId&&mode==='model'){captureCrystal();model.thumbnail=thumbnail(adapter.previewGroup());}
+  try{if(model.generator.typeId==='crystals'&&model.id===currentId&&mode==='model')captureCrystal();
    const record=state.library.find(r=>r.id===model.id);saveLibraryRevision(state.library,model,{expectedRevision:record?.versions.at(-1)?.revision||0});save();adapter.status('Saved '+model.name+' to your reusable library.');
   }catch(error){adapter.status(error.message);}
  }
@@ -2528,10 +2661,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   function card(model,root,libraryRecord=null){
    const tile=document.createElement('article');tile.className='sms-tile';
    const generator=registry.list().find(g=>g.typeId===model.generator.typeId);
-   const src=model.thumbnail||(generator?.recipe?recipeThumbnail(generator,model.parameters,model.build,[model.materials?.primary?.colour||0x88bbff,model.materials?.secondary?.colour||0xffcf70]):null);
    tile.dataset.modelTheme=model.generator.typeId;
    tile.innerHTML='<h3>'+esc(model.name)+'</h3><p class="sms-descriptor">'+esc(generator?.displayName||model.generator.typeId)+' · revision '+(libraryRecord?.versions.at(-1).revision||model.revision)+'</p><div class="sms-actions"></div>';
-   tile.prepend(modelPicture(src));
+   tile.prepend(savedModelPicture(model,libraryRecord?'library':project.id));
    const actions=tile.querySelector('.sms-actions');
    const action=(name,fn)=>{const b=document.createElement('button');b.textContent=name;b.onclick=fn;actions.append(b);};
    if(!libraryRecord){action('Open',()=>switchModel(model.id));action('Save to library',()=>{saveModel(model);renderLibraryCards();});
@@ -2583,11 +2715,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  }
  function savedProjectCard(saved,root,version){
    const tile=document.createElement('article');tile.className='sms-tile';tile.dataset.snapshotId=saved.snapshotId;
-   const thumbnail=saved.models.find(model=>isModelThumbnail(model.thumbnail))?.thumbnail;
+   const cover=saved.models[0];
    const count=saved.models.length;
    tile.innerHTML='<h3>'+esc(saved.title)+'</h3><p class="sms-descriptor">'+'Saved version '+version+' · '+count+' '+(count===1?'model':'models')+'</p><div class="sms-actions"><button type="button">Open project</button></div>';
-   tile.prepend(modelPicture(thumbnail));
-   const button=tile.querySelector('button');
+   tile.prepend(cover?savedModelPicture(cover,saved.snapshotId):modelPicture(null));
+   const button=tile.querySelector('.sms-actions button');
    button.setAttribute('aria-label','Open project '+saved.title);
    button.onclick=()=>{
     if(!confirm('Open this saved project? Your current project will be kept as a saved copy.'))return;
@@ -2624,8 +2756,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    button.setAttribute('aria-label','New '+family.displayName+' from template');
    button.append(startingPointPicture(family),family.displayName);
    button.onclick=()=>{
-    add(family.typeId);
-    document.querySelector('.workspace-tabs [data-tab=design]').click();
+    const create=name=>{add(family.typeId,null,name);document.querySelector('.workspace-tabs [data-tab=design]').click();};
+    if(shell)requestModelName('Name new model',family.displayName,create);else create(family.displayName);
    };
    tile.append(button);grid.append(tile);
   }
@@ -2645,7 +2777,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const title=document.createElement('h3');title.textContent=template.name;
    const status=document.createElement('p');
    status.textContent=source?(template.kind==='model'?'Model · revision '+template.revision:'Project template'):'Unavailable source';
-   tile.append(modelPicture(source?.thumbnail||source?.models?.find(model=>isModelThumbnail(model.thumbnail))?.thumbnail),title,status);
+   const cover=template.kind==='model'?source:source?.models[0];
+   tile.append(cover?savedModelPicture(cover,template.sourceId):modelPicture(null),title,status);
    const controls=document.createElement('div');controls.className='sms-actions';tile.append(controls);
    const action=(name,handler)=>{
     const button=document.createElement('button');button.type='button';button.textContent=name;button.onclick=handler;controls.append(button);
@@ -2761,7 +2894,6 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  function send(id){captureCrystal();enqueue(id);save();showPrint();}
  function showPrint(){if(shell)printExpanded=false;captureCrystal();mode='print';overlay.hidden=false;document.body.classList.add('sms-sidebar-mode');panel.hidden=false;
   const model=active();
-  quickPrintThumbnail=model?.thumbnail||(model?.generator.typeId==='crystals'?thumbnail(adapter.previewGroup()):null);
   panel.innerHTML='<h2>Print Centre</h2><p class="sms-descriptor">Project printer defaults for jobs without overrides.</p><label>Printer<select id="smsPrinter"><option>Ultimaker 3 Extended</option><option>Ultimaker 2+</option><option>Custom / other</option></select></label><label>Nozzle / AA core<select id="smsNozzle">'+[.25,.4,.6,.8].map(n=>'<option>'+n+'</option>').join('')+'</select></label><label>Material<select id="smsMaterial"><option>PLA</option><option>PETG</option></select></label><label>Quality<input id="smsQuality" type="number" min="0" max="100" value="'+project.printer.curaQuality+'"></label><p class="sms-descriptor">Dual material uses the UM3. Confirm both AA cores, materials, extruder assignments and layer support in Cura.</p><button id="smsCura">Download Cura settings</button><button id="smsPrepareAll">Prepare queued jobs</button><button id="smsPrintBackup">Save project and jobs</button><p id="smsPrintStatus" role="status"></p>';
   $('smsPrinter').value=project.printer.printer;$('smsNozzle').value=project.printer.curaNozzle;$('smsMaterial').value=project.printer.curaMaterial;
   for(const [id,key] of [['smsPrinter','printer'],['smsNozzle','curaNozzle'],['smsMaterial','curaMaterial'],['smsQuality','curaQuality']]){
@@ -2841,9 +2973,9 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const model=active(),card=$('smsPrintCurrent');
    if(model){
     const name=document.createElement('strong');name.textContent=model.name;
-    card.append(modelPicture(quickPrintThumbnail),name);
+    card.append(savedModelPicture(model,project.id),name);
     if(!project.printJobs.some(job=>job.modelId===model.id)){
-     const start=document.createElement('button');start.textContent='Prepare current model';
+     const start=document.createElement('button');start.textContent='Prepare current model';start.dataset.prepareCurrent='';
      start.onclick=()=>prepare(enqueue(model.id).id);card.append(start);
     }
    }
@@ -2885,7 +3017,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     '<button data-job-prepare>'+(preparing?'Preparing…':['failed','cancelled'].includes(job.status)?'Retry':'Prepare')+'</button>'+
     '<button data-job-cancel>Cancel</button><button data-job-export>Download production ZIP</button><button data-job-stl>Download STL</button><button data-job-3mf>Download 3MF</button><button data-job-cura>'+
     (advisory?'Download Cura settings':'Download Cura profile')+'</button><button data-job-remove>Remove</button></div>';
-   tile.prepend(modelPicture(model.thumbnail||(model.id===currentId?quickPrintThumbnail:null)));
+   tile.prepend(savedModelPicture(model,project.id));
    const action=(name,disabled,run)=>{
     const button=tile.querySelector('[data-job-'+name+']');button.disabled=disabled;button.onclick=run;
    };
@@ -3057,6 +3189,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   return true;
  }
  function replaceProject(next){
+  if(modelDrawer?.open)modelDrawer.setOpen(false,false);
   cancelPixelGesture();endPixelPlacement();editors.cancel();remember({capture:false});
   for(const worker of workers.values())worker.terminate();workers.clear();prepared.clear();histories.clear();
   for(const c of cache.values())if(c.group)disposeGroup(c.group);else adapter.release(c);cache.clear();
@@ -3138,7 +3271,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   $('smsIndependentCrystal').hidden=!enabled;
  }
  const initial=project.activeTab||project.tabs[0];currentId=initial;
- if(findModel(project,initial).generator.typeId==='crystals'){
+ if(!initial){adapter.detach();if(!shell)showLibrary();}
+ else if(findModel(project,initial).generator.typeId==='crystals'){
   switching=true;adapter.activate(findModel(project,initial),null);switching=false;renderTabs();
  }else{currentId=null;adapter.detach();switchModel(initial);}
  for(const job of project.printJobs)if(['preparing','prepared'].includes(job.status)){job.status='stale';job.requestId=null;job.preparedRevision=null;}
@@ -3155,7 +3289,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const {action,family}=feature;
   if(action==='family'){renderPicker(registry.get(family));picker.showModal();return;}
   if(action==='library'){showLibrary();$('smsSearch')?.focus();return;}
-  if(action==='print'){showPrint();shell.focusAfterNavigation(['#smsPrintCurrent button','#smsExpandPrint']);return;}
+  if(action==='print'){showPrint();shell.focusAfterNavigation(['#smsPrintCurrent [data-prepare-current]','#smsExpandPrint']);return;}
   if(action==='search'){
    document.querySelector('.workspace-tabs [data-tab=design]').click();
    shell.focusAfterNavigation(['#smsFindTools']);return;

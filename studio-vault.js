@@ -8,6 +8,27 @@ const encode=text=>{const b=new TextEncoder().encode(text);let s='';for(let i=0;
 const decode=text=>new TextDecoder().decode(Uint8Array.from(atob(text.replace(/\s/g,'')),c=>c.charCodeAt(0)));
 export async function assetHash(value){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(canonical(value)));return [...new Uint8Array(bytes)].map(v=>v.toString(16).padStart(2,'0')).join('');}
 const assetPath=hash=>{if(!/^[a-f0-9]{64}$/.test(hash))throw Error('Invalid studio asset reference.');return '.sensory-model-studio/assets/'+hash+'.json';};
+/** Read the same authenticated private-repository JSON using the Contents object
+ * response for normal files and the Git Blob API when GitHub omits inline
+ * content for files over 1 MB. All requests stay in the token-scoped client;
+ * no download_url or public raw.githubusercontent.com access is used.
+ */
+async function readStudioGitHubJson(client,path){
+ const file=await client.request('/contents/'+path,{headers:{Accept:'application/vnd.github.object+json'}});
+ if(!file)return null;
+ if(file.type && file.type!=='file')throw Error('Private Studio backup path is not a file.');
+ let content=file.content;
+ if(file.encoding==='none'){
+  if(!/^[a-f0-9]{40}$/i.test(file.sha||''))throw Error('Private Studio backup asset has no valid Git blob SHA.');
+  const blob=await client.request('/git/blobs/'+file.sha);
+  if(!blob||blob.encoding!=='base64'||blob.sha!==file.sha||typeof blob.content!=='string'||!blob.content.trim())
+   throw Error('Private Studio backup asset is unreadable via the Git blob API.');
+  content=blob.content;
+ }else if(file.encoding && file.encoding!=='base64')throw Error('Unsupported private Studio backup asset encoding.');
+ if(typeof content!=='string'||!content.trim())throw Error('Private Studio backup asset has no readable contents.');
+ try{return {sha:file.sha,value:JSON.parse(decode(content))};}
+ catch(error){throw Error('Private Studio backup JSON could not be read; no local data was changed.',{cause:error});}
+}
 export async function packStudioVault(state){
  validateProject(state.project);const assets=new Map();
  async function add(value){const hash=await assetHash(value);assets.set(hash,value);return hash;}
@@ -35,11 +56,11 @@ export async function unpackStudioVault(manifest,readAsset){
 }
 export class StudioVault {
  constructor(client){this.client=client;this.sha=null;this.busy=false;}
- async remote(){const file=await this.client.request('/contents/'+STUDIO_MANIFEST);return file?{sha:file.sha,manifest:JSON.parse(decode(file.content))}:null;}
+ async remote(){const file=await readStudioGitHubJson(this.client,STUDIO_MANIFEST);return file?{sha:file.sha,manifest:file.value}:null;}
  async pull({acknowledge=true}={}){
   if(this.busy)throw Error('Studio sync is already running.');this.busy=true;
   try{const current=await this.remote();if(!current)throw Error('This private repository has no Sensory Model Studio backup yet.');
-   const state=await unpackStudioVault(current.manifest,async hash=>{const file=await this.client.request('/contents/'+assetPath(hash));if(!file)throw Error('A studio asset is missing; the local workspace has not changed.');return JSON.parse(decode(file.content));});
+   const state=await unpackStudioVault(current.manifest,async hash=>{const file=await readStudioGitHubJson(this.client,assetPath(hash));if(!file)throw Error('A studio asset is missing; the local workspace has not changed.');return file.value;});
    if(acknowledge){this.sha=current.sha;return state;}
    return {state,sha:current.sha};
   }finally{this.busy=false;}
@@ -49,10 +70,10 @@ export class StudioVault {
   try{const current=await this.remote();if((current?.sha??null)!==this.sha)throw Error('The private studio vault changed. Pull and reconcile both versions before uploading.');
    const {manifest,assets}=await packStudioVault(state);
    let uploaded=0;
-   for(const [hash,value]of assets){const path=assetPath(hash),existing=await this.client.request('/contents/'+path);
-    if(existing){if(await assetHash(JSON.parse(decode(existing.content)))!==hash)throw Error('An immutable remote asset has different contents.');continue;}
+   for(const [hash,value]of assets){const path=assetPath(hash),existing=await readStudioGitHubJson(this.client,path);
+    if(existing){if(await assetHash(existing.value)!==hash)throw Error('An immutable remote asset has different contents.');continue;}
     try{await this.client.request('/contents/'+path,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Add immutable studio asset',content:encode(canonical(value))})});uploaded++;}
-    catch(error){const concurrent=await this.client.request('/contents/'+path);if(!concurrent||await assetHash(JSON.parse(decode(concurrent.content)))!==hash)throw error;}
+    catch(error){const concurrent=await readStudioGitHubJson(this.client,path);if(!concurrent||await assetHash(concurrent.value)!==hash)throw error;}
    }
    const latest=await this.remote();if((latest?.sha??null)!==this.sha)throw Error('The studio manifest changed while assets uploaded. Previous backups remain complete. Pull before retrying.');
    const response=await this.client.request('/contents/'+STUDIO_MANIFEST,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:'Commit complete Sensory Model Studio backup',content:encode(JSON.stringify(manifest)),...(this.sha?{sha:this.sha}:{})})});

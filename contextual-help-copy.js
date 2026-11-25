@@ -208,6 +208,16 @@ export const nativeFamilyHelp = {
 };
 
 export const dynamicHelp = {
+ '#smsFindTools': ['Finds tools and downloads using everyday words.','Search for what you want to do, for example pixel test fit or magnet. Choose a result to move to its workspace and focus the existing control. An unavailable result explains why.'],
+ '[data-batch-id]': ['Includes this crystal in the batch selection.','Select only the crystals that should receive your next batch operation. Selection alone does not change their geometry.'],
+ '.md-search': ['Filters the open models in this project.','Type part of a model name to find it among the open tiles. Clearing the search restores the list without changing your project or saved models.'],
+ '.md-header button[aria-expanded]': ['Opens or closes the Models drawer.','Open the drawer to switch between models in the current project. Escape collapses the drawer and returns keyboard focus to its toggle.'],
+ '.md-pick': ['Switches to this open model.','Select the tile to continue editing that model. Use Alt and an arrow key to reorder the open models, or Delete to close its open entry.'],
+ '.md-card [data-action=rename]': ['Changes the model name.','Choose a recognisable name for the model. Its identity stays the same. For a pinned Library model, make an independent variant before renaming.'],
+ '.md-card [data-action=close]': ['Closes the open entry without deleting the saved model.','Close a model when you no longer need it in the drawer. The model remains in its project and can be reopened from Library.'],
+ '.md-card [data-action=info]': ['Shows the source, revision and profile dependencies.','Review where the model comes from, its revision and preview status when deciding which saved model to reopen or print.'],
+ '.md-card [data-action=retry]': ['Attempts to render the saved geometry again.','Retry when the preview is deferred or graphics become available. Missing or corrupt geometry may require a valid saved version.'],
+ 'dialog[data-model-naming] input': ['Sets the name before creation or renaming.','Use a meaningful name that is easy to recognise in the project and print queue. Cancel leaves the existing models unchanged.'],
  '[data-native-bend-radius]': ['Sets the smallest permitted curve in the cable route.', 'Use a bend radius that your real cable can follow without strain. A wider bend needs more room around a socket or opening.'],
  '[data-pattern-field=alignment]': ['Chooses how the centre of the pattern is aligned.', 'Use Model centre when the holes should be centred on the part. Choose a centreline or Custom offset when matching an off-centre fixing.'],
  '[data-pattern-field=kind]': ['Chooses a straight line, circle or rectangular grid of holes.', 'Choose the arrangement that matches the measured fixing points. The available spacing and rotation controls depend on the selected layout.'],

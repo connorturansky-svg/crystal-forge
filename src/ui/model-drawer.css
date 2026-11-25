@@ -1,0 +1,21 @@
+/* Candidate scoped styles: host must be positioned and have a definite viewport height. */
+.md-drawer{position:absolute;inset:auto 0 0;z-index:6;display:flex;flex-direction:column;max-height:100%;min-width:0;background:var(--panel,#fff);color:var(--ink,var(--text,#203049));border:1px solid var(--border,#b4c1d2);box-sizing:border-box;font:inherit}
+.md-drawer.md-open{height:33.333%;min-height:min(9rem,100%);}
+.md-header{display:flex;align-items:center;gap:.4rem;padding:.3rem;flex-wrap:wrap}
+.md-header button,.md-card button{font:inherit;cursor:pointer}
+.md-summary{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.md-body{display:flex;flex-direction:column;min-height:0;flex:1;padding:.3rem;gap:.35rem}
+.md-body[hidden],.md-drawer [hidden]{display:none!important}
+.md-search{width:100%;box-sizing:border-box;font:inherit}
+.md-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,15rem),1fr));align-content:start;gap:.35rem;overflow:auto;min-height:0;overscroll-behavior:contain}
+.md-card{display:flex;align-items:center;flex-wrap:wrap;min-width:0;gap:.3rem;padding:.3rem;border:1px solid var(--border,#b4c1d2);border-radius:.4rem}
+.md-card.md-active{border:2px solid var(--teal,var(--accent,#6951af));font-weight:700}
+.md-pick{display:flex;align-items:center;text-align:left;gap:.4rem;flex:1;min-width:0}
+.md-thumb{display:grid;place-items:center;flex:0 0 4rem;min-height:3rem;font-size:.72em;overflow-wrap:anywhere}
+.md-thumb img{width:100%;height:3rem;object-fit:contain}
+.md-name{min-width:0;overflow-wrap:anywhere}
+.md-name small{display:block}
+.md-drawer :focus-visible{outline:2px solid currentColor;outline-offset:2px}
+#smsModelsDrawer{visibility:visible}
+.sms-centre>.sms-overlay{padding-bottom:5rem}
+@media(max-width:440px){.md-summary{flex-basis:100%;order:1}.md-grid{grid-template-columns:minmax(0,1fr)}}

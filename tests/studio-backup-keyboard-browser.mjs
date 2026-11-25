@@ -9,6 +9,7 @@ try{
  await page.goto(url,{waitUntil:'domcontentloaded'});
  await page.locator('#smsHomeNew').click();
  await page.locator('#smsPicker [data-generator="light-pods"]').click();
+  await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
  const snapshot=()=>page.evaluate(()=>JSON.stringify(window.__sensoryStudio.project));
  const accepted=await snapshot();
  await page.locator('#smsLibrary').press('Enter');
