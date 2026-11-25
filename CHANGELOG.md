@@ -62,6 +62,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 - Opt in to registered automatic bed splitting for eligible solid Crystal plinths. The cancellable background check creates matching sockets, named separate dowels and assembly instructions in the production ZIP, or refuses an unverified layout.
 
+## v0.16.0-dev.35.43 — Adjustable, readable Models drawer
+
+- Adjust Thumbnail size from compact to large; the number of columns adapts to the viewport width.
+- Keep model names on a readable horizontal line and move Rename, Info and Close into a separate action row. Long names remain available through their full accessible label and title.
+- Remember thumbnail size separately from project data. Real saved-source previews and retry messages are preserved. The size control uses the shared contextual Help system.
+
 ## v0.16.0-dev.35.42 — Browse compact Library cards
 
 - Browse model and project previews in compact cards. Hover, tab to Actions or tap it to open, copy or organise an item. Press Escape to close the actions.

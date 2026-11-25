@@ -209,6 +209,7 @@ export const nativeFamilyHelp = {
 };
 
 export const dynamicHelp = {
+ '[data-drawer-zoom]': ['Changes thumbnail and card size without changing model data.','Choose a smaller size to fit more open models in the viewport, or a larger size to inspect the saved previews. The choice is remembered in this browser and does not change your model, camera zoom or print settings.'],
  '.sms-library-actions-toggle': ['Shows the available actions for this Library item.','Reveal actions to open, copy, organise or save a model or project. Escape dismisses the action panel without editing the saved item.'],
  '#smsImport': ['Selects a Studio backup or older Crystal project to review.','Choose the editable JSON backup you want to restore. Review the projects and revisions before confirming; a file selection alone does not replace your current project.'],
  'dialog input[type=file][accept=".svg,image/svg+xml"]': ['Chooses a local SVG artwork file.','Select a vector artwork file, then inspect the imported outline, scale and thickness before creating the model.'],
