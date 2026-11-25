@@ -3,11 +3,11 @@
 > **Source/navigation:** [Feature-first source layout](docs/SOURCE_LAYOUT.md) and [repository map](docs/REPOSITORY_MAP.md). Printing helpers begin under `src/printing/`, but core entrypoints and other files remain at root until their active PRs finish. For path-only changes verify both current and historical SHA-scoped Pages release assets, all relative imports and exact-head CI. Do not re-create old root files as compatibility shims, or move Codex-owned WT-023/WT-026 modules without reconciliation.
 
 
-> **Current focus — 24 November 2026:** #147 transactional saves and #151 Templates-first Library B1 are merged; main checkpoint `cd194706997ae1bd31d1231e0a2ab1870c9064c6`. Continue B2 destination chooser under #139; #148 private backups and #158 Gear grips remain existing drafts. Verify current GitHub state before work. Source layout #161 is a separate owner-reviewed migration.
+> **Current entry point:** Read [AI handover](docs/AI_HANDOVER.md) and [project status](docs/PROJECT_STATUS.md) for live-ref checks, merge holds and next assignments. WT-023B2a #172 is merged. B2b requires a new owner dispatch. Verify GitHub refs before picking up existing work.
 
-**Token-saving start:** read [one-page Codex guide](docs/WT023_CODEX_FAST_START.md) → [WT-023B #139](https://github.com/connorturansky-svg/crystal-forge/issues/139) → directly affected source/tests. Reuse the **already merged** `tests/helpers/wt023-project-index.mjs` (test-only) and `tests/wt023-project-index.test.mjs`; do not remake their snapshot identity research. WT-023A implementation PR #147 is merged; [#138](https://github.com/connorturansky-svg/crystal-forge/issues/138) is closed completed. Do not restart it. Do not begin a new hosted login, PIN, automatic cloud sync, nested folders or an unrelated UI overhaul.
+**Start here:** Read the current [handover](docs/AI_HANDOVER.md) and [project status](docs/PROJECT_STATUS.md), then the relevant issue and source. For B2b, the approved [Library implementation packet](docs/WT023_PROJECT_LIBRARY_IMPLEMENTATION.md) and [#139](https://github.com/connorturansky-svg/crystal-forge/issues/139) cover acceptance. Keep the existing project and snapshot store.
 
-**Branch ownership:** #147 is Codex-owned; #148 is independent cloud QA; [#10](https://github.com/connorturansky-svg/crystal-forge/issues/10) physical fit is unverified. Never modify someone else's unreviewed branch, overwrite saved projects, or merge without owner approval. Verify current branch, commits, PRs and exact-head checks before acting.
+**Branch ownership:** Check current issue and pull request claims. Preserve other contributors’ branches and existing saved projects. The owner approves merges and verified physical fit remains under [#10](https://github.com/connorturansky-svg/crystal-forge/issues/10).
 
 ## Historical handoff and branch policy (21 November 2026)
 
