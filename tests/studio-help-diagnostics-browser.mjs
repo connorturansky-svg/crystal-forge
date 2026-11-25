@@ -9,6 +9,7 @@ try{
  await page.goto(url,{waitUntil:'domcontentloaded'});
  await page.locator('#smsHomeNew').click();
  await page.locator('#smsPicker [data-generator="waves"]').click();
+  await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
  const help=page.locator('#helpBtn');
  await help.press('Enter');
  const dialog=page.getByRole('dialog',{name:/Crystal Forge.*Help/});

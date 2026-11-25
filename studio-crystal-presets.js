@@ -1,4 +1,4 @@
-import {generateFormation, crystalGeometry, crystalOrientation, baseGeometry, crystalRootOffset} from './geometry-v3.js';
+import {generateFormation, crystalGeometry, crystalOrientation, baseGeometry, baseAccentSpecs, baseSurfaceHeight, crystalRootOffset} from './geometry-v3.js';
 
 // Each starting point is an independent model. These are just the existing
 // Crystal parameters, so no new saved shape type or optical path is implied.
@@ -14,12 +14,21 @@ export function crystalStartingPoints(defaults){
  return options.map(([id,name,parameters])=>({id,name,parameters:{...defaults,...parameters}}));
 }
 
-export function crystalStartingPointPreview(THREE,settings){
- const cluster=generateFormation(settings),group=new THREE.Group();
+export function crystalStartingPointPreview(THREE,settings,cluster=generateFormation(settings)){
+ const group=new THREE.Group();
  try{
-  if(settings.baseType!=='none')group.add(new THREE.Mesh(baseGeometry(THREE,cluster,settings),new THREE.MeshStandardMaterial({color:0x424c69,roughness:.7})));
+  if(settings.baseType!=='none'){
+   const baseMaterial=()=>new THREE.MeshStandardMaterial({color:settings.colour??0x424c69,roughness:.56,flatShading:true,side:THREE.DoubleSide});
+   group.add(new THREE.Mesh(baseGeometry(THREE,cluster,settings),baseMaterial()));
+   for(const accent of baseAccentSpecs(cluster,settings)){
+    const mesh=new THREE.Mesh(crystalGeometry(THREE,accent,settings),baseMaterial());
+    mesh.position.set(accent.x,baseSurfaceHeight(cluster,settings,accent.x,accent.z)-3,accent.z);
+    mesh.rotation.y=accent.rotation;group.add(mesh);
+   }
+  }
   for(const crystal of cluster){
-   const mesh=new THREE.Mesh(crystalGeometry(THREE,crystal,settings),new THREE.MeshStandardMaterial({color:0x477e9c,roughness:.5,flatShading:true}));
+   if(crystal.hidden)continue;
+   const mesh=new THREE.Mesh(crystalGeometry(THREE,crystal,settings),new THREE.MeshStandardMaterial({color:settings.colour??0x477e9c,roughness:.4,flatShading:true,side:THREE.DoubleSide}));
    group.add(mesh);
    mesh.position.set(crystal.x,crystal.y+crystalRootOffset(cluster,settings,crystal,THREE),crystal.z);
    mesh.quaternion.copy(crystalOrientation(THREE,crystal));
