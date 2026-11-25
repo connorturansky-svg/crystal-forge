@@ -124,7 +124,7 @@ try{
  assert.equal(await page.locator('.sms-split,.sms-more').count(),0);
  assert.equal(await page.locator('.brand').innerText(),'Pixel Model Maker');
  assert((await page.locator('.version').boundingBox()).y>(await page.locator('.brand').boundingBox()).y);
- for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','descriptionsBtn','changelogBtn','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
+ for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','hoverNotes','detailedExplanations','changelogBtn','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
   assert(await page.locator('#'+id).isVisible(),id+' is directly available');
  const leftPanel=page.locator('#smsTools'),rightPanel=page.locator('#smsPrecision'),bottom=page.locator('#smsModelsDrawer');
  assert.equal(Math.round((await rightPanel.boundingBox()).width),335);
@@ -173,10 +173,17 @@ try{
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('#infoOverlay').isVisible(),false);
  }
- const descriptions=page.locator('#descriptionsBtn');
- const described=await descriptions.getAttribute('aria-pressed');
- await descriptions.click();assert.notEqual(await descriptions.getAttribute('aria-pressed'),described);
- await descriptions.click();
+ const hoverNotes=page.getByRole('checkbox',{name:'Hover Notes',exact:true});
+ const explanations=page.getByRole('checkbox',{name:'Detailed Explanations',exact:true});
+ const hoverEnabled=await hoverNotes.isChecked(),detailEnabled=await explanations.isChecked();
+ await explanations.setChecked(!detailEnabled);
+ assert.equal(await explanations.isChecked(),!detailEnabled);
+ assert.equal(await hoverNotes.isChecked(),hoverEnabled);
+ await hoverNotes.setChecked(!hoverEnabled);
+ assert.equal(await hoverNotes.isChecked(),!hoverEnabled);
+ assert.equal(await explanations.isChecked(),!detailEnabled);
+ await hoverNotes.setChecked(hoverEnabled);
+ await explanations.setChecked(detailEnabled);
  const [savedBackup]=await Promise.all([page.waitForEvent('download'),page.locator('#saveBtn').click()]);
  assert.match(savedBackup.suggestedFilename(),/\.json$/);
  await Promise.all([page.waitForEvent('filechooser'),page.locator('#loadBtn').click()]);

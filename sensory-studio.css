@@ -8,7 +8,13 @@
 [data-model-theme="light-pods"]{--model-hue:48}
 [data-model-theme="control-caps"]{--model-hue:325}
 [data-model-theme="workspace"]{--model-hue:213}
-.studio-modelbar{position:sticky;top:0;z-index:12}
+.studio-modelbar{position:sticky;top:0;z-index:12;flex-wrap:wrap}
+.studio-modelbar .studio-modeltabs{min-width:0;flex:1 1 12rem}
+.studio-modelbar .contextual-help{flex:0 0 auto}
+.studio-modelbar .contextual-help:has(.contextual-help-detail){max-width:12rem}
+/* Expanded guidance participates in the sidebar layout instead of allowing
+   the sticky tool finder to cover a focused setting farther down the panel. */
+.show-detailed-explanations .sms-tool-finder{position:static}
 .studio-modeltabs button{border-top:3px solid hsl(var(--model-hue) 58% 49%);background:hsl(var(--model-hue) 35% 21%)}
 .studio-modeltabs button[aria-selected=true]{border-color:hsl(var(--model-hue) 76% 68%);background:hsl(var(--model-hue) 42% 30%)}
 body.theme-light .studio-modeltabs button{background:hsl(var(--model-hue) 55% 95%);color:hsl(var(--model-hue) 50% 22%);border-top-color:hsl(var(--model-hue) 58% 49%)}
