@@ -662,6 +662,7 @@ try{
   const savedCog=page.locator('#smsSavedModels article').filter({hasText:'Cog: Connors new one'});
   await savedCog.waitFor();
   await template.click();
+  await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
   const freshCog=await crystal();
   assert.notEqual(freshCog.id,firstCog.id);
   assert.deepEqual(freshCog.parameters,firstCog.parameters);
