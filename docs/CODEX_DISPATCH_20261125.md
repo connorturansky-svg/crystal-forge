@@ -1,6 +1,6 @@
 # Current implementation dispatch — 25 November 2026
 
-**Dated evidence, not a branch pointer.** Main audited `ff495743be918b761e17ee3bc87264d64b00b4a2`. Read AGENTS.md and AI_HANDOVER.md, then verify live claims and refs. This index supersedes stale next-task directions in historical issue bodies without deleting their evidence or changing product requirements.
+**Historical dispatch.** See [current project status](PROJECT_STATUS.md) for B2a delivery, merged Help and live review holds. Main audited `ff495743be918b761e17ee3bc87264d64b00b4a2`. Read AGENTS.md and AI_HANDOVER.md, then verify live claims and refs. This index supersedes stale next-task directions in historical issue bodies without deleting their evidence or changing product requirements.
 
 ## Current consolidation
 
