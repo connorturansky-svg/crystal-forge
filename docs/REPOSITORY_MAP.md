@@ -55,3 +55,7 @@ Only call a check **passed** when it actually executed on the exact branch/PR SH
 - Former WT-021 specifics: `docs/WT021_*.md`, `prompts/START_HERE.md` and `prompts/active/WT021_*.md`: retain for provenance, but treat dated instructions as historical.
 - Long chronology: [AI handover](AI_HANDOVER.md), [roadmap](ROADMAP.md), [development history](DEVELOPMENT_HISTORY.md); do not restart superseded branches on the basis of these records.
 - Old independent PRs #37, #42, #90 and #101 remain review/owner-decision items, not something a new agent should merge to 'clean up' without comparison and explicit approval.
+
+## Contextual help
+
+[tooltips.js](../tooltips.js) manages shared short notes, toolbar preferences and inline help. [contextual-help-copy.js](../contextual-help-copy.js) holds authored detail and generated-control descriptions. See the [WT-024 coverage inventory](WT024_CONTEXTUAL_HELP_COVERAGE.md) before adding a selector or changing a setting’s meaning.

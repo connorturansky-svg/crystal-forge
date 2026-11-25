@@ -3,7 +3,7 @@
 
 ## Density correction (25 November 2026, proposed)
 
-The owner reported single-letter wrapping on the deployed drawer. The corrective candidate separates the full-width selection area from the Rename/Info/Close row, uses a responsive minimum card width and a five-position **Thumbnail size** slider (Small to Extra large). The choice persists only in browser view preferences, not project documents. Names are horizontally ellipsised with full accessible name and title. Preview failure reasons remain visible with Retry. Use real browser geometry assertions and screenshots at 390/768/1440px, both density extremes and 200% zoom; verify no underlying storage changes. Reconcile provisional release .35.40 with actual main if Gear or Help lands first. Do not merge until exact-head checks and owner visual inspection.
+The owner reported single-letter wrapping on the deployed drawer. The corrective candidate separates the full-width selection area from the Rename/Info/Close row, uses a responsive minimum card width and a five-position **Thumbnail size** slider (Small to Extra large). The choice persists only in browser view preferences, not project documents. Names are horizontally ellipsised with full accessible name and title. Preview failure reasons remain visible with Retry. Use real browser geometry assertions and screenshots at 390/768/1440px, both density extremes and 200% zoom; verify no underlying storage changes. Reconciled with merged #163 Help; provisional release .35.41. The thumbnail slider uses the shared Help registry; its explanatory text scrolls within the controls region so the model grid remains reachable. Do not merge until exact-head checks and owner visual inspection.
 
 ## Using the drawer
 

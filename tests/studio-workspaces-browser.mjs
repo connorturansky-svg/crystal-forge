@@ -221,5 +221,64 @@ try{
  await auditLayout('200% text-only What’s New');
  await page.locator('#closeInfo').click();
  await page.evaluate(()=>{document.documentElement.style.fontSize='';});
+ // WT-024 uses the same shared renderer for existing and generated controls.
+ const hoverNotes=page.getByRole('checkbox',{name:'Hover Notes',exact:true});
+ const detailedExplanations=page.getByRole('checkbox',{name:'Detailed Explanations',exact:true});
+ assert(await hoverNotes.isChecked());
+ assert(!(await detailedExplanations.isChecked()));
+ await detailedExplanations.check();
+ await destination('Design').press('Enter');
+ async function verifyHelp(selector,copy){
+  await reveal(selector);
+  const control=page.locator(selector);
+  const help=control.locator('xpath=ancestor-or-self::*[self::label or contains(concat(" ",normalize-space(@class)," ")," control ") or contains(concat(" ",normalize-space(@class)," ")," sms-model-control ")][1]/following-sibling::*[1]');
+  assert.match(await help.locator('.contextual-help-detail').textContent(),copy);
+  assert(await help.locator('.contextual-help-detail').isVisible());
+  await control.focus();
+  await page.waitForFunction(()=>!document.querySelector('#controlTooltip').hidden);
+  assert.match(await control.getAttribute('aria-describedby'),/controlTooltip/);
+  assert.match(await control.getAttribute('aria-describedby'),/contextualHelpDetail/);
+  await page.keyboard.press('Escape');
+  assert(!(await page.locator('#controlTooltip').isVisible()));
+  assert.match(await control.getAttribute('aria-describedby'),/contextualHelpDetail/);
+  await help.getByRole('button',{name:'Show setting help',exact:true}).click();
+  assert(await page.locator('#controlTooltip').isVisible());
+ }
+ await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{count:5},'WT-024 Crystal'));
+ await destination('Design').press('Enter');
+ await verifyHelp('[data-state=count]',/few crystals/);
+ assert(await page.locator('[data-palette-key=count][aria-describedby*="contextualHelpDetail"]').count(),
+  'the Crystal quick control also has detailed help');
+ await page.evaluate(()=>window.__sensoryStudio.addModel('gears',{},'WT-024 Gear'));
+ await destination('Design').press('Enter');
+ await verifyHelp('[data-model-param=teeth]',/finer spacing/);
+ for(const type of ['tactile-tiles','waves','control-caps','characters','light-pods']){
+  await page.evaluate(typeId=>window.__sensoryStudio.addModel(typeId),type);
+  await destination('Design').press('Enter');
+  const fields=page.locator('[data-model-param][data-model-family="'+type+'"]');
+  assert(await fields.count()>0,type+' renders native parameters');
+  assert.equal(await fields.locator('xpath=self::*[contains(@aria-describedby,"contextualHelpDetail")]').count(),
+   await fields.count(),type+' native parameters have contextual detail');
+ }
+ for(const [workspace,selector] of [['Home','#smsHomeSearch'],['Library','#smsSearch'],['Print Centre','#smsPrinter']]){
+  await destination(workspace).press('Enter');
+  await page.locator(selector+'[aria-describedby*="contextualHelpDetail"]').waitFor({state:'attached',timeout:4000});
+ }
+ await destination('Design').press('Enter');
+ await page.setViewportSize({width:390,height:844});
+ await auditLayout('390px with detailed contextual help');
+ await page.setViewportSize({width:720,height:475});
+ await page.evaluate(()=>{document.documentElement.style.fontSize='200%'});
+ await auditLayout('200% text with detailed contextual help');
+ await page.evaluate(()=>{document.documentElement.style.fontSize=''});
+ const revision=await page.evaluate(()=>window.__sensoryStudio.currentModel.revision);
+ await hoverNotes.uncheck();
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.revision),revision);
+ assert(await detailedExplanations.isChecked());
+ assert(!(await page.locator('#controlTooltip').isVisible()));
+ await page.reload();
+ await page.waitForFunction(()=>window.__sensoryStudio);
+ assert(!(await hoverNotes.isChecked()));
+ assert(await detailedExplanations.isChecked());
  console.log('WT-022 workspaces: keyboard, retained model, actual mounting gesture and narrow navigation passed');
 }finally{await browser.close();}
