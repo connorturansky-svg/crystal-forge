@@ -208,6 +208,7 @@ export const nativeFamilyHelp = {
 };
 
 export const dynamicHelp = {
+ '.sms-library-actions-toggle': ['Shows the available actions for this Library item.','Reveal actions to open, copy, organise or save a model or project. Escape dismisses the action panel without editing the saved item.'],
  '#smsImport': ['Selects a Studio backup or older Crystal project to review.','Choose the editable JSON backup you want to restore. Review the projects and revisions before confirming; a file selection alone does not replace your current project.'],
  'dialog input[type=file][accept=".svg,image/svg+xml"]': ['Chooses a local SVG artwork file.','Select a vector artwork file, then inspect the imported outline, scale and thickness before creating the model.'],
  'dialog input[type=file][accept=".stl,.obj"]': ['Chooses a local STL or OBJ mesh.','Select the exported mesh of the part you want to import. Check its orientation and units before adding it to the project.'],

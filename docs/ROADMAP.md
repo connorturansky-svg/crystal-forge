@@ -247,3 +247,7 @@ On discovering a reproducible failure, add exact steps, input settings, actual/e
 
 Implemented on the draft PR7 branch: engraved five/three-size physical fit samples, side-open wire slots in full-body specimens, chosen-hole calibration applied globally to LED sockets with a visible reversible override, and an all-rights-reserved original-source notice. Physical tolerance, actual cable strain relief and real Cura/print tests remain acceptance requirements. Public source visibility remains unchanged.
 
+
+### WT-023B Library follow-up
+
+WT-023B2a adds compact preview cards with accessible action disclosure. Track implementation and owner review under [#139](https://github.com/connorturansky-svg/crystal-forge/issues/139). WT-023B2b covers saved-project inspection and the transactional destination chooser after the B2a review.

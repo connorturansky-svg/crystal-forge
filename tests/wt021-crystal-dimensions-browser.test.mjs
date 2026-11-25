@@ -647,6 +647,7 @@ try{
   await page.waitForFunction(()=>window.__crystalForgePlacementMetrics().routeGuidesVisible);
   const template=page.getByRole('button',{name:'New Cogs & Gears from template',exact:true});
   await page.locator('#smsLibrary').click();
+ await page.locator('#smsBuiltInTemplates').getByRole('button',{name:'Actions for Cogs & Gears',exact:true}).click();
   await template.click();
   await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
   await page.waitForFunction(()=>!window.__crystalForgePlacementMetrics().routeGuidesVisible);
@@ -661,6 +662,7 @@ try{
   await page.locator('#smsLibrary').click();
   const savedCog=page.locator('#smsSavedModels article').filter({hasText:'Cog: Connors new one'});
   await savedCog.waitFor();
+ await page.locator('#smsBuiltInTemplates').getByRole('button',{name:'Actions for Cogs & Gears',exact:true}).click();
   await template.click();
   await page.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Create model'}).click();
   const freshCog=await crystal();
@@ -668,6 +670,7 @@ try{
   assert.deepEqual(freshCog.parameters,firstCog.parameters);
   assert.deepEqual(freshCog.build,firstCog.build);
   await page.locator('#smsLibrary').click();
+ await savedCog.locator('.sms-library-actions-toggle').click();
   await savedCog.getByRole('button',{name:'Independent copy'}).click();
   assert.deepEqual((await crystal()).parameters,editedCog.parameters);
   console.log('WT-021 Library templates start fresh and saved variants preserve their edits');

@@ -151,6 +151,7 @@ jobs:
         with:
           name: crystal-forge-browser-screenshot
           path: |
+            qa/wt023b2a-*.png
             qa/browser-smoke.png
             qa/unified-*.png
             qa/ux02-*.png
