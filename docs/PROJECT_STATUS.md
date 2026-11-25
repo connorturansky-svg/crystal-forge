@@ -1,5 +1,7 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
+WT-024 contextual help is in development on `feat/wt024-contextual-help`. See the [candidate coverage and known gaps](WT024_CONTEXTUAL_HELP_COVERAGE.md) alongside [Issue #152](https://github.com/connorturansky-svg/crystal-forge/issues/152).
+
 ## WT-023 integration checkpoint — 23 November 2026
 
 Main at this reconciliation is `b18ff81ee954a2dbb3a257e313b9d1d7354280d5`. It includes the #157 readability release and #160 acceptance guide alongside #150, #153, #155, #156 and #159. [#147](https://github.com/connorturansky-svg/crystal-forge/pull/147) carries project persistence as v0.16.0-dev.35.34. On main-targeted PRs the dedicated seven-builder edge workflow owns browser edge coverage, leaving the core browser workflow time for the rest of the regression suite. Use [#147’s checks](https://github.com/connorturansky-svg/crystal-forge/pull/147/checks) for current exact-head CI. After approval, follow the [WT-023 acceptance guide](WT023_NEXT_SLICES_ACCEPTANCE_20261123.md) to reconcile drafts #151 and #148 independently.
