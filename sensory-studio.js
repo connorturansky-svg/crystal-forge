@@ -722,8 +722,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     if(!current())return;
     if(!result)throw Error('Preview deferred. Retry when ready.');
     const img=modelPicture(result.src);
-    img.onerror=()=>{savedPreviewQueue.invalidate(key);img.remove();status.hidden=false;status.textContent='Preview image invalid';retry.hidden=false;};
-    status.hidden=true;root.prepend(img);
+    img.onerror=()=>{savedPreviewQueue.invalidate(key);img.replaceWith(status);status.textContent='Preview image invalid';retry.hidden=false;};
+    status.replaceWith(img);
    }catch(error){if(root.isConnected){status.hidden=false;status.textContent=error.message||'Preview unavailable';retry.hidden=false;}}
   };
   retry.onclick=load;
@@ -739,9 +739,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  function renameDrawerModel(id){
   const model=findModel(project,id);
   if(model.link){adapter.status('Make an independent variant before renaming a linked model.');return;}
-  requestModelName('Rename model',model.name,name=>{editModel(project,id,{name});renderTabs();save();});
+  requestModelName('Rename model',model.name,name=>{editModel(project,id,{name});renderTabs();save();},
+   ()=>document.getElementById('model-tab-'+id));
  }
- function requestModelName(title,suggestion,accept){
+ function requestModelName(title,suggestion,accept,focusAfter=()=>newModelControl){
   const dialog=document.createElement('dialog'),form=document.createElement('form');
   const heading=document.createElement('h2');heading.textContent=title;
   const label=document.createElement('label');label.textContent='Model name ';
@@ -757,7 +758,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   };
   label.append(input);form.append(heading,label,create,cancel);dialog.append(form);
   dialog.setAttribute('aria-label',title);document.body.append(dialog);
-  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  dialog.addEventListener('close',()=>{
+   dialog.remove();
+   if(document.activeElement===document.body)focusAfter()?.focus({preventScroll:true});
+  },{once:true});
   dialog.showModal();input.select();
  }
  function showModelInfo(id,preview){
