@@ -1937,11 +1937,12 @@ try{
   await toggle.check();
   await output.filter({hasText:'P'+count+' · insertion'}).waitFor({timeout:60000});
   const message=await output.innerText();
-  const measurements=[...message.matchAll(/P(\d+) · insertion ([\d.]+) mm · nominal cutter roof allowance (-?[\d.]+) mm · ([\d.]+) mm³ outside stock · ([\d.]+) mm³ stock interference; ([\d.]+) mm³ overlap with wire cuts · ([\d.]+) mm³ missing from required surrounding stock/g)];
+  const measurements=[...message.matchAll(/P(\d+) · insertion ([\d.]+) mm · nominal cutter roof allowance (-?[\d.]+) mm · (-?[\d.]+) mm³ outside stock · ([\d.]+) mm³ stock interference; ([\d.]+) mm³ overlap with wire cuts · ([\d.]+) mm³ missing from required surrounding stock/g)];
   assert.equal(measurements.length,count,name+' reports physical fit for every installed socket');
   for(const [index,measurement] of measurements.entries()){
    assert.equal(Number(measurement[1]),index+1);
    assert(Number(measurement[2])>0,name+' reports a positive insertion depth');
+   assert(Number(measurement[4])>=0,name+' reports a nonnegative outside-stock volume, including rounded negative zero');
    assert.equal(Number(measurement[6]),0,name+' has no wire cuts before routing');
    assert(Number(measurement[7])<=.05,name+' has the required surrounding stock');
   }
