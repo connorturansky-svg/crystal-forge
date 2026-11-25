@@ -208,6 +208,9 @@ export const nativeFamilyHelp = {
 };
 
 export const dynamicHelp = {
+ '#smsImport': ['Selects a Studio backup or older Crystal project to review.','Choose the editable JSON backup you want to restore. Review the projects and revisions before confirming; a file selection alone does not replace your current project.'],
+ 'dialog input[type=file][accept=".svg,image/svg+xml"]': ['Chooses a local SVG artwork file.','Select a vector artwork file, then inspect the imported outline, scale and thickness before creating the model.'],
+ 'dialog input[type=file][accept=".stl,.obj"]': ['Chooses a local STL or OBJ mesh.','Select the exported mesh of the part you want to import. Check its orientation and units before adding it to the project.'],
  '#smsFindTools': ['Finds tools and downloads using everyday words.','Search for what you want to do, for example pixel test fit or magnet. Choose a result to move to its workspace and focus the existing control. An unavailable result explains why.'],
  '[data-batch-id]': ['Includes this crystal in the batch selection.','Select only the crystals that should receive your next batch operation. Selection alone does not change their geometry.'],
  '.md-search': ['Filters the open models in this project.','Type part of a model name to find it among the open tiles. Clearing the search restores the list without changing your project or saved models.'],

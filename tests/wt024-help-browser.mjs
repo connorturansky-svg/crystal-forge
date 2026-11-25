@@ -37,8 +37,8 @@ try{
    await page.getByRole('navigation',{name:'Workspaces'}).getByRole('button',{name:workspace,exact:true}).press('Enter');
    const audit=await page.evaluate(()=>{
     for(const item of document.querySelectorAll('details'))if(item.getClientRects().length)item.open=true;
-    const fields=[...document.querySelectorAll('input:not([type=hidden],[type=file]),select,textarea')].filter(e=>
-     e.getClientRects().length&&!e.closest('[hidden]')&&!e.matches('#hoverNotes,#detailedExplanations'));
+    const fields=[...document.querySelectorAll('input:not([type=hidden]),select,textarea')].filter(e=>
+     e.getClientRects().length&&!e.closest('[hidden]')&&!e.matches('#hoverNotes,#detailedExplanations,#loadFile'));
     return {count:fields.length,missing:fields.filter(e=>!(e.getAttribute('aria-describedby')||'').split(/\s+/).some(id=>
      document.getElementById(id)?.classList.contains('contextual-help-detail'))).map(e=>e.outerHTML.slice(0,180))};
    });
@@ -63,6 +63,26 @@ try{
  const naming=page.getByRole('dialog',{name:'Name new model'});
  assert.match(await naming.locator('.contextual-help-detail').innerText(),/meaningful name/);
  await naming.getByRole('button',{name:'Cancel'}).click();
+ const auditModal=async(modal)=>{
+  await modal.waitFor();
+  const missing=await modal.evaluate(root=>[...root.querySelectorAll('input:not([type=hidden]),select,textarea')].filter(e=>
+   e.getClientRects().length&&!e.closest('[hidden]')&&!(e.getAttribute('aria-describedby')||'').split(/\s+/).some(id=>
+    document.getElementById(id)?.classList.contains('contextual-help-detail'))).map(e=>e.outerHTML.slice(0,180)));
+  assert.deepEqual(missing,[]);
+ };
+ for(const [trigger,name] of [['Import SVG','Import SVG artwork'],['Import 3D model','Import 3D model']]){
+  await page.locator('#smsNew').click();
+  await page.getByRole('button',{name:trigger,exact:true}).click();
+  const dialog=page.getByRole('dialog',{name});
+  await auditModal(dialog);
+  await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
+ }
+ await page.evaluate(()=>window.__sensoryStudio.addModel('waves',null,'Help profile fixture'));
+ await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
+ await page.getByRole('button',{name:'Create / edit pixel profile'}).click();
+ const profile=page.locator('#pixelProfileOverlay');
+ await auditModal(profile);
+ await page.keyboard.press('Escape');
  for(const width of [390,768,1440]){
   await page.setViewportSize({width,height:950});
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),width+'px layout');
@@ -72,5 +92,16 @@ try{
  assert(await hover.isChecked());assert(await detailed.isChecked());
  assert.deepEqual(await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),HELP_PREFERENCES_KEY),{hover:true,detailed:true});
  assert.deepEqual(errors,[]);
- console.log('WT-024 Chromium: '+settings+' visible setting instances across seven builders and eight workspaces; preferences, cross-tab, drawer and naming passed.');
+ const touchContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});
+ const touch=await touchContext.newPage();
+ await touch.goto(url);
+ await touch.waitForFunction(()=>window.__sensoryStudio);
+ await touch.evaluate(()=>window.__sensoryStudio.addModel('gears',null,'Touch help fixture'));
+ const touchDrawer=touch.locator('#smsModelsDrawer');
+ await touchDrawer.getByRole('button',{name:/Models \(/}).tap();
+ await touchDrawer.locator('.md-search + .contextual-help button').tap();
+ await touch.locator('#controlTooltip').waitFor();
+ assert.match(await touch.locator('#controlTooltip').innerText(),/Filters the open models/);
+ await touchContext.close();
+ console.log('WT-024 Chromium: '+settings+' visible setting instances across seven builders and eight workspaces; preferences, cross-tab, drawer, naming and import/profile editors passed.');
 }finally{await browser.close();}

@@ -241,7 +241,7 @@ try{
   await page.keyboard.press('Escape');
   assert(!(await page.locator('#controlTooltip').isVisible()));
   assert.match(await control.getAttribute('aria-describedby'),/contextualHelpDetail/);
-  await help.getByRole('button',{name:/Show setting help for/}).click();
+  await help.getByRole('button',{name:'Show setting help',exact:true}).click();
   assert(await page.locator('#controlTooltip').isVisible());
  }
  await page.evaluate(()=>window.__sensoryStudio.addModel('crystals',{count:5},'WT-024 Crystal'));

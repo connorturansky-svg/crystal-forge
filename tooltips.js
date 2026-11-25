@@ -658,7 +658,8 @@ export function installContextualHelp(doc=document){
   trigger.className='contextual-help-trigger';
   trigger.type='button';
   trigger.textContent='?';
-  trigger.setAttribute('aria-label','Show setting help for '+(info[0]||settingLabel(control)||'this control'));
+  trigger.setAttribute('aria-label','Show setting help');
+  trigger.setAttribute('aria-description',info[0]||settingLabel(control)||'This control');
   helpTriggerOwners.set(trigger,control);
   help.append(trigger);
   const copy=classicDetails[classicKey(control)]||nativeEntry(control)?.[1]||dynamicEntry(control)?.[1];
