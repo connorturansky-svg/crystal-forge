@@ -17,7 +17,9 @@ import {PIXEL_PRESETS,normalisePixelProfile,resolvePixelProfile,resolveSocketPro
 
 import {auditLightPassages,lightPassageExportBlock,lightPassageReportEntries} from '../light-passage-inspection.js';
 
+import {verifyRegisteredGridAssembly} from './registered-grid-assembly.test.mjs';
 const wasm=await Module();wasm.setup();
+verifyRegisteredGridAssembly(wasm);
 {
  const settings={pixelProfileId:'gumdrop',pixelDiameter:12,pixelFit:.15,pixelRetentionLip:.2,socketConical:true};
  const profile=resolvePixelProfile(settings),solids=[],hold=solid=>(solids.push(solid),solid);
