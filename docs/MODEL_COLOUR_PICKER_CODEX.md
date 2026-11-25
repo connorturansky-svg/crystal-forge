@@ -30,3 +30,7 @@ These inform design, not a formal accessibility or colour calibration certificat
 
 ## Codex execution prompt
 Implement #170 on a new focused feature branch from freshly verified main, after shared-file ownership is cleared. Read AGENTS.md, AI_HANDOVER.md, this packet and current colour/history/preview code. Implement the shared labelled control, preserve numeric data and exact values, fix zero fallbacks, integrate native material history and classic source capture, verify seven-family real previews and export invariants. Run focused Node/Chromium then applicable exact-head CI. Update user guide, Help copy, changelog and generated release metadata. Commit/push a reviewable PR with exact SHA and screenshots, no automatic merge. Do not stop at another plan or broaden into a material catalogue. Source audit only here; no runtime test executed.
+
+## Builder integration checkpoint
+
+The shared picker is now mounted in classic Crystal and native Design panels. Native primary/active secondary role edits use the existing document commit, revision, thumbnail invalidation and undo history, including measured-profile history entries. Black is resolved without a truthiness fallback in live, saved and chamfer previews. No geometry or exporter semantics are changed. Browser, exact-head CI, accessibility and independent geometry checks remain pending; viewport layer renderer integration is separate outstanding work.

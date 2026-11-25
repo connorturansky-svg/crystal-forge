@@ -1,3 +1,5 @@
+import {openModelColourControl} from './src/ui/model-colour-control.mjs';
+import {formatModelHex,resolveModelColour} from './src/ui/model-colour.mjs';
 import {installFeatureCatalogue} from './studio-features.js';
 import {makePixelReplicaRecipe} from './pixel-replica.js';
 import {prepareRecipe} from './studio-geometry.js';
@@ -245,6 +247,7 @@ function syncForm(){
  $('hardwareColoursBtn').classList.toggle('active',!!s.hardwareColourMode);
  refreshStudioLighting();
  document.querySelectorAll('#colours button').forEach(b=>b.classList.toggle('active',Number(b.dataset.colour)===s.colour));
+ if($('customModelColour'))$('customModelColour').textContent='Choose model colour · '+formatModelHex(resolveModelColour(s.colour,0x8bbcff));
 }
 function saveProject(){
  const text=JSON.stringify({version:3,settings:s,crystals},null,2);
@@ -1073,6 +1076,7 @@ $('hardwareColoursBtn').onclick=()=>{s.hardwareColourMode=!s.hardwareColourMode;
 $('featureOverlay').onchange=()=>updateHardwareAnnotationVisibility();
 
 $('colours').querySelectorAll('button').forEach(b=>b.onclick=()=>{s.colour=Number(b.dataset.colour);syncForm();rebuild();snapshot()});
+$('customModelColour').onclick=()=>openModelColourControl({value:resolveModelColour(s.colour,0x8bbcff),opener:$('customModelColour'),commit:value=>{if(window.__sensoryStudio?.currentModel?.link)return false;s.colour=value;syncForm();rebuild();snapshot();return true;}});
 // Persistent appearance setting. Separate from saved geometry projects.
 const classicLayout=new URLSearchParams(location.search).get('layout')==='legacy'||new URLSearchParams(location.search).has('legacy');
 let activeTheme=classicLayout?'dark':'light';

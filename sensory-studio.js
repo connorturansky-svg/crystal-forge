@@ -1,3 +1,5 @@
+import {openModelColourControl} from './src/ui/model-colour-control.mjs';
+import {modelDisplayColours,withModelColour,formatModelHex,resolveModelColour} from './src/ui/model-colour.mjs';
 import {listProjectFolders} from './studio-project-index.js';
 import {libraryCard} from './src/ui/library-card.mjs';
 import {createModelDrawer,createPreviewQueue} from './src/ui/model-drawer.mjs';
@@ -547,7 +549,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    if(c?.group&&c.group.parent)c.view={camera:camera.position.toArray(),target:orbit.target.toArray()};
    if(c?.group)disposeGroup(c.group);
    const recipe=applyBuildModules(generator.recipe(model.parameters),model.build,generator.capabilities,{preview:true});
-   const group=previewRecipe(THREE,recipe,[model.materials.primary?.colour||0x88bbff,model.materials.secondary?.colour||0xffcf70]);previewBuilds++;c={kind:'generic',group,fingerprint,view:c?.view,routing:recipe.nativeRouting,recipe};cache.set(model.id,c);
+   const group=previewRecipe(THREE,recipe,modelDisplayColours(model.materials));previewBuilds++;c={kind:'generic',group,fingerprint,view:c?.view,routing:recipe.nativeRouting,recipe};cache.set(model.id,c);
    if(!shell)model.thumbnail=thumbnail(group);
    if(recipe.edgeFinish?.enabled)refreshChamferPreview(model,c);
   }
@@ -570,7 +572,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const recipe=applyBuildModules(generator.recipe(model.parameters),model.build,generator.capabilities);
    const result=prepareRecipe(THREE,wasm,recipe);
    const surfaces=result.bodies.map(({role,mesh})=>{
-    const colour=role==='primary'?(model.materials.primary?.colour||0x88bbff):(model.materials.secondary?.colour||0xffcf70);
+    const colour=modelDisplayColours(model.materials)[role==='primary'?0:1];
     const surface=new THREE.Mesh(nativeFitMesh(mesh),new THREE.MeshStandardMaterial({color:colour,roughness:.55}));
     surface.userData.materialRole=role;
     surface.userData.chamferPreview=true;
@@ -704,7 +706,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     group=crystalStartingPointPreview(THREE,{...generator.defaultParameters,...model.parameters},crystals);
    }else{
     const recipe=applyBuildModules(generator.recipe(model.parameters),model.build,generator.capabilities,{preview:true});
-    group=previewRecipe(THREE,recipe,[model.materials?.primary?.colour||0x88bbff,model.materials?.secondary?.colour||0xffcf70]);
+    group=previewRecipe(THREE,recipe,modelDisplayColours(model.materials));
    }
    const src=thumbnail(group);
    if(!src)throw Error('3D preview could not render. Retry when graphics are available.');
@@ -992,11 +994,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   }
   return ()=>{
    for(const {model,build} of updates){
-    const previous={parameters:copy(model.parameters),build:copy(model.build)};
+    const previous=historyState(model);
     let h=histories.get(model.id);
     if(!h){h={items:[previous],index:0};histories.set(model.id,h);}
     editModel(project,model.id,{build});
-    h.items.splice(h.index+1);h.items.push({parameters:copy(model.parameters),build:copy(build)});h.index=h.items.length-1;
+    h.items.splice(h.index+1);h.items.push(historyState(model));h.index=h.items.length-1;
    }
    if(updates.some(({model})=>model.id===active()?.id)&&mode==='model')showGeneric(active());
    if(updates.length){renderTabs();save();}
@@ -2462,6 +2464,27 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  function visualRange(root,field,value,apply,disabled){
   return renderPrecisionRange(root,field,value,apply,disabled);
  }
+ function appearanceMarkup(model,g){
+  const colours=modelDisplayColours(model.materials);
+  return '<fieldset class="sms-model-appearance"><legend>Model appearance</legend>'+
+   ['primary','secondary'].map((role,i)=>'<button type="button" data-model-colour-role="'+role+'"'+(model.link?' disabled':'')+(i&&!(g.capabilities.supportsDualMaterial&&model.parameters.dualMaterial)?' hidden':'')+'><span class="model-colour-sample" style="background:'+formatModelHex(colours[i])+'" aria-hidden="true"></span> '+(i?'Secondary':'Primary')+' model colour <span data-model-colour-value>'+formatModelHex(colours[i])+'</span></button>').join('')+
+   '<p class="sms-descriptor">Model display colours, separate from simulated LED glow.</p></fieldset>';
+ }
+ function refreshAppearance(model,g){
+  const colours=modelDisplayColours(model.materials);
+  for(const [i,role] of ['primary','secondary'].entries()){
+   const button=panel.querySelector('[data-model-colour-role="'+role+'"]');if(!button)continue;
+   button.hidden=i===1&&!(g.capabilities.supportsDualMaterial&&model.parameters.dualMaterial);
+   button.querySelector('[data-model-colour-value]').textContent=formatModelHex(colours[i]);
+   button.querySelector('.model-colour-sample').style.backgroundColor=formatModelHex(colours[i]);
+   button.onclick=()=>openModelColourControl({value:modelDisplayColours(model.materials)[i],roleLabel:(i?'Secondary':'Primary')+' model colour',opener:button,commit:value=>{
+    if(active()?.id!==model.id||model.link)return false;
+    const accepted=commit({materials:withModelColour(model.materials,role,value)});
+    if(accepted)refreshAppearance(model,g);
+    return !!accepted;
+   }});
+  }
+ }
  function renderEditor(){
   if(mode!=='model'||!active())return;const model=active(),g=registry.get(model.generator.typeId);
   if(model.generator.typeId==='crystals'){panel.hidden=true;renderPalette();return;}
@@ -2474,9 +2497,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    '<div class="sms-actions">'+(stage==='design'?'<button id="smsBuild" class="primary">Next → Build</button>':'<button id="smsDesign">← Design</button><button id="smsSend" class="primary">Next → Queue for print</button>')+'</div>'+
    (model.link?'<p class="sms-descriptor">Linked to library revision '+model.link.revision+'.</p><button id="smsBreak">Make an independent variant</button>'+(update?'<button id="smsAccept">Accept library revision '+update.revision+'</button>':''):'')+
    '<div class="sms-actions"><button id="smsUndo">Undo</button><button id="smsRedo">Redo</button><button id="smsDuplicate">Duplicate</button><button id="smsSaveModel">Save to Library</button><button id="smsSaveModelAs">Save as new model…</button></div>'+
-   (stage==='design'?'<label>Starting point<select id="smsPreset"><option value="">Choose a preset…</option>'+g.presets.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('')+'</select></label>'+designSections(g,model)+partEditor(model):
+   (stage==='design'?'<label>Starting point<select id="smsPreset"><option value="">Choose a preset…</option>'+g.presets.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>').join('')+'</select></label>'+appearanceMarkup(model,g)+designSections(g,model)+partEditor(model):
     ((!shell||buildWorkspace==='build')&&g.capabilities.supportsBase?details('Base and backing','Add a flat backing and set its thickness.','<label><input type="checkbox" data-build="base" '+(model.build.base?'checked':'')+'> Integrated flat base</label><label>Base thickness (mm)<input type="number" data-build="baseThickness" value="'+(model.build.baseThickness||3)+'" min="2" max="15"></label>'):'')+((!shell||buildWorkspace==='mounting')&&g.capabilities.supportsMounting?details('Automatic screw pair','Set the separate two-hole preset.','<label><input type="checkbox" data-build="mounting" '+(model.build.mounting?'checked':'')+'> Two mounting holes</label><label>Fixing profile<select data-build="mountStyle">'+['Through holes','Underside counterbores','Underside countersinks'].map(value=>'<option'+(model.build.mountStyle===value?' selected':'')+'>'+value+'</option>').join('')+'</select></label><label>Hole diameter (mm)<input type="number" data-build="holeDiameter" value="'+(model.build.holeDiameter||3.4)+'" min="2" max="8" step=".1"></label>'):'')+((!shell||buildWorkspace==='build')&&g.capabilities.supportsLEDs?details('Lighting and cable access','Set the cavity and opening in Design.','<p>Use the Light and materials and Holes and fittings sections to size the cavity and cable exit.</p>'):'')+(!shell?details('Pixel holes','Place and size holes to fit real pixels.',pixelBuilderMarkup(model,esc,fittingProfiles())):'') )+
    '<div id="smsModelError" class="sms-descriptor" role="status"></div>';
+  refreshAppearance(model,g);
   $('smsModelName').onchange=e=>commit({name:e.target.value.trim()||g.displayName});
   if($('smsDesign'))$('smsDesign').onclick=()=>{stage='design';renderTabs();renderEditor();};if($('smsBuild'))$('smsBuild').onclick=()=>{stage='build';renderTabs();renderEditor();};if($('smsSend'))$('smsSend').onclick=()=>send(model.id);
   $('smsDuplicate').onclick=()=>{const duplicate=duplicateModel(project,model.id);switchModel(duplicate.id);};$('smsSaveModel').onclick=()=>saveModel(model);
@@ -2503,7 +2527,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    if(input.type==='checkbox')input.checked=!!current;else input.value=current;
    const output=panel.querySelector('[data-value-for="'+schema.key+'"]');
    if(output)output.textContent=current+' '+(schema.unit||'');
-   if(accepted)renderPalette();
+   if(accepted){refreshAppearance(model,g);renderPalette();}
   });
   const coupon=$('smsPixelCoupon');
   if(coupon)coupon.onclick=()=>downloadPixelCoupon(model,
@@ -2535,17 +2559,18 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   bindPartEditor(model);
   editors.refresh();renderPalette();
  }
+ function historyState(model){return {parameters:copy(model.parameters),build:copy(model.build),materials:copy(model.materials)};}
  function commit(changes,{history=true}={}){
   const model=active();if(model.link){$('smsModelError').textContent='Make an independent variant before editing.';return;}
   const old=copy(model);try{
    const generator=registry.get(model.generator.typeId),candidate={...model,...changes};
    if(candidate.generator.typeId!=='crystals')applyBuildModules(generator.recipe(candidate.parameters),candidate.build,generator.capabilities,{preview:true});
-   if(history){let h=histories.get(model.id);if(!h){h={items:[{parameters:old.parameters,build:old.build}],index:0};histories.set(model.id,h);}h.items.splice(h.index+1);h.items.push({parameters:copy(candidate.parameters),build:copy(candidate.build)});h.index=h.items.length-1;}
-   editModel(project,model.id,changes);showGeneric(model);renderTabs();save();if($('smsModelError'))$('smsModelError').textContent='Updated. Prepare again before exporting.';
+   editModel(project,model.id,changes);
+   if(history&&modelFingerprint(old)!==modelFingerprint(model)){let h=histories.get(model.id);if(!h){h={items:[historyState(old)],index:0};histories.set(model.id,h);}h.items.splice(h.index+1);h.items.push(historyState(model));h.index=h.items.length-1;}showGeneric(model);renderTabs();save();if($('smsModelError'))$('smsModelError').textContent='Updated. Prepare again before exporting.';
    return true;
   }catch(error){if($('smsModelError'))$('smsModelError').textContent=error.message;}
  }
- function undo(delta){const h=histories.get(currentId),next=(h?.index??0)+delta;if(!h||next<0||next>=h.items.length)return;h.index=next;commit(copy(h.items[next]),{history:false});renderEditor();}
+ function undo(delta){const h=histories.get(currentId),next=(h?.index??0)+delta;if(!h||next<0||next>=h.items.length)return;const previous=h.index;h.index=next;if(!commit(copy(h.items[next]),{history:false}))h.index=previous;renderEditor();}
  function saveModel(model){
   try{if(model.generator.typeId==='crystals'&&model.id===currentId&&mode==='model')captureCrystal();
    const record=state.library.find(r=>r.id===model.id);saveLibraryRevision(state.library,model,{expectedRevision:record?.versions.at(-1)?.revision||0});save();adapter.status('Saved '+model.name+' to your reusable library.');

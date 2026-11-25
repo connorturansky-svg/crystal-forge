@@ -208,6 +208,7 @@ export const nativeFamilyHelp = {
 };
 
 export const dynamicHelp = {
+ "#customModelColour, [data-model-colour-role]": ["Choose any exact model display colour.","Pick a named swatch, use the colour picker or enter six hexadecimal digits. Apply commits one model edit; Cancel changes nothing. The display colour is separate from LED glow and does not establish actual filament colour."],
  '.sms-library-actions-toggle': ['Shows the available actions for this Library item.','Reveal actions to open, copy, organise or save a model or project. Escape dismisses the action panel without editing the saved item.'],
  '#smsImport': ['Selects a Studio backup or older Crystal project to review.','Choose the editable JSON backup you want to restore. Review the projects and revisions before confirming; a file selection alone does not replace your current project.'],
  'dialog input[type=file][accept=".svg,image/svg+xml"]': ['Chooses a local SVG artwork file.','Select a vector artwork file, then inspect the imported outline, scale and thickness before creating the model.'],

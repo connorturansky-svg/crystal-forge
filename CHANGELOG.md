@@ -60,7 +60,7 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 ## v0.16.0-dev.35.46 — Model colour controls foundation (candidate)
 
-- Prepare shared exact RGB validation and named swatches for future model appearance controls. The new picker is not yet connected to model editing.
+- Choose arbitrary model display colours using named swatches, a colour picker or exact HEX input. Native material colours support undo/redo and preserve black; linked models remain read-only. Viewport layer integration remains in development.
 
 ## v0.16.0-dev.35.42 — Browse compact Library cards
 
