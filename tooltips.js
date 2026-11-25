@@ -1,5 +1,21 @@
 /* Crystal Forge control explanations. One accessible tooltip for the whole app. */
+import {classicDetails,nativeHelp,nativeFamilyHelp,dynamicHelp} from './contextual-help-copy.js';
 const SETTINGS={
+ "curaQualityType": ["curaQualityType","Choose the Cura base quality family needed for an imported profile to appear."],
+ "autoBedSplit": ["autoBedSplit","Split models exceeding the selected printer bed into straight-cut printable pieces."],
+ "edgeManualMounts": ["edgeManualMounts","Include eligible manual through-holes while generating perimeter fixing tabs."],
+ "socketConical": ["socketConical","Give eligible underside LED sockets a conical ceiling for base-down printing."],
+ "wireAllowOverLength": ["wireAllowOverLength","Keep an over-length cable route as an explicitly warned exception instead of automatically refusing it."],
+ "wireVaulted": ["wireVaulted","Request a roofed wire-track cross-section where enough surrounding material exists."],
+ "wireShowLengths": ["wireShowLengths","Show calculated cable lengths on the model next to the planned links."],
+ "edgeFinishSteps": ["edgeFinishSteps","Legacy setting: the verified chamfer currently uses one step."],
+ "edgeFinishScope": ["edgeFinishScope","Legacy setting: the current supported finish is limited to eligible top edges."],
+ "edgeFinishStyle": ["edgeFinishStyle","Legacy setting: current edge finishing uses the supported chamfer, not arbitrary rounding."],
+ "tipStyle": ["Tip style","Choose rounded, blunt or flat ends for the printed crystals."],
+ "edgeFinishEnabled": ["Edge finishing","Bevel supported exposed top rims."],
+ "edgeFinishAmount": ["Bevel amount","Set how much plastic the bevel takes off an eligible top rim."],
+ "requireAccessiblePassages": ["Require light passages","Check for a clear route from fitted LEDs into the crystal before export."],
+ "wireDirectionArrows": ["Cable direction arrows","Show the order in which the cable reaches the pixels."],
  "count": [
   "Crystal count",
   "How many crystals generate in the formation. Increasing the number can affect print size and preparation time."
@@ -281,7 +297,6 @@ const BUTTONS={
   "Help",
   "Opens the full help guide and keyboard shortcuts."
  ],
- "descriptionsBtn": ["Descriptions panel","Display a persistent explanation card for whichever control you hover, focus or change."],
  "changelogBtn": [
   "What’s new",
   "Shows version history and recent development changes."
@@ -431,9 +446,38 @@ const OTHER={
 const titleFrom=el=>el.closest('.control')?.querySelector('label')?.textContent?.trim().replace(/\s+/g,' ').replace(/\d+(?:\.\d+)?(?:%|mm|°)?$/,'').trim()||
  el.closest('.checks')?.textContent?.trim().replace(/\s+/g,' ')||
  el.textContent?.trim().replace(/\s+/g,' ')||'Control';
+const dynamicSelectors=Object.keys(dynamicHelp);
+const dynamicSelector=dynamicSelectors.join(',');
+const helpTriggerOwners=new WeakMap();
+function dynamicEntry(el){
+ if(el.nodeType!==1||!el.matches(dynamicSelector))return undefined;
+ const key=dynamicSelectors.find(selector=>el.matches(selector));
+ return dynamicHelp[key];
+}
+function settingLabel(el){
+ const label=el.closest?.('label')||el.parentElement?.querySelector('label');
+ const caption=label&&Array.from(label.childNodes).filter(node=>node.nodeType===3).map(node=>node.textContent.trim()).filter(Boolean).join(' ');
+ return caption||el.getAttribute?.('aria-label')||(el.tagName==='BUTTON'?el.textContent.trim():undefined);
+}
+function nativeEntry(el){
+ const {modelFamily,modelParam,paletteKey}=el.dataset;
+ const key=modelParam||(modelFamily?paletteKey:undefined);
+ return nativeFamilyHelp[modelFamily]?.[key]||nativeHelp[key];
+}
+const paletteClassicKeys={'crystal-base-height':'baseHeight',count:'count',spacing:'spacing',width:'width',socketShoulderAngle:'socketShoulderAngle'};
+function classicKey(el){return el.dataset.state||(!el.dataset.modelFamily?paletteClassicKeys[el.dataset.paletteKey]:undefined)}
 function lookup(el){
+ if(el.dataset.precisionInput){
+  const slider=el.closest('.sms-visual-range')?.querySelector('[data-palette-key]');
+  if(slider)return lookup(slider);
+ }
  if(el.dataset.tooltipTitle&&el.dataset.tooltipBody)return [el.dataset.tooltipTitle,el.dataset.tooltipBody];
- if(el.dataset.state&&SETTINGS[el.dataset.state])return SETTINGS[el.dataset.state];
+ const nativeParameter=nativeEntry(el);
+ if(nativeParameter)return [settingLabel(el)||el.dataset.modelParam,nativeParameter[0]];
+ const dynamic=dynamicEntry(el);
+ if(dynamic)return [settingLabel(el)||'Setting',dynamic[0]];
+ const key=classicKey(el);
+ if(key&&SETTINGS[key])return SETTINGS[key];
  if(el.id&&BUTTONS[el.id])return BUTTONS[el.id];
  if(el.id&&SETTINGS[el.id])return SETTINGS[el.id];
  if(el.id&&OTHER[el.id])return OTHER[el.id];
@@ -462,6 +506,7 @@ const MOUNT_EXPLANATIONS={
  'Ceiling mount':'Nominal fixing features, not a load-rated suspension system. Use certified hardware and independent safety retention.'
 };
 export function describeControl(el){
+ if(helpTriggerOwners.has(el))return describeControl(helpTriggerOwners.get(el));
  const info=lookup(el);
  if(el?.dataset?.state==='mount')return ['Mount: '+el.value,MOUNT_EXPLANATIONS[el.value]||info?.[1]];
  return info;
@@ -471,12 +516,12 @@ export function installTooltips(doc=document){
  node.id='controlTooltip';node.className='control-tooltip';node.setAttribute('role','tooltip');node.hidden=true;
  const heading=doc.createElement('strong'),description=doc.createElement('span');
  node.append(heading,description);doc.body.append(node);
- let target=null,timer=0,enabled=true;
- const eligible='button, input:not([type=file]), select, [data-tooltip-body]';
+ let target=null,timer=0,leaveTimer=0,enabled=true;
+ const eligible=['button','input:not([type=file])','select','[data-tooltip-body]',...dynamicSelectors].join(',');
  const descriptionIds=el=>el.getAttribute('aria-describedby')?.match(/[^\t\n\f\r ]+/g)||[];
  const clearTimer=()=>{if(timer){clearTimeout(timer);timer=0}};
  const hide=()=>{
-  clearTimer();
+  clearTimer();clearTimeout(leaveTimer);
   if(!node.hidden&&target){
    const ids=descriptionIds(target),remaining=ids.filter(id=>id!==node.id);
    if(remaining.length!==ids.length){
@@ -485,26 +530,42 @@ export function installTooltips(doc=document){
    }
   }
   node.hidden=true;target=null;
+  if(node.parentNode!==doc.body)doc.body.append(node);
  };
  const valid=el=>el&&!el.disabled&&!el.closest('[hidden]')&&el.getClientRects().length>0;
  const position=()=>{
   if(node.hidden||!target)return;
+  if(!valid(target)){hide();return}
   const rect=target.getBoundingClientRect();
   const viewportWidth=doc.documentElement.clientWidth,viewportHeight=doc.documentElement.clientHeight;
   const width=Math.min(300,viewportWidth-22);node.style.maxWidth=width+'px';
   const box=node.getBoundingClientRect();
   let x=rect.left+rect.width/2-box.width/2;
-  const panel=target.closest('.left,.right,.sms-controls');
-  if(panel){const bounds=panel.getBoundingClientRect();if(bounds.right+box.width+22<viewportWidth)x=bounds.right+11;else if(bounds.left-box.width-11>0)x=bounds.left-box.width-11;}
-  x=Math.max(11,Math.min(viewportWidth-box.width-11,x));
-  let y=panel?rect.top:rect.bottom+11;
-  if(y+box.height>viewportHeight-9)y=rect.top-box.height-11;
+  const above=rect.top-box.height-8;
+  const workspace=target.closest('.sms-workspace-nav');
+  const modal=target.closest('dialog[open]');
+  // In a modal the focused field is often immediately above Create/Save.
+  // Prefer an outside edge or the space above the field so help never
+  // covers the next action directly beneath that field.
+  const libraryCaption=target.closest('.sms-library-caption');
+  let y=libraryCaption?libraryCaption.getBoundingClientRect().top-box.height-8:
+   (workspace||modal)&&above>=9?above:rect.bottom+8;
+  const panel=modal||target.closest('.left,.right,.sms-controls');
+  if(panel){
+   const bounds=panel.getBoundingClientRect();
+   if(bounds.right+box.width+18<viewportWidth){x=bounds.right+8;y=rect.top}
+   else if(bounds.left-box.width-18>0){x=bounds.left-box.width-8;y=rect.top}
+  }
+  if(y===rect.bottom+8&&y+box.height>viewportHeight-9)y=above;
+  x=Math.max(9,Math.min(viewportWidth-box.width-9,x));
   y=Math.max(9,Math.min(viewportHeight-box.height-9,y));
   node.style.left=Math.round(x)+'px';node.style.top=Math.round(y)+'px';
  };
  const show=()=>{
   timer=0;if(!enabled||!valid(target))return;
   const content=describeControl(target);if(!content)return;
+  const host=target.closest('dialog[open]')||doc.body;
+  if(node.parentNode!==host)host.append(node);
   heading.textContent=content[0];description.textContent=content[1];
   node.hidden=false;
   const ids=descriptionIds(target);
@@ -513,7 +574,7 @@ export function installTooltips(doc=document){
  };
  const prepare=(el,delay)=>{
   if(!enabled||!valid(el))return hide();
-  if(target===el){if(!node.hidden)position();return}
+  if(target===el){clearTimeout(leaveTimer);if(!node.hidden)position();return}
   hide();target=el;timer=setTimeout(show,delay);
  };
  doc.addEventListener('pointerover',e=>{
@@ -522,17 +583,152 @@ export function installTooltips(doc=document){
   if(el)prepare(el,440);
  });
  doc.addEventListener('pointerout',e=>{
-  if(target&&e.target===target&&!target.contains(e.relatedTarget))hide();
+  if(target&&target.contains(e.target)&&!target.contains(e.relatedTarget)&&target!==doc.activeElement){
+   if(node.hidden)hide();
+   else if(!node.contains(e.relatedTarget))leaveTimer=setTimeout(hide,300);
+  }
+ });
+ node.addEventListener('pointerenter',()=>clearTimeout(leaveTimer));
+ node.addEventListener('pointerleave',e=>{
+  if(target!==doc.activeElement&&!target?.contains(e.relatedTarget))hide();
  });
  doc.addEventListener('focusin',e=>{
   const el=e.target.closest?.(eligible);
   if(el)prepare(el,240);
  });
  doc.addEventListener('focusout',e=>{if(target&&(target===e.target||target.contains(e.target)))hide()});
- doc.addEventListener('pointerdown',()=>hide(),true);
+ doc.addEventListener('pointerdown',e=>{if(!node.contains(e.target)&&!e.target.closest?.('.contextual-help-trigger'))hide()},true);
+ doc.addEventListener('click',e=>{
+  const trigger=e.target.closest?.('.contextual-help-trigger');
+  if(!trigger||!enabled)return;
+  if(target!==trigger){hide();target=trigger}
+  clearTimer();show();
+ });
  doc.addEventListener('keydown',e=>{if(e.key==='Escape')hide()},true);
- doc.addEventListener('scroll',()=>{if(target){if(!node.hidden)position();else hide()}},true);
- window.addEventListener('resize',()=>{if(target)position()});
+ doc.addEventListener('close',e=>{if(e.target.contains?.(target))hide()},true);
+ doc.addEventListener('scroll',()=>{if(target&&!node.hidden)position()},true);
+ doc.defaultView.addEventListener('resize',hide);
  return {hide,enable(value){enabled=!!value;if(!enabled)hide()},get enabled(){return enabled}};
 }
 
+
+export const HELP_PREFERENCES_KEY='crystal-forge-contextual-help-v1';
+
+export function readHelpPreferences(storage){
+ const defaults={hover:true,detailed:false};
+ try{
+  const value=storage.getItem(HELP_PREFERENCES_KEY);
+  if(value===null)return {...defaults,detailed:storage.getItem('crystal-forge-descriptions')==='on'};
+  const saved=JSON.parse(value);
+  return {
+   hover:typeof saved?.hover==='boolean'?saved.hover:defaults.hover,
+   detailed:typeof saved?.detailed==='boolean'?saved.detailed:defaults.detailed
+  };
+ }catch{return defaults}
+}
+
+export function installContextualHelp(doc=document){
+ const hover=doc.getElementById('hoverNotes');
+ const detailed=doc.getElementById('detailedExplanations');
+ const tooltip=installTooltips(doc);
+ let storage;
+ try{storage=doc.defaultView.localStorage}catch{}
+ const settings=readHelpPreferences(storage);
+ const selector=['[data-state]','[data-model-param]','[data-palette-key]',...dynamicSelectors].join(',');
+ const controls=new Map();
+ let nextDetailId=0;
+
+ function associateDetail(control,id,enabled){
+  if(!id)return;
+  const before=control.getAttribute('aria-describedby')?.split(/\s+/).filter(Boolean)||[];
+  const after=before.filter(value=>value!==id);
+  if(enabled)after.push(id);
+  if(before.join(' ')===after.join(' '))return;
+  if(after.length)control.setAttribute('aria-describedby',after.join(' '));
+  else control.removeAttribute('aria-describedby');
+ }
+
+ function decorate(control){
+  // Repeated drawer actions expose their short note on hover/focus; the
+  // drawer filter and naming fields receive adjacent detailed guidance.
+  if(control.matches('.md-card button,.md-header button'))return;
+  const anchor=control.closest('label,.control,.sms-model-control,.sms-visual-range')||control;
+  const existing=controls.get(control);
+  if(existing?.anchor===anchor&&existing.help.parentElement===anchor.parentElement)return;
+  if(existing){associateDetail(control,existing.id,false);existing.help.remove()}
+  const info=describeControl(control);
+  if(!info?.[1])return;
+  const help=doc.createElement('div');
+  help.className='contextual-help';
+  const trigger=doc.createElement('button');
+  trigger.className='contextual-help-trigger';
+  trigger.type='button';
+  trigger.textContent='?';
+  trigger.setAttribute('aria-label','Show setting help');
+  trigger.setAttribute('aria-description',info[0]||settingLabel(control)||'This control');
+  helpTriggerOwners.set(trigger,control);
+  help.append(trigger);
+  const copy=classicDetails[classicKey(control)]||nativeEntry(control)?.[1]||dynamicEntry(control)?.[1];
+  let id;
+  if(copy){
+   id='contextualHelpDetail'+(++nextDetailId);
+   const explanation=doc.createElement('p');
+   explanation.id=id;
+   explanation.className='contextual-help-detail';
+   explanation.textContent=copy;
+   help.append(explanation);
+  }
+  anchor.after(help);
+  controls.set(control,{anchor,help,id});
+  associateDetail(control,id,detailed.checked);
+ }
+
+ function prune(){
+  for(const [control,{help,id}] of controls){
+   if(!control.isConnected){associateDetail(control,id,false);help.remove();controls.delete(control)}
+  }
+ }
+ function decorateWithin(root){
+  if(root.matches?.(selector))decorate(root);
+  for(const control of root.querySelectorAll(selector))decorate(control);
+ }
+ function apply(){
+  tooltip.enable(hover.checked);
+  doc.body.classList.toggle('show-hover-notes',hover.checked);
+  doc.body.classList.toggle('show-detailed-explanations',detailed.checked);
+  for(const [control,{id}] of controls)associateDetail(control,id,detailed.checked);
+ }
+ function save(){
+  apply();
+  try{storage.setItem(HELP_PREFERENCES_KEY,JSON.stringify({hover:hover.checked,detailed:detailed.checked}))}catch{}
+ }
+ hover.checked=settings.hover;
+ detailed.checked=settings.detailed;
+ try{
+  if(storage.getItem(HELP_PREFERENCES_KEY)===null)storage.setItem(HELP_PREFERENCES_KEY,JSON.stringify(settings));
+ }catch{}
+ hover.addEventListener('change',save);
+ detailed.addEventListener('change',save);
+ doc.defaultView.addEventListener('storage',event=>{
+  if(event.key!==HELP_PREFERENCES_KEY&&event.key!==null)return;
+  const updated=readHelpPreferences(storage);
+  hover.checked=updated.hover;
+  detailed.checked=updated.detailed;
+  apply();
+ });
+ apply();
+ decorateWithin(doc.body);
+ const observer=new doc.defaultView.MutationObserver(records=>{
+  let removed=false;
+  const added=new Set();
+  for(const {addedNodes,removedNodes} of records){
+   if([...removedNodes].some(node=>node.nodeType===1&&!node.closest('.contextual-help')))removed=true;
+   for(const node of addedNodes){
+    if(node.nodeType===1&&node.isConnected&&!node.closest('.contextual-help'))added.add(node);
+   }
+  }
+  if(removed)prune();
+  for(const node of added)decorateWithin(node);
+ });
+ observer.observe(doc.body,{childList:true,subtree:true});
+}

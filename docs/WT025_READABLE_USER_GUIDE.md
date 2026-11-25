@@ -1,6 +1,6 @@
 # Crystal Forge — readable quick guide
 
-> **Release candidate v0.16.0-dev.35.33 ([PR #157](https://github.com/connorturansky-svg/crystal-forge/pull/157)).** The readable defaults described below apply to this candidate. Universal two-level help and “Since your last visit” are separate planned updates.
+> **Release candidate v0.16.0-dev.35.33 ([PR #157](https://github.com/connorturansky-svg/crystal-forge/pull/157)).** The readable defaults described below apply to this candidate. “Since your last visit” is a separate planned update.
 
 ## Find something without searching through menus
 
@@ -17,7 +17,9 @@ The **Features** tab under Help provides a visual list of model builders and ava
 
 ## Find projects and templates in the Library
 
-In the WT-023B B1 candidate (#151), Templates appears first. Projects contains one expandable folder per project, with the active project marked separately from its saved versions. Use Tab to reach a folder heading and Enter or Space to open or fold it. Open a saved version through its Open project action. The current project is saved as a recoverable copy before switching. Folder expansion is remembered within the browser tab, including on reload.
+Templates appears first. Projects contains one expandable folder per project, with the active project marked separately from its saved versions. Use Tab to reach a folder heading and Enter or Space to open or fold it. Open a saved version through its Open project action. The current project is saved as a recoverable copy before switching. Folder expansion is remembered within the browser tab, including on reload.
+
+Library cards show a preview and the item name. Hover over a card or tab to **Actions** to find its commands. On a touchscreen, tap **Actions**. Press Escape to close the commands and return to **Actions**. If a preview could not load, use **Retry** on the card.
 
 Saved models and the existing favourites and collection filters remain available. Template destinations still use the established actions. The planned destination chooser will be implemented separately under #139.
 
@@ -41,3 +43,15 @@ Saved models and the existing favourites and collection filters remain available
 A future **Since your last visit** area will summarise shipped changes in ordinary language, help you locate moved tools and let you mark updates as read. These will be explained here and in the in-app Help only when implementation is merged, Pages deployment is verified and the owner approves release.
 
 **Need to give feedback?** In [WT-025 issue #154](https://github.com/connorturansky-svg/crystal-forge/issues/154), report the workspace, exact label that is hard to read or find, your browser/zoom and what you expected. You do not need to understand the code.
+
+## Read help beside a setting
+
+In the WT-024 candidate, turn on **Hover Notes** and hover over or focus a setting. On a touch screen, select the question-mark button. Press Escape to dismiss a note. Turn on **Detailed Explanations** to show longer guidance for supported settings. The two options work independently, and your browser remembers your choices.
+
+## Models drawer
+
+Open **Models** at the bottom of the 3D viewport. The list contains the current project's open models. It closes when you reload Studio. While open, type in **Find an open model** to narrow the list without changing saved data.
+
+Choose a model to switch to it. Use **Rename**, **Info** or **Close** on its tile. **Close** removes the open entry while keeping the model in the project. Use Alt+arrow on a model button to reorder it, or Escape to close the drawer and return focus to Models.
+
+Use **New model** to pick a starting point, then review the suggested name. Previews load when their tiles come into view. If a preview fails, read the reason and use **Retry preview**.

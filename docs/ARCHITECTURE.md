@@ -75,3 +75,7 @@ Version text and the in-app changelog live in `index.html`, while `CHANGELOG.md`
 ## Architectural hazards / planned improvements
 
 The unbundled ESM architecture is simple but CDN availability matters. Geometry/fabrication can be computationally expensive. Tests currently cover representative configurations rather than all slider combinations or physical printing. UI status/warnings must expose what has and has not been checked. Future changes should add testability at boundaries rather than rewrite the entire app merely to introduce a test runner.
+
+### Library card presentation
+
+`src/ui/library-card.mjs` manages the action disclosure for each Library card. `sensory-studio.js` supplies the existing callbacks and genuine saved preview, including status and retry. Disclosure state is ephemeral and outside the project data and transaction path.

@@ -39,9 +39,9 @@ try{
  await choose('wire IN OUT','Wiring','#pickWireEntryBtn');
  await choose('bevel crystal','Build','[data-edge-finish=enabled]');
  await choose('Cura profile','Print Centre','#smsCura');
- await choose('STL export','Print Centre','#smsPrintCurrent button');
+ await choose('STL export','Print Centre','#smsPrintCurrent [data-prepare-current]');
  assert.match(await page.locator('.sms-tool-finder [role=status]').innerText(),/Prepare the current model/);
- await page.locator('#smsPrintCurrent button').click();
+ await page.locator('#smsPrintCurrent').getByRole('button',{name:'Prepare current model',exact:true}).click();
  await page.locator('[data-job-stl]:enabled').waitFor({timeout:120000});
  await choose('STL export','Print Centre','[data-job-stl]');
  await page.setViewportSize({width:390,height:844});

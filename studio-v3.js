@@ -15,9 +15,9 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {generateFormation,crystalGeometry,crystalOrientation,baseGeometry,baseAccentSpecs,baseSurfaceHeight,crystalRootOffset,exportSTL} from './geometry-v3.js';
 import {crystalFittingPreview,loadManifold,setThreeInstance,saveSTL,save3MF,encodeSTL,makeCalibrationStrip,makePixelSeatCoupon,makeDetachableMountPlate,splitPreparedMesh,splitPreparedMeshGrid,makeSplitPinCoupon,makeDetachablePlate,makeSteppedPixelCoupon} from './fabrication-v1.js';
-import {buildProductionPack} from './production-pack.js';
-import {planSplitJoints} from './split-joints.js';
-import {planBedAwareSplit} from './bed-split.js';
+import {buildProductionPack} from './src/printing/production-pack.js';
+import {planSplitJoints} from './src/printing/split-joints.js';
+import {planBedAwareSplit} from './src/printing/bed-split.js';
 import {planDetachablePlate} from './detachable-plate.js';
 import {applyShapePreset} from './design-workflows.js';
 setThreeInstance(THREE);
@@ -29,15 +29,15 @@ import {saveTemplate,readTemplates,findTemplate,deleteTemplate} from './project-
 import {GitHubVault,captureVault,mergeVault} from './github-vault.js';
 import {manufacturingFingerprint} from './manufacturing-fingerprint.js';
 import {saveNamedProject,listSavedProjects,loadNamedProject,deleteNamedProject} from './project-library.js';
-import {installTooltips,describeControl} from './tooltips.js';
+import {installContextualHelp} from './tooltips.js';
 import {PIXEL_PRESETS,allPixelProfiles,normalisePixelProfile,resolvePixelProfile,resolveSocketProfile,socketShoulderRise} from './pixel-profiles.js';
 import {planPixelProfileSave,planPixelProfileDelete} from './studio-profile-safety.js';
 import {renderPixelProfileDiagram,PIXEL_DIMENSIONS} from './pixel-profile-diagram.js';
 import {createCuraProfile,calculateCuraSettings} from './cura-profiles.js';
-import {adviseCuraForModel} from './cura-model-advisor.js';
+import {adviseCuraForModel} from './src/printing/cura-model-advisor.js';
 import {calibrationSpec,selectedFitResult,resetFitCalibration} from './fit-calibration.js';
-import {assessPrintQuality,printChecklistText} from './print-quality.js';
-import {assessOpticalAccess,opticalAuditCSV} from './optical-audit.js';
+import {assessPrintQuality,printChecklistText} from './src/printing/print-quality.js';
+import {assessOpticalAccess,opticalAuditCSV} from './src/printing/optical-audit.js';
 
 const $=id=>document.getElementById(id);
 let studioBridge=null;
@@ -1795,30 +1795,7 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Delete'&&selectedId){crystals=crystals.filter(c=>c.id!==selectedId);selectedId=null;rebuild();snapshot()}
 });
 syncForm();rebuild();snapshot();
-installTooltips();
-const descriptionsKey='crystal-forge-descriptions';
-let descriptionsEnabled=false;
-try{descriptionsEnabled=localStorage.getItem(descriptionsKey)==='on'}catch(e){}
-function showDescription(el){
- if(!descriptionsEnabled)return;
- const info=describeControl(el);if(!info)return;
- $('contextHelpTitle').textContent=info[0];
- $('contextHelpBody').textContent=info[1];
-}
-function toggleDescriptionsUI(){
- $('contextHelp').hidden=!descriptionsEnabled;
- document.body.classList.toggle('descriptions-active',descriptionsEnabled);
- $('descriptionsBtn').setAttribute('aria-pressed',String(descriptionsEnabled));
- $('descriptionsBtn').textContent=descriptionsEnabled?'ⓘ Descriptions: On':'ⓘ Descriptions';
- if(descriptionsEnabled)showDescription(document.querySelector('[data-state="mount"]'));
- try{localStorage.setItem(descriptionsKey,descriptionsEnabled?'on':'off')}catch(e){}
-}
-$('descriptionsBtn').onclick=()=>{descriptionsEnabled=!descriptionsEnabled;toggleDescriptionsUI()};
-for(const kind of ['pointerover','focusin','change'])
- document.addEventListener(kind,e=>{
-  const el=e.target.closest?.('button,input,select');if(el)showDescription(el);
- });
-toggleDescriptionsUI();
+installContextualHelp();
 installExactValueEditors();
 // Keep the classic lighting card intact before installing collapsible sections.
 if(classicLayout){

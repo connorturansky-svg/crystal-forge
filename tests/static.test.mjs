@@ -10,8 +10,18 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const local=p=>path.join(root,p);
 const jsPaths=fs.readdirSync(root).filter(p=>p.endsWith('.js'));
-for(const p of fs.readdirSync(local('tests')).filter(p=>p.endsWith('.mjs')))jsPaths.push('tests/'+p);
-assert(jsPaths.includes('studio-v3.js')&&jsPaths.includes('fabrication-v1.js')&&jsPaths.includes('hardware-editor.js')&&jsPaths.includes('pixel-profiles.js')&&jsPaths.includes('wire-routing.js')&&jsPaths.includes('print-advisor.js')&&jsPaths.includes('cura-profiles.js')&&jsPaths.includes('print-quality.js')&&jsPaths.includes('optical-audit.js')&&jsPaths.includes('split-joints.js')&&jsPaths.includes('design-workflows.js')&&jsPaths.includes('production-pack.js')&&jsPaths.includes('targeted-light-paths.js')&&jsPaths.includes('light-port-plan.js')&&jsPaths.includes('pixel-profile-diagram.js')&&jsPaths.includes('cura-model-advisor.js')&&jsPaths.includes('detachable-plate.js'));
+// Check nested source, test helpers and scripts, not just legacy root modules.
+function addNestedJs(directory){
+ for(const entry of fs.readdirSync(local(directory),{withFileTypes:true})){
+  const child=directory+'/'+entry.name;
+  if(entry.isDirectory())addNestedJs(child);
+  else if(entry.isFile()&&/\.(?:js|mjs)$/i.test(entry.name))jsPaths.push(child);
+ }
+}
+for(const directory of ['src','tests','scripts','svg-import']){
+ if(fs.existsSync(local(directory)))addNestedJs(directory);
+}
+assert(jsPaths.includes('studio-v3.js')&&jsPaths.includes('fabrication-v1.js')&&jsPaths.includes('hardware-editor.js')&&jsPaths.includes('pixel-profiles.js')&&jsPaths.includes('wire-routing.js')&&jsPaths.includes('src/printing/print-advisor.js')&&jsPaths.includes('cura-profiles.js')&&jsPaths.includes('src/printing/print-quality.js')&&jsPaths.includes('src/printing/optical-audit.js')&&jsPaths.includes('src/printing/split-joints.js')&&jsPaths.includes('design-workflows.js')&&jsPaths.includes('src/printing/production-pack.js')&&jsPaths.includes('targeted-light-paths.js')&&jsPaths.includes('light-port-plan.js')&&jsPaths.includes('pixel-profile-diagram.js')&&jsPaths.includes('src/printing/cura-model-advisor.js')&&jsPaths.includes('detachable-plate.js'));
 for(const p of jsPaths){
  // node --check parses ESM without importing CDN modules or starting WebGL.
  try{execFileSync(process.execPath,['--check',local(p)],{stdio:'pipe'})}
@@ -35,7 +45,7 @@ const index=read('index.html');
 assert.match(index,/<script\s+type="module"\s+src="\.\/studio-v3\.js"><\/script>/,'Active app is bootstrapped from studio-v3.js');
 assert.match(index,/type="importmap"/,'The browser import map is declared');
 for(const id of ['viewport','prepareBtn','prepareStatus','prepareReport','showManufacturing',
- 'stlBtn','threeMfBtn','placePixelBtn','placeMountBtn','placeTabBtn','pickWireExitBtn','resetTabsBtn','reportVault','reportLEDVents','pixelProfileSelect','pixelProfileOverlay','descriptionsBtn','contextHelp','wiringCsvBtn','reportWireChannels','reportRoofSpan','customPrinterSettings','shapePresetSelect','applyShapePresetBtn','printChecklistBtn','opticalCsvBtn','productionPackBtn','detachablePlateBtn','exportMountPlateBtn','singleWireExitBtn','wireRouteStatus','pixelProfileDiagram','curaModelAdvice','curaRecommendedNozzleBtn','steppedPixelCouponBtn','reportTargeted','reportDirectPorts','reportSkippedPorts','reportSkippedLight','printFlowEstimate','fitResultSelect','fitOverrideToolBtn','resetFitOverrideBtn','applyFitResultBtn','fitCalibrationStatus']){
+ 'stlBtn','threeMfBtn','placePixelBtn','placeMountBtn','placeTabBtn','pickWireExitBtn','resetTabsBtn','reportVault','reportLEDVents','pixelProfileSelect','pixelProfileOverlay','hoverNotes','detailedExplanations','wiringCsvBtn','reportWireChannels','reportRoofSpan','customPrinterSettings','shapePresetSelect','applyShapePresetBtn','printChecklistBtn','opticalCsvBtn','productionPackBtn','detachablePlateBtn','exportMountPlateBtn','singleWireExitBtn','wireRouteStatus','pixelProfileDiagram','curaModelAdvice','curaRecommendedNozzleBtn','steppedPixelCouponBtn','reportTargeted','reportDirectPorts','reportSkippedPorts','reportSkippedLight','printFlowEstimate','fitResultSelect','fitOverrideToolBtn','resetFitOverrideBtn','applyFitResultBtn','fitCalibrationStatus']){
  assert(index.includes('id="'+id+'"'),'Missing essential UI element #'+id);
 }
 const defaults=read('studio-v3.js');
@@ -64,4 +74,5 @@ for(const required of ['AGENTS.md','docs/AI_HANDOVER.md','docs/ARCHITECTURE.md',
 try{
  execFileSync(process.execPath,[local('tests/wt024-help-audit.test.mjs')],{cwd:root,stdio:'pipe'});
 }catch(error){throw new Error('WT-024 help inventory tests failed: '+String(error.stderr||error.message));}
+execFileSync(process.execPath,[local('tests/model-drawer-prototype.test.mjs')],{cwd:root,stdio:'inherit'});
 console.log(JSON.stringify({result:'STATIC CHECKS PASSED',scriptsParsed:jsPaths.length,relativeImports:checkedImports,uiControls:controls.size,docsChecked:10},null,2));

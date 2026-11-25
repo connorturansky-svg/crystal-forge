@@ -58,11 +58,38 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
-## v0.16.0-dev.35.36 — Tactile cog grips and off-centre handles
+## v0.16.0-dev.35.49 — Tactile cog grips and off-centre handles
 
 - Add ten Gear-top grip starting points, including offset crank spindles, fluted/knurled dials, rounded rectangular handles and tactile profiles with independent width, depth and height.
 - Double-click a flat cog face or choose Add grip, drag or edit exact X/Z coordinates, and get explicit feedback when a strengthened base overlaps a shaft bore, window or gear edge.
 - Prepare a real Boolean-fused model with round or chamfered grip roots and a continuous measured centre shaft bore through a combined centred knob. Edit all source settings later; bearing-mounted handles, arbitrary Cap-model fusion and physical strength qualification remain future work.
+
+## v0.16.0-dev.35.42 — Browse compact Library cards
+
+- Browse model and project previews in compact cards. Hover, tab to Actions or tap it to open, copy or organise an item. Press Escape to close the actions.
+
+## v0.16.0-dev.35.40 — Read guidance beside settings
+
+- Use Hover Notes to see short help with a mouse, keyboard or question-mark button.
+- Use Detailed Explanations to read longer guidance beside supported settings. Set each option independently and keep your choices between visits.
+
+## v0.16.0-dev.35.39 — Browse open models in the viewport
+
+- Open the Models drawer from the bottom of the viewport to find, switch, reorder, rename or close open models.
+- Name a new model before adding it. Use Info to check its project, source and revision.
+- See previews generated from the saved model when its card comes into view. Retry a preview when it cannot render.
+
+## v0.16.0-dev.35.38 — Recover larger private Studio backups
+
+- Restore and verify larger model assets and Studio manifests through GitHub's authenticated Git Blob API when the Contents API omits inline data.
+- Preserve existing saved projects and private backup revisions if an oversized asset cannot be read.
+
+## v0.16.0-dev.35.36 — Organised printing source files
+
+- Find the production pack, print-quality checks, Cura model advice and optical reports together in a dedicated printing source folder.
+- Keep all existing model settings, saved projects and STL/3MF output behaviour unchanged; this is a source layout improvement.
+- Preserve SHA-specific GitHub Pages files for both current and older browser tabs while source modules move.
+
 ## v0.16.0-dev.35.35 — Find templates and projects in Library
 
 - Browse templates first, then open saved versions from collapsible project folders.

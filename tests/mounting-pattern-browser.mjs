@@ -179,6 +179,7 @@ try{
  await page.locator('#smsSaveCrystal').click();
  await page.locator('#smsLibrary').click();
  const saved=page.locator('#smsSavedModels article').filter({hasText:crystalName});
+ await saved.locator('.sms-library-actions-toggle').click();
  await saved.getByRole('button',{name:'Independent copy'}).click();
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.mountingPatterns?.length===1);
  assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.manualMountHoles),crystalMounts);

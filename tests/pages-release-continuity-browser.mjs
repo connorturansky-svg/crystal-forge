@@ -25,8 +25,9 @@ try{
  await write(join(newRelease,'vendor/manifold/manifold.js'),'export const manifoldVersion="3.5.4";');
  await write(join(newRelease,'vendor/manifold/manifold.wasm'),'fake nonempty wasm fixture');
  await write(join(oldSource,'svg-import/index.js'),'export const imported=true;');
+ await write(join(oldSource,'src/printing/legacy-helper.js'),'export const retained=true;');
  await write(join(oldSource,'studio-v3.js'),
-  "export const liveVersion='old'; import './svg-import/index.js';");
+  "export const liveVersion='old'; import './svg-import/index.js'; import './src/printing/legacy-helper.js';");
  await write(join(oldSource,'fabrication-worker.js'),"self.postMessage('worker-from-old-SHA');");
  for(let i=0;i<12;i++)await write(join(oldSource,'support-'+i+'.js'),
   "export const n="+i+"; import 'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js';");
@@ -63,6 +64,7 @@ try{
  const retained=await preserveRelease({sourceRoot:oldSource,siteRoot:site,oldSha:older,currentSha:newer});
  assert(retained.files>=10);
  assert.equal((await tab.request.get(base+'releases/'+older+'/fabrication-worker.js')).status(),200);
+ assert.equal((await tab.request.get(base+'releases/'+older+'/src/printing/legacy-helper.js')).status(),200);
  assert.equal((await tab.request.get(base+'releases/'+older+'/vendor/three/build/three.module.js')).status(),200);
  const message=await tab.evaluate(()=>new Promise((resolve,reject)=>{
   const worker=new Worker(new URL('fabrication-worker.js',document.baseURI),{type:'module'});

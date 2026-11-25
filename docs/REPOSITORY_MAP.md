@@ -1,6 +1,9 @@
 # Repository map — start here before opening 100 files
 
-**Current orientation (23 Nov 2026):** main `d2ee1ab84ea41d363d9448df436732a286bf2c54` includes merged CI efficiency #131, approved WT-023 architecture #144, and independent test-only project-index prework #146. Codex's data-layer #147 is still a **draft** and behind main; the next feature milestone is [WT-023B #139](https://github.com/connorturansky-svg/crystal-forge/issues/139), not a new WT-023A architecture exercise. Start at [Codex fast start](WT023_CODEX_FAST_START.md) and [status](PROJECT_STATUS.md). Recheck live GitHub before changing code; archived WT-021 and WT-022 entries remain historical.
+**Source-layout update (first printing-source wave):** seven stable print/production helpers now live under [`src/printing/`](../src/printing/), rather than the repository root. See the [source layout guide](SOURCE_LAYOUT.md) for the exact seven filenames, what stays in the root and future migration rules. The historical status checkpoint below is dated, not a current GitHub PR state.
+
+
+**Current orientation (24 Nov 2026):** #147 transactional saves and #151 Library B1 merged; main checkpoint `cd194706997ae1bd31d1231e0a2ab1870c9064c6`. B2 destination chooser remains under #139; #148 and #158 remain separate drafts. Check live GitHub state before changing source. See [current status](PROJECT_STATUS.md), [source layout](SOURCE_LAYOUT.md) and [active PRs](https://github.com/connorturansky-svg/crystal-forge/pulls).
 
 ## For a human opening the repository
 
@@ -27,7 +30,7 @@
 | Real manufacturing, not just preview | `fabrication-v1.js`, `fabrication-worker.js`, `studio-model-worker.js`, `studio-material-export.js`, `studio-edge-finish.js` |
 | Library, saved state and recovery | `studio-documents.js`, `studio-organisation.js`, `studio-sync-plan.js`, `studio-vault.js`, `studio-migration.js`, `github-vault.js` (legacy Crystal), [backup guidance](BACKUP_RECOVERY.md), [WT-023 fast start](WT023_CODEX_FAST_START.md) |
 | Find-a-tool search | `studio-tool-finder.js`, `sensory-studio.js`; full tool registry/matcher in `studio-tool-registry.js` and `studio-tool-search-core.js` from #133, now in `main` via merged #134 |
-| Print export settings/Cura | `cura-profiles.js`, `production-pack.js`, `studio-material-export.js`, `tests/cura-profiles.test.mjs` |
+| Print export settings/Cura | `cura-profiles.js`, `src/printing/production-pack.js`, `src/printing/print-quality.js`, `src/printing/optical-audit.js`, `src/printing/cura-model-advisor.js`, `studio-material-export.js`, `tests/cura-profiles.test.mjs` |
 
 **Important invariant:** the interactive preview meshes are not automatically the connected Manifold-produced printable part. Validate actual exported STL/3MF sections and physical print separately. Existing browser actions and state can change between workspaces; do not create new model build stages just to display new tabs.
 
@@ -52,3 +55,7 @@ Only call a check **passed** when it actually executed on the exact branch/PR SH
 - Former WT-021 specifics: `docs/WT021_*.md`, `prompts/START_HERE.md` and `prompts/active/WT021_*.md`: retain for provenance, but treat dated instructions as historical.
 - Long chronology: [AI handover](AI_HANDOVER.md), [roadmap](ROADMAP.md), [development history](DEVELOPMENT_HISTORY.md); do not restart superseded branches on the basis of these records.
 - Old independent PRs #37, #42, #90 and #101 remain review/owner-decision items, not something a new agent should merge to 'clean up' without comparison and explicit approval.
+
+## Contextual help
+
+[tooltips.js](../tooltips.js) manages shared short notes, toolbar preferences and inline help. [contextual-help-copy.js](../contextual-help-copy.js) holds authored detail and generated-control descriptions. See the [WT-024 coverage inventory](WT024_CONTEXTUAL_HELP_COVERAGE.md) before adding a selector or changing a setting’s meaning.

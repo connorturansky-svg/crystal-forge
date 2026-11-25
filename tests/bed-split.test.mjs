@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {planBedAwareSplit} from '../bed-split.js';
+import {planBedAwareSplit} from '../src/printing/bed-split.js';
 const report=(width,depth,height,limit=[215,215,300])=>({printerLimit:limit,mesh:{
  points:new Float32Array([-width/2,0,-depth/2,width/2,height,depth/2,width/2,0,-depth/2])}});
 const no=planBedAwareSplit(report(120,110,180));assert(no.ready&&!no.needed&&no.pieceCount===1);

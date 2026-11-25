@@ -12,10 +12,7 @@ export const TOOL_FINDER_ITEMS=Object.freeze([
  {id:'mount-hole',label:'Place mounting hole',workspace:'Mounting',aliases:['manual through-hole','screw fixing','threaded insert','magnet pocket'],
   description:'Place individual fixing holes and select a fixing profile.',
   crystal:'[data-tool-action=placeMountBtn]',control:'[data-place-mount]',editing:true},
- {id:'gear-top-grips',label:'Cog handles and tactile knobs',workspace:'Design',
-  aliases:['off centre crank handle','offset peg','turning knob','spigot','gears top controls','knurled dial','spindle','cog grip'],
-  description:'Add an integral tapered, textured or off-centre grip to a Cog. Available when editing a Gear in Design.',
-  control:'#smsGearTopEditor',editing:true},
+ {id:'gear-top-grips',label:'Cog handles and tactile knobs',workspace:'Design',aliases:['off centre crank handle','offset peg','turning knob','spigot','gears top controls','knurled dial','spindle','cog grip'],description:'Add an integral tapered, textured or off-centre grip to a Cog. Available when editing a Gear in Design.',control:'#smsGearTopEditor',editing:true},
  {id:'edge-finish',label:'Top edge bevel',workspace:'Build',aliases:['smooth sharp edges','bevel crystal','chamfer','edge finishing'],
   description:'Chamfer exposed flat top rims on the printable model.',
   control:'.sms-palette [data-edge-finish=enabled]',editing:true},
@@ -51,7 +48,7 @@ export const TOOL_FINDER_ITEMS=Object.freeze([
   control:'#smsJobs [data-job-3mf]',prepare:true},
  {id:'prepare',label:'Prepare printable mesh',workspace:'Print Centre',aliases:['render actual model','print preview','manufacturing geometry'],
   description:'Prepare the current model using the manufacturing pipeline.',
-  control:'#smsPrintCurrent button, #smsJobs [data-job-prepare]'},
+  control:'#smsPrintCurrent [data-prepare-current], #smsJobs [data-job-prepare]'},
  {id:'library',label:'Save project to Library',workspace:'Library',aliases:['save to library','store project','saved models'],
   description:'Find the project save action in Library.',control:'#smsSaveProject',noModel:true}
 ]);

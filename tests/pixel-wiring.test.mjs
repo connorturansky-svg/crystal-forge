@@ -3,7 +3,7 @@ import {PIXEL_DIMENSIONS,renderPixelProfileDiagram} from '../pixel-profile-diagr
 import {planWireRoutes} from '../wire-routing.js';
 import {generateFormation} from '../geometry-v3.js';
 import {planHardware} from '../hardware-layout.js';
-import {adviseCuraForModel} from '../cura-model-advisor.js';
+import {adviseCuraForModel} from '../src/printing/cura-model-advisor.js';
 
 assert.equal(PIXEL_DIMENSIONS.length,7,'Seven measurable fields A-G');
 assert.deepEqual(PIXEL_DIMENSIONS.map(d=>d.letter),['A','B','C','D','E','F','G']);

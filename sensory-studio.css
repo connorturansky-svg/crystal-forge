@@ -8,7 +8,13 @@
 [data-model-theme="light-pods"]{--model-hue:48}
 [data-model-theme="control-caps"]{--model-hue:325}
 [data-model-theme="workspace"]{--model-hue:213}
-.studio-modelbar{position:sticky;top:0;z-index:12}
+.studio-modelbar{position:sticky;top:0;z-index:12;flex-wrap:wrap}
+.studio-modelbar .studio-modeltabs{min-width:0;flex:1 1 12rem}
+.studio-modelbar .contextual-help{flex:0 0 auto}
+.studio-modelbar .contextual-help:has(.contextual-help-detail){max-width:12rem}
+/* Expanded guidance participates in the sidebar layout instead of allowing
+   the sticky tool finder to cover a focused setting farther down the panel. */
+.show-detailed-explanations .sms-tool-finder{position:static}
 .studio-modeltabs button{border-top:3px solid hsl(var(--model-hue) 58% 49%);background:hsl(var(--model-hue) 35% 21%)}
 .studio-modeltabs button[aria-selected=true]{border-color:hsl(var(--model-hue) 76% 68%);background:hsl(var(--model-hue) 42% 30%)}
 body.theme-light .studio-modeltabs button{background:hsl(var(--model-hue) 55% 95%);color:hsl(var(--model-hue) 50% 22%);border-top-color:hsl(var(--model-hue) 58% 49%)}
@@ -68,7 +74,7 @@ body.theme-light .sms-visual-range .sms-precision-error{color:#ad1935}
 body.sms-unified{display:flex;flex-direction:column;height:100dvh;min-height:0;overflow:hidden}
 body.sms-unified .layout{display:grid;flex:1;min-height:0;height:auto;position:relative;
  grid-template-columns:var(--sms-tools-width) 8px minmax(0,1fr) 8px var(--sms-settings-width)!important;
- grid-template-rows:minmax(0,1fr) 58px}
+ grid-template-rows:minmax(0,1fr)}
 .sms-unified .layout>.workspace-resizer{display:none!important}
 .sms-unified .topbar{min-height:44px;flex:0 0 auto;flex-wrap:wrap;gap:4px 10px;padding:4px 10px;z-index:32}
 .sms-unified .topcluster{gap:6px;min-width:0}
@@ -119,18 +125,13 @@ body[data-studio-build-home="wiring"] :is(#placePixelBtn,#placeMountBtn){display
 .sms-unified[data-studio-view=home] :is(.sms-tools,.sms-settings){visibility:hidden}
 .sms-unified .sms-overlay{background:var(--bg);overflow-wrap:anywhere}
 .sms-unified.sms-focused .viewarea{position:fixed!important;inset:0;z-index:30;height:100dvh}
-.sms-rail{grid-column:1/-1;grid-row:2;display:flex;align-items:center;min-width:0;gap:6px;padding:4px 8px;background:var(--panel);border-top:1px solid var(--border)}
-.sms-rail .studio-modeltabs{display:flex;flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;padding:3px;gap:5px}
-.sms-rail .studio-modeltabs button{flex:none;display:flex;align-items:center;gap:6px;padding:4px 7px;white-space:nowrap}
-.sms-rail img,.sms-rail .sms-picture-empty{width:31px;height:26px;min-height:0;object-fit:contain;font-size:0;background:#edf2f8;border-radius:4px}
-.sms-rail #smsNew{white-space:nowrap;padding:4px 7px}
+.sms-saved-preview>[hidden]{display:none!important}
 @media(max-width:900px){
- body.sms-unified{height:auto;min-height:100dvh;overflow:auto;padding-bottom:58px}
+ body.sms-unified{height:auto;min-height:100dvh;overflow:auto}
  body.sms-unified .layout{width:100%;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(400px,62dvh) auto auto}
  .sms-centre{grid-column:1;grid-row:1}.sms-tools{grid-column:1;grid-row:2}.sms-settings{grid-column:1;grid-row:3}
  .sms-edge{display:none}
  .sms-side-body{max-height:48dvh}
- .sms-rail{position:fixed;inset:auto 0 0;z-index:20;min-height:54px}
  .sms-unified[data-studio-view=home] :is(.sms-tools,.sms-settings){display:none}
  .sms-unified #smsHomeSearch{max-width:100%}
 }
@@ -178,7 +179,6 @@ dialog[aria-label="Review backup"] .sms-actions{flex-wrap:wrap}
 .sms-tool-result{font-size:.9375rem;line-height:1.5;padding:10px}
 .sms-context-controls label,.sms-context-controls fieldset,.sms-visual-range-caption{line-height:1.5}
 .sms-visual-range .sms-precision-reset{font-size:.875rem}
-.sms-rail .studio-modeltabs button{padding:6px 9px}
 .sms-unified .sms-side-heading{min-height:40px}
 .sms-unified :is(.sms-tool-finder,.sms-palette,.sms-side-body){overflow-wrap:break-word}
 @media(max-width:600px){
