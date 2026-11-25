@@ -10,7 +10,10 @@ export function libraryCard(root,card,preview,actions,title){
   controller={current:null};
   controllers.set(root,controller);
   doc.addEventListener('pointerdown',event=>{
-   if(controller.current&&!controller.current.card.contains(event.target))controller.current.close(false);
+   const current=controller.current;
+   if(current&&!current.card.contains(event.target)){
+    current.close(current.actions.contains(doc.activeElement));
+   }
   },true);
  }
  const artwork=doc.createElement('div'),footer=doc.createElement('div'),toggle=doc.createElement('button');
@@ -19,13 +22,14 @@ export function libraryCard(root,card,preview,actions,title){
  toggle.setAttribute('aria-label','Actions for '+title.textContent);
  actions.id='smsLibraryActions'+(++nextActionsId);
  actions.classList.add('sms-library-actions');
- actions.setAttribute('role','group');actions.setAttribute('aria-label','Model actions');
+ actions.setAttribute('role','group');actions.setAttribute('aria-label','Actions for '+title.textContent);
  toggle.setAttribute('aria-controls',actions.id);toggle.setAttribute('aria-expanded','false');
  actions.hidden=true;
  artwork.append(preview,actions);footer.append(title,toggle);
  card.prepend(footer,artwork);card.classList.add('sms-library-card');
  let pinned=false,suppressed=false;
- const entry={card,close};
+ const entry={card,actions,close};
+ const touch=doc.defaultView.matchMedia('(hover: none)');
  function show(passive=false){
   if(suppressed)return;
   if(passive&&controller.current!==entry&&controller.current?.card.contains(doc.activeElement))return;
@@ -41,11 +45,12 @@ export function libraryCard(root,card,preview,actions,title){
  card.addEventListener('pointerenter',event=>{
   if(event.pointerType==='mouse'){suppressed=false;show(true);}
  });
- card.addEventListener('pointerleave',()=>{
+ card.addEventListener('pointerleave',event=>{
+  if(event.pointerType!=='mouse')return;
   suppressed=false;
   if(!pinned&&!card.contains(doc.activeElement))close();
  });
- card.addEventListener('focusin',()=>{if(!suppressed)show()});
+ card.addEventListener('focusin',()=>{if(!suppressed&&!touch.matches)show()});
  card.addEventListener('focusout',event=>{
   if(!card.contains(event.relatedTarget)){suppressed=false;if(!pinned)close();}
  });

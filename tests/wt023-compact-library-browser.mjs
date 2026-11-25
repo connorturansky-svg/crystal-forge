@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright';
+import {HELP_PREFERENCES_KEY} from '../tooltips.js';
 import {WORKSPACE_KEY} from '../studio-documents.js';
 
 const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
 const url=process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321';
 try{
  const context=await browser.newContext({viewport:{width:1440,height:950}});
+ await context.addInitScript(key=>localStorage.setItem(key,JSON.stringify({hover:true,detailed:false})),HELP_PREFERENCES_KEY);
  const page=await context.newPage(),errors=[];
  page.on('pageerror',error=>errors.push(error.message));
  await page.goto(url);await page.waitForFunction(()=>window.__sensoryStudio);
@@ -22,6 +24,15 @@ try{
  const toggle=card.locator('.sms-library-actions-toggle'),actions=card.locator('.sms-library-actions');
  const storage=()=>page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY);
  await page.mouse.move(3,3);
+ const detail=card.locator('.contextual-help-detail');
+ await page.locator('#detailedExplanations').check();
+ assert(await detail.isVisible());
+ await page.locator('#hoverNotes').uncheck();
+ assert(await detail.isVisible());
+ await page.locator('#detailedExplanations').uncheck();
+ assert(!await detail.isVisible());
+ await page.locator('#hoverNotes').check();
+ await card.scrollIntoViewIfNeeded();
  const before=await storage();
  assert(!await actions.isVisible());
  await card.hover();assert(await actions.isVisible());
@@ -31,6 +42,7 @@ try{
  await page.mouse.move(3,3);assert(!await actions.isVisible());
  await toggle.focus();assert(await actions.isVisible());
  await toggle.press('Tab');
+ if(await page.locator(':focus').evaluate(el=>el.classList.contains('contextual-help-trigger')))await page.keyboard.press('Tab');
  assert(await actions.evaluate(el=>el.contains(document.activeElement)));
  await page.keyboard.press('Escape');
  assert(!await actions.isVisible());
@@ -51,6 +63,8 @@ try{
   await toggle.press('Escape');
  }
  await page.locator('#themeBtn').click();
+ await card.scrollIntoViewIfNeeded();
+ await page.screenshot({path:'qa/wt023b2a-dark-1440.png'});
  await page.evaluate(()=>{document.documentElement.style.fontSize='200%'});
  await toggle.focus();
  assert(await card.locator('h3').isVisible());

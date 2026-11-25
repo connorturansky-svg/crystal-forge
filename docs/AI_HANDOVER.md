@@ -4,6 +4,10 @@ WT-024 owns shared setting help in [tooltips.js](../tooltips.js) and [contextual
 
 See the [WT-023 integration checkpoint](PROJECT_STATUS.md#wt-023-integration-checkpoint--23-november-2026) for the current review and CI pointers.
 
+## WT-023B2a compact Library cards
+
+The [Library card helper](../src/ui/library-card.mjs) reveals the existing model, project and template controls. The callbacks and preview queue remain owned by `sensory-studio.js`. Keep preview status and Retry reachable and keep display preferences outside the saved workspace. The card disclosure uses the shared WT-024 help registry. [#139](https://github.com/connorturansky-svg/crystal-forge/issues/139) tracks acceptance. B2b project inspection and destination selection follow owner review. Info consolidation is tracked separately under [#154](https://github.com/connorturansky-svg/crystal-forge/issues/154).
+
 ## WT-023B B1 Library view
 
 Templates precede single-level project folders. The index derives folders from `project.id` and versions from `snapshotId`; collapse preferences live in session storage. Opening a saved version uses merged WT-023A #147. Existing template actions retain their destinations and naming behaviour. Template destination selection, naming, resources and cloud UI are follow-ups in the [WT-023 acceptance guide](WT023_NEXT_SLICES_ACCEPTANCE_20261123.md). See #139 and #151 for exact-head verification.
