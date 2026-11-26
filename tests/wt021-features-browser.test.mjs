@@ -39,8 +39,15 @@ try{
  assert(await summary.isVisible());
  assert(await trigger.getAttribute('data-info-unread')!==null);
  assert.equal(await summary.locator('#infoReleaseSummaryList>li').count(),1);
- assert.match(await summary.locator('#infoReleaseSummaryList').innerText(),/Moved — Open Info/);
- assert.match(await summary.locator('#infoReleaseSummaryList').innerText(),/New — Read version highlights/);
+ const currentTitle=await dialog.locator('#currentRelease > strong').innerText();
+ assert.match(await summary.locator('#infoReleaseSummaryList').innerText(),new RegExp(currentTitle.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ // WT-021 wording belongs to its historical release, even after newer releases ship.
+ const infoRelease=dialog.locator('#infoChangelog details.release').filter({
+  has:page.locator(':scope > summary').filter({hasText:'v0.16.0-dev.35.50 —'})
+ });
+ assert.equal(await infoRelease.count(),1);
+ assert.match(await infoRelease.locator(':scope > ul').textContent(),/Moved — Open Info/);
+ assert.match(await infoRelease.locator(':scope > ul').textContent(),/New — Read version highlights/);
  assert(!await summary.getByText('Unreleased WT-021 draft',{exact:true}).count());
  const readKey=await page.evaluate(prefix=>prefix+document.querySelector('.version').textContent.trim().slice(1),RELEASE_READ_PREFIX);
  assert.equal(await page.evaluate(key=>localStorage.getItem(key),readKey),null,'Opening Info does not acknowledge changes');
@@ -156,3 +163,4 @@ try{
 }finally{
  await browser.close();
 }
+

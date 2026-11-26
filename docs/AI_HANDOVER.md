@@ -6,6 +6,8 @@
 
 ## Active WT-026 grip correction — PR #181
 
+Final verification correction (26 November): WT-021 browser assertions now locate historical .35.50 explicitly while retaining current-release summary and acknowledgement coverage. WT-026 Chromium exercises real Move/Rotate/Scale handle drags, body dragging, double-click cycling, invalid-grip reload, failed preparation with disabled exports, correction of the same grip and successful STL/3MF downloads. Both theme screenshots are captured as `qa/unified-wt026-*.png` in the browser CI artifact. Local focused browser, static, gear-control and release-metadata checks passed; full suites and exact final-head hosted CI must be checked before marking ready. No automatic merge.
+
 Red grip drafts are valid design documents, not printable solids. `withGearTopControls` permits placement issues only in preview mode; strict preparation rejects them. Keep red preview feedback, direct body movement and Three.js transform modes separate from the manufacturing path. See [gear guide](WT026_GEARS_USER_GUIDE.md). Candidate .35.51 is reconciled after #174; verify browser gesture and exact-head CI before owner review. Do not merge automatically.
 
 ## Resume from GitHub
@@ -397,3 +399,4 @@ The app is **not yet deployed from this branch**. Tests on GitHub Actions must p
 ## Session handoff convention
 
 End every substantive coding session with: branch + head SHA, changed files, intended user outcome, tests actually run and their links/results, unresolved defects/manual checks, last user decision and immediate next step. Update this file without rewriting historical decisions to fit new code. If work remains uncommitted in Codex local workspace, say that explicitly; the remote GitHub branch does not contain it.
+
