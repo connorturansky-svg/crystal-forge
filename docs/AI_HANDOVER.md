@@ -8,6 +8,8 @@ Hosted browser run 45911010069 reached the B2b competing-tab fixture but timed o
 
 Run 45911925248 repeated the peer navigation timeout even at DOM readiness. The concurrency fixture now uses a lightweight same-origin HTML peer instead of booting a second WebGL editor. It asserts a real cross-tab storage event, guarded refusal, unchanged active state and the existing one-write successful retry. This isolates storage contention from renderer startup; it does not remove the competing-tab regression. All five other substantive suites passed again.
 
+Full-editor concurrency remains separately covered at the start of `tests/wt023b2b-browser.mjs`: two real Studio tabs load, the peer renames and durably saves its project through the UI, and the first tab's open chooser refuses that competing write without changing its in-memory project. A fresh browser context then runs the destination/geometry matrix. Both fixtures pass locally; require final-head hosted CI.
+
 See [Library destination user guide and handover](WT023B2B_LIBRARY_DESTINATIONS.md) for the isolated candidate builder, chooser, guarded-write publication and regression commands. The existing Library and workspace stores remain authoritative. Check issue #139 and the live draft before resuming; exact-head CI and owner approval remain required.
 ## Active WT-025 / WT-024 interface-polish candidate
 

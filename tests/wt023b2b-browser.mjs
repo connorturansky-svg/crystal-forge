@@ -5,10 +5,32 @@ import {revealLibraryActions} from './helpers/library-actions.mjs';
 import {gearGenerator} from '../studio-catalogue.js';
 const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:950}}),errors=[];
+ let context=await browser.newContext({viewport:{width:1440,height:950}});
+ let page=await context.newPage();const errors=[];
  page.on('pageerror',error=>errors.push(error.message));
- await page.goto(process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321');
+ const url=process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321';
+ await page.goto(url,{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.__sensoryStudio);
+ // Full-editor contention is isolated from the later preview/zoom/worker matrix.
+ const peer=await page.context().newPage();await peer.setViewportSize({width:390,height:844});
+ await peer.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
+ await peer.waitForFunction(()=>window.__sensoryStudio,null,{timeout:60000});
+ await peer.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
+ await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__sensoryStudio);
+ const beforePeer=await page.evaluate(()=>JSON.stringify(window.__sensoryStudio.project));
+ await page.locator('#smsNew').click();await page.locator('#smsPicker [data-generator=gears]').click();
+ const staleChooser=page.getByRole('dialog',{name:'Name new model'});
+ await peer.locator('#smsProjectTitle').fill('Peer editor saved project');await peer.locator('#smsProjectTitle').press('Tab');
+ await peer.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
+ await staleChooser.getByRole('button',{name:'Create model',exact:true}).click();
+ assert.match(await staleChooser.getByRole('alert').innerText(),/Another tab saved/);
+ assert.equal(await page.evaluate(()=>JSON.stringify(window.__sensoryStudio.project)),beforePeer);
+ console.log('WT-023B2b: a real project save from the second full editor refuses the first editor’s stale chooser without changing its project.');
+ await staleChooser.getByRole('button',{name:'Cancel',exact:true}).click();await peer.close();
+ await context.close();
+ context=await browser.newContext({viewport:{width:1440,height:950}});page=await context.newPage();
+ page.on('pageerror',error=>errors.push(error.message));
+ await page.goto(url,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__sensoryStudio);
  await page.evaluate(()=>window.__sensoryStudio.addModel('gears',null,'Source revision one'));
  await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
  await page.evaluate(async key=>{
@@ -25,11 +47,11 @@ try{
   });
   localStorage.setItem(key,JSON.stringify(w));
  },WORKSPACE_KEY);
- await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
+ await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__sensoryStudio);
  await page.evaluate(()=>{const s=window.__sensoryStudio;s.send(s.currentModel.id);});
  const preparedJob=page.locator('#smsJobs article').filter({hasText:'Source revision one'}).last();
  await preparedJob.locator('[data-job-prepare]').click();
- await preparedJob.locator('[data-job-stl]:enabled').waitFor({timeout:120000});
+ await preparedJob.locator('[data-job-stl]:enabled').waitFor({timeout:120000}).catch(async error=>{throw Error(await preparedJob.innerText(),{cause:error});});
  const downloadPrepared=async format=>{
   const [download]=await Promise.all([page.waitForEvent('download'),preparedJob.locator('[data-job-'+format+']').click()]);
   assert.equal(await download.failure(),null);
@@ -106,7 +128,7 @@ try{
  const beforeRefusal=await workspace();await chooser.getByRole('button',{name:'Add model',exact:true}).click();
  assert.match(await chooser.getByRole('alert').innerText(),/Missing measured pixel profile/);
  assert.deepEqual(await workspace(),beforeRefusal);await page.keyboard.press('Escape');
- await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
+ await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__sensoryStudio);
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.name),'Source revision one');
  assert.deepEqual(errors,[]);
  console.log('WT-023B2b Chromium: seven families × three destinations, exact same-title snapshots, unchanged settings/history and revision-faithful previews passed.');
