@@ -2148,9 +2148,15 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   adapter.status(message);
  }
  const gearTops=model=>model.build.gearTopControls||[];
+ const gearIssue=(model,id)=>cache.get(model.id)?.recipe?.gearTopIssues?.[id]||null;
+ function gearTopFeedback(model,id,success){
+  const issue=gearIssue(model,id);
+  gearTopMessages.set(model.id,issue?'Red grip — '+issue+' Adjust its position or size before preparing or exporting.':success);
+ }
  function gearTopMarkup(model){
   const controls=gearTops(model),selectedId=selectedGearTops.get(model.id)||controls[0]?.id;
   const current=controls.find(item=>item.id===selectedId)||controls[0];
+  const issue=current&&gearIssue(model,current.id);
   const disabled=model.link?' disabled':'';
   const opts=(values,currentValue)=>values.map(value=>'<option'+(value===currentValue?' selected':'')+'>'+esc(value)+'</option>').join('');
   const preset=gearTopPresetChoices.get(model.id)||'offset-spindle';
@@ -2174,7 +2180,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    ['depth',8,100,.1],['height',6,80,.1],['rotation',-360,360,1],['joinMm',0,5,.1]];
   const fields=current?'<fieldset><legend>Selected grip — exact dimensions</legend>'+
    '<label>Grip<select id="smsGearTopSelect"'+disabled+'>'+controls.map(c=>'<option value="'+esc(c.id)+'"'+(c.id===current.id?' selected':'')+'>'+esc(GEAR_TOP_PRESETS.find(p=>p.id===c.presetId)?.name||c.kind)+' · '+esc(c.id.slice(0,6))+'</option>').join('')+'</select></label>'+
-   numeric.map(([key,min,max,step])=>'<label>'+names[key]+' ('+(key==='rotation'?'degrees':'mm')+')<input data-gear-top-field="'+key+'"'+tip(key)+' type="number" min="'+min+'" max="'+max+'" step="'+step+'" value="'+esc(current[key])+'"'+disabled+' title="'+esc(key==='joinMm'?'Widen the joint where grip meets wheel. The shoulder is real printed geometry.':'Edit this dimension independently. Values outside the solid gear are rejected.')+'"></label>').join('')+
+   numeric.map(([key,min,max,step])=>'<label>'+names[key]+' ('+(key==='rotation'?'degrees':'mm')+')<input data-gear-top-field="'+key+'"'+tip(key)+' type="number" min="'+min+'" max="'+max+'" step="'+step+'" value="'+esc(current[key])+'"'+disabled+' title="'+esc(key==='joinMm'?'Widen the joint where grip meets wheel. The shoulder is real printed geometry.':'Edit this dimension independently. Unsafe placements remain red until corrected.')+'"></label>').join('')+
    '<label>Profile<select data-gear-top-field="profile"'+tip('profile')+disabled+'>'+opts(TOP_PROFILES,current.profile)+'</select></label>'+
    '<label>Surface texture<select data-gear-top-field="surface"'+tip('surface')+disabled+'>'+opts(TOP_SURFACES,current.surface)+'</select></label>'+
    '<label>Base join<select data-gear-top-field="join"'+tip('join')+disabled+'>'+opts(TOP_JOINS,current.join)+'</select></label>'+
@@ -2183,10 +2189,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    '<button type="button" id="smsRemoveGearTop"'+tip('remove')+disabled+'>Remove selected grip</button></fieldset>':
    '<p class="sms-descriptor">No grips yet. Select a starting point and add one, or double-click the solid top face in the viewport.</p>';
   return '<details class="sms-panel-details" id="smsGearTopEditor" open><summary>Top handles & tactile knobs<small>Place a grip on your cog, then move it and adjust its shape.</small></summary><div>'+
-   '<p class="sms-descriptor" id="smsGearTopHelp">Double-click the flat top of your cog to place the chosen grip. Click a grip to select it; drag it across the top or use the exact X and Z fields. A red preview means the strengthened base would cover a hole, window or outside edge. The original shaft bore remains open through a centred knob after manufacturing preparation.</p>'+
+   '<p class="sms-descriptor" id="smsGearTopHelp">Double-click the cog to place the chosen grip, even over a window. Click a grip to select it; drag it across the top or edit its exact dimensions. A red grip remains editable but blocks preparation until it clears holes, windows and edges. The original shaft bore remains open through a centred knob after manufacturing preparation.</p>'+
    '<label>New grip preset<select id="smsGearTopPreset"'+disabled+'>'+GEAR_TOP_PRESETS.map(p=>'<option value="'+p.id+'"'+(p.id===preset?' selected':'')+'>'+esc(p.name)+'</option>').join('')+'</select></label>'+
    '<button type="button" id="smsAddGearTop"'+tip('add')+disabled+'>＋ Add selected grip</button>'+
-   '<p id="smsGearTopStatus" role="status" aria-live="polite" style="overflow-wrap:anywhere">'+esc(gearTopMessages.get(model.id)||'')+'</p>'+
+   '<p id="smsGearTopStatus" role="status" aria-live="polite" style="overflow-wrap:anywhere">'+esc(issue?'Red grip — '+issue+' Adjust its position or size before preparing or exporting.':gearTopMessages.get(model.id)||'')+'</p>'+
    '<p class="sms-descriptor">For an off-centre spindle, start away from the shaft. For a centred dial, use X = 0 and Z = 0. These are integral printed grips, not mechanically free-spinning bearings.</p>'+fields+
    '</div></details>';
  }
@@ -2195,7 +2201,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(!commit({build:{...model.build,gearTopControls:controls}})){
    gearTopMessage(model,$('smsModelError')?.textContent||'Grip could not be changed.');return false;
   }
-  gearTopMessages.delete(model.id);
+  gearTopFeedback(model,id,'Grip updated.');
   selectedGearTops.set(model.id,id);renderEditor();return true;
  }
  function addGearTop(model,point){
@@ -2212,16 +2218,12 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    if(recipe?.nativeRouting?.enabled)throw Error('Turn off serial routing before adding a tactile top handle.');
    const host=gearTopSafeHost(recipe);
    const issue=gearTopPlacementIssue(c,host,gearTops(model));
-   if(issue&&point){gearTopMessage(model,issue+' No grip added.');return false;}
-   if(issue){
-    c=findGearTopStart(c,host,gearTops(model),at);
-    if(!c){gearTopMessage(model,issue+' No suitable automatic position found for this preset. Try a smaller preset or change the cog.');return false;}
-   }
+   if(issue&&!point)c=findGearTopStart(c,host,gearTops(model),at)||c;
    if(!commit({build:{...model.build,gearTopControls:[...gearTops(model),c]}})){
     gearTopMessage(model,($('smsModelError')?.textContent||'Grip could not be added.')+' No grip added.');return false;
    }
    selectedGearTops.set(model.id,c.id);
-   gearTopMessages.set(model.id,'Grip added at X '+c.x+' mm, Z '+c.z+' mm.');
+   gearTopFeedback(model,c.id,'Grip added at X '+c.x+' mm, Z '+c.z+' mm.');
    renderEditor();return true;
   }catch(error){gearTopMessage(model,error.message+' No grip added.');return false;}
  }
@@ -2270,15 +2272,18 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const group=cache.get(model.id)?.group;
   if(!group)return;
   const hit=partRay.intersectObjects(group.children.filter(mesh=>mesh.isMesh&&mesh.visible&&!mesh.userData.previewOnly),false)[0];
-  if(!hit){gearTopMessage(model,'Double-click solid material on the flat cog top, not a hole or empty space.');return;}
   event.preventDefault();event.stopImmediatePropagation();
-  if(hit.object.userData.gearTopId){
+  if(hit?.object.userData.gearTopId){
    selectedGearTops.set(model.id,hit.object.userData.gearTopId);renderEditor();return;
   }
-  if(Math.abs(hit.point.y-model.parameters.thickness)>1.2||hit.face?.normal.y<.7){
-   gearTopMessage(model,'Double-click an exposed, flat gear top; raised rails and side faces are not yet supported.');return;
-  }
-  addGearTop(model,{x:Math.round(hit.point.x*10)/10,z:Math.round(hit.point.z*10)/10});
+  const host=cache.get(model.id)?.recipe?.gearHost;
+  if(!host)return;
+  const at=partRay.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-host.topY),new THREE.Vector3());
+  if(!at)return;
+  // Permit empty spoke windows and the concave spaces inside the wheel envelope.
+  const limit=Math.max(...host.outline.map(([x,z])=>Math.hypot(x,z)));
+  if(Math.hypot(at.x,at.z)>limit+1){gearTopMessage(model,'Double-click within the cog to place a grip.');return;}
+  addGearTop(model,{x:Math.round(at.x*10)/10,z:Math.round(at.z*10)/10});
  },true);
  renderer.domElement.addEventListener('pointerdown',event=>{
   const model=activeGearForPointer();
@@ -2303,11 +2308,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   gearPointer(event);
   const point=partRay.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),
    -gesture.model.parameters.thickness),new THREE.Vector3());
-  if(!point)return;
+  if(!point||Math.abs(point.x)>150||Math.abs(point.z)>150)return;
   const candidate={...gesture.control,x:Math.round(point.x*10)/10,z:Math.round(point.z*10)/10};
   const issue=gearTopPlacementIssue(candidate,cache.get(gesture.model.id)?.recipe?.gearHost,
    gearTops(gesture.model).filter(c=>c.id!==gesture.control.id));
-  gesture.candidate=issue?null:candidate;gesture.issue=issue;
+  gesture.candidate=candidate;gesture.issue=issue;
   gesture.mesh.position.set(candidate.x-gesture.control.x,0,candidate.z-gesture.control.z);
   gesture.mesh.material.emissive?.setHex(issue?0x9b1528:0x075b43);
   adapter.status(issue||'Valid grip position. Release to place.');
@@ -2322,7 +2327,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(event.type==='pointercancel'){adapter.status('Grip move cancelled; previous position preserved.');return;}
   if(gesture.candidate&&active()?.id===gesture.model.id)
    updateGearTop(gesture.model,gesture.control.id,{x:gesture.candidate.x,z:gesture.candidate.z});
-  else if(gesture.issue)adapter.status(gesture.issue+' No change saved.');
+  else if(gesture.issue)adapter.status(gesture.issue);
  }
  renderer.domElement.addEventListener('pointerup',finishGearDrag,true);
  renderer.domElement.addEventListener('pointercancel',finishGearDrag,true);

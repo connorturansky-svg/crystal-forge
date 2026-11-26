@@ -42,9 +42,12 @@ try{
  const oldX=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0].x);
  await page.locator('[data-gear-top-field="x"]').fill('0');
  await page.locator('[data-gear-top-field="x"]').press('Tab');
- assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0].x),oldX,
-  'An offset grip must not close the centre bore.');
- assert.match(await page.locator('#smsModelError').innerText(),/shaft bore/);
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0].x),0,
+  'Invalid placement remains editable.');
+ assert.match(await page.locator('#smsGearTopStatus').innerText(),/Red grip.*shaft bore/);
+ await page.locator('[data-gear-top-field="x"]').fill(String(oldX));
+ await page.locator('[data-gear-top-field="x"]').press('Tab');
+ await page.waitForFunction(()=>!document.getElementById('smsGearTopStatus')?.textContent.includes('Red grip'));
  await page.locator('#smsRemoveGearTop').click();
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===0);
  await page.locator('[data-view=top]').click();

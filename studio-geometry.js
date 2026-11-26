@@ -56,13 +56,17 @@ export function previewRecipe(THREE, recipe, colours=[0x88bbff,0xffcf70]) {
  const group=new THREE.Group();
  for(const [role,parts] of [['primary',recipe.positive],['secondary',recipe.secondary||[]]])for(const part of parts){
   const mesh=new THREE.Mesh(recipeGeometry(THREE,part),new THREE.MeshStandardMaterial({color:colours[role==='primary'?0:1],roughness:.55,flatShading:false}));
-  mesh.userData.materialRole=role;mesh.userData.partId=part.partId;mesh.userData.gearTopId=part.gearTopId;group.add(mesh);
+  mesh.userData.materialRole=role;mesh.userData.partId=part.partId;mesh.userData.gearTopId=part.gearTopId;
+  if(part.gearTopIssue){mesh.userData.gearTopIssue=part.gearTopIssue;mesh.material.color.setHex(0xe04444);mesh.material.emissive.setHex(0x651010);}
+  group.add(mesh);
   if(role==='primary'&&recipe.dualMaterial&&recipe.materialSplitRole==='top'){
    const y=recipe.materialSplitHeight;
    mesh.material.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,-1,0),y)];
    const face=new THREE.Mesh(mesh.geometry.clone(),new THREE.MeshStandardMaterial({color:colours[1],roughness:.55,
     clippingPlanes:[new THREE.Plane(new THREE.Vector3(0,1,0),-y)]}));
-   face.userData.materialRole='secondary';face.userData.partId=part.partId;group.add(face);
+   face.userData.materialRole='secondary';face.userData.partId=part.partId;face.userData.gearTopId=part.gearTopId;
+   if(part.gearTopIssue){face.userData.gearTopIssue=part.gearTopIssue;face.material.color.setHex(0xe04444);face.material.emissive.setHex(0x651010);}
+   group.add(face);
   }
  }
  const solidSurfaces=group.children.slice();
@@ -194,6 +198,7 @@ function gearRailSection(wasm,{source,outerInset,innerInset}){
   return true;
  };
 export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittings=false}={}){
+ if(Object.keys(recipe.gearTopIssues||{}).length)throw Error('Resolve red grip placements before preparation: '+Object.values(recipe.gearTopIssues).join(' '));
  const owned=[];const hold=solid=>(owned.push(solid),solid);
  const positionSeat=(solid,seat,rotation=0)=>placeNativeSocketSolid(THREE,wasm,hold,solid,seat,rotation);
  const socket=part=>{

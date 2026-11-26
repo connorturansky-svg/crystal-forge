@@ -633,7 +633,8 @@ export function applyBuildModules(recipe,build={},capabilities={}, {preview=fals
  if(build.gearTopControls?.length){
   if(!r.gearHost)throw Error('Tactile top handles are available only on Cogs & Gears.');
   if(routing.enabled)throw Error('Turn off serial routing before adding a tactile top handle.');
-  const joined=withGearTopControls(r,build.gearTopControls);
+  const joined=withGearTopControls(r,build.gearTopControls,{preview});
+  r.gearTopIssues=joined.gearTopIssues;
   r.gearHost=joined.gearHost;r.positive=joined.positive;r.negative=joined.negative;r.bounds=joined.bounds;r.warnings=joined.warnings;
  }
  // Edit only positive stock. The authoritative negative pixel, channel and

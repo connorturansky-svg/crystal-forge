@@ -97,3 +97,12 @@ const excluded=gearTopSafeHost({...base,negative:[{kind:'cylinder',radius:4,posi
 const alternate=findGearTopStart(spindle,excluded,[],{x:24,z:0});
 assert(alternate&&gearTopPlacementIssue(alternate,excluded)===null);
 assert.equal(findGearTopStart(spindle,{outline:[[-5,-5],[5,-5],[5,5],[-5,5]],holes:[],shaftBore:0,topY:8}),null);
+
+const draft={...spindle,x:0};
+const draftRecipe=withGearTopControls(base,[draft],{preview:true});
+assert.match(draftRecipe.gearTopIssues[draft.id],/shaft bore/);
+assert.equal(draftRecipe.positive.at(-1).gearTopId,draft.id);
+assert.throws(()=>withGearTopControls(base,[draft]),/shaft bore/);
+const previewDraft=applyBuildModules(base,{gearTopControls:[draft]},gearGenerator.capabilities,{preview:true});
+assert.match(previewDraft.gearTopIssues[draft.id],/shaft bore/);
+assert.throws(()=>applyBuildModules(base,{gearTopControls:[draft]},gearGenerator.capabilities),/shaft bore/);

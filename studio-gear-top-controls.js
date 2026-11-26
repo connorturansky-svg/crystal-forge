@@ -221,25 +221,28 @@ export function findGearTopStart(control,host,others=[],preferred={x:0,z:0}){
  }
  return null;
 }
-export function withGearTopControls(recipe,controls=[]){
+export function withGearTopControls(recipe,controls=[],{preview=false}={}){
  if(!Array.isArray(controls)||controls.length>8)throw Error('Use up to eight tactile top controls per cog.');
  if(!controls.length)return recipe;
  const host=recipe.gearHost;
  const safeHost=gearTopSafeHost(recipe);
- const ids=new Set();
+ const ids=new Set(),gearTopIssues={};
  for(const c of controls){
   validateGearTopControl(c);
   if(ids.has(c.id))throw Error('Duplicate top-control ID.');ids.add(c.id);
   const problem=gearTopPlacementIssue(c,safeHost,controls.filter(x=>x!==c));
-  if(problem)throw Error(problem);
+  if(problem){
+   if(!preview)throw Error(problem);
+   gearTopIssues[c.id]=problem;
+  }
  }
- const positive=[...recipe.positive,...controls.map(c=>gearTopMesh(c,host.topY))],negative=[...(recipe.negative||[])];
+ const positive=[...recipe.positive,...controls.map(c=>({...gearTopMesh(c,host.topY),gearTopIssue:gearTopIssues[c.id]||null}))],negative=[...(recipe.negative||[])];
  // The intrinsic Gear extrude has its original bore; reopening AFTER union
  // prevents a knob from plugging that hole. Off-centre controls never move it.
  if(host.shaftBore>0){
   const height=host.topY+Math.max(...controls.map(c=>c.height))+4;
   negative.push({kind:'cylinder',radius:host.shaftBore/2,height,position:[0,height/2-2,0],gearThroughBore:true});
  }
- return {...recipe,gearHost:safeHost,positive,negative,bounds:{...recipe.bounds,height:Math.max(recipe.bounds.height,host.topY+Math.max(...controls.map(c=>c.height)))},
+ return {...recipe,gearHost:safeHost,gearTopIssues,positive,negative,bounds:{...recipe.bounds,height:Math.max(recipe.bounds.height,host.topY+Math.max(...controls.map(c=>c.height)))},
   warnings:[...(recipe.warnings||[]),'Handle and joint are Boolean-fused; verify torque, print orientation, grip texture and pinch points on a physical sample.']};
 }
