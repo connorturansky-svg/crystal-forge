@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.50 — Find help and releases in Info
+- Moved — Open Info to reach the Help guide, searchable Features and What’s new from one toolbar button. The question-mark keyboard shortcut still opens Help.
+- Changed — New browsers start with both optional help switches off. Existing choices are retained, and Hover Notes also controls ordinary browser title hints while keeping critical blocked-action reasons available.
+- Changed — When both optional help modes are enabled, desktop controls with inline guidance no longer show an extra question button. Touch devices retain tap-to-read help.
+- New — Read version highlights in Info, including changes since the last version you marked as read. Unreleased notes stay separate, and read preferences never alter projects.
+
 ## v0.16.0-dev.35.49 — Tactile cog grips and off-centre handles
 
 - Add ten Gear-top grip starting points, including offset crank spindles, fluted/knurled dials, rounded rectangular handles and tactile profiles with independent width, depth and height.

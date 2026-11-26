@@ -1,5 +1,9 @@
 # AI handover — read immediately after AGENTS.md
 
+## Active WT-025 / WT-024 interface-polish candidate
+
+[PR #174](https://github.com/connorturansky-svg/crystal-forge/pull/174) is the shared implementation for #154 and #152. Read [the implementation checkpoint](WT025_INTERFACE_POLISH_CHECKPOINT.md). The Info dialog retains existing feature navigation and generated history; `src/ui/info-release-summary.mjs` owns browser-local version acknowledgement. Keep the existing contextual help registry, preserve accessible names and critical warnings, and verify exact-head checks before owner review. Do not treat a candidate version as deployed.
+
 ## Resume from GitHub
 
 Start with [project status and priority order](PROJECT_STATUS.md#chatgpt-handover--25-november-2026). Fetch live main, check issue and branch ownership, and verify Actions against the exact PR head before requesting owner review. The owner approves merges. B2a merged in #172. B2b remains unstarted and requires owner dispatch.

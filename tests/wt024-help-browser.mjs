@@ -13,6 +13,25 @@ try{
  const hover=page.locator('#hoverNotes'),detailed=page.locator('#detailedExplanations');
  const model=()=>page.evaluate(()=>JSON.stringify(window.__sensoryStudio.currentModel));
  const before=await model();
+ assert.equal(await hover.isChecked(),false,'Fresh browser starts without hover notes');
+ assert.equal(await detailed.isChecked(),false);
+ // Native title changes, accessible names, and critical disabled reasons must survive toggles.
+ const witness=page.locator('#nativeHelpWitness');
+ await page.evaluate(()=>{
+  const b=document.createElement('button');b.id='nativeHelpWitness';b.title='Native hint';
+  const blocked=document.createElement('button');blocked.id='nativeBlockedWitness';blocked.disabled=true;blocked.title='Cannot prepare: missing stock';
+  document.body.append(b,blocked);
+ });
+ await page.waitForFunction(()=>document.querySelector('#nativeHelpWitness').getAttribute('title')==='');
+ assert.equal(await witness.getAttribute('aria-label'),'Native hint');
+ assert.equal(await page.locator('#nativeBlockedWitness').getAttribute('title'),'Cannot prepare: missing stock');
+ await witness.evaluate(el=>el.title='Updated native hint');
+ await page.waitForFunction(()=>document.querySelector('#nativeHelpWitness').getAttribute('title')==='');
+ await hover.check();
+ assert.equal(await witness.getAttribute('title'),'Updated native hint');
+ await hover.uncheck();
+ assert.equal(await witness.getAttribute('title'),'');
+ await page.evaluate(()=>{document.querySelector('#nativeHelpWitness').remove();document.querySelector('#nativeBlockedWitness').remove();});
  for(const short of [false,true])for(const long of [false,true]){
   await hover.setChecked(short);await detailed.setChecked(long);
   assert.equal(await hover.isChecked(),short);
@@ -109,9 +128,13 @@ try{
  const touch=await touchContext.newPage();
  await touch.goto(url);
  await touch.waitForFunction(()=>window.__sensoryStudio&&document.querySelector('#smsModelsDrawer'),null,{timeout:60000});
+ await touch.locator('#hoverNotes').check();
+ await touch.locator('#detailedExplanations').check();
  await touch.evaluate(()=>window.__sensoryStudio.addModel('gears',null,'Touch help fixture'));
  const touchDrawer=touch.locator('#smsModelsDrawer');
  await touchDrawer.getByRole('button',{name:/Models \(/}).tap();
+ assert(await touchDrawer.locator('.md-search + .contextual-help .contextual-help-detail').isVisible());
+ assert(await touchDrawer.locator('.md-search + .contextual-help button').isVisible(),'Both modes retain the touch trigger');
  await touchDrawer.locator('.md-search + .contextual-help button').tap();
  await touch.locator('#controlTooltip').waitFor();
  assert.match(await touch.locator('#controlTooltip').innerText(),/Filters the open models/);
