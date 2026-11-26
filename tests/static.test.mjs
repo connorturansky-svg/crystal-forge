@@ -1,3 +1,4 @@
+import './gear-top-controls.test.mjs';
 // Dependency-free repository wiring and JavaScript parsing smoke test.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

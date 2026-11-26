@@ -1,3 +1,4 @@
+import './gear-top-manifold.test.mjs';
 import {makeRoutedSocketSpecimen} from '../studio-catalogue.js';
 import {PIXEL_PRESETS} from '../pixel-profiles.js';
 import {makePixelReplicaRecipe} from '../pixel-replica.js';
