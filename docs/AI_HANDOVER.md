@@ -6,6 +6,8 @@ Owner dispatched completion on 26 November. #175 now reconciles main after merge
 
 Hosted browser run 45911010069 reached the B2b competing-tab fixture but timed out at the peer page's full-load navigation before its concurrency assertions. The fixture now waits for DOM content plus actual Studio readiness rather than all page resources; every storage/cancellation/concurrency assertion remains. Five other substantive exact-head suites passed that candidate. Recheck all final-head CI after this test-only correction.
 
+Run 45911925248 repeated the peer navigation timeout even at DOM readiness. The concurrency fixture now uses a lightweight same-origin HTML peer instead of booting a second WebGL editor. It asserts a real cross-tab storage event, guarded refusal, unchanged active state and the existing one-write successful retry. This isolates storage contention from renderer startup; it does not remove the competing-tab regression. All five other substantive suites passed again.
+
 See [Library destination user guide and handover](WT023B2B_LIBRARY_DESTINATIONS.md) for the isolated candidate builder, chooser, guarded-write publication and regression commands. The existing Library and workspace stores remain authoritative. Check issue #139 and the live draft before resuming; exact-head CI and owner approval remain required.
 ## Active WT-025 / WT-024 interface-polish candidate
 

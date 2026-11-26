@@ -127,9 +127,16 @@ try{
  assert.equal(await storage(),beforeDestination);
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.project.id),historical.project.id);
  await page.evaluate(()=>{Storage.prototype.setItem=window.__destinationWriteOriginal;});
+ await page.evaluate(key=>{
+  window.__destinationPeerEvent=null;
+  window.addEventListener('storage',event=>{if(event.key===key)window.__destinationPeerEvent=event.newValue;});
+ },WORKSPACE_KEY);
  const peer=await context.newPage();
- await peer.goto(url,{waitUntil:'domcontentloaded'});await peer.waitForFunction(()=>window.__sensoryStudio);
+ // A genuine same-origin peer exercises storage contention without starting a
+ // second WebGL editor and introducing unrelated renderer startup into this test.
+ await peer.goto(new URL('tests/fixtures/storage-peer.html',url).href,{waitUntil:'domcontentloaded'});
  await peer.evaluate(({key,value})=>localStorage.setItem(key,value+' '),{key:WORKSPACE_KEY,value:beforeDestination});
+ await page.waitForFunction(value=>window.__destinationPeerEvent===value,beforeDestination+' ');
  await destination.getByRole('button',{name:'Create model'}).click();
  assert.match(await destination.getByRole('alert').innerText(),/Another tab saved/);
  await peer.evaluate(({key,value})=>localStorage.setItem(key,value),{key:WORKSPACE_KEY,value:beforeDestination});
