@@ -399,4 +399,3 @@ The app is **not yet deployed from this branch**. Tests on GitHub Actions must p
 ## Session handoff convention
 
 End every substantive coding session with: branch + head SHA, changed files, intended user outcome, tests actually run and their links/results, unresolved defects/manual checks, last user decision and immediate next step. Update this file without rewriting historical decisions to fit new code. If work remains uncommitted in Codex local workspace, say that explicitly; the remote GitHub branch does not contain it.
-

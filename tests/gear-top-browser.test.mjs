@@ -212,4 +212,3 @@ try{
  assert.equal(errors.length,0,'No uncaught errors: '+errors.join('; '));
  console.log('WT-026 Chromium: exact sizing, rollback, undo/redo, duplication, reusable template, reload and snapshot switching passed.');
 }finally{await browser.close();}
-

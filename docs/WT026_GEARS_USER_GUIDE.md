@@ -25,4 +25,3 @@ Select a grip to show the standard Move gizmo (X/Z). Double-click it to cycle Mo
 Release candidate .35.51 follows merged #174's .35.50. Focused Chromium regression covers actual Move/Rotate/Scale handles, direct dragging, mode cycling, invalid saved-model reload, blocked preparation/exports and successful STL/3MF downloads after correction. Both light and dark screenshots are included in the browser CI artifact. Exact final-head CI remains required before owner merge review.
 
 After #174 merged, .35.51 is reconciled against its Info release history. The first CI failure demonstrated that some heavily perforated cogs cannot fit the full preset; this is now explicitly covered as an editable red fallback, not an assumed fit. Direct grip-body drag is separate from the axis handles and preserves the original grab offset.
-
