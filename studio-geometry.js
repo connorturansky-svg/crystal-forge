@@ -56,7 +56,7 @@ export function previewRecipe(THREE, recipe, colours=[0x88bbff,0xffcf70]) {
  const group=new THREE.Group();
  for(const [role,parts] of [['primary',recipe.positive],['secondary',recipe.secondary||[]]])for(const part of parts){
   const mesh=new THREE.Mesh(recipeGeometry(THREE,part),new THREE.MeshStandardMaterial({color:colours[role==='primary'?0:1],roughness:.55,flatShading:false}));
-  mesh.userData.materialRole=role;mesh.userData.partId=part.partId;group.add(mesh);
+  mesh.userData.materialRole=role;mesh.userData.partId=part.partId;mesh.userData.gearTopId=part.gearTopId;group.add(mesh);
   if(role==='primary'&&recipe.dualMaterial&&recipe.materialSplitRole==='top'){
    const y=recipe.materialSplitHeight;
    mesh.material.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,-1,0),y)];
@@ -412,6 +412,22 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    total=repaired;
   }
 
+  // Grip lofts share a complex curved union with an involute Gear face.
+  // Simplify only this opt-in assembly at sub-print precision to avoid
+  // Boolean sliver triangles which Manifold accepts but STL cannot encode.
+  if(recipe.positive.some(part=>part.gearTopId)){
+   const volume=total.volume(),tolerance=.0001;
+   let cleaned=hold(hold(total.setTolerance(tolerance)).asOriginal());
+   cleaned=hold(cleaned.simplify(tolerance));
+   if(!validTriangles(cleaned.getMesh())){
+    const rebuilt=hold(new wasm.Manifold(cleaned.getMesh()));
+    cleaned=hold(hold(rebuilt.asOriginal()).simplify(tolerance));
+   }
+   if(cleaned.status()!=='NoError'||cleaned.isEmpty()||
+     Math.abs(cleaned.volume()-volume)>.01||!validTriangles(cleaned.getMesh()))
+    throw Error('The fused grip contains sub-printable sliver triangles. Increase the shoulder clearance or change the grip profile before exporting.');
+   total=cleaned;
+  }
   if(total.status()!=='NoError'||total.isEmpty()||total.volume()<=0)throw Error('Manufacturing produced no valid material.');
   let regions=[{role:'primary',solid:total}];
   const coincidentFace=recipe.positive.length===1&&recipe.secondary?.length===1&&!secondaryStock.length&&!recipe.partitioned?recipe.secondary[0]:null;

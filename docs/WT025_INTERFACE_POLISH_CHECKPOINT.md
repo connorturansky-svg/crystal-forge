@@ -18,3 +18,8 @@ A non-touch desktop hides extra question buttons only when both modes are enable
 ## Checkpoint 4 — final acceptance hardening
 
 The current release notes have authored Moved/Changed/New labels. The summary supports all five specified categories, leaves unclassified historical notes unchanged and does not guess what old changes meant. A cross-tab acknowledgement restores focus if it hides the focused Mark as read button. Browser tests exercise touch with both modes enabled and read-state persistence across reload. Existing Help/Features navigation remains authoritative; historical notes do not invent deep links. No local browser execution or manual screen-reader claim. The current candidate is not a verified public deployment.
+
+
+## Checkpoint 5 — reconciliation after WT-026
+
+Candidate v0.16.0-dev.35.50 is based on merged WT-026 (#158) at `2d9a377ba8ffc6fdbb6b6fbf76a9e9bf0e7b17bf`. Preserves gear controls, geometry, tests and .35.49 release history while integrating Info. Static entry point runs both focused suites; shared Library fixture isolation is retained once. Exact new-head CI and manual visual/accessibility review remain required; this is not a release claim.
