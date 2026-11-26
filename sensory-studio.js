@@ -1,3 +1,4 @@
+import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {listProjectFolders} from './studio-project-index.js';
 import {libraryCard} from './src/ui/library-card.mjs';
 import {createModelDrawer,createPreviewQueue} from './src/ui/model-drawer.mjs';
@@ -518,6 +519,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  function saveImmediately(){clearTimeout(saveTimer);validateProject(project);writeWorkspace(state);dirty=false;}
  window.addEventListener('beforeunload',event=>{try{if(dirty)saveImmediately();}catch{event.preventDefault();event.returnValue='';}});
  function remember({capture=true}={}){
+  clearGearGizmo();
   if(!currentId)return;const model=active();
   if(model.generator.typeId==='crystals'){
    if(capture)captureCrystal();
@@ -827,6 +829,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   modelDimensions.hidden=false;
  }
  function renderTabs(){
+  syncGearGizmo();
   if((placementModel||mountingModel)&&(!canEditPixels(active())||(placementModel&&placementModel!==active()?.id)||(mountingModel&&mountingModel!==active()?.id)))endPixelPlacement();
   for(const job of project.printJobs)if(job.status==='stale')discardPrintResult(job.id);
   if(inspection){
@@ -2140,7 +2143,88 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     return editPixel(model,index,hole,{root,selector});
    }});
  }
- const selectedGearTops=new Map(),gearTopPresetChoices=new Map(),gearTopMessages=new Map();
+ const selectedGearTops=new Map(),gearTopPresetChoices=new Map(),gearTopMessages=new Map(),gearTopModes=new Map();
+ const gearModes=['translate','rotate','scale'];
+ const gearMode=model=>gearTopModes.get(model.id)||'translate';
+ const setGearSelection=(model,id)=>{
+  if(selectedGearTops.get(model.id)!==id)gearTopModes.set(model.id,'translate');
+  selectedGearTops.set(model.id,id);
+ };
+ var gearGizmo,gearProxy,gearTransform;
+ function clearGearGizmo(){
+  if(!gearGizmo)return;
+  gearGizmo.detach();gearGizmo.enabled=false;
+ }
+ function syncGearGizmo(){
+  const model=active();
+  if(mode!=='model'||stage!=='design'||model?.generator.typeId!=='gears'||model.link){clearGearGizmo();return;}
+  if(gearTransform)return;
+  const control=gearTops(model).find(c=>c.id===selectedGearTops.get(model.id));
+  const cached=cache.get(model.id);
+  if(!control||!cached?.group?.parent){clearGearGizmo();return;}
+  if(!gearGizmo){
+   gearProxy=new THREE.Object3D();scene.add(gearProxy);
+   gearGizmo=new TransformControls(camera,renderer.domElement);
+   scene.add(gearGizmo.getHelper?.()||gearGizmo);gearGizmo.setSize(.8);
+   gearGizmo.addEventListener('dragging-changed',event=>{
+    orbit.enabled=!event.value;
+    if(event.value){
+     const target=active(),id=selectedGearTops.get(target?.id),original=gearTops(target).find(c=>c.id===id);
+     if(!original)return;
+     const entry=cache.get(target.id);
+     gearTransform={model:target,original,topY:entry.recipe.gearHost.topY,host:entry.recipe.gearHost,
+      meshes:entry.group.children.filter(mesh=>mesh.userData.gearTopId===id).map(mesh=>({mesh,matrix:mesh.matrix.clone(),auto:mesh.matrixAutoUpdate,colour:mesh.material.color.clone(),emissive:mesh.material.emissive.clone()})),candidate:null};
+    }else if(gearTransform){
+     const drag=gearTransform;gearTransform=null;
+     for(const item of drag.meshes){
+      item.mesh.matrix.copy(item.matrix);item.mesh.matrixAutoUpdate=item.auto;item.mesh.matrixWorldNeedsUpdate=true;
+      item.mesh.material.color.copy(item.colour);item.mesh.material.emissive.copy(item.emissive);
+     }
+     if(drag.candidate&&active()?.id===drag.model.id){
+      const {x,z,rotation,width,depth,height}=drag.candidate;
+      updateGearTop(drag.model,drag.original.id,{x,z,rotation,width,depth,height});
+     }else syncGearGizmo();
+    }
+   });
+   gearGizmo.addEventListener('objectChange',()=>{
+    const drag=gearTransform;if(!drag)return;
+    const a=drag.original,mode=gearMode(drag.model);
+    const clamp=(n,min,max)=>Math.round(Math.max(min,Math.min(max,n))*10)/10;
+    const p={...a};
+    if(mode==='translate'){p.x=clamp(gearProxy.position.x,-150,150);p.z=clamp(gearProxy.position.z,-150,150);}
+    if(mode==='rotate')p.rotation=Math.round(THREE.MathUtils.radToDeg(-gearProxy.rotation.y)*10)/10;
+    if(mode==='scale'){
+     p.width=clamp(a.width*gearProxy.scale.x,8,100);
+     p.depth=clamp(a.depth*gearProxy.scale.z,8,100);
+     p.height=clamp(a.height*gearProxy.scale.y,6,80);
+    }
+    if(![p.x,p.z,p.rotation,p.width,p.depth,p.height].every(Number.isFinite))return;
+    const issue=gearTopPlacementIssue(p,drag.host,gearTops(drag.model).filter(c=>c.id!==a.id));
+    drag.candidate=p;
+    const y=drag.topY;
+    const delta=new THREE.Matrix4().makeTranslation(p.x,y,p.z)
+     .multiply(new THREE.Matrix4().makeRotationY(-THREE.MathUtils.degToRad(p.rotation)))
+     .multiply(new THREE.Matrix4().makeScale(p.width/a.width,p.height/a.height,p.depth/a.depth))
+     .multiply(new THREE.Matrix4().makeRotationY(THREE.MathUtils.degToRad(a.rotation)))
+     .multiply(new THREE.Matrix4().makeTranslation(-a.x,-y,-a.z));
+    for(const item of drag.meshes){
+     item.mesh.matrixAutoUpdate=false;item.mesh.matrix.multiplyMatrices(delta,item.matrix);item.mesh.matrixWorldNeedsUpdate=true;
+     item.mesh.material.color.setHex(issue?0xe04444:0x88bbff);
+     if(!issue)item.mesh.material.color.copy(item.colour);
+     item.mesh.material.emissive.setHex(issue?0x651010:0);
+    }
+    adapter.status(issue?'Red grip — '+issue:'Valid grip. Release to save.');
+   });
+  }
+  const tool=gearMode(model);
+  gearProxy.position.set(control.x,cached.recipe.gearHost.topY,control.z);
+  gearProxy.rotation.set(0,-THREE.MathUtils.degToRad(control.rotation),0);gearProxy.scale.set(1,1,1);
+  gearProxy.updateMatrixWorld(true);
+  gearGizmo.setMode(tool);gearGizmo.setSpace(tool==='scale'?'local':'world');
+  gearGizmo.showX=tool!=='rotate';gearGizmo.showY=tool!=='translate';gearGizmo.showZ=tool!=='rotate';
+  gearGizmo.enabled=true;gearGizmo.attach(gearProxy);
+ }
+
  function gearTopMessage(model,message){
   gearTopMessages.set(model.id,message);
   const status=$('smsGearTopStatus');
@@ -2179,6 +2263,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const numeric=[['x',-150,150,.1],['z',-150,150,.1],['width',8,100,.1],
    ['depth',8,100,.1],['height',6,80,.1],['rotation',-360,360,1],['joinMm',0,5,.1]];
   const fields=current?'<fieldset><legend>Selected grip — exact dimensions</legend>'+
+   '<div role="group" aria-label="Grip transform" class="sms-actions">'+gearModes.map(tool=>'<button type="button" data-gear-transform="'+tool+'" aria-pressed="'+(tool===gearMode(model))+'"'+disabled+'>'+({translate:'Move',rotate:'Rotate',scale:'Scale'}[tool])+'</button>').join('')+'</div>'+
    '<label>Grip<select id="smsGearTopSelect"'+disabled+'>'+controls.map(c=>'<option value="'+esc(c.id)+'"'+(c.id===current.id?' selected':'')+'>'+esc(GEAR_TOP_PRESETS.find(p=>p.id===c.presetId)?.name||c.kind)+' · '+esc(c.id.slice(0,6))+'</option>').join('')+'</select></label>'+
    numeric.map(([key,min,max,step])=>'<label>'+names[key]+' ('+(key==='rotation'?'degrees':'mm')+')<input data-gear-top-field="'+key+'"'+tip(key)+' type="number" min="'+min+'" max="'+max+'" step="'+step+'" value="'+esc(current[key])+'"'+disabled+' title="'+esc(key==='joinMm'?'Widen the joint where grip meets wheel. The shoulder is real printed geometry.':'Edit this dimension independently. Unsafe placements remain red until corrected.')+'"></label>').join('')+
    '<label>Profile<select data-gear-top-field="profile"'+tip('profile')+disabled+'>'+opts(TOP_PROFILES,current.profile)+'</select></label>'+
@@ -2202,7 +2287,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    gearTopMessage(model,$('smsModelError')?.textContent||'Grip could not be changed.');return false;
   }
   gearTopFeedback(model,id,'Grip updated.');
-  selectedGearTops.set(model.id,id);renderEditor();return true;
+  setGearSelection(model,id);renderEditor();return true;
  }
  function addGearTop(model,point){
   const preset=gearTopPresetChoices.get(model.id)||'offset-spindle';
@@ -2222,7 +2307,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    if(!commit({build:{...model.build,gearTopControls:[...gearTops(model),c]}})){
     gearTopMessage(model,($('smsModelError')?.textContent||'Grip could not be added.')+' No grip added.');return false;
    }
-   selectedGearTops.set(model.id,c.id);
+   setGearSelection(model,c.id);
    gearTopFeedback(model,c.id,'Grip added at X '+c.x+' mm, Z '+c.z+' mm.');
    renderEditor();return true;
   }catch(error){gearTopMessage(model,error.message+' No grip added.');return false;}
@@ -2234,7 +2319,10 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   $('smsAddGearTop').onclick=()=>addGearTop(model);
   const selected=$('smsGearTopSelect');
   if(!selected)return;
-  selected.onchange=()=>{selectedGearTops.set(model.id,selected.value);renderEditor();};
+  selected.onchange=()=>{setGearSelection(model,selected.value);renderEditor();};
+  for(const button of root.querySelectorAll('[data-gear-transform]'))button.onclick=()=>{
+   gearTopModes.set(model.id,button.dataset.gearTransform);renderEditor();
+  };
   const chosen=gearTops(model).find(c=>c.id===selected.value);
   for(const input of root.querySelectorAll('[data-gear-top-field]')){
    input.setAttribute('aria-describedby','smsGearTopFieldHelp');
@@ -2251,7 +2339,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   $('smsRemoveGearTop').onclick=()=>{
    const controls=gearTops(model).filter(c=>c.id!==chosen.id);
    if(commit({build:{...model.build,gearTopControls:controls}})){
-    gearTopMessages.delete(model.id);selectedGearTops.set(model.id,controls[0]?.id);renderEditor();
+    gearTopMessages.delete(model.id);setGearSelection(model,controls[0]?.id);renderEditor();
    }
   };
  }
@@ -2274,7 +2362,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const hit=partRay.intersectObjects(group.children.filter(mesh=>mesh.isMesh&&mesh.visible&&!mesh.userData.previewOnly),false)[0];
   event.preventDefault();event.stopImmediatePropagation();
   if(hit?.object.userData.gearTopId){
-   selectedGearTops.set(model.id,hit.object.userData.gearTopId);renderEditor();return;
+   const id=hit.object.userData.gearTopId;
+   if(selectedGearTops.get(model.id)===id){
+    gearTopModes.set(model.id,gearModes[(gearModes.indexOf(gearMode(model))+1)%gearModes.length]);
+   }else setGearSelection(model,id);
+   renderEditor();return;
   }
   const host=cache.get(model.id)?.recipe?.gearHost;
   if(!host)return;
@@ -2287,7 +2379,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  },true);
  renderer.domElement.addEventListener('pointerdown',event=>{
   const model=activeGearForPointer();
-  if(!model||event.button!==0)return;
+  if(!model||event.button!==0||gearGizmo?.dragging||gearGizmo?.axis)return;
   gearPointer(event);
   const mesh=partRay.intersectObjects(cache.get(model.id)?.group?.children||[],false)
    .find(hit=>hit.object.visible&&hit.object.userData.gearTopId)?.object;
@@ -2295,7 +2387,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const control=gearTops(model).find(c=>c.id===mesh.userData.gearTopId);
   if(!control)return;
   event.preventDefault();event.stopImmediatePropagation();
-  selectedGearTops.set(model.id,control.id);renderEditor();
+  setGearSelection(model,control.id);renderEditor();
+  if(gearMode(model)!=='translate')return;
   gearTopGesture={id:event.pointerId,model,control,mesh,candidate:null,issue:null,
    start:[event.clientX,event.clientY]};
   renderer.domElement.setPointerCapture(event.pointerId);
@@ -2727,6 +2820,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   });
   bindPartEditor(model);
   if(g.typeId==='gears'&&stage==='design')bindGearTopEditor(model);
+  syncGearGizmo();
   editors.refresh();renderPalette();
  }
  function commit(changes,{history=true}={}){
@@ -3509,7 +3603,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(action==='inspect')shell.focusAfterNavigation(['[data-feature-inspect]']);
   else tab?.focus();
  }
- window.__sensoryStudio={project,registry,canOpenFeature,openFeature,get currentModel(){return active();},get mode(){return mode;},switchModel,addModel:add,showLibrary,showPrint,send,prepare,saveImmediately,fittingPointScreen,pixelMarkerScreen:id=>{const marker=pixelMarkers(active()).find(item=>item.userData.pixelId===id);return marker?projectMarker(marker):null;},get cacheSize(){return cache.size;},get metrics(){return {previewBuilds,geometries:renderer.info.memory.geometries,activeWorkers:workers.size};}};
+ window.__sensoryStudio={project,registry,canOpenFeature,openFeature,get currentModel(){return active();},get mode(){return mode;},get gearTransformMode(){return activeGearForPointer()?gearMode(active()):null;},switchModel,addModel:add,showLibrary,showPrint,send,prepare,saveImmediately,fittingPointScreen,pixelMarkerScreen:id=>{const marker=pixelMarkers(active()).find(item=>item.userData.pixelId===id);return marker?projectMarker(marker):null;},get cacheSize(){return cache.size;},get metrics(){return {previewBuilds,geometries:renderer.info.memory.geometries,activeWorkers:workers.size};}};
  return {onCrystalChange:captureCrystal,backup,nativeModelBounds,planPixelProfileClearance,
   onPixelProfileLibraryChange:profiles=>{state.pixelProfiles=copy(profiles);save();},
   pixelProfileReferenced:id=>[

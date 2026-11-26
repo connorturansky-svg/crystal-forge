@@ -147,6 +147,19 @@ try{
  await page.mouse.dblclick(location.x,location.y);
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
  assert.match(await page.locator('#smsGearTopStatus').innerText(),/Grip added/);
+ // The same grip remains selected when cycling transform modes.
+ const gripScreen=await screenAt(openworkGrip.x,openworkGrip.z);
+ for(const tool of ['rotate','scale','translate']){
+  await page.mouse.dblclick(gripScreen.x,gripScreen.y);
+  await page.waitForFunction(mode=>window.__sensoryStudio.gearTransformMode===mode,tool);
+  assert.equal(await page.locator('[data-gear-transform="'+tool+'"]').getAttribute('aria-pressed'),'true');
+ }
+ await page.locator('#smsRemoveGearTop').click();
+ const inside=await screenAt(18,0),outside=await screenAt(40,0);
+ const u=(28.32-18)/22;
+ await page.mouse.dblclick(inside.x+(outside.x-inside.x)*u,inside.y+(outside.y-inside.y)*u);
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
+ assert.match(await page.locator('#smsGearTopStatus').innerText(),/Red grip.*window/);
  assert.equal(errors.length,0,'No uncaught errors: '+errors.join('; '));
  console.log('WT-026 Chromium: exact sizing, rollback, undo/redo, duplication, reusable template, reload and snapshot switching passed.');
 }finally{await browser.close();}

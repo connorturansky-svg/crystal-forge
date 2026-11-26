@@ -18,3 +18,6 @@ To reuse a setup, save the project in Library and choose **Save as reusable temp
 
 ### Grip placement feedback
 Add selected grip checks the preset at its normal starting position and searches nearby positions for an offset spindle if that position overlaps a cutout. Preset size and shoulder are never silently reduced. A centred knob stays centred; if it cannot fit, choose a different preset or edit the cog. Double-clicking uses your exact chosen position even if the resulting grip overlaps a window or bore. Invalid grips are red and editable; preparation/export is blocked until fixed or removed. Read the message immediately below Add selected grip if nothing is added. Existing saved models do not need to be rebuilt merely to use this workflow; unsafe geometry still requires adjustment.
+
+### Viewport transforms
+Select a grip to show the standard Move gizmo (X/Z). Double-click it to cycle Move → Rotate (Y) → Scale (width/depth/height) → Move, or choose the labelled mode buttons. Red grips can be moved and resized like valid grips. Exact dimensions remain available. The base stays attached to the cog plane; Y translation and tilting are intentionally unavailable. Print preparation refuses unresolved red placements.
