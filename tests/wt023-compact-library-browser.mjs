@@ -12,7 +12,7 @@ try{
  await context.addInitScript(key=>localStorage.setItem(key,JSON.stringify({hover:true,detailed:false})),HELP_PREFERENCES_KEY);
  const page=await context.newPage(),errors=[];
  page.on('pageerror',error=>errors.push(error.message));
- await page.goto(url);await page.waitForFunction(()=>window.__sensoryStudio);
+ await page.goto(url,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__sensoryStudio);
  await page.evaluate(()=>window.__sensoryStudio.addModel('gears',null,'Compact card witness'));
  await page.locator('#smsSaveModel').click();
  await page.locator('#smsLibrary').click();
@@ -128,7 +128,7 @@ try{
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.project.id),historical.project.id);
  await page.evaluate(()=>{Storage.prototype.setItem=window.__destinationWriteOriginal;});
  const peer=await context.newPage();
- await peer.goto(url);await peer.waitForFunction(()=>window.__sensoryStudio);
+ await peer.goto(url,{waitUntil:'domcontentloaded'});await peer.waitForFunction(()=>window.__sensoryStudio);
  await peer.evaluate(({key,value})=>localStorage.setItem(key,value+' '),{key:WORKSPACE_KEY,value:beforeDestination});
  await destination.getByRole('button',{name:'Create model'}).click();
  assert.match(await destination.getByRole('alert').innerText(),/Another tab saved/);
@@ -177,13 +177,13 @@ try{
  assert.equal(fresh.project.models.length,1);assert.equal(fresh.project.models[0].name,'Fresh destination witness');
  assert.equal(fresh.project.printer.curaNozzle,.4);
  assert.deepEqual(fresh.project.hardwareProfiles,[]);
- await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
+ await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__sensoryStudio);
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.project.id),fresh.project.id);
  assert.deepEqual(errors,[]);
  await context.close();
  const touchContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});
  const touch=await touchContext.newPage();
- await touch.goto(url);await touch.waitForFunction(()=>window.__sensoryStudio);
+ await touch.goto(url,{waitUntil:'domcontentloaded'});await touch.waitForFunction(()=>window.__sensoryStudio);
  await touch.locator('#smsLibrary').tap();
  const builtIn=touch.locator('#smsBuiltInTemplates article').filter({has:touch.getByRole('heading',{name:'Cogs & Gears',exact:true})});
  const touchToggle=builtIn.locator('.sms-library-actions-toggle');

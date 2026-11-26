@@ -4,6 +4,8 @@
 
 Owner dispatched completion on 26 November. #175 now reconciles main after merged #181 (.35.51); candidate .35.52 retains every release entry. Shared chooser also serves New Model/presets. Exact snapshot labels, revision-faithful source previews and labelled read-only settings complete inspection. Focused Chromium verifies seven families × three destinations and prepared-job object/cache retention with actual downloads; compact-card coverage includes cancel/quota/two-tab refusal and theme/responsive/touch evidence. Node archive tests include hashed-vault round trip. Full regression and final exact-head CI must be checked before marking ready. Follow-on #176–#179 reconciliation is documented in the destination guide; their branches are untouched.
 
+Hosted browser run 45911010069 reached the B2b competing-tab fixture but timed out at the peer page's full-load navigation before its concurrency assertions. The fixture now waits for DOM content plus actual Studio readiness rather than all page resources; every storage/cancellation/concurrency assertion remains. Five other substantive exact-head suites passed that candidate. Recheck all final-head CI after this test-only correction.
+
 See [Library destination user guide and handover](WT023B2B_LIBRARY_DESTINATIONS.md) for the isolated candidate builder, chooser, guarded-write publication and regression commands. The existing Library and workspace stores remain authoritative. Check issue #139 and the live draft before resuming; exact-head CI and owner approval remain required.
 ## Active WT-025 / WT-024 interface-polish candidate
 
