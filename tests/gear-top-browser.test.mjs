@@ -1,6 +1,7 @@
 import {revealLibraryActions} from './helpers/library-actions.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
+import {mkdir} from 'node:fs/promises';
 
 const browser=await chromium.launch({headless:true,
  executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,
@@ -42,9 +43,12 @@ try{
  const oldX=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0].x);
  await page.locator('[data-gear-top-field="x"]').fill('0');
  await page.locator('[data-gear-top-field="x"]').press('Tab');
- assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0].x),oldX,
-  'An offset grip must not close the centre bore.');
- assert.match(await page.locator('#smsModelError').innerText(),/shaft bore/);
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0].x),0,
+  'Invalid placement remains editable.');
+ assert.match(await page.locator('#smsGearTopStatus').innerText(),/Red grip.*shaft bore/);
+ await page.locator('[data-gear-top-field="x"]').fill(String(oldX));
+ await page.locator('[data-gear-top-field="x"]').press('Tab');
+ await page.waitForFunction(()=>!document.getElementById('smsGearTopStatus')?.textContent.includes('Red grip'));
  await page.locator('#smsRemoveGearTop').click();
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===0);
  await page.locator('[data-view=top]').click();
@@ -66,6 +70,24 @@ try{
  await page.mouse.move(target.x,target.y,{steps:6});
  await page.mouse.up();
  await page.waitForFunction(()=>Math.abs(window.__sensoryStudio.currentModel.build.gearTopControls?.[0]?.z-8)<.5);
+ await mkdir('qa',{recursive:true});
+ await page.screenshot({path:'qa/unified-wt026-move-gizmo.png'});
+ const dragHandle=async(mode,offset,end,field)=>{
+  await page.locator('[data-gear-transform="'+mode+'"]').click();
+  const before=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0]);
+  const centre=await page.evaluate(()=>{const s=window.__sensoryStudio,c=s.currentModel.build.gearTopControls[0];return s.gearTopPlaneScreen(c.x,c.z);});
+  await page.mouse.move(centre.x+offset[0],centre.y+offset[1]);
+  await page.mouse.down();
+  await page.mouse.move(centre.x+end[0],centre.y+end[1],{steps:12});
+  await page.mouse.up();
+  await page.waitForFunction(({field,value})=>window.__sensoryStudio.currentModel.build.gearTopControls[0][field]!==value,{field,value:before[field]});
+  await page.screenshot({path:'qa/unified-wt026-'+mode+'-gizmo.png'});
+ };
+ await dragHandle('translate',[78,0],[93,0],'x');
+ await dragHandle('rotate',[57,-57],[80,0],'rotation');
+ await page.locator('[data-gear-top-field="rotation"]').fill('0');
+ await page.locator('[data-gear-top-field="rotation"]').press('Tab');
+ await dragHandle('scale',[70,0],[85,0],'width');
  await page.locator('[data-gear-top-field="rotation"]').fill('37');
  await page.locator('[data-gear-top-field="rotation"]').press('Tab');
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0].rotation===37);
@@ -120,6 +142,73 @@ try{
  await reopened.getByRole('button',{name:'Open project WT-026 retained grips'}).press('Enter');
  await page.waitForFunction(id=>window.__sensoryStudio.project.id===id,original.projectId);
  await assertRetained();
+ // Add on a new openwork cog using the old Legacy body structure.
+ await page.locator('#smsNew').click();
+ await page.locator('#smsPicker [data-generator="gears"]').click();
+ await page.locator('#smsGearTopEditor').waitFor();
+ await setParameter('diameter','118');
+ await setParameter('teeth','20');
+ await setParameter('spokes','8');
+ await setParameter('webStyle','Legacy');
+ await setParameter('wheelStyle','Rounded lobes');
+ await setParameter('holeStyle','Oval');
+ await setParameter('hub','25');
+ await setParameter('bore','14');
+ await page.locator('#smsGearTopPreset').selectOption('straight-spindle');
+ await page.locator('#smsAddGearTop').click();
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
+ assert.match(await page.locator('#smsGearTopStatus').innerText(),/Grip added|Red grip/);
+ const openworkGrip=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0]);
+ await page.locator('#smsRemoveGearTop').click();
+ await page.locator('[data-view=top]').click();
+ await page.waitForFunction(()=>{const {settled,camera,target}=window.__crystalForgeViewMetrics();return settled&&camera[1]>target[1]&&Math.hypot(camera[0]-target[0],camera[2]-target[2])<.1;});
+ const planeAt=async(x,z)=>page.evaluate(([x,z])=>window.__sensoryStudio.gearTopPlaneScreen(x,z),[x,z]);
+ const location=await planeAt(28.32,0);
+ await page.mouse.dblclick(location.x,location.y);
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
+ assert.match(await page.locator('#smsGearTopStatus').innerText(),/Red grip.*window/);
+ const invalid=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0]);
+ assert(Math.abs(invalid.x-28.32)<.5);
+ // The same grip remains selected when cycling transform modes.
+ const gripScreen=await screenAt(invalid.x,invalid.z);
+ for(const tool of ['rotate','scale','translate']){
+  await page.mouse.dblclick(gripScreen.x,gripScreen.y);
+  await page.waitForFunction(mode=>window.__sensoryStudio.gearTransformMode===mode,tool);
+  assert.equal(await page.locator('[data-gear-transform="'+tool+'"]').getAttribute('aria-pressed'),'true');
+ }
+ // Correct the same draft without deleting or recreating it.
+ await page.evaluate(()=>window.__sensoryStudio.saveImmediately());
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>window.__sensoryStudio?.currentModel?.build.gearTopControls?.length===1);
+ assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0]),invalid);
+ await page.locator('#smsGearTopEditor').waitFor();
+ assert.match(await page.locator('#smsGearTopStatus').innerText(),/Red grip/);
+ await mkdir('qa',{recursive:true});
+ await page.screenshot({path:'qa/unified-wt026-invalid-theme-a.png'});
+ await page.locator('#themeBtn').click();
+ await page.screenshot({path:'qa/unified-wt026-invalid-theme-b.png'});
+ const modelId=await page.evaluate(()=>window.__sensoryStudio.currentModel.id);
+ await page.evaluate(id=>window.__sensoryStudio.send(id),modelId);
+ const job=page.locator('#smsJobs article').last();
+ await job.locator('[data-job-prepare]').click();
+ await page.waitForFunction(()=>window.__sensoryStudio.project.printJobs.at(-1).status==='failed');
+ for(const selector of ['[data-job-stl]','[data-job-3mf]','[data-job-export]'])assert(await job.locator(selector).isDisabled());
+ await page.evaluate(id=>window.__sensoryStudio.switchModel(id),modelId);
+ await page.locator('#smsGearTopEditor').waitFor();
+ await page.locator('[data-gear-top-field="join"]').selectOption('None');
+ for(const [field,value] of [['width','8'],['depth','8'],['x','43'],['z','0']]){
+  const input=page.locator('[data-gear-top-field="'+field+'"]');await input.fill(value);await input.press('Tab');
+ }
+ await page.waitForFunction(()=>!document.getElementById('smsGearTopStatus')?.textContent.includes('Red grip'));
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0].id),invalid.id);
+ await page.evaluate(id=>window.__sensoryStudio.send(id),modelId);
+ const corrected=page.locator('#smsJobs article').last();
+ await corrected.locator('[data-job-prepare]').click();
+ await corrected.locator('[data-job-stl]:enabled').waitFor({timeout:120000});
+ for(const selector of ['[data-job-stl]','[data-job-3mf]']){
+  const download=page.waitForEvent('download');await corrected.locator(selector).click();
+  assert.equal(await (await download).failure(),null);
+ }
  assert.equal(errors.length,0,'No uncaught errors: '+errors.join('; '));
  console.log('WT-026 Chromium: exact sizing, rollback, undo/redo, duplication, reusable template, reload and snapshot switching passed.');
 }finally{await browser.close();}

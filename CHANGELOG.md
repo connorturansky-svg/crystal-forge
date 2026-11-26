@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.51 — Editable grip placement and transform controls
+
+- Add a grip at a clicked position even when its footprint overlaps a spoke window or shaft bore; the red editable preview explains why preparation is blocked.
+- Move a selected grip along the cog plane, rotate around its vertical axis and scale its width, depth or height using the viewport gizmo. Double-click to cycle tools, or choose a labelled mode button.
+- Automatically search for a suitable offset spindle position when using Add selected grip. Invalid placement remains editable but cannot be manufactured or exported until corrected.
+
 ## v0.16.0-dev.35.50 — Find help and releases in Info
 - Moved — Open Info to reach the Help guide, searchable Features and What’s new from one toolbar button. The question-mark keyboard shortcut still opens Help.
 - Changed — New browsers start with both optional help switches off. Existing choices are retained, and Hover Notes also controls ordinary browser title hints while keeping critical blocked-action reasons available.
