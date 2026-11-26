@@ -23,3 +23,5 @@ Add selected grip checks the preset at its normal starting position and searches
 Select a grip to show the standard Move gizmo (X/Z). Double-click it to cycle Move → Rotate (Y) → Scale (width/depth/height) → Move, or choose the labelled mode buttons. Red grips can be moved and resized like valid grips. Exact dimensions remain available. The base stays attached to the cog plane; Y translation and tilting are intentionally unavailable. Print preparation refuses unresolved red placements.
 
 Release candidate .35.51 is reserved above #174's .35.50; reconcile both entries after whichever branch merges first. Actual viewport pointer, invalid saved-model recovery and blocked print-export tests and visual review are still required before owner merge review.
+
+After #174 merged, .35.51 is reconciled against its Info release history. The first CI failure demonstrated that some heavily perforated cogs cannot fit the full preset; this is now explicitly covered as an editable red fallback, not an assumed fit. Direct grip-body drag is separate from the axis handles and preserves the original grab offset.

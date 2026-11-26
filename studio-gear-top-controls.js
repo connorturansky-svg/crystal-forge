@@ -226,7 +226,7 @@ export function withGearTopControls(recipe,controls=[],{preview=false}={}){
  if(!controls.length)return recipe;
  const host=recipe.gearHost;
  const safeHost=gearTopSafeHost(recipe);
- const ids=new Set(),gearTopIssues={};
+ const ids=new Set(),gearTopIssues=Object.create(null);
  for(const c of controls){
   validateGearTopControl(c);
   if(ids.has(c.id))throw Error('Duplicate top-control ID.');ids.add(c.id);

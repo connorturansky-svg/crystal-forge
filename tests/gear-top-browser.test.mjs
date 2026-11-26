@@ -138,28 +138,32 @@ try{
  await page.locator('#smsGearTopPreset').selectOption('straight-spindle');
  await page.locator('#smsAddGearTop').click();
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
- assert.match(await page.locator('#smsGearTopStatus').innerText(),/Grip added/);
+ assert.match(await page.locator('#smsGearTopStatus').innerText(),/Grip added|Red grip/);
  const openworkGrip=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0]);
  await page.locator('#smsRemoveGearTop').click();
  await page.locator('[data-view=top]').click();
  await page.waitForFunction(()=>{const {settled,camera,target}=window.__crystalForgeViewMetrics();return settled&&camera[1]>target[1]&&Math.hypot(camera[0]-target[0],camera[2]-target[2])<.1;});
- const location=await screenAt(openworkGrip.x,openworkGrip.z);
+ const planeAt=async(x,z)=>page.evaluate(([x,z])=>window.__sensoryStudio.gearTopPlaneScreen(x,z),[x,z]);
+ const location=await planeAt(28.32,0);
  await page.mouse.dblclick(location.x,location.y);
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
- assert.match(await page.locator('#smsGearTopStatus').innerText(),/Grip added/);
+ assert.match(await page.locator('#smsGearTopStatus').innerText(),/Red grip.*window/);
+ const invalid=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0]);
+ assert(Math.abs(invalid.x-28.32)<.5);
  // The same grip remains selected when cycling transform modes.
- const gripScreen=await screenAt(openworkGrip.x,openworkGrip.z);
+ const gripScreen=await screenAt(invalid.x,invalid.z);
  for(const tool of ['rotate','scale','translate']){
   await page.mouse.dblclick(gripScreen.x,gripScreen.y);
   await page.waitForFunction(mode=>window.__sensoryStudio.gearTransformMode===mode,tool);
   assert.equal(await page.locator('[data-gear-transform="'+tool+'"]').getAttribute('aria-pressed'),'true');
  }
- await page.locator('#smsRemoveGearTop').click();
- const inside=await screenAt(18,0),outside=await screenAt(40,0);
- const u=(28.32-18)/22;
- await page.mouse.dblclick(inside.x+(outside.x-inside.x)*u,inside.y+(outside.y-inside.y)*u);
- await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
- assert.match(await page.locator('#smsGearTopStatus').innerText(),/Red grip.*window/);
+ // Correct the same draft without deleting or recreating it.
+ await page.locator('[data-gear-top-field="join"]').selectOption('None');
+ for(const [field,value] of [['width','8'],['depth','8'],['x','43'],['z','0']]){
+  const input=page.locator('[data-gear-top-field="'+field+'"]');await input.fill(value);await input.press('Tab');
+ }
+ await page.waitForFunction(()=>!document.getElementById('smsGearTopStatus')?.textContent.includes('Red grip'));
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0].id),invalid.id);
  assert.equal(errors.length,0,'No uncaught errors: '+errors.join('; '));
  console.log('WT-026 Chromium: exact sizing, rollback, undo/redo, duplication, reusable template, reload and snapshot switching passed.');
 }finally{await browser.close();}

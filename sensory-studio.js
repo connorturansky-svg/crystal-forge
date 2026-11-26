@@ -552,7 +552,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const recipe=applyBuildModules(generator.recipe(model.parameters),model.build,generator.capabilities,{preview:true});
    const group=previewRecipe(THREE,recipe,[model.materials.primary?.colour||0x88bbff,model.materials.secondary?.colour||0xffcf70]);previewBuilds++;c={kind:'generic',group,fingerprint,view:c?.view,routing:recipe.nativeRouting,recipe};cache.set(model.id,c);
    if(!shell)model.thumbnail=thumbnail(group);
-   if(recipe.edgeFinish?.enabled)refreshChamferPreview(model,c);
+   if(recipe.edgeFinish?.enabled&&(!model.build.gearTopControls?.length||stage!=='design'))refreshChamferPreview(model,c);
   }
   scene.add(c.group);
   if(c.view){camera.position.fromArray(c.view.camera);orbit.target.fromArray(c.view.target);camera.lookAt(orbit.target);}
@@ -2378,17 +2378,23 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
  },true);
  renderer.domElement.addEventListener('pointerdown',event=>{
   const model=activeGearForPointer();
-  if(!model||event.button!==0||gearGizmo?.dragging||gearGizmo?.axis)return;
+  if(!model||event.button!==0||gearGizmo?.dragging)return;
   gearPointer(event);
   const mesh=partRay.intersectObjects(cache.get(model.id)?.group?.children||[],false)
    .find(hit=>hit.object.visible&&hit.object.userData.gearTopId)?.object;
-  if(!mesh)return;
+  if(!mesh)return; // The standard gizmo receives pointer events outside the grip itself.
   const control=gearTops(model).find(c=>c.id===mesh.userData.gearTopId);
   if(!control)return;
+  const same=selectedGearTops.get(model.id)===control.id;
+  if(same&&gearMode(model)!=='translate'&&gearGizmo?.axis)return;
   event.preventDefault();event.stopImmediatePropagation();
-  setGearSelection(model,control.id);renderEditor();
+  if(!same){setGearSelection(model,control.id);renderEditor();}
   if(gearMode(model)!=='translate')return;
-  gearTopGesture={id:event.pointerId,model,control,mesh,colour:mesh.material.color.clone(),emissive:mesh.material.emissive.clone(),candidate:null,issue:null,
+  const topY=cache.get(model.id).recipe.gearHost.topY;
+  const anchor=partRay.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),-topY),new THREE.Vector3());
+  if(!anchor)return;
+  const meshes=cache.get(model.id).group.children.filter(m=>m.userData.gearTopId===control.id).map(m=>({mesh:m,colour:m.material.color.clone(),emissive:m.material.emissive.clone()}));
+  gearTopGesture={id:event.pointerId,model,control,meshes,topY,anchor,candidate:null,issue:null,
    start:[event.clientX,event.clientY]};
   renderer.domElement.setPointerCapture(event.pointerId);
  },true);
@@ -2399,15 +2405,19 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(Math.hypot(event.clientX-gesture.start[0],event.clientY-gesture.start[1])<3)return;
   gearPointer(event);
   const point=partRay.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),
-   -gesture.model.parameters.thickness),new THREE.Vector3());
-  if(!point||Math.abs(point.x)>150||Math.abs(point.z)>150)return;
-  const candidate={...gesture.control,x:Math.round(point.x*10)/10,z:Math.round(point.z*10)/10};
+   -gesture.topY),new THREE.Vector3());
+  if(!point)return;
+  const clamp=n=>Math.round(Math.max(-150,Math.min(150,n))*10)/10;
+  const candidate={...gesture.control,x:clamp(gesture.control.x+point.x-gesture.anchor.x),z:clamp(gesture.control.z+point.z-gesture.anchor.z)};
   const issue=gearTopPlacementIssue(candidate,cache.get(gesture.model.id)?.recipe?.gearHost,
    gearTops(gesture.model).filter(c=>c.id!==gesture.control.id));
   gesture.candidate=candidate;gesture.issue=issue;
-  gesture.mesh.position.set(candidate.x-gesture.control.x,0,candidate.z-gesture.control.z);
-  gesture.mesh.material.color.setHex(issue?0xe04444:(gesture.mesh.userData.materialRole==='secondary'?(gesture.model.materials.secondary?.colour||0xffcf70):(gesture.model.materials.primary?.colour||0x88bbff)));
-  gesture.mesh.material.emissive?.setHex(issue?0x9b1528:0x075b43);
+  for(const {mesh} of gesture.meshes){
+   mesh.position.set(candidate.x-gesture.control.x,0,candidate.z-gesture.control.z);
+   mesh.material.color.setHex(issue?0xe04444:(mesh.userData.materialRole==='secondary'?(gesture.model.materials.secondary?.colour||0xffcf70):(gesture.model.materials.primary?.colour||0x88bbff)));
+   mesh.material.emissive.setHex(issue?0x9b1528:0x075b43);
+  }
+  if(gearProxy)gearProxy.position.set(candidate.x,gesture.topY,candidate.z);
   adapter.status(issue||'Valid grip position. Release to place.');
  },true);
  function finishGearDrag(event){
@@ -2416,8 +2426,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   gearTopGesture=null;
   event.preventDefault();event.stopImmediatePropagation();
   if(renderer.domElement.hasPointerCapture(event.pointerId))renderer.domElement.releasePointerCapture(event.pointerId);
-  gesture.mesh.position.set(0,0,0);gesture.mesh.material.color.copy(gesture.colour);gesture.mesh.material.emissive.copy(gesture.emissive);
-  if(event.type==='pointercancel'){adapter.status('Grip move cancelled; previous position preserved.');return;}
+  for(const {mesh,colour,emissive} of gesture.meshes){mesh.position.set(0,0,0);mesh.material.color.copy(colour);mesh.material.emissive.copy(emissive);}
+  if(event.type==='pointercancel'){syncGearGizmo();adapter.status('Grip move cancelled; previous position preserved.');return;}
   if(gesture.candidate&&active()?.id===gesture.model.id)
    updateGearTop(gesture.model,gesture.control.id,{x:gesture.candidate.x,z:gesture.candidate.z});
   else if(gesture.issue)adapter.status(gesture.issue);
@@ -3603,7 +3613,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   if(action==='inspect')shell.focusAfterNavigation(['[data-feature-inspect]']);
   else tab?.focus();
  }
- window.__sensoryStudio={project,registry,canOpenFeature,openFeature,get currentModel(){return active();},get mode(){return mode;},get gearTransformMode(){return activeGearForPointer()?gearMode(active()):null;},switchModel,addModel:add,showLibrary,showPrint,send,prepare,saveImmediately,fittingPointScreen,pixelMarkerScreen:id=>{const marker=pixelMarkers(active()).find(item=>item.userData.pixelId===id);return marker?projectMarker(marker):null;},get cacheSize(){return cache.size;},get metrics(){return {previewBuilds,geometries:renderer.info.memory.geometries,activeWorkers:workers.size};}};
+ window.__sensoryStudio={project,registry,canOpenFeature,openFeature,get currentModel(){return active();},get mode(){return mode;},get gearTransformMode(){return activeGearForPointer()?gearMode(active()):null;},gearTopPlaneScreen:(x,z)=>{const host=cache.get(active()?.id)?.recipe?.gearHost;return host?projectPoint(new THREE.Vector3(x,host.topY,z)):null;},switchModel,addModel:add,showLibrary,showPrint,send,prepare,saveImmediately,fittingPointScreen,pixelMarkerScreen:id=>{const marker=pixelMarkers(active()).find(item=>item.userData.pixelId===id);return marker?projectMarker(marker):null;},get cacheSize(){return cache.size;},get metrics(){return {previewBuilds,geometries:renderer.info.memory.geometries,activeWorkers:workers.size};}};
  return {onCrystalChange:captureCrystal,backup,nativeModelBounds,planPixelProfileClearance,
   onPixelProfileLibraryChange:profiles=>{state.pixelProfiles=copy(profiles);save();},
   pixelProfileReferenced:id=>[
