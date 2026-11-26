@@ -95,6 +95,18 @@ try{
  await savedCard.getByRole('button',{name:'Inspect saved project '+saved.title,exact:true}).click();
  const inspection=page.getByRole('dialog',{name:'Inspect saved project'});
  assert(await inspection.getByRole('heading',{name:'Compact card witness',exact:true}).first().isVisible());
+ assert.match(await inspection.innerText(),new RegExp(saved.snapshotId));
+ await inspection.locator('.sms-saved-preview img').first().waitFor();
+ await inspection.getByText('Saved project defaults, profiles and print jobs',{exact:true}).click();
+ assert.match(await inspection.locator('details').first().innerText(),/Printer/);
+ for(const theme of ['first','second']){
+  for(const width of [390,768,1440]){
+   await page.setViewportSize({width,height:950});
+   assert(await inspection.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+   await page.screenshot({path:`qa/wt023b2b-inspection-${theme}-${width}.png`});
+  }
+  await page.locator('#themeBtn').evaluate(el=>el.click());
+ }
  assert.equal(await storage(),JSON.stringify(historical));
  await inspection.getByRole('button',{name:'Close inspection'}).click();
 
@@ -142,6 +154,21 @@ try{
  await destination.getByRole('combobox',{name:'Destination project'}).selectOption({label:'New project'});
  await destination.getByRole('textbox',{name:'New project name'}).fill(historical.project.title);
  await destination.getByRole('textbox',{name:'Model name'}).fill('Fresh destination witness');
+ for(const theme of ['first','second']){
+  for(const width of [390,768,1440]){
+   await page.setViewportSize({width,height:950});
+   assert(await destination.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+   await page.screenshot({path:`qa/wt023b2b-destination-${theme}-${width}.png`});
+  }
+  await page.locator('#themeBtn').evaluate(el=>el.click());
+ }
+ await page.setViewportSize({width:390,height:950});
+ await page.evaluate(()=>{document.documentElement.style.fontSize='200%'});
+ assert(await destination.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+ await page.screenshot({path:'qa/wt023b2b-destination-zoom.png'});
+ await page.keyboard.press('Tab');
+ assert(await destination.evaluate(el=>el.contains(document.activeElement)));
+ await page.evaluate(()=>{document.documentElement.style.fontSize=''});
  await page.screenshot({path:'qa/wt023b2b-new-destination.png'});
  await destination.getByRole('button',{name:'Create model'}).click();
  await destination.waitFor({state:'hidden'});
@@ -164,6 +191,12 @@ try{
  assert.equal(await touchToggle.getAttribute('aria-expanded'),'true');
  await builtIn.getByRole('button',{name:'New Cogs & Gears from template'}).tap();
  await touch.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Cancel'}).tap();
+ await revealLibraryActions(builtIn);
+ await builtIn.getByRole('button',{name:'New Cogs & Gears from template'}).tap();
+ const touchChooser=touch.getByRole('dialog',{name:'Name new model'});
+ await touchChooser.getByRole('textbox',{name:'Model name',exact:true}).fill('Touch destination witness');
+ await touchChooser.getByRole('button',{name:'Create model',exact:true}).tap();
+ await touch.waitForFunction(()=>window.__sensoryStudio.currentModel.name==='Touch destination witness');
  await touchContext.close();
  console.log('WT-023B2a Chromium: compact previews, hover persistence, keyboard disclosure, Escape, touch, linked source and unchanged storage passed.');
 }finally{await browser.close();}

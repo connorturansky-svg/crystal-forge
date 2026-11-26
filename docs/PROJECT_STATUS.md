@@ -1,5 +1,9 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
+## WT-023B2b completion candidate — 26 November 2026
+
+Continue existing #175, owner-dispatched after #181 merged. Candidate .35.52 integrates main .35.51 and preserves Info, compact Library, drawer sizing, precision and cog improvements. Read-only saved-version/settings inspection and the shared atomic destination chooser use the existing workspace. See [verification and follow-on dependencies](WT023B2B_LIBRARY_DESTINATIONS.md). Do not treat the dated open-PR table below as live status; exact final-head CI and owner merge review remain required.
+
 ## ChatGPT handover — 25 November 2026
 
 Main audited at `66994cc98d3ef9bd68ef38161fd7a2b78fef8dbb`. The owner merged [B2a #172](https://github.com/connorturansky-svg/crystal-forge/pull/172). Main carries v0.16.0-dev.35.42. Its runtime head `cba402317d40bd09a0dd228a1257ebf0c4c0fb88` passed all six substantive [PR workflows](https://github.com/connorturansky-svg/crystal-forge/pull/172/checks). Persistence #147, project folders #151, private backup #148, Models drawer #164/#166 and contextual Help #163 are integrated. See [AI_HANDOVER.md](AI_HANDOVER.md) for source and test commands.

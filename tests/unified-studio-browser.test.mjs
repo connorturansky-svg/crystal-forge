@@ -125,7 +125,7 @@ try{
  assert.equal(await page.locator('.sms-split,.sms-more').count(),0);
  assert.equal(await page.locator('.brand').innerText(),'Pixel Model Maker');
  assert((await page.locator('.version').boundingBox()).y>(await page.locator('.brand').boundingBox()).y);
- for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','hoverNotes','detailedExplanations','changelogBtn','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
+ for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','hoverNotes','detailedExplanations','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
   assert(await page.locator('#'+id).isVisible(),id+' is directly available');
  const leftPanel=page.locator('#smsTools'),rightPanel=page.locator('#smsPrecision'),bottom=page.locator('#smsModelsDrawer');
  assert.equal(Math.round((await rightPanel.boundingBox()).width),335);
@@ -168,10 +168,15 @@ try{
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.id),id);
  await page.locator('#advancedBtn').click();
  await page.locator('#simpleBtn').click();
- for(const id of ['helpBtn','changelogBtn']){
+ assert.equal(await page.locator('#changelogBtn').count(),0);
+ assert.equal(await page.locator('#helpBtn').innerText(),'Info');
+ for(const id of ['helpBtn']){
   await page.locator('#'+id).click();
   assert(await page.locator('#infoOverlay').isVisible());
+  await page.locator('#infoTabChangelog').click();
+  assert(await page.locator('#infoChangelog').isVisible());
   await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'helpBtn');
   assert.equal(await page.locator('#infoOverlay').isVisible(),false);
  }
  const hoverNotes=page.getByRole('checkbox',{name:'Hover Notes',exact:true});
@@ -3466,7 +3471,13 @@ try{
   const first={...savedProject,snapshotId:'version-1'};
   const second={...savedProject,snapshotId:'version-2'};
   const workspace={schemaVersion:1,project:activeProject,savedProjects:[first,second],library:[],legacyTemplates:[]};
-  const targetPage=await browser.newPage({viewport:{width:390,height:844}});
+  // The isolated Library fixture must not compete with the preceding long-lived WebGL renderer.
+  assert.deepEqual(errors,[]);
+  await page.close();
+  const isolatedBrowser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
+  const targetPage=await isolatedBrowser.newPage({viewport:{width:390,height:844}});
+  targetPage.on('pageerror',error=>errors.push(error.message));
+  page=targetPage;
   try{
    await targetPage.addInitScript(({key,workspace})=>{
     if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(workspace));
@@ -3504,7 +3515,7 @@ try{
    assert.deepEqual(await modelIds(),['shared-model']);
    await targetPage.reload({waitUntil:'commit'});
    await targetPage.waitForFunction(()=>window.__sensoryStudio?.project.id==='other-project');
-  }finally{await targetPage.close();}
+  }finally{await isolatedBrowser.close();}
  }
  assert.deepEqual(errors,[]);
  console.log('Unified Home, Design, Build, Library and Quick Print screenshots captured.');

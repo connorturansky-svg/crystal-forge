@@ -11,7 +11,7 @@ function labelled(text,field){
  label.append(field);return label;
 }
 // All controls work without hover; the modal only calls commit on explicit submit.
-export function openLibraryDestination(workspace,{source,suggestion,linked=false,revisions=[],commit}){
+export function openLibraryDestination(workspace,{source,suggestion,linked=false,revisions=[],preview,commit}){
  const whole=source.kind==='project-template';
  const title=whole?'Create project from template':source.kind==='built-in'?'Name new model':'Choose model destination';
  const opener=document.activeElement;
@@ -21,6 +21,16 @@ export function openLibraryDestination(workspace,{source,suggestion,linked=false
  const description=element('p',whole?'Create an independent project using this template’s saved models and project settings. The existing project will be saved first.':
   (linked?'The new model will be linked to the exact selected source revision.':'The new model will be an independent editable copy.'));
  form.append(heading,description);
+ const sourceInfo=element('p','',{'data-library-source-info':''});
+ const artwork=element('div','',{'data-library-source-preview':''});
+ form.append(sourceInfo,artwork);
+ const renderSource=revision=>{
+  sourceInfo.textContent=source.kind==='library'?'Library source '+source.sourceId+' · revision '+revision:
+   whole?'Project '+source.projectId+' · snapshot '+source.snapshotId:'Starting point · '+source.typeId;
+  artwork.replaceChildren();
+  const picture=preview?.(revision);if(picture)artwork.append(picture);
+ };
+ renderSource(source.revision);
  const choices=whole?[{kind:'new',label:'New project from template'}]:destinationChoices(workspace);
  const destination=element('select','',{'data-library-destination-choice':''});
  for(const [i,choice] of choices.entries())destination.add(new Option(choice.label,String(i)));
@@ -35,6 +45,7 @@ export function openLibraryDestination(workspace,{source,suggestion,linked=false
    revision.onchange=()=>{
     const previous=revisions.find(v=>v.revision===selectedRevision);
     selectedRevision=Number(revision.value);
+    renderSource(selectedRevision);
     if(name.value===previous?.model.name)name.value=revisions.find(v=>v.revision===selectedRevision).model.name;
    };
    form.append(labelled('Source revision',revision));
@@ -57,8 +68,8 @@ export function openLibraryDestination(workspace,{source,suggestion,linked=false
  destination.onchange=update;update();
  const error=element('p','',{role:'alert'});
  const actions=element('div','',{class:'sms-actions'});
- const submit=element('button',whole?'Create project':source.kind==='built-in'?'Create model':'Add model',{type:'submit'});
- const cancel=element('button','Cancel',{type:'button'});cancel.onclick=()=>dialog.close();
+ const submit=element('button',whole?'Create project':source.kind==='built-in'?'Create model':'Add model',{type:'submit','data-library-confirm':''});
+ const cancel=element('button','Cancel',{type:'button','data-library-cancel':''});cancel.onclick=()=>dialog.close();
  actions.append(submit,cancel);form.append(error,actions);dialog.append(form);
  form.onsubmit=event=>{
   event.preventDefault();error.textContent='';

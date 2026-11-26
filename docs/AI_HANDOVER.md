@@ -2,11 +2,24 @@
 
 ## WT-023B2b candidate (draft; not shipped)
 
+Owner dispatched completion on 26 November. #175 now reconciles main after merged #181 (.35.51); candidate .35.52 retains every release entry. Shared chooser also serves New Model/presets. Exact snapshot labels, revision-faithful source previews and labelled read-only settings complete inspection. Focused Chromium verifies seven families × three destinations and prepared-job object/cache retention with actual downloads; compact-card coverage includes cancel/quota/two-tab refusal and theme/responsive/touch evidence. Node archive tests include hashed-vault round trip. Full regression and final exact-head CI must be checked before marking ready. Follow-on #176–#179 reconciliation is documented in the destination guide; their branches are untouched.
+
 See [Library destination user guide and handover](WT023B2B_LIBRARY_DESTINATIONS.md) for the isolated candidate builder, chooser, guarded-write publication and regression commands. The existing Library and workspace stores remain authoritative. Check issue #139 and the live draft before resuming; exact-head CI and owner approval remain required.
+## Active WT-025 / WT-024 interface-polish candidate
+
+[PR #174](https://github.com/connorturansky-svg/crystal-forge/pull/174) is the shared implementation for #154 and #152. Read [the implementation checkpoint](WT025_INTERFACE_POLISH_CHECKPOINT.md). The Info dialog retains existing feature navigation and generated history; `src/ui/info-release-summary.mjs` owns browser-local version acknowledgement. Keep the existing contextual help registry, preserve accessible names and critical warnings, and verify exact-head checks before owner review. Do not treat a candidate version as deployed.
+
+## Active WT-026 grip correction — PR #181
+
+Final verification correction (26 November): WT-021 browser assertions now locate historical .35.50 explicitly while retaining current-release summary and acknowledgement coverage. WT-026 Chromium exercises real Move/Rotate/Scale handle drags, body dragging, double-click cycling, invalid-grip reload, failed preparation with disabled exports, correction of the same grip and successful STL/3MF downloads. Both theme screenshots are captured as `qa/unified-wt026-*.png` in the browser CI artifact. Local focused browser, static, gear-control and release-metadata checks passed; full suites and exact final-head hosted CI must be checked before marking ready. No automatic merge.
+
+The full local manufacturing suite passed. A separate Crystal browser fixture intermittently dragged P2 to (25.6, -10.5) while its subsequent section assumed a horizontal route. It now waits for camera settling and establishes (32, 0) with exact controls after retaining the pointer-drag regression. The unchanged 3.2 mm STL/3MF width assertions and complete Crystal journey pass. This is a test-fixture correction, with no runtime or release-version change.
+
+Red grip drafts are valid design documents, not printable solids. `withGearTopControls` permits placement issues only in preview mode; strict preparation rejects them. Keep red preview feedback, direct body movement and Three.js transform modes separate from the manufacturing path. See [gear guide](WT026_GEARS_USER_GUIDE.md). Candidate .35.51 is reconciled after #174; verify browser gesture and exact-head CI before owner review. Do not merge automatically.
 
 ## Resume from GitHub
 
-Start with [project status and priority order](PROJECT_STATUS.md#chatgpt-handover--25-november-2026). Fetch live main, check issue and branch ownership, and verify Actions against the exact PR head before requesting owner review. The owner approves merges. B2a merged in #172. B2b remains unstarted and requires owner dispatch.
+Start with [project status and priority order](PROJECT_STATUS.md#chatgpt-handover--25-november-2026). Fetch live main, check issue and branch ownership, and verify Actions against the exact PR head before requesting owner review. The owner approves merges. B2a merged in #172. B2b continues in #175 under the 26 November owner dispatch.
 
 - Library rendering and preview callbacks live in `sensory-studio.js`. Card disclosure and CSS are in `src/ui/library-card.mjs` and `src/ui/library-card.css`. Scroll clearance follows the actual Models drawer height. Shared Help uses `tooltips.js` and `contextual-help-copy.js`.
 - For B2b, trace `renderLibraryCards`, `renderBuiltInTemplates`, `renderTemplates`, `saveProjectSnapshot` and `replaceProject` in `sensory-studio.js`, then `projectWorkspaceCandidate` and stale-write protection in `studio-sync-plan.js`. Preserve stable project, snapshot and source revision IDs. Follow the [B2b acceptance packet](WT023_PROJECT_LIBRARY_IMPLEMENTATION.md#b2b--project-browser-and-destination-transaction).

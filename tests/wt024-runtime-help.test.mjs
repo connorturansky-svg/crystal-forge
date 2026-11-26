@@ -8,14 +8,15 @@ import {HELP_PREFERENCES_KEY,readHelpPreferences,describeControl} from '../toolt
 
 test('contextual help preferences default and migrate independently',()=>{
  const storage=entries=>({getItem:key=>entries[key]??null});
- assert.deepEqual(readHelpPreferences(storage({})),{hover:true,detailed:false});
+ assert.deepEqual(readHelpPreferences(storage({})),{hover:false,detailed:false});
  assert.deepEqual(readHelpPreferences(storage({'crystal-forge-descriptions':'on'})),{hover:true,detailed:true});
+ assert.deepEqual(readHelpPreferences(storage({'crystal-forge-descriptions':'off'})),{hover:true,detailed:false});
  for(const hover of [false,true])for(const detailed of [false,true]){
   const saved={hover,detailed};
   assert.deepEqual(readHelpPreferences(storage({[HELP_PREFERENCES_KEY]:JSON.stringify(saved)})),saved);
  }
- assert.deepEqual(readHelpPreferences(storage({[HELP_PREFERENCES_KEY]:'invalid'})),{hover:true,detailed:false});
- assert.deepEqual(readHelpPreferences(undefined),{hover:true,detailed:false});
+ assert.deepEqual(readHelpPreferences(storage({[HELP_PREFERENCES_KEY]:'invalid'})),{hover:false,detailed:false});
+ assert.deepEqual(readHelpPreferences(undefined),{hover:false,detailed:false});
 });
 
 test('classic and native control copy uses explicit registry entries',()=>{

@@ -58,11 +58,34 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
-## v0.16.0-dev.35.45 — Choose where Library models belong
+## v0.16.0-dev.35.52 — Choose where Library models belong
 
 - Inspect the models and project defaults of a saved project version without opening it.
 - Choose the current project, an exact saved version or a named new project when adding a Library model or starting point.
 - Confirm the model name and source revision; linked copies stay pinned. A cancelled or failed destination change leaves existing work in place.
+## v0.16.0-dev.35.51 — Editable grip placement and transform controls
+
+- Add a grip at a clicked position even when its footprint overlaps a spoke window or shaft bore; the red editable preview explains why preparation is blocked.
+- Move a selected grip along the cog plane, rotate around its vertical axis and scale its width, depth or height using the viewport gizmo. Double-click to cycle tools, or choose a labelled mode button.
+- Automatically search for a suitable offset spindle position when using Add selected grip. Invalid placement remains editable but cannot be manufactured or exported until corrected.
+
+## v0.16.0-dev.35.50 — Find help and releases in Info
+- Moved — Open Info to reach the Help guide, searchable Features and What’s new from one toolbar button. The question-mark keyboard shortcut still opens Help.
+- Changed — New browsers start with both optional help switches off. Existing choices are retained, and Hover Notes also controls ordinary browser title hints while keeping critical blocked-action reasons available.
+- Changed — When both optional help modes are enabled, desktop controls with inline guidance no longer show an extra question button. Touch devices retain tap-to-read help.
+- New — Read version highlights in Info, including changes since the last version you marked as read. Unreleased notes stay separate, and read preferences never alter projects.
+
+## v0.16.0-dev.35.49 — Tactile cog grips and off-centre handles
+
+- Add ten Gear-top grip starting points, including offset crank spindles, fluted/knurled dials, rounded rectangular handles and tactile profiles with independent width, depth and height.
+- Double-click a flat cog face or choose Add grip, drag or edit exact X/Z coordinates, and get explicit feedback when a strengthened base overlaps a shaft bore, window or gear edge.
+- Prepare a real Boolean-fused model with round or chamfered grip roots and a continuous measured centre shaft bore through a combined centred knob. Edit all source settings later; bearing-mounted handles, arbitrary Cap-model fusion and physical strength qualification remain future work.
+
+## v0.16.0-dev.35.43 — Adjustable, readable Models drawer
+
+- Adjust Thumbnail size from compact to large; the number of columns adapts to the viewport width.
+- Keep model names on a readable horizontal line and move Rename, Info and Close into a separate action row. Long names remain available through their full accessible label and title.
+- Remember thumbnail size separately from project data. Real saved-source previews and retry messages are preserved. The size control uses the shared contextual Help system.
 
 ## v0.16.0-dev.35.42 — Browse compact Library cards
 

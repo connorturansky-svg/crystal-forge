@@ -1,3 +1,4 @@
+import './gear-top-controls.test.mjs';
 // Dependency-free repository wiring and JavaScript parsing smoke test.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -74,4 +75,5 @@ try{
  execFileSync(process.execPath,[local('tests/wt024-help-audit.test.mjs')],{cwd:root,stdio:'pipe'});
 }catch(error){throw new Error('WT-024 help inventory tests failed: '+String(error.stderr||error.message));}
 execFileSync(process.execPath,[local('tests/model-drawer-prototype.test.mjs')],{cwd:root,stdio:'inherit'});
+execFileSync(process.execPath,['--test',local('tests/info-release-summary.test.mjs')],{cwd:root,stdio:'inherit'});
 console.log(JSON.stringify({result:'STATIC CHECKS PASSED',scriptsParsed:jsPaths.length,relativeImports:checkedImports,uiControls:controls.size,docsChecked:10},null,2));

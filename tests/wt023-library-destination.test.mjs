@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {createProject,createModel,addModel,saveLibraryRevision,queueModel,beginPreparation,finishPreparation,canExport} from '../studio-documents.js';
 import {destinationChoices,libraryDestinationCandidate,commitLibraryDestination,NEW_PROJECT_PRINTER} from '../src/ui/library-destination.mjs';
+import {packStudioVault,unpackStudioVault} from '../studio-vault.js';
+import {readOrganisation} from '../studio-organisation.js';
 const model=(id,name,type='waves')=>createModel({id,name,typeId:type,parameters:{width:42}});
 const project=createProject({id:'active',title:'Same title'});
 addModel(project,model('original','Original'));
@@ -57,4 +59,10 @@ for(const error of ['Quota exceeded','Another tab saved this workspace']){
 assert.equal(writes,2);assert.equal(publishes,0);
 commitLibraryDestination(workspace,request,{writeWorkspace:()=>writes++,publish:result=>{assert.equal(writes,3);assert.equal(result.candidate.project.models.length,2);publishes++;}});
 assert.equal(publishes,1);assert.equal(JSON.stringify(workspace),original);
+const archive=JSON.parse(JSON.stringify(b.candidate));
+const missingProfile=structuredClone(workspace);missingProfile.library[0].versions[0].model.build.activePixelProfileId='custom-missing';
+assert.throws(()=>libraryDestinationCandidate(missingProfile,request),/Missing measured pixel profile/);
+assert.equal(JSON.stringify(workspace),original);
+const packed=await packStudioVault(archive);
+assert.deepEqual(await unpackStudioVault(packed.manifest,hash=>packed.assets.get(hash)),{...archive,legacyTemplates:[],organisation:readOrganisation(archive.organisation)});
 console.log('WT-023B2b destination contracts: exact revisions and snapshots, seven families, current jobs, new defaults, historical preservation, single write and rollback passed.');

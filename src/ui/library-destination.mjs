@@ -9,6 +9,15 @@ const nameOf=(name,label)=>{
  if(!value||Array.from(value).length>100)throw Error('Enter a '+label+' of 1 to 100 characters.');
  return value;
 };
+export function missingModelPixelProfiles(model,workspace){
+ const ids=[model.build?.activePixelProfileId,...(model.build?.pixelHoles||[]).flatMap(hole=>[hole.profileId,hole.socketProfile?.id])];
+ if(model.generator.typeId==='crystals')ids.push(model.parameters?.pixelProfileId,...(model.parameters?.manualPixelHoles||[]).map(hole=>hole.profileId));
+ return [...new Set(ids.filter(id=>typeof id==='string'&&id.startsWith('custom-')))].filter(id=>!workspace.pixelProfiles?.some(profile=>profile.id===id));
+}
+function requirePixelProfiles(model,workspace){
+ const missing=missingModelPixelProfiles(model,workspace);
+ if(missing.length)throw Error('Missing measured pixel profile: '+missing.join(', ')+'. Restore its profile library before copying this model.');
+}
 function exactSnapshot(workspace,projectId,snapshotId){
  const matches=workspace.savedProjects.filter(p=>p.snapshotId===snapshotId&&p.id===projectId);
  if(!snapshotId||matches.length!==1)throw Error('The chosen saved project version is unavailable. Reopen the Library and choose again.');
@@ -16,7 +25,7 @@ function exactSnapshot(workspace,projectId,snapshotId){
 }
 export function destinationChoices(workspace){
  return [{kind:'current',projectId:workspace.project.id,label:'Current project — '+workspace.project.title},
-  ...workspace.savedProjects.map((p,i)=>({kind:'snapshot',projectId:p.id,snapshotId:p.snapshotId,label:p.title+' — saved version '+(i+1)+' ('+p.models.length+' models)'})),
+  ...workspace.savedProjects.map(p=>({kind:'snapshot',projectId:p.id,snapshotId:p.snapshotId,label:p.title+' — '+(p.updatedAt||'Saved version')+' · '+p.snapshotId+' ('+p.models.length+' models)'})),
   {kind:'new',label:'New project'}];
 }
 export function libraryDestinationCandidate(workspace,{source,destination,modelName,projectName,linked=false},{createBuiltIn}={}){
@@ -27,6 +36,7 @@ export function libraryDestinationCandidate(workspace,{source,destination,modelN
  if(source.kind==='project-template'){
   if(destination.kind!=='new')throw Error('A project template must create a new independent project.');
   const target=templateProject(exactSnapshot(workspace,source.projectId,source.snapshotId));
+  for(const model of target.models)requirePixelProfiles(model,workspace);
   target.title=nameOf(projectName,'project name');
   target.updatedAt=new Date().toISOString();
   for(const job of target.printJobs)delete job.progress;
@@ -41,7 +51,7 @@ export function libraryDestinationCandidate(workspace,{source,destination,modelN
  let model;
  if(source.kind==='built-in'){
   if(linked||typeof createBuiltIn!=='function')throw Error('Choose an independent built-in model.');
-  const generated=validateModel(createBuiltIn(source.typeId,name));
+  const generated=validateModel(createBuiltIn(source.typeId,name,source));
   if(generated.generator.typeId!==source.typeId||generated.link!==null)throw Error('The starting point is no longer available.');
   model=addModel(target,generated);
  }else if(source.kind==='library'){
@@ -49,6 +59,7 @@ export function libraryDestinationCandidate(workspace,{source,destination,modelN
   model=insertLibraryModel(target,workspace.library,source.sourceId,{revision:source.revision,linked,id:newId()});
  }else throw Error('The selected Library source is unsupported.');
  model.name=name;
+ requirePixelProfiles(model,workspace);
  const switchProject=destination.kind!=='current';
  const candidate=switchProject?projectWorkspaceCandidate(workspace,target):validateArchive({...workspace,project:target});
  return {candidate,switchProject,modelId:model.id};

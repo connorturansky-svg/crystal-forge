@@ -10,11 +10,15 @@ The shared renderer lives in [tooltips.js](../tooltips.js). Add authored entries
 | --- | --- | --- |
 | Classic Crystal settings | 109 of 112 distinct `data-state` keys | 3 hidden legacy edge-finishing fields |
 | Native builder parameters | All 69 catalogue literal keys and 6 additional Tactile Tile keys | Static test checks every registered schema directly |
-| Dynamic settings | 160 explicit selectors | Includes tool finder, batch selection, Models drawer and visible file fields |
+| Dynamic settings | 161 explicit selectors (including proposed density control) | Includes tool finder, batch selection, Models drawer and visible file fields |
 
 Classic fields intentionally excluded because they are hidden and normalised to the supported finishing mode: `edgeFinishStyle`, `edgeFinishScope`, `edgeFinishSteps`.
 
 The registered-schema test covers the separate Tactile Tile schema alongside the main catalogue and import generators.
+
+## Drawer density follow-up (candidate #169)
+
+The new thumbnail-size slider adds authored short and detailed help through the existing registry. Its browser preference is separate from project data. The new focused test checks the guidance and keyboard changes alongside the existing drawer filter. Exact-head results remain required; the earlier 786-instance count is historical evidence, not a claim about the new build.
 
 ## Reconciled runtime evidence
 
