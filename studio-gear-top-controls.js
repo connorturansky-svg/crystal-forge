@@ -172,10 +172,8 @@ export function gearTopMesh(c,topY){
  }
  return {kind:'mesh',gearTopId:c.id,mesh:{points:new Float32Array(points),triangles:new Uint32Array(triangles)}};
 }
-export function withGearTopControls(recipe,controls=[]){
- if(!Array.isArray(controls)||controls.length>8)throw Error('Use up to eight tactile top controls per cog.');
- if(!controls.length)return recipe;
- const host=recipe.gearHost;
+export function gearTopSafeHost(recipe){
+ const host=recipe?.gearHost;
  if(!host)throw Error('Top controls are available only for the Cogs & Gears builder.');
  const hardwareExclusions=[];
  for(const part of recipe.negative||[]){
@@ -191,7 +189,43 @@ export function withGearTopControls(recipe,controls=[]){
    throw Error('An existing hardware cut lacks a measurable footprint. Resolve it before adding a grip.');
   hardwareExclusions.push({x,z,radius});
  }
- const safeHost={...host,hardwareExclusions};
+ return {...host,hardwareExclusions};
+}
+
+// Preserve the chosen preset dimensions. Search nearby radial positions only
+// when the original default is invalid; never weaken the placement validator.
+export function findGearTopStart(control,host,others=[],preferred={x:0,z:0}){
+ const check=(x,z)=>{
+  const candidate={...control,x:Math.round(x*10)/10,z:Math.round(z*10)/10};
+  if(Math.abs(candidate.x)>150||Math.abs(candidate.z)>150)return null;
+  return gearTopPlacementIssue(candidate,host,others)?null:candidate;
+ };
+ if(!host?.outline?.length)return null;
+ const first=check(preferred.x,preferred.z);if(first)return first;
+ // Keep centred knobs centred: offsetting a dial changes its intended use.
+ if(control.kind!=='spindle')return null;
+ const limit=Math.min(150,Math.max(...host.outline.map(([x,z])=>Math.hypot(x,z))));
+ const start=Math.hypot(preferred.x,preferred.z);
+ const radii=[start];
+ for(let r=2;r<=limit;r+=2)radii.push(r);
+ radii.sort((a,b)=>Math.abs(a-start)-Math.abs(b-start));
+ for(const radius of radii){
+  const count=Math.max(16,Math.ceil(radius*2*Math.PI/3));
+  for(let i=0;i<count;i++){
+   const angle=2*Math.PI*i/count;
+   const x=radius*Math.cos(angle),z=radius*Math.sin(angle);
+   // Cheap centre rejection avoids expensive footprint checks in empty space.
+   if(!pointInside([x,z],host.outline)||host.holes.some(h=>pointInside([x,z],h)))continue;
+   const candidate=check(x,z);if(candidate)return candidate;
+  }
+ }
+ return null;
+}
+export function withGearTopControls(recipe,controls=[]){
+ if(!Array.isArray(controls)||controls.length>8)throw Error('Use up to eight tactile top controls per cog.');
+ if(!controls.length)return recipe;
+ const host=recipe.gearHost;
+ const safeHost=gearTopSafeHost(recipe);
  const ids=new Set();
  for(const c of controls){
   validateGearTopControl(c);

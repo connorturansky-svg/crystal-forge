@@ -120,6 +120,30 @@ try{
  await reopened.getByRole('button',{name:'Open project WT-026 retained grips'}).press('Enter');
  await page.waitForFunction(id=>window.__sensoryStudio.project.id===id,original.projectId);
  await assertRetained();
+ // Add on a new openwork cog using the old Legacy body structure.
+ await page.locator('#smsNew').click();
+ await page.locator('#smsPicker [data-generator="gears"]').click();
+ await page.locator('#smsGearTopEditor').waitFor();
+ await setParameter('diameter','118');
+ await setParameter('teeth','20');
+ await setParameter('spokes','8');
+ await setParameter('webStyle','Legacy');
+ await setParameter('wheelStyle','Rounded lobes');
+ await setParameter('holeStyle','Oval');
+ await setParameter('hub','25');
+ await setParameter('bore','14');
+ await page.locator('#smsGearTopPreset').selectOption('straight-spindle');
+ await page.locator('#smsAddGearTop').click();
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
+ assert.match(await page.locator('#smsGearTopStatus').innerText(),/Grip added/);
+ const openworkGrip=await page.evaluate(()=>window.__sensoryStudio.currentModel.build.gearTopControls[0]);
+ await page.locator('#smsRemoveGearTop').click();
+ await page.locator('[data-view=top]').click();
+ await page.waitForFunction(()=>{const {settled,camera,target}=window.__crystalForgeViewMetrics();return settled&&camera[1]>target[1]&&Math.hypot(camera[0]-target[0],camera[2]-target[2])<.1;});
+ const location=await screenAt(openworkGrip.x,openworkGrip.z);
+ await page.mouse.dblclick(location.x,location.y);
+ await page.waitForFunction(()=>window.__sensoryStudio.currentModel.build.gearTopControls?.length===1);
+ assert.match(await page.locator('#smsGearTopStatus').innerText(),/Grip added/);
  assert.equal(errors.length,0,'No uncaught errors: '+errors.join('; '));
  console.log('WT-026 Chromium: exact sizing, rollback, undo/redo, duplication, reusable template, reload and snapshot switching passed.');
 }finally{await browser.close();}

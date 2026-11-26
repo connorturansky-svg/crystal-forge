@@ -15,3 +15,6 @@
 To reuse a setup, save the project in Library and choose **Save as reusable template** on its saved version. Open saved versions from their project folders. A saved version retains the grip settings from the moment it was saved.
 
 **Current scope:** All grips are integral printable pieces, not separately freely spinning bearing-mounted handles. Arbitrary saved Control Cap-to-Gear fusion, raised/curved mounting faces and general-purpose per-edge CAD fillets are follow-on work; do not assume a printed grip is rated for hand force or safe for young children.
+
+### Grip placement feedback
+Add selected grip checks the preset at its normal starting position and searches nearby positions for an offset spindle if that position overlaps a cutout. Preset size and shoulder are never silently reduced. A centred knob stays centred; if it cannot fit, choose a different preset or edit the cog. Double-clicking uses your exact chosen position and refuses unsafe placement. Read the message immediately below Add selected grip if nothing is added. Existing saved models do not need to be rebuilt merely to use this workflow; unsafe geometry still requires adjustment.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {GEAR_TOP_PRESETS,newGearTopControl,validateGearTopControl,gearTopPlacementIssue,
- gearTopMesh,withGearTopControls} from '../studio-gear-top-controls.js';
+ gearTopMesh,withGearTopControls,gearTopSafeHost,findGearTopStart} from '../studio-gear-top-controls.js';
 import {gearGenerator,applyBuildModules} from '../studio-catalogue.js';
 import {findPixelPosition} from '../studio-pixel-builder.js';
 
@@ -81,3 +81,19 @@ for(const hardware of [{pixelHoles:[socket]},{manualMountHoles:[recess]}]){
  assert.deepEqual(clear.negative.filter(cut=>!cut.gearThroughBore),cutOnly.negative);
 }
 console.log('WT-026 gear top: presets, exact bounds, geometry, collision, stable IDs and bore recipe passed.');
+
+// Legacy-style flower cog: old fixed +X position sits over a radial window.
+const flower=gearGenerator.recipe({...gearGenerator.defaultParameters,diameter:118,teeth:20,spokes:8,webStyle:'Legacy',wheelStyle:'Rounded lobes',holeStyle:'Oval',bore:14,hub:25});
+const originalStart={x:30.7,z:0};
+const flowerGrip=newGearTopControl('flower-grip','straight-spindle',originalStart);
+assert.match(gearTopPlacementIssue(flowerGrip,flower.gearHost),/window/);
+const safeStart=findGearTopStart(flowerGrip,gearTopSafeHost(flower),[],originalStart);
+assert(safeStart,'Search finds a full-size grip on openwork stock');
+assert.equal(safeStart.width,flowerGrip.width);
+assert.equal(gearTopPlacementIssue(safeStart,flower.gearHost),null);
+assert.doesNotThrow(()=>withGearTopControls(flower,[safeStart]));
+assert.deepEqual(findGearTopStart(spindle,base.gearHost,[],{x:24,z:0}),spindle);
+const excluded=gearTopSafeHost({...base,negative:[{kind:'cylinder',radius:4,position:[24,0,0]}]});
+const alternate=findGearTopStart(spindle,excluded,[],{x:24,z:0});
+assert(alternate&&gearTopPlacementIssue(alternate,excluded)===null);
+assert.equal(findGearTopStart(spindle,{outline:[[-5,-5],[5,-5],[5,5],[-5,5]],holes:[],shaftBore:0,topY:8}),null);
