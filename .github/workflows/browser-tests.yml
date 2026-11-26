@@ -30,7 +30,8 @@ permissions:
 jobs:
   browser:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    # Full core suite can exceed 25 minutes on hosted Chrome; keep all fixtures.
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
         with:
@@ -118,6 +119,7 @@ jobs:
         run: |
           mkdir -p qa
           set +e
+          set -o pipefail
           {
             node tests/exact-value-accessibility-browser.mjs &&
             node tests/studio-tool-finder-browser.mjs &&
@@ -135,9 +137,8 @@ jobs:
             else
               npm run test:browser
             fi
-          } > browser-run.log 2>&1
+          } 2>&1 | tee browser-run.log
           status=$?
-          cat browser-run.log
           exit "$status"
       - name: Upload browser test output log
         if: always() && steps.scope.outputs.run_heavy == 'true'
