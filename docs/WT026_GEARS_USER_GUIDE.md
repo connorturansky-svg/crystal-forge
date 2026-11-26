@@ -21,3 +21,5 @@ Add selected grip checks the preset at its normal starting position and searches
 
 ### Viewport transforms
 Select a grip to show the standard Move gizmo (X/Z). Double-click it to cycle Move → Rotate (Y) → Scale (width/depth/height) → Move, or choose the labelled mode buttons. Red grips can be moved and resized like valid grips. Exact dimensions remain available. The base stays attached to the cog plane; Y translation and tilting are intentionally unavailable. Print preparation refuses unresolved red placements.
+
+Release candidate .35.51 is reserved above #174's .35.50; reconcile both entries after whichever branch merges first. Actual viewport pointer, invalid saved-model recovery and blocked print-export tests and visual review are still required before owner merge review.

@@ -2163,7 +2163,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const cached=cache.get(model.id);
   if(!control||!cached?.group?.parent){clearGearGizmo();return;}
   if(!gearGizmo){
-   gearProxy=new THREE.Object3D();scene.add(gearProxy);
+   gearProxy=new THREE.Object3D();gearProxy.rotation.order='YXZ';scene.add(gearProxy);
    gearGizmo=new TransformControls(camera,renderer.domElement);
    scene.add(gearGizmo.getHelper?.()||gearGizmo);gearGizmo.setSize(.8);
    gearGizmo.addEventListener('dragging-changed',event=>{
@@ -2209,8 +2209,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
      .multiply(new THREE.Matrix4().makeTranslation(-a.x,-y,-a.z));
     for(const item of drag.meshes){
      item.mesh.matrixAutoUpdate=false;item.mesh.matrix.multiplyMatrices(delta,item.matrix);item.mesh.matrixWorldNeedsUpdate=true;
-     item.mesh.material.color.setHex(issue?0xe04444:0x88bbff);
-     if(!issue)item.mesh.material.color.copy(item.colour);
+     item.mesh.material.color.setHex(issue?0xe04444:(item.mesh.userData.materialRole==='secondary'?(drag.model.materials.secondary?.colour||0xffcf70):(drag.model.materials.primary?.colour||0x88bbff)));
      item.mesh.material.emissive.setHex(issue?0x651010:0);
     }
     adapter.status(issue?'Red grip — '+issue:'Valid grip. Release to save.');
@@ -2389,7 +2388,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   event.preventDefault();event.stopImmediatePropagation();
   setGearSelection(model,control.id);renderEditor();
   if(gearMode(model)!=='translate')return;
-  gearTopGesture={id:event.pointerId,model,control,mesh,candidate:null,issue:null,
+  gearTopGesture={id:event.pointerId,model,control,mesh,colour:mesh.material.color.clone(),emissive:mesh.material.emissive.clone(),candidate:null,issue:null,
    start:[event.clientX,event.clientY]};
   renderer.domElement.setPointerCapture(event.pointerId);
  },true);
@@ -2407,6 +2406,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    gearTops(gesture.model).filter(c=>c.id!==gesture.control.id));
   gesture.candidate=candidate;gesture.issue=issue;
   gesture.mesh.position.set(candidate.x-gesture.control.x,0,candidate.z-gesture.control.z);
+  gesture.mesh.material.color.setHex(issue?0xe04444:(gesture.mesh.userData.materialRole==='secondary'?(gesture.model.materials.secondary?.colour||0xffcf70):(gesture.model.materials.primary?.colour||0x88bbff)));
   gesture.mesh.material.emissive?.setHex(issue?0x9b1528:0x075b43);
   adapter.status(issue||'Valid grip position. Release to place.');
  },true);
@@ -2416,7 +2416,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   gearTopGesture=null;
   event.preventDefault();event.stopImmediatePropagation();
   if(renderer.domElement.hasPointerCapture(event.pointerId))renderer.domElement.releasePointerCapture(event.pointerId);
-  gesture.mesh.position.set(0,0,0);gesture.mesh.material.emissive?.setHex(0);
+  gesture.mesh.position.set(0,0,0);gesture.mesh.material.color.copy(gesture.colour);gesture.mesh.material.emissive.copy(gesture.emissive);
   if(event.type==='pointercancel'){adapter.status('Grip move cancelled; previous position preserved.');return;}
   if(gesture.candidate&&active()?.id===gesture.model.id)
    updateGearTop(gesture.model,gesture.control.id,{x:gesture.candidate.x,z:gesture.candidate.z});
