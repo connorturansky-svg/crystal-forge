@@ -56,13 +56,17 @@ export function previewRecipe(THREE, recipe, colours=[0x88bbff,0xffcf70]) {
  const group=new THREE.Group();
  for(const [role,parts] of [['primary',recipe.positive],['secondary',recipe.secondary||[]]])for(const part of parts){
   const mesh=new THREE.Mesh(recipeGeometry(THREE,part),new THREE.MeshStandardMaterial({color:colours[role==='primary'?0:1],roughness:.55,flatShading:false}));
-  mesh.userData.materialRole=role;mesh.userData.partId=part.partId;group.add(mesh);
+  mesh.userData.materialRole=role;mesh.userData.partId=part.partId;mesh.userData.gearTopId=part.gearTopId;
+  if(part.gearTopIssue){mesh.userData.gearTopIssue=part.gearTopIssue;mesh.material.color.setHex(0xe04444);mesh.material.emissive.setHex(0x651010);}
+  group.add(mesh);
   if(role==='primary'&&recipe.dualMaterial&&recipe.materialSplitRole==='top'){
    const y=recipe.materialSplitHeight;
    mesh.material.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,-1,0),y)];
    const face=new THREE.Mesh(mesh.geometry.clone(),new THREE.MeshStandardMaterial({color:colours[1],roughness:.55,
     clippingPlanes:[new THREE.Plane(new THREE.Vector3(0,1,0),-y)]}));
-   face.userData.materialRole='secondary';face.userData.partId=part.partId;group.add(face);
+   face.userData.materialRole='secondary';face.userData.partId=part.partId;face.userData.gearTopId=part.gearTopId;
+   if(part.gearTopIssue){face.userData.gearTopIssue=part.gearTopIssue;face.material.color.setHex(0xe04444);face.material.emissive.setHex(0x651010);}
+   group.add(face);
   }
  }
  const solidSurfaces=group.children.slice();
@@ -135,10 +139,12 @@ export function previewRecipe(THREE, recipe, colours=[0x88bbff,0xffcf70]) {
   const k=Math.floor((link.path.length-1)/2),a=point(link.path[k]),b=point(link.path[k+1]);
   const d=b.clone().sub(a).normalize(),tip=a.clone().lerp(b,.63),back=tip.clone().addScaledVector(d,-2.5);
   const across=front?new THREE.Vector3(d.y,-d.x,0):new THREE.Vector3(-d.z,0,d.x);
-  points.push(tip,back.clone().addScaledVector(across,1.2),tip,back.clone().addScaledVector(across,-1.2));
+  const arrows=[tip,back.clone().addScaledVector(across,1.2),tip,back.clone().addScaledVector(across,-1.2)];
   const guide=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points),
    new THREE.LineBasicMaterial({color:link.reason?0xff3155:0x00d5c8,depthTest:false}));
-  guide.renderOrder=6;guide.visible=false;guide.userData.nativeRoute=true;guide.userData.previewOnly=true;group.add(guide);
+  guide.renderOrder=6;guide.visible=false;guide.userData.nativeRoute=true;guide.userData.routeWarning=!!link.reason;guide.userData.previewOnly=true;group.add(guide);
+  const direction=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(arrows),guide.material.clone());
+  direction.renderOrder=6;direction.visible=false;direction.userData.nativeRouteDirection=true;direction.userData.previewOnly=true;group.add(direction);
  }
  return group;
 }
@@ -194,6 +200,7 @@ function gearRailSection(wasm,{source,outerInset,innerInset}){
   return true;
  };
 export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittings=false}={}){
+ if(Object.keys(recipe.gearTopIssues||{}).length)throw Error('Resolve red grip placements before preparation: '+Object.values(recipe.gearTopIssues).join(' '));
  const owned=[];const hold=solid=>(owned.push(solid),solid);
  const positionSeat=(solid,seat,rotation=0)=>placeNativeSocketSolid(THREE,wasm,hold,solid,seat,rotation);
  const socket=part=>{
@@ -412,6 +419,22 @@ export function prepareRecipe(THREE,wasm,recipe,{onProgress=()=>{},inspectFittin
    total=repaired;
   }
 
+  // Grip lofts share a complex curved union with an involute Gear face.
+  // Simplify only this opt-in assembly at sub-print precision to avoid
+  // Boolean sliver triangles which Manifold accepts but STL cannot encode.
+  if(recipe.positive.some(part=>part.gearTopId)){
+   const volume=total.volume(),tolerance=.0001;
+   let cleaned=hold(hold(total.setTolerance(tolerance)).asOriginal());
+   cleaned=hold(cleaned.simplify(tolerance));
+   if(!validTriangles(cleaned.getMesh())){
+    const rebuilt=hold(new wasm.Manifold(cleaned.getMesh()));
+    cleaned=hold(hold(rebuilt.asOriginal()).simplify(tolerance));
+   }
+   if(cleaned.status()!=='NoError'||cleaned.isEmpty()||
+     Math.abs(cleaned.volume()-volume)>.01||!validTriangles(cleaned.getMesh()))
+    throw Error('The fused grip contains sub-printable sliver triangles. Increase the shoulder clearance or change the grip profile before exporting.');
+   total=cleaned;
+  }
   if(total.status()!=='NoError'||total.isEmpty()||total.volume()<=0)throw Error('Manufacturing produced no valid material.');
   let regions=[{role:'primary',solid:total}];
   const coincidentFace=recipe.positive.length===1&&recipe.secondary?.length===1&&!secondaryStock.length&&!recipe.partitioned?recipe.secondary[0]:null;

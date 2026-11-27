@@ -1,5 +1,5 @@
 import {WORKSPACE_KEY} from '../studio-documents.js';
-import {revealLibraryActions} from './helpers/library-actions.mjs';
+import {revealLibraryActions,confirmLibraryDestination} from './helpers/library-actions.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -125,7 +125,7 @@ try{
  assert.equal(await page.locator('.sms-split,.sms-more').count(),0);
  assert.equal(await page.locator('.brand').innerText(),'Pixel Model Maker');
  assert((await page.locator('.version').boundingBox()).y>(await page.locator('.brand').boundingBox()).y);
- for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','hoverNotes','detailedExplanations','changelogBtn','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
+ for(const id of ['simpleBtn','advancedBtn','themeBtn','helpBtn','hoverNotes','detailedExplanations','saveBtn','loadBtn','smsReload','smsGlobalUndo','smsGlobalRedo','smsLibrary','smsHome','smsNew'])
   assert(await page.locator('#'+id).isVisible(),id+' is directly available');
  const leftPanel=page.locator('#smsTools'),rightPanel=page.locator('#smsPrecision'),bottom=page.locator('#smsModelsDrawer');
  assert.equal(Math.round((await rightPanel.boundingBox()).width),335);
@@ -168,10 +168,15 @@ try{
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.id),id);
  await page.locator('#advancedBtn').click();
  await page.locator('#simpleBtn').click();
- for(const id of ['helpBtn','changelogBtn']){
+ assert.equal(await page.locator('#changelogBtn').count(),0);
+ assert.equal(await page.locator('#helpBtn').innerText(),'Info');
+ for(const id of ['helpBtn']){
   await page.locator('#'+id).click();
   assert(await page.locator('#infoOverlay').isVisible());
+  await page.locator('#infoTabChangelog').click();
+  assert(await page.locator('#infoChangelog').isVisible());
   await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'helpBtn');
   assert.equal(await page.locator('#infoOverlay').isVisible(),false);
  }
  const hoverNotes=page.getByRole('checkbox',{name:'Hover Notes',exact:true});
@@ -430,8 +435,8 @@ try{
  const starter=page.getByRole('button',{name:'Create project from template'});
  await page.locator('#smsReusableTemplates').getByRole('button',{name:'Actions for River starter',exact:true}).click();
  await starter.waitFor();
- page.once('dialog',dialog=>dialog.dismiss());
  await starter.press('Enter');
+ await page.getByRole('dialog',{name:'Create project from template'}).getByRole('button',{name:'Cancel',exact:true}).click();
  assert.equal(await page.locator('#smsProjectTitle').inputValue(),'Current unsaved title');
  await shot('wt015-templates');
  await page.locator('#smsLibraryAll').press('Enter');
@@ -554,17 +559,19 @@ try{
  const pinned=page.locator('article').filter({has:page.getByRole('heading',{name:'Pinned model starter',exact:true})});
  await revealLibraryActions(pinned);
  await pinned.getByRole('button',{name:'Linked copy',exact:true}).click();
+ await confirmLibraryDestination(page);
  const link=await page.evaluate(()=>window.__sensoryStudio.currentModel.link);
  assert.equal(link.revision,1);
  await page.locator('#smsLibrary').click();
  await revealLibraryActions(pinned);
  await pinned.getByRole('button',{name:'Independent copy',exact:true}).click();
+ await confirmLibraryDestination(page);
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.link),null);
  const previousProject=await page.evaluate(()=>window.__sensoryStudio.project.id);
  await page.locator('#smsLibrary').click();
  await page.locator('#smsReusableTemplates').getByRole('button',{name:'Actions for River starter',exact:true}).click();
- page.once('dialog',dialog=>dialog.accept());
  await page.getByRole('button',{name:'Create project from template'}).press('Enter');
+ await page.getByRole('dialog',{name:'Create project from template'}).getByRole('button',{name:'Create project',exact:true}).click();
  assert.notEqual(await page.evaluate(()=>window.__sensoryStudio.project.id),previousProject);
  assert.deepEqual(await snapshot(),savedModels);
  await shot('wt015-restored-project');
@@ -1493,14 +1500,17 @@ try{
  assert(await page.locator('#smsTools header button').isVisible());
  assert(await page.locator('#smsPrecision header button').isVisible());
  await openModels();
- const bottomTabs=page.locator('#smsModelsDrawer #smsTabs');
+ const bottomTabs=page.locator('#smsModelsDrawer .md-body');
  assert(await bottomTabs.evaluate(node=>node.scrollHeight>node.clientHeight));
  const last=bottomTabs.locator('[data-action=select]').last(),lastId=await last.getAttribute('id');
  await last.press('Alt+ArrowLeft');
  assert.equal(await bottomTabs.locator('[data-action=select]').nth(-2).getAttribute('id'),lastId);
  await bottomTabs.locator('#'+lastId).press('Alt+ArrowRight');
  await bottomTabs.evaluate(node=>{node.scrollTop=node.scrollHeight;});
- assert(await bottomTabs.evaluate(node=>node.scrollTop>0));
+ assert(await bottomTabs.evaluate((node,id)=>{
+  const clip=node.getBoundingClientRect(),last=node.querySelector('#'+CSS.escape(id)).getBoundingClientRect();
+  return node.scrollTop>0&&last.top>=clip.top-1&&last.bottom<=clip.bottom+1;
+ },lastId),'Scrolling the shared drawer must reveal the last model');
  await bottomTabs.locator('#'+lastId).press('Escape');
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1));
  await shot('wt014-narrow');
@@ -2822,6 +2832,7 @@ try{
   const libraryCard=page.locator('#smsSavedModels article').filter({has:page.getByRole('heading',{name:witness,exact:true})});
   await revealLibraryActions(libraryCard);
   await libraryCard.getByRole('button',{name:'Linked copy',exact:true}).click();
+  await confirmLibraryDestination(page);
   const linked=await modelState();
   assert.equal(linked.link.revision,1);
   assert.deepEqual(linked.build,original.build);
@@ -2830,6 +2841,7 @@ try{
   await page.locator('#smsLibrary').click();
   await revealLibraryActions(libraryCard);
   await libraryCard.getByRole('button',{name:'Independent copy',exact:true}).click();
+  await confirmLibraryDestination(page);
   const independent=await modelState();
   assert.equal(independent.link,null);
   assert.deepEqual(independent.build,original.build);
@@ -3462,7 +3474,13 @@ try{
   const first={...savedProject,snapshotId:'version-1'};
   const second={...savedProject,snapshotId:'version-2'};
   const workspace={schemaVersion:1,project:activeProject,savedProjects:[first,second],library:[],legacyTemplates:[]};
-  const targetPage=await browser.newPage({viewport:{width:390,height:844}});
+  // The isolated Library fixture must not compete with the preceding long-lived WebGL renderer.
+  assert.deepEqual(errors,[]);
+  await page.close();
+  const isolatedBrowser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
+  const targetPage=await isolatedBrowser.newPage({viewport:{width:390,height:844}});
+  targetPage.on('pageerror',error=>errors.push(error.message));
+  page=targetPage;
   try{
    await targetPage.addInitScript(({key,workspace})=>{
     if(!localStorage.getItem(key))localStorage.setItem(key,JSON.stringify(workspace));
@@ -3500,7 +3518,7 @@ try{
    assert.deepEqual(await modelIds(),['shared-model']);
    await targetPage.reload({waitUntil:'commit'});
    await targetPage.waitForFunction(()=>window.__sensoryStudio?.project.id==='other-project');
-  }finally{await targetPage.close();}
+  }finally{await isolatedBrowser.close();}
  }
  assert.deepEqual(errors,[]);
  console.log('Unified Home, Design, Build, Library and Quick Print screenshots captured.');

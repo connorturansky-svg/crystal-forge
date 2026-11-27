@@ -225,6 +225,7 @@ try{
  const prior=(await crystal()).parameters.manualPixelHoles;
  const p2=page.locator('.hardware-marker[data-hw-kind=pixel]').filter({hasText:'P2'});
  await p2.click();
+ await page.waitForFunction(()=>window.__crystalForgeViewMetrics().settled);
  const marker=await p2.boundingBox();
  const destination=await onBase(32,0);
  await page.mouse.move(marker.x+marker.width/2,marker.y+marker.height/2);
@@ -236,6 +237,13 @@ try{
   throw Error('Crystal drag did not commit: '+await page.locator('#status').innerText()+' '+JSON.stringify((await crystal()).parameters.manualPixelHoles),{cause:error});
  });
  const p2x=await reveal(page.locator('[data-hole-kind=pixel][data-hole-axis=x][data-hole-index="1"]'));
+ // Keep the later perpendicular route-width section deterministic. The drag
+ // above covers pointer editing; exact fields establish the manufacturing fixture.
+ await p2x.fill('32');await p2x.press('Tab');
+ const p2z=await reveal(page.locator('[data-hole-kind=pixel][data-hole-axis=z][data-hole-index="1"]'));
+ await p2z.fill('0');await p2z.press('Tab');
+ assert.equal((await crystal()).parameters.manualPixelHoles[1].x,32);
+ assert.equal((await crystal()).parameters.manualPixelHoles[1].z,0);
  const acceptedX=await p2x.inputValue();
  await p2x.fill('9999');await p2x.press('Tab');
  assert.equal(Number(await p2x.inputValue()),Number(acceptedX));
@@ -672,6 +680,8 @@ try{
   await page.locator('#smsLibrary').click();
  await savedCog.locator('.sms-library-actions-toggle').click();
   await savedCog.getByRole('button',{name:'Independent copy'}).click();
+  await page.getByRole('dialog',{name:'Choose model destination'}).getByRole('button',{name:'Add model',exact:true}).click();
+  await page.getByRole('dialog',{name:'Choose model destination'}).waitFor({state:'hidden'});
   assert.deepEqual((await crystal()).parameters,editedCog.parameters);
   console.log('WT-021 Library templates start fresh and saved variants preserve their edits');
  }

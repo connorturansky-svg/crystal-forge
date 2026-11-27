@@ -40,7 +40,7 @@ Saved models and the existing favourites and collection filters remain available
 
 ## What future releases should add
 
-A future **Since your last visit** area will summarise shipped changes in ordinary language, help you locate moved tools and let you mark updates as read. These will be explained here and in the in-app Help only when implementation is merged, Pages deployment is verified and the owner approves release.
+In the WT-025 interface-polish candidate, **Info → What’s new** shows current version highlights or changes since the most recent version you explicitly marked as read. Select **Mark this version as read** to acknowledge them. Opening Info alone does not mark anything as read. Draft notes remain separate. The small dot on Info indicates unread version notes. Deployment and final checks are pending owner review.
 
 **Need to give feedback?** In [WT-025 issue #154](https://github.com/connorturansky-svg/crystal-forge/issues/154), report the workspace, exact label that is hard to read or find, your browser/zoom and what you expected. You do not need to understand the code.
 
@@ -52,6 +52,25 @@ In the WT-024 candidate, turn on **Hover Notes** and hover over or focus a setti
 
 Open **Models** at the bottom of the 3D viewport. The list contains the current project's open models. It closes when you reload Studio. While open, type in **Find an open model** to narrow the list without changing saved data.
 
-Choose a model to switch to it. Use **Rename**, **Info** or **Close** on its tile. **Close** removes the open entry while keeping the model in the project. Use Alt+arrow on a model button to reorder it, or Escape to close the drawer and return focus to Models.
+Choose a model to switch to it. Use **More actions** (…) for **Rename** or **Info**. Info shows the full name when the card truncates it. **Close** (×) removes the open entry while keeping the model in the project. Use Alt+arrow on a model button to reorder it. Escape closes More actions first, then closes the drawer and returns focus to Models.
+
+Set **Thumbnail size** from 1 (Extra compact) to 5 (Extra large). The setting is remembered in the browser. Search, size, inline explanations and cards scroll together below the Models and New model buttons.
 
 Use **New model** to pick a starting point, then review the suggested name. Previews load when their tiles come into view. If a preview fails, read the reason and use **Retry preview**.
+
+
+## Colours and viewport Layers
+
+In **Design**, open **Model appearance**. Choose a named swatch, use the system picker, or enter exact HEX or RGB values. Select **Apply colour** to commit the edit. **Cancel** discards the draft. Colours travel with the saved model. Secondary colour is available when the builder has an active second material.
+
+Open **Layers** in the viewport to hide individual guides, or choose a preset such as **Clean model** or **Wire routing**. The choices are stored in this browser. Active editing feedback remains available. Use **Reset layers** to restore the defaults. Layers affect guides only. Real cuts and fused features remain part of the prepared solid. Crystal supplies tab outlines and cable length labels. The other builders expose their available fitting, route, mount and guide layers.
+
+## Finding information
+
+Select **Info** in the toolbar, then choose Help guide, Features or What’s new. Press Escape to close and return to the toolbar. The `?` keyboard shortcut still opens the Help guide. Hover Notes and Detailed Explanations remain separate settings.
+
+New browsers start with both optional help switches off. Turn on Hover Notes for short hints or Detailed Explanations for inline guidance; use both if preferred. Existing choices are retained. A disabled action can still explain why it is blocked.
+
+When both help modes are on, desktop controls that already show an inline explanation hide the redundant question button. Touch devices retain the button; keyboard focus and mouse hover still show short guidance.
+
+New release highlights use plain-text labels such as New, Changed and Moved to make the changes easier to scan. Older notes retain their original wording. Use the existing Help guide, Features or global tool search to locate a control.

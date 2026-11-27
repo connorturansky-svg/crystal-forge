@@ -1,5 +1,17 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
+## Model appearance and viewport inspection — PR #176
+
+[PR #176](https://github.com/connorturansky-svg/crystal-forge/pull/176) integrates the shared colour editor and viewport Layers. Candidate v0.16.0-dev.35.54 follows merged #183. #182 owns coordination documentation. #177–#179 remain separate. Verify exact-head checks and owner review before merging.
+
+## WT-023C2 compact Models drawer — 27 November 2026
+
+[PR #183](https://github.com/connorturansky-svg/crystal-forge/pull/183) continues the existing drawer with five compact densities, a single expanded scroll surface and toolbar styling for both optional help checkboxes. Candidate .35.53 follows merged #175 (.35.52). See the [drawer QA](WT023C_MODEL_DRAWER_CODEX.md) and [exact-head checks](https://github.com/connorturansky-svg/crystal-forge/pull/183/checks). Owner review and merge are separate steps.
+
+## WT-023B2b completion candidate — 26 November 2026
+
+Continue existing #175, owner-dispatched after #181 merged. Candidate .35.52 integrates main .35.51 and preserves Info, compact Library, drawer sizing, precision and cog improvements. Read-only saved-version/settings inspection and the shared atomic destination chooser use the existing workspace. See [verification and follow-on dependencies](WT023B2B_LIBRARY_DESTINATIONS.md). Do not treat the dated open-PR table below as live status; exact final-head CI and owner merge review remain required.
+
 ## ChatGPT handover — 25 November 2026
 
 Main audited at `66994cc98d3ef9bd68ef38161fd7a2b78fef8dbb`. The owner merged [B2a #172](https://github.com/connorturansky-svg/crystal-forge/pull/172). Main carries v0.16.0-dev.35.42. Its runtime head `cba402317d40bd09a0dd228a1257ebf0c4c0fb88` passed all six substantive [PR workflows](https://github.com/connorturansky-svg/crystal-forge/pull/172/checks). Persistence #147, project folders #151, private backup #148, Models drawer #164/#166 and contextual Help #163 are integrated. See [AI_HANDOVER.md](AI_HANDOVER.md) for source and test commands.

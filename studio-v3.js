@@ -1,6 +1,7 @@
 import {openModelColourControl} from './src/ui/model-colour-control.mjs';
 import {formatModelHex,resolveModelColour} from './src/ui/model-colour.mjs';
 import {installFeatureCatalogue} from './studio-features.js';
+import {installInfoReleaseSummary} from './src/ui/info-release-summary.mjs';
 import {makePixelReplicaRecipe} from './pixel-replica.js';
 import {prepareRecipe} from './studio-geometry.js';
 import {makeRoutedSocketSpecimen} from './studio-catalogue.js';
@@ -298,8 +299,8 @@ function updateHardwareAnnotationVisibility(){
 }
 function setFloating(enabled){
  s.floatView=!!enabled;
- grid.visible=!s.floatView;
- axes.visible=!s.floatView;
+ gridRequested=!s.floatView;
+ applyViewportLayers();
  $('floatBtn').classList.toggle('active',s.floatView);
  if(s.floatView){
   // Orbit around the actual object centre, not the world origin/build plate.
@@ -477,6 +478,14 @@ gizmo.setScaleSnap(s.snap?.1:null);
 gizmo.addEventListener('dragging-changed',e=>{orbit.enabled=!e.value;if(!e.value){applyGizmo();rebuildBase();snapshot();renderTree();renderSelection()}});
 gizmo.addEventListener('objectChange',()=>{applyGizmo(false);renderSelection(true)});
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+let viewportLayerVisible=()=>true,gridRequested=true;
+function applyViewportLayers(){
+ grid.visible=axes.visible=gridRequested&&viewportLayerVisible('gridAxes');
+ for(const mesh of pixelGroup.children){
+  const layer=mesh.userData.viewportLayer;
+  if(layer)mesh.visible=viewportLayerVisible(layer);
+ }
+}
 let crystalMeshes=[],baseMesh=null,baseAccents=[],pixelGroup=new THREE.Group(),selectedMesh=null;
 scene.add(pixelGroup);
 const crystalMat=()=>new THREE.MeshStandardMaterial({color:s.colour,metalness:0,roughness:.4,flatShading:true,side:THREE.DoubleSide});
@@ -542,6 +551,7 @@ async function updateLEDs(){
      ['positive',preview.positive,preview.collisionVolume>.01?0xff6161:0xffdc58,.42]
     ]){
      const mesh=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({color,opacity,transparent:true,depthTest:false,depthWrite:false}));
+     mesh.userData.viewportLayer=kind==='positive'?'pixelReplicas':'socketPreviews';mesh.visible=viewportLayerVisible(mesh.userData.viewportLayer);
      mesh.name='crystal-fitting-'+kind;mesh.renderOrder=kind==='positive'?96:95;group.add(mesh);
     }
     messages.push('P'+(index+1)+' · insertion '+preview.insertionDepth.toFixed(2)+' mm · centre roof '+preview.remainingRoof.toFixed(2)+' mm · '+preview.exposedVolume.toFixed(2)+' mm³ outside base · '+preview.collisionVolume.toFixed(2)+' mm³ interfering with base');
@@ -1058,7 +1068,7 @@ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>snapView(b.dat
 document.querySelectorAll('[data-look]').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('[data-look]').forEach(x=>x.classList.toggle('active',x===b));updateAppearance();
 });
-$('gridBtn').onclick=()=>{grid.visible=!grid.visible;axes.visible=grid.visible; if(s.floatView&&grid.visible){s.floatView=false;$('floatBtn').classList.remove('active');persist()}};
+$('gridBtn').onclick=()=>{gridRequested=!gridRequested;applyViewportLayers();if(s.floatView&&gridRequested){s.floatView=false;$('floatBtn').classList.remove('active');persist()}};
 $('floatBtn').onclick=()=>setFloating(!s.floatView);
 $('fitPixelBaseBtn').onclick=()=>{
  const limit=Number(document.querySelector('[data-state=baseHeight]').max);
@@ -1138,7 +1148,7 @@ function closeInfo(){
  returnFocus?.focus();
 }
 $('helpBtn').onclick=()=>showInfo('help');
-$('changelogBtn').onclick=()=>showInfo('changelog');
+installInfoReleaseSummary();
 $('closeInfo').onclick=closeInfo;
 for(const [i,button] of infoTabs.entries()){
  button.onclick=()=>showInfoTab(button.dataset.info);
@@ -1525,8 +1535,8 @@ function verifyPrepared(){
 $('prepareBtn').onclick=buildManufacturing;
 $('showManufacturing').onchange=e=>manufacturingView(e.target.checked);
 $('printHeatmap').onchange=applyPrintHeatmap;
-if(s.floatView){grid.visible=false;axes.visible=false}
-hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh:()=>baseMesh,
+if(s.floatView){gridRequested=false;applyViewportLayers()}
+hardwareUI=createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh:()=>baseMesh,layerVisible:id=>viewportLayerVisible(id),
  validateMountPattern:validateCrystalMountPattern,
  getSettings:()=>s,getCrystals:()=>crystals,canEdit:()=>!window.__sensoryStudio?.currentModel?.link,
  onSelectionChange:()=>document.dispatchEvent(new Event('studio-crystal-pixel-selection')),
@@ -1820,6 +1830,7 @@ if(classicLayout){
 installCollapsibleSections();
 installConciseHelp();
 if(studioBootstrap&&!new URLSearchParams(location.search).has('legacy'))studioBridge=installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstrap:studioBootstrap,adapter:{
+ setViewportLayerFilter:filter=>{viewportLayerVisible=filter;applyViewportLayers();},applyViewportLayers,
  capture:()=>({settings:clone(s),crystals:clone(crystals),selectedId}),
  bounds:()=>{
   const bounds=new THREE.Box3();

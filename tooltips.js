@@ -294,12 +294,8 @@ const BUTTONS={
   "Switches between light and dark application themes."
  ],
  "helpBtn": [
-  "Help",
-  "Opens the full help guide and keyboard shortcuts."
- ],
- "changelogBtn": [
-  "What’s new",
-  "Shows version history and recent development changes."
+  "Info",
+  "Opens the Help guide, searchable Features and What’s new release history in one dialog."
  ],
  "saveBtn": [
   "Save project",
@@ -449,6 +445,8 @@ const titleFrom=el=>el.closest('.control')?.querySelector('label')?.textContent?
 const dynamicSelectors=Object.keys(dynamicHelp);
 const dynamicSelector=dynamicSelectors.join(',');
 const helpTriggerOwners=new WeakMap();
+// Keep native titles available to the shared help registry while browser hover is off.
+const suppressedTitles=new WeakMap();
 function dynamicEntry(el){
  if(el.nodeType!==1||!el.matches(dynamicSelector))return undefined;
  const key=dynamicSelectors.find(selector=>el.matches(selector));
@@ -486,12 +484,12 @@ function lookup(el){
  if(el.dataset.tool)return TOOLS[el.dataset.tool];
  if(el.dataset.look)return LOOKS[el.dataset.look];
  if(el.dataset.colour)return ['Crystal colour','Changes the preview crystal material colour, not the colour of your printed filament.'];
- if(el.dataset.info)return [el.dataset.info==='help'?'Help':'Version history','Switch the currently displayed information panel.'];
+ if(el.dataset.info)return [({help:'Help guide',features:'Features',changelog:'Version history'}[el.dataset.info]||'Studio information'),'Switch the currently displayed information panel.'];
  if(el.dataset.holeAxis)return ['Hole '+el.dataset.holeAxis.toUpperCase()+' position','Set a physical LED or mounting-hole position in millimetres. Invalid entries are flagged red.'];
  if(el.dataset.removeHole)return ['Remove hole','Delete this manually placed hardware hole.'];
  if(el.id==='loadFile')return null;
  const heading=titleFrom(el);
- const native=el.getAttribute('title');
+ const native=el.getAttribute('title')||suppressedTitles.get(el);
  if(native)return [heading,native];
  return null;
 }
@@ -615,10 +613,14 @@ export function installTooltips(doc=document){
 export const HELP_PREFERENCES_KEY='crystal-forge-contextual-help-v1';
 
 export function readHelpPreferences(storage){
- const defaults={hover:true,detailed:false};
+ const defaults={hover:false,detailed:false};
  try{
   const value=storage.getItem(HELP_PREFERENCES_KEY);
-  if(value===null)return {...defaults,detailed:storage.getItem('crystal-forge-descriptions')==='on'};
+  if(value===null){
+   const legacy=storage.getItem('crystal-forge-descriptions');
+   // The old switch governed inline explanations only; retain hover for legacy users.
+   return legacy==='on'||legacy==='off'?{hover:true,detailed:legacy==='on'}:defaults;
+  }
   const saved=JSON.parse(value);
   return {
    hover:typeof saved?.hover==='boolean'?saved.hover:defaults.hover,
@@ -636,7 +638,33 @@ export function installContextualHelp(doc=document){
  const settings=readHelpPreferences(storage);
  const selector=['[data-state]','[data-model-param]','[data-palette-key]',...dynamicSelectors].join(',');
  const controls=new Map();
+ const titled=new Set();
  let nextDetailId=0;
+
+ function restoreTitle(el){
+  const prior=suppressedTitles.get(el);
+  if(prior!==undefined&&el.getAttribute('title')==='')el.setAttribute('title',prior);
+  suppressedTitles.delete(el);titled.delete(el);
+ }
+ function syncTitle(el){
+  if(!(el instanceof doc.defaultView.HTMLElement))return;
+  // Disabled actions can carry a blocking reason rather than optional help.
+  // Leave those reasons and existing status/error text available.
+  if(hover.checked||el.matches(':disabled')){restoreTitle(el);return;}
+  const current=el.getAttribute('title');
+  if(current===null){suppressedTitles.delete(el);titled.delete(el);return;}
+  if(!current)return;
+  // An empty title masks inherited browser hints. Retain title-only names.
+  if(el.matches('button,input,select,textarea,a[href],[role=button]')&&
+   !el.hasAttribute('aria-label')&&!el.hasAttribute('aria-labelledby')&&
+   !el.textContent.trim()&&!el.labels?.length){el.setAttribute('aria-label',current);}
+  suppressedTitles.set(el,current);titled.add(el);
+  el.setAttribute('title','');
+ }
+ function syncTitles(root){
+  if(root.matches?.('[title]'))syncTitle(root);
+  for(const el of root.querySelectorAll('[title]'))syncTitle(el);
+ }
 
  function associateDetail(control,id,enabled){
   if(!id)return;
@@ -694,6 +722,8 @@ export function installContextualHelp(doc=document){
  }
  function apply(){
   tooltip.enable(hover.checked);
+  if(hover.checked){for(const el of titled)restoreTitle(el);}
+  else syncTitles(doc.body);
   doc.body.classList.toggle('show-hover-notes',hover.checked);
   doc.body.classList.toggle('show-detailed-explanations',detailed.checked);
   for(const [control,{id}] of controls)associateDetail(control,id,detailed.checked);
@@ -721,14 +751,18 @@ export function installContextualHelp(doc=document){
  const observer=new doc.defaultView.MutationObserver(records=>{
   let removed=false;
   const added=new Set();
-  for(const {addedNodes,removedNodes} of records){
+  for(const {type,target,addedNodes,removedNodes} of records){
+   if(type==='attributes'){syncTitle(target);continue;}
    if([...removedNodes].some(node=>node.nodeType===1&&!node.closest('.contextual-help')))removed=true;
    for(const node of addedNodes){
     if(node.nodeType===1&&node.isConnected&&!node.closest('.contextual-help'))added.add(node);
    }
   }
-  if(removed)prune();
-  for(const node of added)decorateWithin(node);
+  if(removed){
+   prune();
+   for(const el of titled)if(!el.isConnected){restoreTitle(el);}
+  }
+  for(const node of added){decorateWithin(node);syncTitles(node);}
  });
- observer.observe(doc.body,{childList:true,subtree:true});
+ observer.observe(doc.body,{childList:true,subtree:true,attributes:true,attributeFilter:['title','disabled']});
 }

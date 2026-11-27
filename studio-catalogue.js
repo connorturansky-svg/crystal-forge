@@ -10,6 +10,7 @@ import {addManualMountCuts,fixingRecessCut,mountProfiles} from './studio-mount-b
 import {planEdgeTabs} from './edge-tabs.js';
 import {generateTile,tactileTileGenerator} from './tactile-tile-generator.js';
 import {createGeneratorRegistry} from './studio-generator-registry.js';
+import {withGearTopControls} from './studio-gear-top-controls.js';
 import {circle,heightField} from './studio-geometry.js';
 const numeric=(key,label,value,min,max,unit='mm',step=.5)=>({key,label,type:'number',default:value,min,max,step,unit});
 const choice=(key,label,value,options)=>({key,label,type:'select',default:value,options});
@@ -164,15 +165,16 @@ export const gearGenerator=define('gears','Cogs & Gears','Mechanical',[
     gearRail:{source:outline,outerInset:radiusOuter*.015,innerInset:radiusOuter*.06}});
   }
  }
+ const gearHost={outline,holes,shaftBore:p.bore,topY:p.thickness};
  const serialSupport=decorative&&p.webStyle==='Solid'&&p.wheelStyle!=='Pulley'&&!holes.length?{outline,thickness:p.thickness,...(!relief&&!inlay?{topY:p.thickness}:{})}:null;
  const serialReason='Use a solid decorative gear without a shaft bore, fixing holes, openwork or pulley recess.';
- if((creativeWeb||relief)&&!inlay)return {positive,serialSupport,serialReason,secondary:[],negative:[],materialSplitHeight:p.thickness-.8,materialSplitRole:'top',bounds:{width:diameter,depth:diameter,height:p.thickness+(relief?p.reliefHeight:0)},warnings:['Decorative wheel. Check wheel clearances before using moving parts.']};
+ if((creativeWeb||relief)&&!inlay)return {gearHost,positive,serialSupport,serialReason,secondary:[],negative:[],materialSplitHeight:p.thickness-.8,materialSplitRole:'top',bounds:{width:diameter,depth:diameter,height:p.thickness+(relief?p.reliefHeight:0)},warnings:['Decorative wheel. Check wheel clearances before using moving parts.']};
  const secondary=[extrusion(inlay?circle(hubRadius):outline,.8,[0,p.thickness-.8,0],inlay?(p.bore?[circle(p.bore/2)]:[circle(hubRadius*.55)]):holes)];
  // Pass through the raised collar and the existing shaft void. This keeps
  // the accent attached to its lower band and avoids a coincident bore cutter.
  const gearInlay=inlay?extrusion(circle(Math.max(hubRadius,collarRadius+.01)),.81+(collarRadius?p.reliefHeight:0),
   [0,p.thickness-.8,0],p.bore?[]:[circle(hubRadius*.55)]):null;
- return {positive,secondary,gearInlay,negative:[],serialSupport,serialReason,bounds:{width:diameter,depth:diameter,height:p.thickness+(relief?p.reliefHeight:0)},warnings:['Pinch points and moving parts require guarding and physical checks. Mechanical meshing still requires a mating-gear test.']};
+ return {gearHost,positive,secondary,gearInlay,negative:[],serialSupport,serialReason,bounds:{width:diameter,depth:diameter,height:p.thickness+(relief?p.reliefHeight:0)},warnings:['Pinch points and moving parts require guarding and physical checks. Mechanical meshing still requires a mating-gear test.']};
 },{supportsMechanisms:true});
 export const waveGenerator=define('waves','Waves & Organic Forms','Organic',[
  choice('flowStyle','Flow structure','Parallel',['Parallel','Concentric','Vortex','Saddle','Dune']),numeric('width','Length',110,30,200),numeric('depth','Width',65,20,160),numeric('thickness','Minimum base thickness',4,2,15),numeric('amplitude','Wave height',12,1,40),numeric('frequency','Wave count',2,0.5,6,'',.1),numeric('phase','Phase',0,0,360,'degrees'),numeric('direction','Direction',0,0,360,'degrees'),numeric('variation','Organic variation',.25,0,1,'',.05)
@@ -628,6 +630,13 @@ export function applyBuildModules(recipe,build={},capabilities={}, {preview=fals
    :'Serial grooves are underside-open. Check cable seating and roof layers in Cura and on a physical print.');
  }
  addBackingTabs(r,build,routing);
+ if(build.gearTopControls?.length){
+  if(!r.gearHost)throw Error('Tactile top handles are available only on Cogs & Gears.');
+  if(routing.enabled)throw Error('Turn off serial routing before adding a tactile top handle.');
+  const joined=withGearTopControls(r,build.gearTopControls,{preview});
+  r.gearTopIssues=joined.gearTopIssues;
+  r.gearHost=joined.gearHost;r.positive=joined.positive;r.negative=joined.negative;r.bounds=joined.bounds;r.warnings=joined.warnings;
+ }
  // Edit only positive stock. The authoritative negative pixel, channel and
  // mounting cutters are subtracted afterwards at their original dimensions.
  const edgeFinish=normaliseEdgeFinish(build.edgeFinish);

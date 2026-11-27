@@ -29,7 +29,8 @@ try{
   await page.locator('#smsGlobalRedo').click();
   assert.equal((await current()).materials.primary.colour,0);
   await opener.click();
-  await dialog.locator('[data-model-colour-hex]').fill('#123ABC');
+  for(const [name,value] of [['Red','18'],['Green','58'],['Blue','188']])await dialog.getByRole('spinbutton',{name,exact:true}).fill(value);
+  assert.equal(await dialog.locator('[data-model-colour-hex]').inputValue(),'#123ABC');
   await dialog.getByRole('button',{name:'Apply colour',exact:true}).click();
   assert.equal((await current()).materials.primary.colour,0x123abc);
  }
@@ -37,6 +38,7 @@ try{
  await page.locator('[data-model-colour-role=primary]').click();
  const dialog=page.getByRole('dialog',{name:'Primary model colour'});
  assert((await dialog.boundingBox()).width<=390);
+ await dialog.screenshot({path:'qa/wt176-after-colour.png'});
  await page.keyboard.press('Escape');
  await dialog.waitFor({state:'hidden'});
  assert.deepEqual(errors,[]);

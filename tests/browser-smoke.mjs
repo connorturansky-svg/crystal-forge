@@ -19,6 +19,7 @@ try{
  await page.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
  await page.waitForFunction(()=>document.querySelector('canvas')&&document.querySelector('#status')?.textContent?.includes('Ready'),null,{timeout:40000});
  assert(await page.locator('canvas').count(),'WebGL canvas mounted');
+ await page.locator('#hoverNotes').check();
  // A DPR=2 canvas must match its CSS viewport, not spill over it.
  const layout=await page.evaluate(()=>{
   const rect=document.querySelector('#viewport').getBoundingClientRect();
@@ -49,7 +50,8 @@ try{
  await page.locator('#helpBtn').click();
  assert(await page.locator('#infoOverlay:not([hidden])').count(),'Help modal opens');
  await page.locator('#closeInfo').click();
- await page.locator('#changelogBtn').click();
+ await page.locator('#helpBtn').click();
+ await page.locator('#infoTabChangelog').click();
  assert(await page.locator('[data-info-pane="changelog"]:not([hidden])').count(),'Changelog opens');
  await page.locator('#closeInfo').click();
  console.log('Theme, Help and Changelog verified');

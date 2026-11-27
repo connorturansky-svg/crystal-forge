@@ -12,3 +12,4 @@ dialog[data-model-colour-dialog] [role=alert]:empty{display:none}
 
 .sms-model-appearance{display:grid;gap:.5rem;min-width:0}
 .sms-model-appearance button:not([hidden]){display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;text-align:left}
+.model-colour-rgb{display:flex;flex-wrap:wrap;gap:.5rem;border:1px solid var(--border);border-radius:.4rem;margin:0;padding:.4rem}.model-colour-rgb input{inline-size:5ch;min-inline-size:4em}
