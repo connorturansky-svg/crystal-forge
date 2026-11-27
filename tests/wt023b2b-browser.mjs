@@ -9,24 +9,30 @@ try{
  let page=await context.newPage();const errors=[];
  page.on('pageerror',error=>errors.push(error.message));
  const url=process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321';
+ await context.tracing.start({screenshots:true,snapshots:true,sources:true});
+ try{
  await page.goto(url,{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.__sensoryStudio);
+ await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
  // Full-editor contention is isolated from the later preview/zoom/worker matrix.
  const peer=await page.context().newPage();await peer.setViewportSize({width:390,height:844});
  await peer.goto(url,{waitUntil:'domcontentloaded',timeout:60000});
  await peer.waitForFunction(()=>window.__sensoryStudio,null,{timeout:60000});
  await peer.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
- await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__sensoryStudio);
+ await page.bringToFront();
  const beforePeer=await page.evaluate(()=>JSON.stringify(window.__sensoryStudio.project));
  await page.locator('#smsNew').click();await page.locator('#smsPicker [data-generator=gears]').click();
  const staleChooser=page.getByRole('dialog',{name:'Name new model'});
+ await peer.bringToFront();
  await peer.locator('#smsProjectTitle').fill('Peer editor saved project');await peer.locator('#smsProjectTitle').press('Tab');
  await peer.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
+ await page.bringToFront();
  await staleChooser.getByRole('button',{name:'Create model',exact:true}).click();
  assert.match(await staleChooser.getByRole('alert').innerText(),/Another tab saved/);
  assert.equal(await page.evaluate(()=>JSON.stringify(window.__sensoryStudio.project)),beforePeer);
  console.log('WT-023B2b: a real project save from the second full editor refuses the first editor’s stale chooser without changing its project.');
  await staleChooser.getByRole('button',{name:'Cancel',exact:true}).click();await peer.close();
+ }finally{await context.tracing.stop({path:'qa/wt023b2b-peer-trace.zip'});}
  await context.close();
  context=await browser.newContext({viewport:{width:1440,height:950}});page=await context.newPage();
  page.on('pageerror',error=>errors.push(error.message));

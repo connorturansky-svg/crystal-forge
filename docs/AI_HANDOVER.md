@@ -10,6 +10,8 @@ Run 45911925248 repeated the peer navigation timeout even at DOM readiness. The 
 
 Full-editor concurrency remains separately covered at the start of `tests/wt023b2b-browser.mjs`: two real Studio tabs load, the peer renames and durably saves its project through the UI, and the first tab's open chooser refuses that competing write without changing its in-memory project. A fresh browser context then runs the destination/geometry matrix. Both fixtures pass locally; require final-head hosted CI.
 
+Run 45913829201 passed the storage-peer case but stalled clicking the background original editor after an unnecessary reload in the full-editor fixture. That fixture now waits for the initial save and explicitly foregrounds each tab before interaction; it retains the real peer UI save and unchanged-project assertions. Local full-editor and destination tests pass. A retained Playwright trace is uploaded with B2b visual evidence for hosted diagnostics.
+
 See [Library destination user guide and handover](WT023B2B_LIBRARY_DESTINATIONS.md) for the isolated candidate builder, chooser, guarded-write publication and regression commands. The existing Library and workspace stores remain authoritative. Check issue #139 and the live draft before resuming; exact-head CI and owner approval remain required.
 ## Active WT-025 / WT-024 interface-polish candidate
 

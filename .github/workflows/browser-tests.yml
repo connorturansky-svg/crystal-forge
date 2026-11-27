@@ -154,6 +154,7 @@ jobs:
           path: |
             qa/wt023b2a-*.png
             qa/wt023b2b-*.png
+            qa/wt023b2b-*.zip
             qa/browser-smoke.png
             qa/unified-*.png
             qa/ux02-*.png
