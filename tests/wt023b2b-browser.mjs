@@ -3,7 +3,9 @@ import {chromium} from 'playwright';
 import {WORKSPACE_KEY} from '../studio-documents.js';
 import {revealLibraryActions} from './helpers/library-actions.mjs';
 import {gearGenerator} from '../studio-catalogue.js';
-const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
+// Pin real WebGL to the deterministic software backend for simultaneous editors;
+// hosted native ANGLE readbacks can stall when both editors render thumbnails.
+const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader','--no-sandbox','--disable-dev-shm-usage']});
 try{
  let context=await browser.newContext({viewport:{width:1440,height:950}});
  let page=await context.newPage();const errors=[];

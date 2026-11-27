@@ -12,6 +12,8 @@ Full-editor concurrency remains separately covered at the start of `tests/wt023b
 
 Run 45913829201 passed the storage-peer case but stalled clicking the background original editor after an unnecessary reload in the full-editor fixture. That fixture now waits for the initial save and explicitly foregrounds each tab before interaction; it retains the real peer UI save and unchanged-project assertions. Local full-editor and destination tests pass. A retained Playwright trace is uploaded with B2b visual evidence for hosted diagnostics.
 
+Run 45915579753 again passed storage-peer coverage; its retained trace records GPU ReadPixels stall warnings and a click that never completes during synchronous picker-thumbnail rendering with two editors. The full B2b concurrency/matrix fixture now pins Chrome's real WebGL to SwiftShader; both ordinary and software-rendered local runs passed. No geometry, UI, storage or download assertion is skipped. Other browser suites continue with their existing renderer configuration. Verify fresh exact-head CI.
+
 See [Library destination user guide and handover](WT023B2B_LIBRARY_DESTINATIONS.md) for the isolated candidate builder, chooser, guarded-write publication and regression commands. The existing Library and workspace stores remain authoritative. Check issue #139 and the live draft before resuming; exact-head CI and owner approval remain required.
 ## Active WT-025 / WT-024 interface-polish candidate
 
