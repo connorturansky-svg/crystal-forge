@@ -2993,11 +2993,11 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   };
   const opener=document.activeElement,dialog=document.createElement('dialog');
   dialog.dataset.libraryInspection='';dialog.setAttribute('aria-label','Inspect saved project');
-  const heading=document.createElement('h2');heading.textContent=saved.title;
+  const heading=document.createElement('h2');heading.textContent=saved.title;heading.tabIndex=-1;
   const summary=document.createElement('p');summary.textContent='Saved project version · '+saved.models.length+' models · read only. Opening this preview does not switch projects.';
   const defaults=document.createElement('p');
   defaults.textContent='Printer: '+(saved.printer?.printer||'Not specified')+' · Hardware profiles: '+(saved.hardwareProfiles?.length||0)+' · Material profiles: '+(saved.materialProfiles?.length||0);
-  const identity=document.createElement('p');identity.textContent='Project ID: '+saved.id+' · Snapshot: '+saved.snapshotId+' · Saved: '+(saved.updatedAt||'Unknown');
+  const identity=document.createElement('p');identity.textContent='Project ID: '+saved.id+' · Snapshot: '+saved.snapshotId+' · Modified: '+(saved.updatedAt||'Unknown');
   const settings=document.createElement('details'),settingsTitle=document.createElement('summary'),settingsData=document.createElement('div');
   settingsTitle.textContent='Saved project defaults, profiles and print jobs';
   settingsData.append(readonly({printer:saved.printer,hardwareProfiles:saved.hardwareProfiles,materialProfiles:saved.materialProfiles,printJobs:saved.printJobs}));
@@ -3020,7 +3020,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   close.dataset.libraryInspectionClose='';
   dialog.append(heading,summary,identity,defaults,settings,grid,close);document.body.append(dialog);
   dialog.addEventListener('close',()=>{dialog.remove();if(opener?.isConnected&&document.activeElement===document.body)opener.focus({preventScroll:true});},{once:true});
-  dialog.showModal();close.focus();
+  dialog.showModal();heading.focus({preventScroll:true});dialog.scrollTop=0;
  }
  function renderLibraryCards(){
   overlay.innerHTML='<h1>Your model library</h1><section id="smsTemplateSection" aria-labelledby="smsTemplateHeading"><h2 id="smsTemplateHeading">Templates</h2><section id="smsBuiltInTemplates"></section><h3>Reusable templates</h3><div id="smsReusableTemplates" class="sms-grid"></div></section><section id="smsProjectsSection" aria-labelledby="smsProjectsHeading"><h2 id="smsProjectsHeading">Projects</h2><div id="smsSavedProjects"></div></section><section id="smsSavedModelsSection" aria-labelledby="smsSavedModelsHeading"><h2 id="smsSavedModelsHeading">Saved models</h2><div id="smsSavedModels" class="sms-grid"></div></section>';

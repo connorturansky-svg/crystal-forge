@@ -94,6 +94,8 @@ try{
  await revealLibraryActions(savedCard);
  await savedCard.getByRole('button',{name:'Inspect saved project '+saved.title,exact:true}).click();
  const inspection=page.getByRole('dialog',{name:'Inspect saved project'});
+ assert(await inspection.locator('h2').evaluate(el=>el===document.activeElement),'Long read-only inspection starts at its heading');
+ assert.equal(await inspection.evaluate(el=>el.scrollTop),0);
  assert(await inspection.getByRole('heading',{name:'Compact card witness',exact:true}).first().isVisible());
  assert.match(await inspection.innerText(),new RegExp(saved.snapshotId));
  await inspection.locator('.sms-saved-preview img').first().waitFor();
@@ -102,6 +104,7 @@ try{
  for(const theme of ['first','second']){
   for(const width of [390,768,1440]){
    await page.setViewportSize({width,height:950});
+   await inspection.evaluate(el=>{el.scrollTop=0;});
    assert(await inspection.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
    await page.screenshot({path:`qa/wt023b2b-inspection-${theme}-${width}.png`});
   }
