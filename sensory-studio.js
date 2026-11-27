@@ -2235,7 +2235,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
      .multiply(new THREE.Matrix4().makeTranslation(-a.x,-y,-a.z));
     for(const item of drag.meshes){
      item.mesh.matrixAutoUpdate=false;item.mesh.matrix.multiplyMatrices(delta,item.matrix);item.mesh.matrixWorldNeedsUpdate=true;
-     item.mesh.material.color.setHex(issue?0xe04444:(item.mesh.userData.materialRole==='secondary'?(drag.model.materials.secondary?.colour||0xffcf70):(drag.model.materials.primary?.colour||0x88bbff)));
+     item.mesh.material.color.setHex(issue?0xe04444:modelDisplayColours(drag.model.materials)[item.mesh.userData.materialRole==='secondary'?1:0]);
      item.mesh.material.emissive.setHex(issue?0x651010:0);
     }
     adapter.status(issue?'Red grip — '+issue:'Valid grip. Release to save.');
@@ -2440,7 +2440,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   gesture.candidate=candidate;gesture.issue=issue;
   for(const {mesh} of gesture.meshes){
    mesh.position.set(candidate.x-gesture.control.x,0,candidate.z-gesture.control.z);
-   mesh.material.color.setHex(issue?0xe04444:(mesh.userData.materialRole==='secondary'?(gesture.model.materials.secondary?.colour||0xffcf70):(gesture.model.materials.primary?.colour||0x88bbff)));
+   mesh.material.color.setHex(issue?0xe04444:modelDisplayColours(gesture.model.materials)[mesh.userData.materialRole==='secondary'?1:0]);
    mesh.material.emissive.setHex(issue?0x9b1528:0x075b43);
   }
   if(gearProxy)gearProxy.position.set(candidate.x,gesture.topY,candidate.z);

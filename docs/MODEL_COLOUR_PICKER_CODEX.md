@@ -1,5 +1,12 @@
 # Model appearance — full colour picker (#170)
 
+## Implemented branch
+
+PR #176 integrates HEX, exact RGB channels, system picker and named swatches in all seven builders. The dialog commits one edit on Apply and keeps a draft on Cancel. The existing revision policy invalidates prepared jobs on a committed colour edit. Fresh Crystal and Gear STL and 3MF exports retain the same geometry after a colour-only edit. The seven-family browser audit covers black and the saved preview path; secondary editing appears only when a second material is active.
+
+The original dated specification follows.
+
+
 Owner request, 25 November 2026. Source baseline ff495743be918b761e17ee3bc87264d64b00b4a2. Isolated reusable picker checkpoint; runtime integration remains pending. coordinate shared UI owners #158 Gear and #163 Help and corrective drawer #169 before implementation. Do not change any of their branches.
 
 ## Implementation checkpoint

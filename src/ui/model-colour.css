@@ -13,3 +13,27 @@ dialog[data-model-colour-dialog] [role=alert]:empty{display:none}
 .sms-model-appearance{display:grid;gap:.5rem;min-width:0}
 .sms-model-appearance button:not([hidden]){display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;text-align:left}
 .model-colour-rgb{display:flex;flex-wrap:wrap;gap:.5rem;border:1px solid var(--border);border-radius:.4rem;margin:0;padding:.4rem}.model-colour-rgb input{inline-size:5ch;min-inline-size:4em}
+dialog[data-model-colour-dialog] h2,
+dialog[data-model-colour-dialog] p { margin: 0; }
+dialog[data-model-colour-dialog] .model-colour-rgb input { inline-size: 5.5ch; }
+.model-colour-actions {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 1;
+  padding: .4rem 0;
+  border-block-start: 1px solid var(--border);
+  background: var(--panel);
+}
+dialog[data-model-colour-dialog] {
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  background: var(--panel);
+  color: var(--ink);
+}
+dialog[data-model-colour-dialog] input {
+  border: 1px solid var(--border);
+  border-radius: .35rem;
+  background: var(--panel2);
+  color: var(--ink);
+}

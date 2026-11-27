@@ -15,7 +15,7 @@ export function openModelColourControl({value,roleLabel='Primary model colour',c
  if(!isModelColour(value)||typeof commit!=='function')throw Error('Colour control requires an exact RGB value and commit callback.');
  const dialog=element('dialog','',{'aria-label':roleLabel,'data-model-colour-dialog':''});
  const form=element('form'),heading=element('h2',roleLabel);
- const note=element('p','Changes model display colour, not the simulated LED or a verified filament colour.');
+ const note=element('p','Sets the model display colour. Simulated LED light and filament appearance are separate.');
  const picker=element('input','',{type:'color','data-model-colour-picker':''});
  const hex=element('input','',{type:'text',maxlength:'7',autocomplete:'off',spellcheck:'false','data-model-colour-hex':''});
  const rgb=element('fieldset','',{class:'model-colour-rgb'});
@@ -25,7 +25,7 @@ export function openModelColourControl({value,roleLabel='Primary model colour',c
   rgb.append(label(name,input));return input;
  });
  const swatches=element('div','',{class:'model-colour-swatches',role:'group','aria-label':'Quick colours'});
- const status=element('p','',{role:'alert'}),actions=element('div','',{class:'sms-actions'});
+ const status=element('p','',{role:'alert'}),actions=element('div','',{class:'sms-actions model-colour-actions'});
  const apply=element('button','Apply colour',{type:'submit'}),cancel=element('button','Cancel',{type:'button'});
  const reset=element('button','Reset choice',{type:'button'});
  const buttons=[];

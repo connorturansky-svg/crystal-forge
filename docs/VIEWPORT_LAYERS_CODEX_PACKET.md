@@ -1,5 +1,12 @@
 # Viewport Layers — implementation packet (#162)
 
+## Implemented branch
+
+PR #176 adds the viewport disclosure, presets and independent guide filters. Crystal supplies every layer in the table. Native builders show existing pixel or mount rings and tags, fitting replicas and cutters, selected port arrows and routes with separately filterable directions. Native cable lengths and tab outlines have no dedicated viewport producers and are shown as unavailable. Grid, axes and dimensions are shared. Visibility composes with the workspace, active preview choices, and selected or invalid feedback. Layers never alter the document, prepare a model or filter final solid geometry.
+
+The original dated specification follows.
+
+
 **Status:** consolidated in model appearance and viewport implementation PR #176. View preference core and tests committed; actual disclosure and renderer integration pending. Main inspected 25 November 2026: `ff495743be918b761e17ee3bc87264d64b00b4a2`. Fetch live main and claim #162 before implementing; #158 Gear and #163 Help own overlapping runtime files. #164 and #166 are merged; #165 is superseded. No new issue or alternative drawer.
 
 ## Codex execution prompt
