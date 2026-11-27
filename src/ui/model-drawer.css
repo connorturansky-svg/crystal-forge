@@ -49,6 +49,7 @@
   background: var(--panel2);
   color: var(--ink);
 }
+.md-search::placeholder { color: var(--muted); opacity: 1; }
 .md-zoom { display: flex; flex-wrap: wrap; align-items: center; min-width: 0; gap: .3rem; font-size: .9em; }
 .md-zoom input { width: clamp(3rem, 8vw, 7rem); min-width: 0; accent-color: var(--blue); }
 .md-zoom output { min-width: 2ch; text-align: center; font-variant-numeric: tabular-nums; }

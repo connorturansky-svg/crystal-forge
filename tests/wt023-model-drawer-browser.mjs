@@ -130,6 +130,11 @@ try{
    await page.screenshot({path:'qa/wt023c2-drawer-'+width+'-'+level+'.png'});
   }
  }
+ const focus=page.getByRole('button',{name:'Focus 3D',exact:true});
+ await focus.click();
+ assert(await body.isVisible());
+ assert(await drawer.evaluate(el=>Math.abs(el.offsetWidth-el.parentElement.clientWidth)<=1));
+ await page.getByRole('button',{name:'Exit focus',exact:true}).click();
  await page.reload({waitUntil:'commit'});
  await page.waitForFunction(()=>window.__sensoryStudio);
  await page.locator('.sms-workspace-nav [data-tab=design]').click();
@@ -173,8 +178,12 @@ try{
  await last.locator('img').waitFor();
  assert(await last.evaluate(el=>el===document.activeElement));
  assert(await body.evaluate(el=>el.scrollTop>0));
+ await page.screenshot({path:'qa/wt023c2-drawer-last.png'});
  await last.press('Home');
  assert(await first.evaluate(el=>el===document.activeElement));
+ const firstId=await body.locator('.md-card').first().getAttribute('data-model-id');
+ await first.dragTo(body.locator('.md-pick').nth(2));
+ assert.equal(await body.locator('.md-card').nth(2).getAttribute('data-model-id'),firstId);
  const clip=await body.boundingBox();
  await page.mouse.move(clip.x+clip.width/2,clip.y+6);
  await page.mouse.wheel(0,900);
@@ -219,9 +228,19 @@ try{
  phone.on('pageerror',error=>errors.push(error.message));
  await phone.goto(process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321',{waitUntil:'domcontentloaded'});
  await phone.waitForFunction(()=>window.__sensoryStudio?.project.tabs.length===105);
+ const touchBody=phone.locator('.md-body');
  const touchDrawer=phone.locator('#smsModelsDrawer');
  await touchDrawer.getByRole('button',{name:/Models \(/}).tap();
- const firstCard=touchDrawer.locator('.md-card').filter({has:phone.getByRole('button',{name:/ : WT023 tactile-tiles$/})});
+ const firstCard=touchDrawer.locator('.md-card').filter({has:phone.getByRole('button',{name:/ : WT023 gears$/})});
+ await firstCard.scrollIntoViewIfNeeded();
+ const touchClip=await touchBody.boundingBox(),start=touchClip.y+touchClip.height-15;
+ const cdp=await touch.newCDPSession(phone),x=Math.round(touchClip.x+touchClip.width/2);
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y:start}]});
+ for(let step=1;step<=5;step++){
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x,y:start-12*step}]});
+ }
+ await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+ await phone.waitForFunction(()=>document.querySelector('.md-body').scrollTop>0);
  const touchButtons=firstCard.locator('.md-actions button');
  assert(await touchButtons.evaluateAll(buttons=>buttons.every(el=>el.offsetWidth>=44&&el.offsetHeight>=44)));
  await firstCard.locator('.md-pick').tap();

@@ -15,6 +15,24 @@ try{
  const before=await model();
  assert.equal(await hover.isChecked(),false,'Fresh browser starts without hover notes');
  assert.equal(await detailed.isChecked(),false);
+ const preferences=page.getByRole('group',{name:'Contextual help'});
+ await preferences.locator('label:has(#hoverNotes)').click();
+ assert(await hover.isChecked());
+ assert(!await detailed.isChecked());
+ await detailed.press('Space');
+ assert(await hover.isChecked());
+ assert(await detailed.isChecked());
+ await detailed.press('Space');
+ await hover.press('Space');
+ assert(!await hover.isChecked());
+ assert(!await detailed.isChecked());
+ assert(await preferences.locator('label').evaluateAll(labels=>{
+  const info=document.getElementById('helpBtn').getBoundingClientRect();
+  return labels.every(label=>{
+   const rect=label.getBoundingClientRect();
+   return Math.abs(rect.height-info.height)<=2&&rect.left>=info.right;
+  });
+ }));
  // Native title changes, accessible names, and critical disabled reasons must survive toggles.
  const witness=page.locator('#nativeHelpWitness');
  await page.evaluate(()=>{
