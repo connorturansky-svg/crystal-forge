@@ -1,5 +1,25 @@
 # AI handover — read immediately after AGENTS.md
 
+## Current coordination — 27 November 2026
+
+Audited main `1d675f8` includes [Library destinations #175](https://github.com/connorturansky-svg/crystal-forge/pull/175), [grip editing #181](https://github.com/connorturansky-svg/crystal-forge/pull/181) and [compact Models drawer #183](https://github.com/connorturansky-svg/crystal-forge/pull/183). The release baseline is v0.16.0-dev.35.53. Preserve the shared Info button and independent Help preferences.
+
+| PR | Ownership and next acceptance |
+| --- | --- |
+| [#176](https://github.com/connorturansky-svg/crystal-forge/pull/176) | Owner assigned model appearance and viewport inspection. Continue the existing branch using the [colour](https://github.com/connorturansky-svg/crystal-forge/blob/feat/model-colour-picker/docs/MODEL_COLOUR_PICKER_CODEX.md) and [Layers](https://github.com/connorturansky-svg/crystal-forge/blob/feat/model-colour-picker/docs/VIEWPORT_LAYERS_CODEX_PACKET.md) packets on that branch. Verify seven builders, saved revisions, active tools, and unchanged manufacturing. Supersedes #167 and #171. |
+| [#182](https://github.com/connorturansky-svg/crystal-forge/pull/182) | Documentation coordination. Owner controls merge. |
+| [#177](https://github.com/connorturansky-svg/crystal-forge/pull/177) | Project resources and private backup. Reconcile merged #175 destination and workspace contracts before integration. |
+| [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) | Structural parity and production assurance. Software QA can proceed independently of the viewport UI. Keep physical validation separate. |
+| [#179](https://github.com/connorturansky-svg/crystal-forge/pull/179) | Modular fabrication. Develop engine and export evidence independently and coordinate shared editor and release files with #176. |
+
+Fetch main and confirm ownership, mergeability and exact-head checks before each review. Allocate release metadata in merge order. Keep owner merge and physical sign-off separate. The planning/prompts branch is historical. Use the manual contributor handoff from #180.
+
+## Historical engineering notes
+
+The dated checkpoints below preserve engineering evidence. Their dispatch and CI notes describe their original state.
+
+At the pre-#175 coordination checkpoint, [main browser run 45904294894](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45904294894) failed. Its root cause was unconfirmed at that checkpoint.
+
 ## WT-023C2 compact Models drawer — PR #183
 
 The implementation continues the existing [draft PR #183](https://github.com/connorturansky-svg/crystal-forge/pull/183), based on main `f50a424faf1a3e333aabcc5c9062246ba0dc9074` after #175. It keeps the existing drawer and preview queue. The expanded body owns scrolling and lazy preview observation. Rename and Info use the card’s More actions disclosure. The two native toolbar help checkboxes continue to bind independently.
