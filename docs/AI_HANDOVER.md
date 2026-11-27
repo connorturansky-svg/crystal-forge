@@ -19,6 +19,8 @@ The existing colour dialog supports exact HEX and RGB, swatches, system picker, 
 
 Implementation head `a83c56de7d11f9a9b9034c50922eeb29950e9dec` passed seven hosted workflows. Its [verification report](https://github.com/connorturansky-svg/crystal-forge/pull/176#issuecomment-7221312939) includes native Chrome 200% zoom, emulated touch, hidden fitting picking, saved revisions and unchanged STL/3MF geometry across all seven builders. The [browser log](https://github.com/connorturansky-svg/crystal-forge/actions/runs/46016055364/artifacts/15207711762) and [screenshots](https://github.com/connorturansky-svg/crystal-forge/actions/runs/46016055364/artifacts/15207631796) record that revision. Use the [PR checks](https://github.com/connorturansky-svg/crystal-forge/pull/176/checks) for fresh exact-head evidence after reconciliation.
 
+The [first reconciliation browser run](https://github.com/connorturansky-svg/crystal-forge/actions/runs/46054624646) caught a timing race in the Library regression. The test now waits for the exact prepared job revision to reach workspace storage before comparing destination writes. It still requires the in-memory job, prepared cache and both downloads to survive.
+
 ## Historical engineering notes
 
 The dated checkpoints below preserve engineering evidence. Their dispatch and CI notes describe their original state.
