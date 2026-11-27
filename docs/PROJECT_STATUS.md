@@ -1,8 +1,12 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
-## Model appearance and viewport inspection — PR #176
+## Active work — 27 November 2026
 
-[PR #176](https://github.com/connorturansky-svg/crystal-forge/pull/176) integrates the shared colour editor and viewport Layers. Candidate v0.16.0-dev.35.54 follows merged #183. #182 owns coordination documentation. #177–#179 remain separate. Verify exact-head checks and owner review before merging.
+Main `dc6d913` includes #175 Library destinations, #181 grip editing, #183 compact Models drawer and the #182 coordination refresh. [#176](https://github.com/connorturansky-svg/crystal-forge/pull/176) is the v0.16.0-dev.35.54 candidate. Its [release handover](AI_HANDOVER.md#176-release-handover) records verification and scope. Continue [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) on its existing branch after the owner merges #176. [Current coordination](AI_HANDOVER.md#current-coordination--27-november-2026) tracks the independent #177 and #179 lanes.
+
+## Historical project status
+
+The following checkpoints record earlier assignments and verification evidence.
 
 ## WT-023C2 compact Models drawer — 27 November 2026
 

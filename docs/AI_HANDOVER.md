@@ -1,8 +1,29 @@
 # AI handover — read immediately after AGENTS.md
 
-## Model appearance and viewport inspection — PR #176
+## Current coordination — 27 November 2026
 
-The existing branch integrates the shared colour dialog and viewport layer preferences. Colour follows the model's normal revision and undo paths. Layers are browser-only and compose with the existing stage, fitting preview and editing controls. Crystal supplies tab outlines and cable length labels; native builders use their available guide meshes and labels. See the [colour](MODEL_COLOUR_PICKER_CODEX.md) and [Layers](VIEWPORT_LAYERS_CODEX_PACKET.md) packets for acceptance. Check the [PR workflows](https://github.com/connorturansky-svg/crystal-forge/pull/176/checks) against the current head before owner review.
+Audited main `dc6d913` includes the merged coordination refresh #182, [Library destinations #175](https://github.com/connorturansky-svg/crystal-forge/pull/175), [grip editing #181](https://github.com/connorturansky-svg/crystal-forge/pull/181) and [compact Models drawer #183](https://github.com/connorturansky-svg/crystal-forge/pull/183). The release baseline is v0.16.0-dev.35.53. Preserve the shared Info button and independent Help preferences.
+
+| PR | Ownership and next acceptance |
+| --- | --- |
+| [#176](https://github.com/connorturansky-svg/crystal-forge/pull/176) | Model appearance and viewport Layers are implemented. Candidate v0.16.0-dev.35.54 requires exact-head CI after the #182 reconciliation and owner merge. See the [colour](MODEL_COLOUR_PICKER_CODEX.md) and [Layers](VIEWPORT_LAYERS_CODEX_PACKET.md) packets. Supersedes #167 and #171. |
+| [#177](https://github.com/connorturansky-svg/crystal-forge/pull/177) | Project resources and private backup. Reconcile merged #175 destination and workspace contracts before integration. |
+| [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) | WT-019 / Phase E software production assurance. Continue the existing branch after the owner merges #176. Preserve the separate physical acceptance register. |
+| [#179](https://github.com/connorturansky-svg/crystal-forge/pull/179) | Modular fabrication. Develop engine and export evidence independently and coordinate shared editor and release files with #176. |
+
+Fetch main and confirm ownership, mergeability and exact-head checks before each review. Allocate release metadata in merge order. Keep owner merge and physical sign-off separate. The planning/prompts branch is historical. Use the manual contributor handoff from #180.
+
+## #176 release handover
+
+The existing colour dialog supports exact HEX and RGB, swatches, system picker, Apply/Cancel, history and saved revisions in all seven builders. Layers preserve workspace bytes and active editing feedback. Cable-length and tab outline guides are available in Crystal. Native guides follow each builder's existing renderer capabilities.
+
+Implementation head `a83c56de7d11f9a9b9034c50922eeb29950e9dec` passed seven hosted workflows. Its [verification report](https://github.com/connorturansky-svg/crystal-forge/pull/176#issuecomment-7221312939) includes native Chrome 200% zoom, emulated touch, hidden fitting picking, saved revisions and unchanged STL/3MF geometry across all seven builders. The [browser log](https://github.com/connorturansky-svg/crystal-forge/actions/runs/46016055364/artifacts/15207711762) and [screenshots](https://github.com/connorturansky-svg/crystal-forge/actions/runs/46016055364/artifacts/15207631796) record that revision. Use the [PR checks](https://github.com/connorturansky-svg/crystal-forge/pull/176/checks) for fresh exact-head evidence after reconciliation.
+
+## Historical engineering notes
+
+The dated checkpoints below preserve engineering evidence. Their dispatch and CI notes describe their original state.
+
+At the pre-#175 coordination checkpoint, [main browser run 45904294894](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45904294894) failed. Its root cause was unconfirmed at that checkpoint.
 
 ## WT-023C2 compact Models drawer — PR #183
 
