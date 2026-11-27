@@ -15,6 +15,24 @@ try{
  const before=await model();
  assert.equal(await hover.isChecked(),false,'Fresh browser starts without hover notes');
  assert.equal(await detailed.isChecked(),false);
+ const preferences=page.getByRole('group',{name:'Contextual help'});
+ await preferences.locator('label:has(#hoverNotes)').click();
+ assert(await hover.isChecked());
+ assert(!await detailed.isChecked());
+ await detailed.press('Space');
+ assert(await hover.isChecked());
+ assert(await detailed.isChecked());
+ await detailed.press('Space');
+ await hover.press('Space');
+ assert(!await hover.isChecked());
+ assert(!await detailed.isChecked());
+ assert(await preferences.locator('label').evaluateAll(labels=>{
+  const info=document.getElementById('helpBtn').getBoundingClientRect();
+  return labels.every(label=>{
+   const rect=label.getBoundingClientRect();
+   return Math.abs(rect.height-info.height)<=2&&rect.left>=info.right;
+  });
+ }));
  // Native title changes, accessible names, and critical disabled reasons must survive toggles.
  const witness=page.locator('#nativeHelpWitness');
  await page.evaluate(()=>{
@@ -86,7 +104,7 @@ try{
  await page.locator('#smsNew').click();
  await page.locator('#smsPicker [data-generator=gears]').click();
  const naming=page.getByRole('dialog',{name:'Name new model'});
- assert.match(await naming.locator('.contextual-help-detail').innerText(),/meaningful name/);
+ assert.match(await naming.getByRole('textbox',{name:'Model name',exact:true}).evaluate(field=>(field.getAttribute('aria-describedby')||'').split(/\s+/).map(id=>document.getElementById(id)?.textContent||'').join(' ')),/meaningful name/);
  // The auto-focused name field can already have a visible tooltip when a
  // person moves to the modal action. The next action must remain clickable.
  await naming.getByRole('textbox',{name:'Model name'}).focus();

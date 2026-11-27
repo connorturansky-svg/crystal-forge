@@ -1,26 +1,50 @@
 # AI handover — read immediately after AGENTS.md
 
-## Current coordination checkpoint — 27 November 2026
+## Current coordination — 27 November 2026
 
-Verified main at audit: `184255f432d28b4bd39073d014e3b39583941319` (merged #181). Fetch live main before work. #158, #174 and #181 are merged; do not restart them. B2a #172 is merged; B2b is already implemented in draft #175, not awaiting a new implementation dispatch.
+Audited main `1d675f8` includes [Library destinations #175](https://github.com/connorturansky-svg/crystal-forge/pull/175), [grip editing #181](https://github.com/connorturansky-svg/crystal-forge/pull/181) and [compact Models drawer #183](https://github.com/connorturansky-svg/crystal-forge/pull/183). The release baseline is v0.16.0-dev.35.53. Preserve the shared Info button and independent Help preferences.
 
-| Existing PR | Remaining scope / next action |
+| PR | Ownership and next acceptance |
 | --- | --- |
-| [#175](https://github.com/connorturansky-svg/crystal-forge/pull/175) | B2b destination chooser; verify current head, browser regression and owner review first. |
-| [#176](https://github.com/connorturansky-svg/crystal-forge/pull/176) | Consolidated colours and Layers; mount real runtime controls across seven builders, verify history, previews and manufacturing invariance. Supersedes #167/#171. |
-| [#177](https://github.com/connorturansky-svg/crystal-forge/pull/177) | Resource catalogue and private backup centre; integrate workspace/vault, migration, UI and two-device tests after #175. |
-| [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) | Structural QA; retain software acceptance and separate physical gates in PHYSICAL_PRODUCTION_ACCEPTANCE.md. |
-| [#179](https://github.com/connorturansky-svg/crystal-forge/pull/179) | Modular fabrication; complete UI, exports, assembly packs and section evidence; physical validation remains separate. |
+| [#176](https://github.com/connorturansky-svg/crystal-forge/pull/176) | Owner assigned model appearance and viewport inspection. Continue the existing branch using the [colour](https://github.com/connorturansky-svg/crystal-forge/blob/feat/model-colour-picker/docs/MODEL_COLOUR_PICKER_CODEX.md) and [Layers](https://github.com/connorturansky-svg/crystal-forge/blob/feat/model-colour-picker/docs/VIEWPORT_LAYERS_CODEX_PACKET.md) packets on that branch. Verify seven builders, saved revisions, active tools, and unchanged manufacturing. Supersedes #167 and #171. |
+| [#182](https://github.com/connorturansky-svg/crystal-forge/pull/182) | Documentation coordination. Owner controls merge. |
+| [#177](https://github.com/connorturansky-svg/crystal-forge/pull/177) | Project resources and private backup. Reconcile merged #175 destination and workspace contracts before integration. |
+| [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) | Structural parity and production assurance. Software QA can proceed independently of the viewport UI. Keep physical validation separate. |
+| [#179](https://github.com/connorturansky-svg/crystal-forge/pull/179) | Modular fabrication. Develop engine and export evidence independently and coordinate shared editor and release files with #176. |
 
-Suggested sequence: #175 then #176, then #177; #178 may progress independently, and #179 must coordinate shared runtime files with #176. This is a proposed order, not a new contributor assignment. All five are existing implementation lanes; do not open duplicates. No open Issues were returned at this checkpoint; closed issues remain acceptance history, not proof of delivery.
-
-Investigate [main browser failure](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45904294894); root cause is not established here. Verify exact-head CI and mergeability live before owner review. Green checkpoint CI does not certify unfinished scope. Reconcile release metadata in actual merge order. No automatic merge, deployment, access change or contributor dispatch. Contributor intake #42 remains historical; use merged #180 manual handoff policy. Approved prompt SHA linkage and current claims must be checked against live PRs; do not infer them from old notes. The planning/prompts branch is historical, not an implementation baseline.
+Fetch main and confirm ownership, mergeability and exact-head checks before each review. Allocate release metadata in merge order. Keep owner merge and physical sign-off separate. The planning/prompts branch is historical. Use the manual contributor handoff from #180.
 
 ## Historical engineering notes
 
-Everything below is retained for technical context only. Any active/current/restart language below refers to its original checkpoint and is superseded by the live PR inventory above.
+The dated checkpoints below preserve engineering evidence. Their dispatch and CI notes describe their original state.
 
+At the pre-#175 coordination checkpoint, [main browser run 45904294894](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45904294894) failed. Its root cause was unconfirmed at that checkpoint.
 
+## WT-023C2 compact Models drawer — PR #183
+
+The implementation continues the existing [draft PR #183](https://github.com/connorturansky-svg/crystal-forge/pull/183), based on main `f50a424faf1a3e333aabcc5c9062246ba0dc9074` after #175. It keeps the existing drawer and preview queue. The expanded body owns scrolling and lazy preview observation. Rename and Info use the card’s More actions disclosure. The two native toolbar help checkboxes continue to bind independently.
+
+See the [drawer handover](WT023C_MODEL_DRAWER_CODEX.md) for measurements and test coverage, and the [PR checks](https://github.com/connorturansky-svg/crystal-forge/pull/183/checks) for the final branch head. #182 is the documentation coordination lane and overlaps this handover. #176 owns appearance and viewport Layers. Recheck both against current main before integration. Owner reviews the visuals and controls merge.
+
+## WT-023B2b candidate (draft; not shipped)
+
+Owner dispatched completion on 26 November. #175 now reconciles main after merged #181 (.35.51); candidate .35.52 retains every release entry. Shared chooser also serves New Model/presets. Exact snapshot labels, revision-faithful source previews and labelled read-only settings complete inspection. Focused Chromium verifies seven families × three destinations and prepared-job object/cache retention with actual downloads; compact-card coverage includes cancel/quota/two-tab refusal and theme/responsive/touch evidence. Node archive tests include hashed-vault round trip. Full regression and final exact-head CI must be checked before marking ready. Follow-on #176–#179 reconciliation is documented in the destination guide; their branches are untouched.
+
+Hosted browser run 45911010069 reached the B2b competing-tab fixture but timed out at the peer page's full-load navigation before its concurrency assertions. The fixture now waits for DOM content plus actual Studio readiness rather than all page resources; every storage/cancellation/concurrency assertion remains. Five other substantive exact-head suites passed that candidate. Recheck all final-head CI after this test-only correction.
+
+Run 45911925248 repeated the peer navigation timeout even at DOM readiness. The concurrency fixture now uses a lightweight same-origin HTML peer instead of booting a second WebGL editor. It asserts a real cross-tab storage event, guarded refusal, unchanged active state and the existing one-write successful retry. This isolates storage contention from renderer startup; it does not remove the competing-tab regression. All five other substantive suites passed again.
+
+Full-editor concurrency remains separately covered at the start of `tests/wt023b2b-browser.mjs`: two real Studio tabs load, the peer renames and durably saves its project through the UI, and the first tab's open chooser refuses that competing write without changing its in-memory project. A fresh browser context then runs the destination/geometry matrix. Both fixtures pass locally; require final-head hosted CI.
+
+Run 45913829201 passed the storage-peer case but stalled clicking the background original editor after an unnecessary reload in the full-editor fixture. That fixture now waits for the initial save and explicitly foregrounds each tab before interaction; it retains the real peer UI save and unchanged-project assertions. Local full-editor and destination tests pass. A retained Playwright trace is uploaded with B2b visual evidence for hosted diagnostics.
+
+Run 45915579753 again passed storage-peer coverage; its retained trace records GPU ReadPixels stall warnings and a click that never completes during synchronous picker-thumbnail rendering with two editors. The full B2b concurrency/matrix fixture now pins Chrome's real WebGL to SwiftShader; both ordinary and software-rendered local runs passed. No geometry, UI, storage or download assertion is skipped. Other browser suites continue with their existing renderer configuration. Verify fresh exact-head CI.
+
+All six substantive suites passed head 6ed1afd. Final hosted screenshot review then caught initial focus on the inspection's bottom Close button, which could scroll the introduction out of view. Inspection now focuses its heading at scroll position zero, with a focused Chromium assertion. The displayed project timestamp is labelled Modified (its actual stored meaning). Recheck final-head CI after this visual/accessibility correction.
+
+The focused follow-up also exposed body focus after Cancel when the source card's action overlay had closed. `restoreLibraryFocus` now resolves a visible original control, its Actions toggle, or New Model after navigation; inspection and chooser share it. Chromium asserts visible focus after cancel/close, as well as top-of-inspection focus. No storage behavior changes.
+
+See [Library destination user guide and handover](WT023B2B_LIBRARY_DESTINATIONS.md) for the isolated candidate builder, chooser, guarded-write publication and regression commands. The existing Library and workspace stores remain authoritative. Check issue #139 and the live draft before resuming; exact-head CI and owner approval remain required.
 ## Active WT-025 / WT-024 interface-polish candidate
 
 [PR #174](https://github.com/connorturansky-svg/crystal-forge/pull/174) is the shared implementation for #154 and #152. Read [the implementation checkpoint](WT025_INTERFACE_POLISH_CHECKPOINT.md). The Info dialog retains existing feature navigation and generated history; `src/ui/info-release-summary.mjs` owns browser-local version acknowledgement. Keep the existing contextual help registry, preserve accessible names and critical warnings, and verify exact-head checks before owner review. Do not treat a candidate version as deployed.
@@ -35,7 +59,7 @@ Red grip drafts are valid design documents, not printable solids. `withGearTopCo
 
 ## Resume from GitHub
 
-Start with [project status and priority order](PROJECT_STATUS.md#chatgpt-handover--25-november-2026). Fetch live main, check issue and branch ownership, and verify Actions against the exact PR head before requesting owner review. The owner approves merges. B2a merged in #172. B2b remains unstarted and requires owner dispatch.
+Start with [project status and priority order](PROJECT_STATUS.md#chatgpt-handover--25-november-2026). Fetch live main, check issue and branch ownership, and verify Actions against the exact PR head before requesting owner review. The owner approves merges. B2a merged in #172. B2b continues in #175 under the 26 November owner dispatch.
 
 - Library rendering and preview callbacks live in `sensory-studio.js`. Card disclosure and CSS are in `src/ui/library-card.mjs` and `src/ui/library-card.css`. Scroll clearance follows the actual Models drawer height. Shared Help uses `tooltips.js` and `contextual-help-copy.js`.
 - For B2b, trace `renderLibraryCards`, `renderBuiltInTemplates`, `renderTemplates`, `saveProjectSnapshot` and `replaceProject` in `sensory-studio.js`, then `projectWorkspaceCandidate` and stale-write protection in `studio-sync-plan.js`. Preserve stable project, snapshot and source revision IDs. Follow the [B2b acceptance packet](WT023_PROJECT_LIBRARY_IMPLEMENTATION.md#b2b--project-browser-and-destination-transaction).

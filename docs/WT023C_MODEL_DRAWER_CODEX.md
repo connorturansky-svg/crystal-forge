@@ -1,6 +1,14 @@
 # WT-023C · Models drawer — implementation handover
 **Owner issue #140 and implementation PR #164.** The default Studio mounts the candidate in the 3D viewport and generates previews from saved source data. Use the PR checks to verify the current commit. Starting base f52cdbcc includes #147/#151/#157/#161.
 
+## WT-023C2 compact drawer — 27 November 2026
+
+[PR #183](https://github.com/connorturansky-svg/crystal-forge/pull/183) supersedes the layout guidance below. The header stays above the shared scroll surface. More actions opens Rename and Info in the card. Close is separate, and failed previews expose their reason and Retry. See the [user guide](WT025_READABLE_USER_GUIDE.md) for the workflow.
+
+At 1440 × 950 CSS px with optional help off and the same 105 models open, Extra compact cards went from about 274 × 100 to 204 × 39 px. Fully visible cards increased from 3 to 16, and thumbnails went from 52 × 39 to 24 × 18 px. At 390 × 950, a separate seven-family sample went from 0 to 4 fully visible cards. In the 105-model sample, the Design median synchronous open took 19.6 ms before and 10.4 ms after, and filtering took 3.7 ms before and 2.5 ms after. In a separate Home sample, filtering took 2.6 ms before and 3.2 ms after. These are headless Chromium timings through forced layout across eleven measured iterations per version, excluding asynchronous preview rendering.
+
+Run `node tests/wt023-model-drawer-browser.mjs` and `node tests/wt024-help-browser.mjs` with the served editor. The drawer test logs geometry for the five levels at 1440 px, samples the extremes at four other viewport widths and creates screenshots in `qa/`. Browser CI uploads the screenshots. The zoom screenshot uses a halved viewport for reflow, in addition to a separate 200% CSS zoom visibility check. Verify the exact commit and suite results in the [PR checks](https://github.com/connorturansky-svg/crystal-forge/pull/183/checks).
+
 ## Density correction (25 November 2026, proposed)
 
 The owner reported single-letter wrapping on the deployed drawer. The corrective candidate separates the full-width selection area from the Rename/Info/Close row, uses a responsive minimum card width and a five-position **Thumbnail size** slider (Small to Extra large). The choice persists only in browser view preferences, not project documents. Names are horizontally ellipsised with full accessible name and title. Preview failure reasons remain visible with Retry. Use real browser geometry assertions and screenshots at 390/768/1440px, both density extremes and 200% zoom; verify no underlying storage changes. Reconciled with merged #163 Help; provisional release .35.43. The thumbnail slider uses the shared Help registry; its explanatory text scrolls within the controls region so the model grid remains reachable. Do not merge until exact-head checks and owner visual inspection.
