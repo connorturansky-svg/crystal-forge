@@ -1,5 +1,26 @@
 # AI handover — read immediately after AGENTS.md
 
+## Current coordination checkpoint — 27 November 2026
+
+Verified main at audit: `184255f432d28b4bd39073d014e3b39583941319` (merged #181). Fetch live main before work. #158, #174 and #181 are merged; do not restart them. B2a #172 is merged; B2b is already implemented in draft #175, not awaiting a new implementation dispatch.
+
+| Existing PR | Remaining scope / next action |
+| --- | --- |
+| [#175](https://github.com/connorturansky-svg/crystal-forge/pull/175) | B2b destination chooser; verify current head, browser regression and owner review first. |
+| [#176](https://github.com/connorturansky-svg/crystal-forge/pull/176) | Consolidated colours and Layers; mount real runtime controls across seven builders, verify history, previews and manufacturing invariance. Supersedes #167/#171. |
+| [#177](https://github.com/connorturansky-svg/crystal-forge/pull/177) | Resource catalogue and private backup centre; integrate workspace/vault, migration, UI and two-device tests after #175. |
+| [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) | Structural QA; retain software acceptance and separate physical gates in PHYSICAL_PRODUCTION_ACCEPTANCE.md. |
+| [#179](https://github.com/connorturansky-svg/crystal-forge/pull/179) | Modular fabrication; complete UI, exports, assembly packs and section evidence; physical validation remains separate. |
+
+Suggested sequence: #175 then #176, then #177; #178 may progress independently, and #179 must coordinate shared runtime files with #176. This is a proposed order, not a new contributor assignment. All five are existing implementation lanes; do not open duplicates. No open Issues were returned at this checkpoint; closed issues remain acceptance history, not proof of delivery.
+
+Investigate [main browser failure](https://github.com/connorturansky-svg/crystal-forge/actions/runs/45904294894); root cause is not established here. Verify exact-head CI and mergeability live before owner review. Green checkpoint CI does not certify unfinished scope. Reconcile release metadata in actual merge order. No automatic merge, deployment, access change or contributor dispatch. Contributor intake #42 remains historical; use merged #180 manual handoff policy. Approved prompt SHA linkage and current claims must be checked against live PRs; do not infer them from old notes. The planning/prompts branch is historical, not an implementation baseline.
+
+## Historical engineering notes
+
+Everything below is retained for technical context only. Any active/current/restart language below refers to its original checkpoint and is superseded by the live PR inventory above.
+
+
 ## Active WT-025 / WT-024 interface-polish candidate
 
 [PR #174](https://github.com/connorturansky-svg/crystal-forge/pull/174) is the shared implementation for #154 and #152. Read [the implementation checkpoint](WT025_INTERFACE_POLISH_CHECKPOINT.md). The Info dialog retains existing feature navigation and generated history; `src/ui/info-release-summary.mjs` owns browser-local version acknowledgement. Keep the existing contextual help registry, preserve accessible names and critical warnings, and verify exact-head checks before owner review. Do not treat a candidate version as deployed.
