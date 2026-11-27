@@ -58,6 +58,12 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.53 — Compact Models drawer
+
+- Fit more open models into the viewport with five thumbnail sizes and compact model actions.
+- Scroll search, thumbnail settings, guidance and model cards together while keeping Models and New model in reach.
+- Toggle Hover Notes and Detailed Explanations independently using the toolbar checkboxes.
+
 ## v0.16.0-dev.35.52 — Choose where Library models belong
 
 - Inspect the models and project defaults of a saved project version without opening it.

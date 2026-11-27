@@ -1,6 +1,14 @@
 # WT-023C · Models drawer — implementation handover
 **Owner issue #140 and implementation PR #164.** The default Studio mounts the candidate in the 3D viewport and generates previews from saved source data. Use the PR checks to verify the current commit. Starting base f52cdbcc includes #147/#151/#157/#161.
 
+## WT-023C2 compact drawer — 27 November 2026
+
+[PR #183](https://github.com/connorturansky-svg/crystal-forge/pull/183) supersedes the layout guidance below. The header stays above the shared scroll surface. More actions opens Rename and Info in the card. Close is separate, and failed previews expose their reason and Retry. See the [user guide](WT025_READABLE_USER_GUIDE.md) for the workflow.
+
+At 1440 × 950 CSS px with optional help off, Extra compact went from about 274 × 97 to 204 × 39 px per first-row card. The recorded comparison shows 3 to 7 fully visible cards, and 52 × 39 to 24 × 18 px thumbnails. The baseline had eight open cards and the after run had seven after exercising Close. At 390 × 950, 0 to 4 cards were fully visible. Measurements are from Chromium and rounded to the nearest CSS pixel.
+
+Run `node tests/wt023-model-drawer-browser.mjs` and `node tests/wt024-help-browser.mjs` with the served editor. The drawer test logs geometry for the five levels at 1440 px, samples the extremes at four other viewport widths and creates screenshots in `qa/`. Browser CI uploads the screenshots. The zoom screenshot uses 200% CSS zoom as a reflow check. Verify the exact commit and suite results in the [PR checks](https://github.com/connorturansky-svg/crystal-forge/pull/183/checks).
+
 ## Density correction (25 November 2026, proposed)
 
 The owner reported single-letter wrapping on the deployed drawer. The corrective candidate separates the full-width selection area from the Rename/Info/Close row, uses a responsive minimum card width and a five-position **Thumbnail size** slider (Small to Extra large). The choice persists only in browser view preferences, not project documents. Names are horizontally ellipsised with full accessible name and title. Preview failure reasons remain visible with Retry. Use real browser geometry assertions and screenshots at 390/768/1440px, both density extremes and 200% zoom; verify no underlying storage changes. Reconciled with merged #163 Help; provisional release .35.43. The thumbnail slider uses the shared Help registry; its explanatory text scrolls within the controls region so the model grid remains reachable. Do not merge until exact-head checks and owner visual inspection.

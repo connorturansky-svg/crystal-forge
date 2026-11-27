@@ -1,5 +1,11 @@
 # AI handover — read immediately after AGENTS.md
 
+## WT-023C2 compact Models drawer — PR #183
+
+The implementation continues the existing [draft PR #183](https://github.com/connorturansky-svg/crystal-forge/pull/183), based on main `f50a424faf1a3e333aabcc5c9062246ba0dc9074` after #175. It keeps the existing drawer and preview queue. The expanded body owns scrolling and lazy preview observation. Rename and Info use the card’s More actions disclosure. The two native toolbar help checkboxes continue to bind independently.
+
+See the [drawer handover](WT023C_MODEL_DRAWER_CODEX.md) for measurements and test coverage, and the [PR checks](https://github.com/connorturansky-svg/crystal-forge/pull/183/checks) for the final branch head. #182 is the documentation coordination lane and overlaps this handover. #176 owns appearance and viewport Layers. Recheck both against current main before integration. Owner reviews the visuals and controls merge.
+
 ## WT-023B2b candidate (draft; not shipped)
 
 Owner dispatched completion on 26 November. #175 now reconciles main after merged #181 (.35.51); candidate .35.52 retains every release entry. Shared chooser also serves New Model/presets. Exact snapshot labels, revision-faithful source previews and labelled read-only settings complete inspection. Focused Chromium verifies seven families × three destinations and prepared-job object/cache retention with actual downloads; compact-card coverage includes cancel/quota/two-tab refusal and theme/responsive/touch evidence. Node archive tests include hashed-vault round trip. Full regression and final exact-head CI must be checked before marking ready. Follow-on #176–#179 reconciliation is documented in the destination guide; their branches are untouched.
