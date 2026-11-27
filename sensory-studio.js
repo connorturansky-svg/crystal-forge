@@ -2,7 +2,7 @@ import {TransformControls} from 'three/addons/controls/TransformControls.js';
 import {listProjectFolders} from './studio-project-index.js';
 import {libraryCard} from './src/ui/library-card.mjs';
 import {commitLibraryDestination,NEW_PROJECT_PRINTER,missingModelPixelProfiles} from './src/ui/library-destination.mjs';
-import {openLibraryDestination} from './src/ui/library-destination-dialog.mjs';
+import {openLibraryDestination,restoreLibraryFocus} from './src/ui/library-destination-dialog.mjs';
 import {createModelDrawer,createPreviewQueue} from './src/ui/model-drawer.mjs';
 import {archiveSummary,archiveChoices,reconcileArchive,commitRecovery,RECOVERY_PREFIX,validateArchive,assertWorkspaceVersion,projectWorkspaceCandidate} from './studio-sync-plan.js';
 import {readMeshFile,importedMeshRecipe,MAX_MESH_BYTES} from './studio-mesh-import.js';
@@ -3019,7 +3019,7 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
   const close=document.createElement('button');close.type='button';close.textContent='Close inspection';close.onclick=()=>dialog.close();
   close.dataset.libraryInspectionClose='';
   dialog.append(heading,summary,identity,defaults,settings,grid,close);document.body.append(dialog);
-  dialog.addEventListener('close',()=>{dialog.remove();if(opener?.isConnected&&document.activeElement===document.body)opener.focus({preventScroll:true});},{once:true});
+  dialog.addEventListener('close',()=>{dialog.remove();restoreLibraryFocus(opener);},{once:true});
   dialog.showModal();heading.focus({preventScroll:true});dialog.scrollTop=0;
  }
  function renderLibraryCards(){

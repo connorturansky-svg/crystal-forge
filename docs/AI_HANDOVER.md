@@ -16,6 +16,8 @@ Run 45915579753 again passed storage-peer coverage; its retained trace records G
 
 All six substantive suites passed head 6ed1afd. Final hosted screenshot review then caught initial focus on the inspection's bottom Close button, which could scroll the introduction out of view. Inspection now focuses its heading at scroll position zero, with a focused Chromium assertion. The displayed project timestamp is labelled Modified (its actual stored meaning). Recheck final-head CI after this visual/accessibility correction.
 
+The focused follow-up also exposed body focus after Cancel when the source card's action overlay had closed. `restoreLibraryFocus` now resolves a visible original control, its Actions toggle, or New Model after navigation; inspection and chooser share it. Chromium asserts visible focus after cancel/close, as well as top-of-inspection focus. No storage behavior changes.
+
 See [Library destination user guide and handover](WT023B2B_LIBRARY_DESTINATIONS.md) for the isolated candidate builder, chooser, guarded-write publication and regression commands. The existing Library and workspace stores remain authoritative. Check issue #139 and the live draft before resuming; exact-head CI and owner approval remain required.
 ## Active WT-025 / WT-024 interface-polish candidate
 

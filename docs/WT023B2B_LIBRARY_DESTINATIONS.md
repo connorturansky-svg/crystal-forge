@@ -6,6 +6,8 @@ For a built-in starting point, saved model or reusable model template, choose th
 
 A linked copy stays pinned to the selected Library revision. An independent copy can be edited. **Older revision** selects an exact saved revision. Cancel/Escape leaves the destination unchanged. A quota or competing-tab warning keeps the chooser open and does not publish the candidate; export a backup if required before reloading.
 
+Inspection starts at its heading so the introduction stays visible on narrow screens. Closing or cancelling restores a visible source control, using the card's Actions button if its action overlay has closed. The timestamp shown in inspection is the project's stored modification time.
+
 ## Engineering handover
 
 - Core candidate and one-write publish boundary: `src/ui/library-destination.mjs`. Chooser: `src/ui/library-destination-dialog.mjs`. The existing `writeWorkspace` guard and `projectWorkspaceCandidate` remain authoritative; no parallel store or schema change.

@@ -80,6 +80,8 @@ try{
  const chooser=page.getByRole('dialog',{name:'Choose model destination'});
  const beforeCopy=await storage();
  await chooser.getByRole('button',{name:'Cancel',exact:true}).click();
+ await card.locator(':focus').waitFor({state:'visible'});
+ assert(await card.evaluate(el=>el.contains(document.activeElement)&&document.activeElement.getClientRects().length>0),'Cancel returns focus to a visible source-card control');
  assert.equal(await storage(),beforeCopy,'Cancel does not write a workspace');
  await revealLibraryActions(card);
  await actions.getByRole('button',{name:'Linked copy',exact:true}).click();
@@ -112,6 +114,8 @@ try{
  }
  assert.equal(await storage(),JSON.stringify(historical));
  await inspection.getByRole('button',{name:'Close inspection'}).click();
+ await savedCard.locator(':focus').waitFor({state:'visible'});
+ assert(await savedCard.evaluate(el=>el.contains(document.activeElement)&&document.activeElement.getClientRects().length>0),'Closing inspection returns focus to a visible source-card control');
 
  const built=page.locator('#smsBuiltInTemplates article').filter({has:page.getByRole('heading',{name:'Cogs & Gears',exact:true})});
  await revealLibraryActions(built);

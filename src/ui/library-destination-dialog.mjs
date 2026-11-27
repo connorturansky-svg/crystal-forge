@@ -10,6 +10,12 @@ function labelled(text,field){
  const label=element('label',text+' ');
  label.append(field);return label;
 }
+export function restoreLibraryFocus(opener,doc=document){
+ if(doc.activeElement!==doc.body)return;
+ const target=[opener,opener?.closest('.sms-tile')?.querySelector('.sms-library-actions-toggle'),doc.getElementById('smsNew')]
+  .find(control=>control?.isConnected&&control.getClientRects().length>0);
+ target?.focus({preventScroll:true});
+}
 // All controls work without hover; the modal only calls commit on explicit submit.
 export function openLibraryDestination(workspace,{source,suggestion,linked=false,revisions=[],preview,commit}){
  const whole=source.kind==='project-template';
@@ -79,7 +85,7 @@ export function openLibraryDestination(workspace,{source,suggestion,linked=false
    commit(request);dialog.close();
   }catch(problem){error.textContent=problem.message||'Could not save the destination.';}
  };
- dialog.addEventListener('close',()=>{dialog.remove();if(opener?.isConnected&&document.activeElement===document.body)opener.focus({preventScroll:true});},{once:true});
+ dialog.addEventListener('close',()=>{dialog.remove();restoreLibraryFocus(opener);},{once:true});
  document.body.append(dialog);dialog.showModal();(whole?projectName:name).select();(whole?projectName:name).focus();
  return dialog;
 }
