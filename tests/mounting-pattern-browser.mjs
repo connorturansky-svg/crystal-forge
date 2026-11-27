@@ -181,6 +181,8 @@ try{
  const saved=page.locator('#smsSavedModels article').filter({hasText:crystalName});
  await saved.locator('.sms-library-actions-toggle').click();
  await saved.getByRole('button',{name:'Independent copy'}).click();
+ await page.getByRole('dialog',{name:'Choose model destination'}).getByRole('button',{name:'Add model',exact:true}).click();
+ await page.getByRole('dialog',{name:'Choose model destination'}).waitFor({state:'hidden'});
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.mountingPatterns?.length===1);
  assert.deepEqual(await page.evaluate(()=>window.__sensoryStudio.currentModel.parameters.manualMountHoles),crystalMounts);
  await page.locator('.sms-workspace-nav [data-tab=build]').click();

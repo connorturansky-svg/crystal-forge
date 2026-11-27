@@ -86,7 +86,7 @@ try{
  await page.locator('#smsNew').click();
  await page.locator('#smsPicker [data-generator=gears]').click();
  const naming=page.getByRole('dialog',{name:'Name new model'});
- assert.match(await naming.locator('.contextual-help-detail').innerText(),/meaningful name/);
+ assert.match(await naming.getByRole('textbox',{name:'Model name',exact:true}).evaluate(field=>(field.getAttribute('aria-describedby')||'').split(/\s+/).map(id=>document.getElementById(id)?.textContent||'').join(' ')),/meaningful name/);
  // The auto-focused name field can already have a visible tooltip when a
  // person moves to the modal action. The next action must remain clickable.
  await naming.getByRole('textbox',{name:'Model name'}).focus();

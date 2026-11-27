@@ -1,5 +1,24 @@
 # AI handover — read immediately after AGENTS.md
 
+## WT-023B2b candidate (draft; not shipped)
+
+Owner dispatched completion on 26 November. #175 now reconciles main after merged #181 (.35.51); candidate .35.52 retains every release entry. Shared chooser also serves New Model/presets. Exact snapshot labels, revision-faithful source previews and labelled read-only settings complete inspection. Focused Chromium verifies seven families × three destinations and prepared-job object/cache retention with actual downloads; compact-card coverage includes cancel/quota/two-tab refusal and theme/responsive/touch evidence. Node archive tests include hashed-vault round trip. Full regression and final exact-head CI must be checked before marking ready. Follow-on #176–#179 reconciliation is documented in the destination guide; their branches are untouched.
+
+Hosted browser run 45911010069 reached the B2b competing-tab fixture but timed out at the peer page's full-load navigation before its concurrency assertions. The fixture now waits for DOM content plus actual Studio readiness rather than all page resources; every storage/cancellation/concurrency assertion remains. Five other substantive exact-head suites passed that candidate. Recheck all final-head CI after this test-only correction.
+
+Run 45911925248 repeated the peer navigation timeout even at DOM readiness. The concurrency fixture now uses a lightweight same-origin HTML peer instead of booting a second WebGL editor. It asserts a real cross-tab storage event, guarded refusal, unchanged active state and the existing one-write successful retry. This isolates storage contention from renderer startup; it does not remove the competing-tab regression. All five other substantive suites passed again.
+
+Full-editor concurrency remains separately covered at the start of `tests/wt023b2b-browser.mjs`: two real Studio tabs load, the peer renames and durably saves its project through the UI, and the first tab's open chooser refuses that competing write without changing its in-memory project. A fresh browser context then runs the destination/geometry matrix. Both fixtures pass locally; require final-head hosted CI.
+
+Run 45913829201 passed the storage-peer case but stalled clicking the background original editor after an unnecessary reload in the full-editor fixture. That fixture now waits for the initial save and explicitly foregrounds each tab before interaction; it retains the real peer UI save and unchanged-project assertions. Local full-editor and destination tests pass. A retained Playwright trace is uploaded with B2b visual evidence for hosted diagnostics.
+
+Run 45915579753 again passed storage-peer coverage; its retained trace records GPU ReadPixels stall warnings and a click that never completes during synchronous picker-thumbnail rendering with two editors. The full B2b concurrency/matrix fixture now pins Chrome's real WebGL to SwiftShader; both ordinary and software-rendered local runs passed. No geometry, UI, storage or download assertion is skipped. Other browser suites continue with their existing renderer configuration. Verify fresh exact-head CI.
+
+All six substantive suites passed head 6ed1afd. Final hosted screenshot review then caught initial focus on the inspection's bottom Close button, which could scroll the introduction out of view. Inspection now focuses its heading at scroll position zero, with a focused Chromium assertion. The displayed project timestamp is labelled Modified (its actual stored meaning). Recheck final-head CI after this visual/accessibility correction.
+
+The focused follow-up also exposed body focus after Cancel when the source card's action overlay had closed. `restoreLibraryFocus` now resolves a visible original control, its Actions toggle, or New Model after navigation; inspection and chooser share it. Chromium asserts visible focus after cancel/close, as well as top-of-inspection focus. No storage behavior changes.
+
+See [Library destination user guide and handover](WT023B2B_LIBRARY_DESTINATIONS.md) for the isolated candidate builder, chooser, guarded-write publication and regression commands. The existing Library and workspace stores remain authoritative. Check issue #139 and the live draft before resuming; exact-head CI and owner approval remain required.
 ## Active WT-025 / WT-024 interface-polish candidate
 
 [PR #174](https://github.com/connorturansky-svg/crystal-forge/pull/174) is the shared implementation for #154 and #152. Read [the implementation checkpoint](WT025_INTERFACE_POLISH_CHECKPOINT.md). The Info dialog retains existing feature navigation and generated history; `src/ui/info-release-summary.mjs` owns browser-local version acknowledgement. Keep the existing contextual help registry, preserve accessible names and critical warnings, and verify exact-head checks before owner review. Do not treat a candidate version as deployed.
@@ -14,7 +33,7 @@ Red grip drafts are valid design documents, not printable solids. `withGearTopCo
 
 ## Resume from GitHub
 
-Start with [project status and priority order](PROJECT_STATUS.md#chatgpt-handover--25-november-2026). Fetch live main, check issue and branch ownership, and verify Actions against the exact PR head before requesting owner review. The owner approves merges. B2a merged in #172. B2b remains unstarted and requires owner dispatch.
+Start with [project status and priority order](PROJECT_STATUS.md#chatgpt-handover--25-november-2026). Fetch live main, check issue and branch ownership, and verify Actions against the exact PR head before requesting owner review. The owner approves merges. B2a merged in #172. B2b continues in #175 under the 26 November owner dispatch.
 
 - Library rendering and preview callbacks live in `sensory-studio.js`. Card disclosure and CSS are in `src/ui/library-card.mjs` and `src/ui/library-card.css`. Scroll clearance follows the actual Models drawer height. Shared Help uses `tooltips.js` and `contextual-help-copy.js`.
 - For B2b, trace `renderLibraryCards`, `renderBuiltInTemplates`, `renderTemplates`, `saveProjectSnapshot` and `replaceProject` in `sensory-studio.js`, then `projectWorkspaceCandidate` and stale-write protection in `studio-sync-plan.js`. Preserve stable project, snapshot and source revision IDs. Follow the [B2b acceptance packet](WT023_PROJECT_LIBRARY_IMPLEMENTATION.md#b2b--project-browser-and-destination-transaction).

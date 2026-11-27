@@ -123,8 +123,8 @@ try{
  await revealLibraryActions(template);
  const create=template.getByRole('button',{name:'Create project from template',exact:true});
  await create.waitFor();
- page.once('dialog',dialog=>dialog.accept());
  await create.press('Enter');
+ await page.getByRole('dialog',{name:'Create project from template'}).getByRole('button',{name:'Create project',exact:true}).click();
  await page.waitForFunction(id=>window.__sensoryStudio.project.id!==id,original.projectId);
  const assertRetained=async()=>{
   const models=await page.evaluate(()=>window.__sensoryStudio.project.models.filter(model=>model.generator.typeId==='gears').map(model=>model.build.gearTopControls));

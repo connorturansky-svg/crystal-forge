@@ -1,5 +1,5 @@
 import {WORKSPACE_KEY} from '../studio-documents.js';
-import {revealLibraryActions} from './helpers/library-actions.mjs';
+import {revealLibraryActions,confirmLibraryDestination} from './helpers/library-actions.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -435,8 +435,8 @@ try{
  const starter=page.getByRole('button',{name:'Create project from template'});
  await page.locator('#smsReusableTemplates').getByRole('button',{name:'Actions for River starter',exact:true}).click();
  await starter.waitFor();
- page.once('dialog',dialog=>dialog.dismiss());
  await starter.press('Enter');
+ await page.getByRole('dialog',{name:'Create project from template'}).getByRole('button',{name:'Cancel',exact:true}).click();
  assert.equal(await page.locator('#smsProjectTitle').inputValue(),'Current unsaved title');
  await shot('wt015-templates');
  await page.locator('#smsLibraryAll').press('Enter');
@@ -559,17 +559,19 @@ try{
  const pinned=page.locator('article').filter({has:page.getByRole('heading',{name:'Pinned model starter',exact:true})});
  await revealLibraryActions(pinned);
  await pinned.getByRole('button',{name:'Linked copy',exact:true}).click();
+ await confirmLibraryDestination(page);
  const link=await page.evaluate(()=>window.__sensoryStudio.currentModel.link);
  assert.equal(link.revision,1);
  await page.locator('#smsLibrary').click();
  await revealLibraryActions(pinned);
  await pinned.getByRole('button',{name:'Independent copy',exact:true}).click();
+ await confirmLibraryDestination(page);
  assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.link),null);
  const previousProject=await page.evaluate(()=>window.__sensoryStudio.project.id);
  await page.locator('#smsLibrary').click();
  await page.locator('#smsReusableTemplates').getByRole('button',{name:'Actions for River starter',exact:true}).click();
- page.once('dialog',dialog=>dialog.accept());
  await page.getByRole('button',{name:'Create project from template'}).press('Enter');
+ await page.getByRole('dialog',{name:'Create project from template'}).getByRole('button',{name:'Create project',exact:true}).click();
  assert.notEqual(await page.evaluate(()=>window.__sensoryStudio.project.id),previousProject);
  assert.deepEqual(await snapshot(),savedModels);
  await shot('wt015-restored-project');
@@ -2827,6 +2829,7 @@ try{
   const libraryCard=page.locator('#smsSavedModels article').filter({has:page.getByRole('heading',{name:witness,exact:true})});
   await revealLibraryActions(libraryCard);
   await libraryCard.getByRole('button',{name:'Linked copy',exact:true}).click();
+  await confirmLibraryDestination(page);
   const linked=await modelState();
   assert.equal(linked.link.revision,1);
   assert.deepEqual(linked.build,original.build);
@@ -2835,6 +2838,7 @@ try{
   await page.locator('#smsLibrary').click();
   await revealLibraryActions(libraryCard);
   await libraryCard.getByRole('button',{name:'Independent copy',exact:true}).click();
+  await confirmLibraryDestination(page);
   const independent=await modelState();
   assert.equal(independent.link,null);
   assert.deepEqual(independent.build,original.build);

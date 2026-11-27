@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.52 — Choose where Library models belong
+
+- Inspect the models and project defaults of a saved project version without opening it.
+- Choose the current project, an exact saved version or a named new project when adding a Library model or starting point.
+- Confirm the model name and source revision; linked copies stay pinned. A cancelled or failed destination change leaves existing work in place.
 ## v0.16.0-dev.35.51 — Editable grip placement and transform controls
 
 - Add a grip at a clicked position even when its footprint overlaps a spoke window or shaft bore; the red editable preview explains why preparation is blocked.
