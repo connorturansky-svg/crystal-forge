@@ -52,7 +52,9 @@ In the WT-024 candidate, turn on **Hover Notes** and hover over or focus a setti
 
 Open **Models** at the bottom of the 3D viewport. The list contains the current project's open models. It closes when you reload Studio. While open, type in **Find an open model** to narrow the list without changing saved data.
 
-Choose a model to switch to it. Use **Rename**, **Info** or **Close** on its tile. **Close** removes the open entry while keeping the model in the project. Use Alt+arrow on a model button to reorder it, or Escape to close the drawer and return focus to Models.
+Choose a model to switch to it. Use **More actions** (…) for **Rename** or **Info**. Info shows the full name when the card truncates it. **Close** (×) removes the open entry while keeping the model in the project. Use Alt+arrow on a model button to reorder it. Escape closes More actions first, then closes the drawer and returns focus to Models.
+
+Set **Thumbnail size** from 1 (Extra compact) to 5 (Extra large). The setting is remembered in the browser. Search, size, inline explanations and cards scroll together below the Models and New model buttons.
 
 Use **New model** to pick a starting point, then review the suggested name. Previews load when their tiles come into view. If a preview fails, read the reason and use **Retry preview**.
 

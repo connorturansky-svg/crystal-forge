@@ -1500,14 +1500,17 @@ try{
  assert(await page.locator('#smsTools header button').isVisible());
  assert(await page.locator('#smsPrecision header button').isVisible());
  await openModels();
- const bottomTabs=page.locator('#smsModelsDrawer #smsTabs');
+ const bottomTabs=page.locator('#smsModelsDrawer .md-body');
  assert(await bottomTabs.evaluate(node=>node.scrollHeight>node.clientHeight));
  const last=bottomTabs.locator('[data-action=select]').last(),lastId=await last.getAttribute('id');
  await last.press('Alt+ArrowLeft');
  assert.equal(await bottomTabs.locator('[data-action=select]').nth(-2).getAttribute('id'),lastId);
  await bottomTabs.locator('#'+lastId).press('Alt+ArrowRight');
  await bottomTabs.evaluate(node=>{node.scrollTop=node.scrollHeight;});
- assert(await bottomTabs.evaluate(node=>node.scrollTop>0));
+ assert(await bottomTabs.evaluate((node,id)=>{
+  const clip=node.getBoundingClientRect(),last=node.querySelector('#'+CSS.escape(id)).getBoundingClientRect();
+  return node.scrollTop>0&&last.top>=clip.top-1&&last.bottom<=clip.bottom+1;
+ },lastId),'Scrolling the shared drawer must reveal the last model');
  await bottomTabs.locator('#'+lastId).press('Escape');
  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1));
  await shot('wt014-narrow');

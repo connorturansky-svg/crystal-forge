@@ -1,5 +1,9 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
+## WT-023C2 compact Models drawer — 27 November 2026
+
+[PR #183](https://github.com/connorturansky-svg/crystal-forge/pull/183) continues the existing drawer with five compact densities, a single expanded scroll surface and toolbar styling for both optional help checkboxes. Candidate .35.53 follows merged #175 (.35.52). See the [drawer QA](WT023C_MODEL_DRAWER_CODEX.md) and [exact-head checks](https://github.com/connorturansky-svg/crystal-forge/pull/183/checks). Owner review and merge are separate steps.
+
 ## WT-023B2b completion candidate — 26 November 2026
 
 Continue existing #175, owner-dispatched after #181 merged. Candidate .35.52 integrates main .35.51 and preserves Info, compact Library, drawer sizing, precision and cog improvements. Read-only saved-version/settings inspection and the shared atomic destination chooser use the existing workspace. See [verification and follow-on dependencies](WT023B2B_LIBRARY_DESTINATIONS.md). Do not treat the dated open-PR table below as live status; exact final-head CI and owner merge review remain required.
