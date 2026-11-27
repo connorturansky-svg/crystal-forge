@@ -98,8 +98,8 @@
 }
 .md-thumb img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .md-name { min-width: 0; }
-.md-name-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 650; line-height: 1.25; }
-.md-active .md-name-title { font-weight: 750; }
+.md-name-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8125rem; font-weight: 600; line-height: 1.3; }
+.md-active .md-name-title { font-weight: 700; }
 .md-name small { display: block; color: var(--muted); line-height: 1.2; }
 .md-actions { display: flex; gap: var(--md-gap); margin-inline-start: auto; }
 .md-actions button, .md-more-panel button, .md-retry {
