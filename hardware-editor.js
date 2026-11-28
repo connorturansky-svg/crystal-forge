@@ -10,7 +10,7 @@ import {snapPixelsToWireLength} from './pixel-spacing-snap.js';
 import {setPixelEdgeMode,pixelEdgeMode,solvePixelMove} from './pixel-motion.js';
 import {routingSummary,renderFeedback} from './routing-feedback.js';
 
-export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,getManufacturingVisible=()=>false,onEdit,onStatus,validateMountPattern,onSelectionChange=()=>{},canEdit=()=>true}){
+export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,getBaseMesh,getSettings,getCrystals,getManufacturingVisible=()=>false,layerVisible=()=>true,onEdit,onStatus,validateMountPattern,onSelectionChange=()=>{},canEdit=()=>true}){
  const $=id=>document.getElementById(id),guides=new THREE.Group();
  const mountingPreview=new THREE.Group();mountingPreview.name='Mount pattern preview';scene.add(mountingPreview);
  const patternViewport=mountPatternViewport({THREE,canvas:renderer.domElement,camera,
@@ -196,11 +196,19 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   const build=isBuild(),rect=renderer.domElement.getBoundingClientRect();
   markerLayer.hidden=!build||!!placing;
   guides.visible=build&&!getManufacturingVisible();
+  if(guides.visible)for(const guide of guides.children){
+   const {layer,kind,id,essential}=guide.userData;
+   if(layer)guide.visible=essential||(kind&&selectedHardware?.kind===kind&&selectedHardware.id===id)||layerVisible(layer);
+  }
   mountingPreview.visible=build&&!placing&&!getManufacturingVisible();
   movementGuides.visible=build&&!placing&&!getManufacturingVisible();
   if(build&&!placing&&rect.width&&rect.height)for(const {button,p} of markerObjects){
    const pt=new THREE.Vector3(p.x,edgeMarkerHeight,p.z).project(camera);
-   const visible=pt.z>-1&&pt.z<1&&Math.abs(pt.x)<1.2&&Math.abs(pt.y)<1.2;
+   const {hwKind,hwId,edgeWire}=button.dataset;
+   const layer=edgeWire?'wirePorts':hwKind==='pixel'?'pixelTags':hwKind?'mountTags':'wireLengths';
+   const essential=(button.classList.contains('invalid')||button.classList.contains('exceeded'))||markerDrag?.id===hwId&&!!markerDrag||
+    edgeDrag&&!!edgeWire||!!hwKind&&selectedHardware?.kind===hwKind&&selectedHardware.id===hwId;
+   const visible=(essential||layerVisible(layer))&&pt.z>-1&&pt.z<1&&Math.abs(pt.x)<1.2&&Math.abs(pt.y)<1.2;
    button.hidden=!visible;
    if(visible){
     button.style.left=((pt.x+1)*.5*rect.width)+'px';
@@ -241,27 +249,27 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
   for(const tab of plan.tabs||[]){
    const disc=new THREE.Mesh(new THREE.CircleGeometry(tab.radius,64),
      new THREE.MeshBasicMaterial({color:0xb985ff,opacity:.18,transparent:true,depthTest:false,depthWrite:false,side:THREE.DoubleSide}));
-   disc.rotation.x=-Math.PI/2;disc.position.set(tab.x,.12,tab.z);disc.renderOrder=78;guides.add(disc);
+   disc.rotation.x=-Math.PI/2;disc.position.set(tab.x,.12,tab.z);disc.renderOrder=78;disc.userData.layer='mountTabs';guides.add(disc);
    const outline=new THREE.Mesh(new THREE.TorusGeometry(tab.radius,.5,8,64),
      new THREE.MeshBasicMaterial({color:0xb985ff,opacity:.9,transparent:true,depthTest:false}));
-   outline.rotation.x=-Math.PI/2;outline.position.set(tab.x,.16,tab.z);outline.renderOrder=86;guides.add(outline);
+   outline.rotation.x=-Math.PI/2;outline.position.set(tab.x,.16,tab.z);outline.renderOrder=86;outline.userData.layer='mountTabs';guides.add(outline);
   }
   for(const hole of plan.tabHoles||[]){
    const ring=new THREE.Mesh(new THREE.TorusGeometry(hole.radius,.5,8,36),
      new THREE.MeshBasicMaterial({color:0x8745fa,transparent:true,depthTest:false}));
-   ring.rotation.x=-Math.PI/2;ring.position.set(hole.x,.38,hole.z);ring.renderOrder=96;guides.add(ring);
+   ring.rotation.x=-Math.PI/2;ring.position.set(hole.x,.38,hole.z);ring.renderOrder=96;ring.userData.layer='mountHoles';guides.add(ring);
   }
-  for(const [points,color] of [[plan.sockets,0xffd84b],[plan.mounts,0xb985ff],
-      [plan.invalidManualPixels||[],0xff536b],[plan.invalidManualMounts||[],0xff536b]]){
+  for(const [points,color,kind,essential] of [[plan.sockets,0xffd84b,'pixel',false],[plan.mounts,0xb985ff,'mount',false],
+      [plan.invalidManualPixels||[],0xff536b,'pixel',true],[plan.invalidManualMounts||[],0xff536b,'mount',true]]){
    for(const p of points){
     if(!Number.isFinite(p.x)||!Number.isFinite(p.z))continue;
     const ring=new THREE.Mesh(new THREE.TorusGeometry(p.radius+.5,.7,8,32),
       new THREE.MeshBasicMaterial({color,transparent:true,opacity:.95,depthTest:false}));
-    ring.rotation.x=-Math.PI/2;ring.position.set(p.x,.6,p.z);ring.renderOrder=90;guides.add(ring);
+    ring.rotation.x=-Math.PI/2;ring.position.set(p.x,.6,p.z);ring.renderOrder=90;Object.assign(ring.userData,{layer:kind==='pixel'?'socketPreviews':'mountHoles',kind,id:String(p.id),essential});guides.add(ring);
     const height=Math.max(8,Number(getSettings().baseHeight)||10);
     const tube=new THREE.Mesh(new THREE.CylinderGeometry(p.radius,p.radius,height,24,1,true),
       new THREE.MeshBasicMaterial({color,transparent:true,opacity:.12,depthTest:false,depthWrite:false,side:THREE.DoubleSide}));
-    tube.position.set(p.x,height/2,p.z);tube.renderOrder=85;guides.add(tube);
+    tube.position.set(p.x,height/2,p.z);tube.renderOrder=85;Object.assign(tube.userData,ring.userData);guides.add(tube);
    }
   }
   let arrowDistance=0;
@@ -276,10 +284,10 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
    const geom=new THREE.BoxGeometry(length,route.depth+.6,route.width);
    const ghost=new THREE.Mesh(geom,new THREE.MeshBasicMaterial({
     color:route.overLength?0xef334f:0x06bed2,transparent:true,opacity:route.overLength?.65:.3,depthTest:false,depthWrite:false,side:THREE.DoubleSide}));
-   ghost.position.set(midX,(route.depth-.4)/2,midZ);ghost.rotation.y=angle;ghost.renderOrder=92;guides.add(ghost);
+   ghost.position.set(midX,(route.depth-.4)/2,midZ);ghost.rotation.y=angle;ghost.renderOrder=92;Object.assign(ghost.userData,{layer:'wireRoutes',essential:route.overLength});guides.add(ghost);
    const outline=new THREE.LineSegments(new THREE.EdgesGeometry(geom),
     new THREE.LineBasicMaterial({color:route.overLength?0xff3356:0x49faff,depthTest:false,transparent:true,opacity:.95}));
-   outline.position.copy(ghost.position);outline.rotation.copy(ghost.rotation);outline.renderOrder=93;guides.add(outline);
+   outline.position.copy(ghost.position);outline.rotation.copy(ghost.rotation);outline.renderOrder=93;Object.assign(outline.userData,ghost.userData);guides.add(outline);
    // Arrow decorations are never allowed to cross an LED socket. They
    // must live on an actual open stretch of cable rather than looking like
    // a stray short unconnected groove through the yellow P ring.
@@ -294,7 +302,7 @@ export function createHardwareEditor({THREE,scene,renderer,camera,orbit,gizmo,ge
       Math.min(8,Math.max(3,route.lengthMm)),route.overLength?0xff3356:0xe5faff,3,2);
      arrow.renderOrder=104;
      for(const item of [arrow.line,arrow.cone]){item.material.depthTest=false;item.material.transparent=true;item.material.opacity=.9;}
-     guides.add(arrow);arrowDistance=0;
+     arrow.userData.layer='wireDirections';guides.add(arrow);arrowDistance=0;
     }
    }
   }

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {confirmLibraryDestination} from './helpers/library-actions.mjs';
 import fs from 'node:fs/promises';
 import {chromium} from 'playwright';
 const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -10,6 +11,7 @@ try{
  const url=new URL(process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321');url.searchParams.set('layout','legacy');
  await page.goto(url.href,{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.__sensoryStudio,null,{timeout:60000});
+ await page.locator('#hoverNotes').check();
  {
   const control=page.locator('#themeBtn');
   const tooltip=page.getByRole('tooltip');
@@ -33,7 +35,7 @@ try{
  }
  assert.equal(await page.locator('.collapsible-section[open]').count(),0,'Sections start closed.');
  assert((await page.locator('.section-descriptor').first().innerText()).length>10);
- await page.locator('.left details.collapsible-section').first().locator('summary').first().click();
+ await page.locator('.left details.collapsible-section').filter({has:page.locator('output[data-out="count"]')}).locator('summary').first().click();
  await page.locator('output[data-out="count"]').click();await page.locator('[data-exact-input="count"]').fill('19');await page.locator('[data-exact-input="count"]').press('Enter');
  await page.waitForFunction(()=>window.__sensoryStudio.currentModel.parameters.count===19);
  await page.locator('output[data-out="count"]').click();await page.locator('[data-exact-input="count"]').fill('30');await page.locator('[data-exact-input="count"]').press('Escape');
@@ -80,6 +82,7 @@ try{
  await page.locator('#smsSaveModel').click();await page.locator('#smsLibrary').click();
  await page.locator('#smsSavedModels .sms-library-actions-toggle').first().click();
  await page.locator('#smsSavedModels button').filter({hasText:'Linked copy'}).first().click();
+ await confirmLibraryDestination(page);
  assert(await page.evaluate(()=>!!window.__sensoryStudio.currentModel.link));await page.locator('#smsBreak').click();assert.equal(await page.evaluate(()=>window.__sensoryStudio.currentModel.link),null);
  await add('gears');
  for(const [type,preset,key,value] of [

@@ -173,3 +173,5 @@ await import('./wt023-postmerge-regressions.test.mjs');
  assert.deepEqual(importProject(exportProject(a)),a);
  console.log('WT-023C drawer document contracts: bulk close/reopen, atomic reorder, rename/job revision and linked-source preservation passed.');
 }
+
+await import('./wt023-library-destination.test.mjs');

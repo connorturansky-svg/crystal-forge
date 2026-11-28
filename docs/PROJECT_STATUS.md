@@ -1,10 +1,22 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
-## Current PR-led backlog — 25 November 2026
+## Active work — 28 November 2026
 
-Owner requested issues be consolidated into implementation PRs. Open delivery lanes: #169 Models drawer; #174 Info/Help; #175 Library B2b; #158 Gear grips; #176 model colours and viewport layers (supersedes #167/#171); #177 shared resources/private backups; structural and production QA on the accompanying branch. Original issue bodies remain acceptance references, not proof of delivery. See [structural audit](STRUCTURAL_PARITY_QA_20261125.md). #10 physical tests, #33 owner administration and #51 held modular assembly require separate owner decisions/evidence. Always verify live PR head and CI. No auto-merge.
+Main `890326f` includes merged #176 and release v0.16.0-dev.35.54. [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) owns WT-019 / Phase E software production assurance. The [structural audit](STRUCTURAL_PARITY_QA_20261125.md) and [completion register](WT021_COMPLETION_REGISTER.md) preserve the requirements and evidence. The owner retains the [physical fabrication gates](PHYSICAL_PRODUCTION_ACCEPTANCE.md). [Current coordination](AI_HANDOVER.md#current-coordination--28-november-2026) tracks the separate #177 and #179 lanes.
 
-## Historical ChatGPT handover — 25 November 2026
+## Historical project status
+
+The following checkpoints record earlier assignments and verification evidence.
+
+## WT-023C2 compact Models drawer — 27 November 2026
+
+[PR #183](https://github.com/connorturansky-svg/crystal-forge/pull/183) continues the existing drawer with five compact densities, a single expanded scroll surface and toolbar styling for both optional help checkboxes. Candidate .35.53 follows merged #175 (.35.52). See the [drawer QA](WT023C_MODEL_DRAWER_CODEX.md) and [exact-head checks](https://github.com/connorturansky-svg/crystal-forge/pull/183/checks). Owner review and merge are separate steps.
+
+## WT-023B2b completion candidate — 26 November 2026
+
+Continue existing #175, owner-dispatched after #181 merged. Candidate .35.52 integrates main .35.51 and preserves Info, compact Library, drawer sizing, precision and cog improvements. Read-only saved-version/settings inspection and the shared atomic destination chooser use the existing workspace. See [verification and follow-on dependencies](WT023B2B_LIBRARY_DESTINATIONS.md). Do not treat the dated open-PR table below as live status; exact final-head CI and owner merge review remain required.
+
+## ChatGPT handover — 25 November 2026
 
 Main audited at `66994cc98d3ef9bd68ef38161fd7a2b78fef8dbb`. The owner merged [B2a #172](https://github.com/connorturansky-svg/crystal-forge/pull/172). Main carries v0.16.0-dev.35.42. Its runtime head `cba402317d40bd09a0dd228a1257ebf0c4c0fb88` passed all six substantive [PR workflows](https://github.com/connorturansky-svg/crystal-forge/pull/172/checks). Persistence #147, project folders #151, private backup #148, Models drawer #164/#166 and contextual Help #163 are integrated. See [AI_HANDOVER.md](AI_HANDOVER.md) for source and test commands.
 

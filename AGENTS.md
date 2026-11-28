@@ -3,9 +3,9 @@
 > **Source/navigation:** [Feature-first source layout](docs/SOURCE_LAYOUT.md) and [repository map](docs/REPOSITORY_MAP.md). Printing helpers begin under `src/printing/`, but core entrypoints and other files remain at root until their active PRs finish. For path-only changes verify both current and historical SHA-scoped Pages release assets, all relative imports and exact-head CI. Do not re-create old root files as compatibility shims, or move Codex-owned WT-023/WT-026 modules without reconciliation.
 
 
-> **Current entry point:** Read [AI handover](docs/AI_HANDOVER.md) and [project status](docs/PROJECT_STATUS.md) for live-ref checks, merge holds and next assignments. WT-023B2a #172 is merged. B2b requires a new owner dispatch. Verify GitHub refs before picking up existing work.
+> **Current entry point:** Read [AI handover](docs/AI_HANDOVER.md) and [project status](docs/PROJECT_STATUS.md) for current claims and acceptance gates. Verify live GitHub refs before resuming work.
 
-**Start here:** Read the current [handover](docs/AI_HANDOVER.md) and [project status](docs/PROJECT_STATUS.md), then the relevant issue and source. For B2b, the approved [Library implementation packet](docs/WT023_PROJECT_LIBRARY_IMPLEMENTATION.md) and [#139](https://github.com/connorturansky-svg/crystal-forge/issues/139) cover acceptance. Keep the existing project and snapshot store.
+**Start here:** Read the handover and project status, then the approved specification and affected source. Continue existing implementation branches where available.
 
 **Branch ownership:** Check current issue and pull request claims. Preserve other contributors’ branches and existing saved projects. The owner approves merges and verified physical fit remains under [#10](https://github.com/connorturansky-svg/crystal-forge/issues/10).
 

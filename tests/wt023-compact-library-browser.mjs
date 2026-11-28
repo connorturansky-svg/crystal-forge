@@ -3,6 +3,7 @@ import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {HELP_PREFERENCES_KEY} from '../tooltips.js';
 import {WORKSPACE_KEY} from '../studio-documents.js';
+import {revealLibraryActions,confirmLibraryDestination} from './helpers/library-actions.mjs';
 
 const browser=await chromium.launch({headless:true,executablePath:process.env.CRYSTAL_FORGE_BROWSER_EXECUTABLE||undefined,args:['--no-sandbox','--disable-dev-shm-usage']});
 const url=process.env.CRYSTAL_FORGE_URL||'http://127.0.0.1:4321';
@@ -11,7 +12,7 @@ try{
  await context.addInitScript(key=>localStorage.setItem(key,JSON.stringify({hover:true,detailed:false})),HELP_PREFERENCES_KEY);
  const page=await context.newPage(),errors=[];
  page.on('pageerror',error=>errors.push(error.message));
- await page.goto(url);await page.waitForFunction(()=>window.__sensoryStudio);
+ await page.goto(url,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__sensoryStudio);
  await page.evaluate(()=>window.__sensoryStudio.addModel('gears',null,'Compact card witness'));
  await page.locator('#smsSaveModel').click();
  await page.locator('#smsLibrary').click();
@@ -76,13 +77,127 @@ try{
  await toggle.click();
  await page.locator('#controlTooltip').filter({hasText:'Actions for Compact card witness'}).waitFor();
  await actions.getByRole('button',{name:'Linked copy',exact:true}).click();
+ const chooser=page.getByRole('dialog',{name:'Choose model destination'});
+ const beforeCopy=await storage();
+ await chooser.getByRole('button',{name:'Cancel',exact:true}).click();
+ await card.locator(':focus').waitFor({state:'visible'});
+ assert(await card.evaluate(el=>el.contains(document.activeElement)&&document.activeElement.getClientRects().length>0),'Cancel returns focus to a visible source-card control');
+ assert.equal(await storage(),beforeCopy,'Cancel does not write a workspace');
+ await revealLibraryActions(card);
+ await actions.getByRole('button',{name:'Linked copy',exact:true}).click();
+ await confirmLibraryDestination(page);
  const link=await page.evaluate(()=>window.__sensoryStudio.currentModel.link);
  assert(link?.sourceId&&link.revision===1);
+ await page.locator('#smsLibrary').click();
+ await page.locator('#smsSaveProject').click();
+ const historical=JSON.parse(await storage());
+ const saved=historical.savedProjects.at(-1);
+ const savedCard=page.locator('[data-snapshot-id]').filter({has:page.getByRole('heading',{name:saved.title,exact:true})}).last();
+ await revealLibraryActions(savedCard);
+ await savedCard.getByRole('button',{name:'Inspect saved project '+saved.title,exact:true}).click();
+ const inspection=page.getByRole('dialog',{name:'Inspect saved project'});
+ assert(await inspection.locator('h2').evaluate(el=>el===document.activeElement),'Long read-only inspection starts at its heading');
+ assert.equal(await inspection.evaluate(el=>el.scrollTop),0);
+ assert(await inspection.getByRole('heading',{name:'Compact card witness',exact:true}).first().isVisible());
+ assert.match(await inspection.innerText(),new RegExp(saved.snapshotId));
+ await inspection.locator('.sms-saved-preview img').first().waitFor();
+ await inspection.getByText('Saved project defaults, profiles and print jobs',{exact:true}).click();
+ assert.match(await inspection.locator('details').first().innerText(),/Printer/);
+ for(const theme of ['first','second']){
+  for(const width of [390,768,1440]){
+   await page.setViewportSize({width,height:950});
+   await inspection.evaluate(el=>{el.scrollTop=0;});
+   assert(await inspection.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+   await page.screenshot({path:`qa/wt023b2b-inspection-${theme}-${width}.png`});
+  }
+  await page.locator('#themeBtn').evaluate(el=>el.click());
+ }
+ assert.equal(await storage(),JSON.stringify(historical));
+ await inspection.getByRole('button',{name:'Close inspection'}).click();
+ await savedCard.locator(':focus').waitFor({state:'visible'});
+ assert(await savedCard.evaluate(el=>el.contains(document.activeElement)&&document.activeElement.getClientRects().length>0),'Closing inspection returns focus to a visible source-card control');
+
+ const built=page.locator('#smsBuiltInTemplates article').filter({has:page.getByRole('heading',{name:'Cogs & Gears',exact:true})});
+ await revealLibraryActions(built);
+ await built.getByRole('button',{name:'New Cogs & Gears from template'}).click();
+ const destination=page.getByRole('dialog',{name:'Name new model'});
+ await destination.getByRole('combobox',{name:'Destination project'}).selectOption('1');
+ await destination.getByRole('textbox',{name:'Model name'}).fill('Saved destination witness');
+ const beforeDestination=await storage();
+ await page.evaluate(key=>{
+  const original=Storage.prototype.setItem;
+  window.__destinationWriteOriginal=original;
+  Storage.prototype.setItem=function(k,v){if(k===key)throw new DOMException('Quota exceeded','QuotaExceededError');return original.call(this,k,v);};
+ },WORKSPACE_KEY);
+ await destination.getByRole('button',{name:'Create model'}).click();
+ assert.match(await destination.getByRole('alert').innerText(),/Quota exceeded/);
+ assert.equal(await storage(),beforeDestination);
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.project.id),historical.project.id);
+ await page.evaluate(()=>{Storage.prototype.setItem=window.__destinationWriteOriginal;});
+ await page.evaluate(key=>{
+  window.__destinationPeerEvent=null;
+  window.addEventListener('storage',event=>{if(event.key===key)window.__destinationPeerEvent=event.newValue;});
+ },WORKSPACE_KEY);
+ const peer=await context.newPage();
+ // A genuine same-origin peer exercises storage contention without starting a
+ // second WebGL editor and introducing unrelated renderer startup into this test.
+ await peer.goto(new URL('tests/fixtures/storage-peer.html',url).href,{waitUntil:'domcontentloaded'});
+ await peer.evaluate(({key,value})=>localStorage.setItem(key,value+' '),{key:WORKSPACE_KEY,value:beforeDestination});
+ await page.waitForFunction(value=>window.__destinationPeerEvent===value,beforeDestination+' ');
+ await destination.getByRole('button',{name:'Create model'}).click();
+ assert.match(await destination.getByRole('alert').innerText(),/Another tab saved/);
+ await peer.evaluate(({key,value})=>localStorage.setItem(key,value),{key:WORKSPACE_KEY,value:beforeDestination});
+ await peer.close();
+ await page.evaluate(key=>{
+  const original=Storage.prototype.setItem;
+  window.__destinationWriteOriginal=original;window.__destinationWrites=0;
+  Storage.prototype.setItem=function(k,v){if(k===key)window.__destinationWrites++;return original.call(this,k,v);};
+ },WORKSPACE_KEY);
+ await destination.getByRole('button',{name:'Create model'}).click();
+ await destination.waitFor({state:'hidden'});
+ const switched=JSON.parse(await storage());
+ assert.equal(switched.project.models.at(-1).name,'Saved destination witness');
+ assert.deepEqual(switched.savedProjects.find(p=>p.snapshotId===saved.snapshotId),saved);
+ assert.equal(switched.savedProjects.length,historical.savedProjects.length+1);
+ await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
+ assert.equal(await page.evaluate(()=>window.__destinationWrites),1);
+ await page.evaluate(()=>{Storage.prototype.setItem=window.__destinationWriteOriginal;});
+ await page.locator('#smsLibrary').click();
+ await revealLibraryActions(built);
+ await built.getByRole('button',{name:'New Cogs & Gears from template'}).click();
+ await destination.getByRole('combobox',{name:'Destination project'}).selectOption({label:'New project'});
+ await destination.getByRole('textbox',{name:'New project name'}).fill(historical.project.title);
+ await destination.getByRole('textbox',{name:'Model name'}).fill('Fresh destination witness');
+ for(const theme of ['first','second']){
+  for(const width of [390,768,1440]){
+   await page.setViewportSize({width,height:950});
+   assert(await destination.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+   await page.screenshot({path:`qa/wt023b2b-destination-${theme}-${width}.png`});
+  }
+  await page.locator('#themeBtn').evaluate(el=>el.click());
+ }
+ await page.setViewportSize({width:390,height:950});
+ await page.evaluate(()=>{document.documentElement.style.fontSize='200%'});
+ assert(await destination.evaluate(el=>el.scrollWidth<=el.clientWidth+1));
+ await page.screenshot({path:'qa/wt023b2b-destination-zoom.png'});
+ await page.keyboard.press('Tab');
+ assert(await destination.evaluate(el=>el.contains(document.activeElement)));
+ await page.evaluate(()=>{document.documentElement.style.fontSize=''});
+ await page.screenshot({path:'qa/wt023b2b-new-destination.png'});
+ await destination.getByRole('button',{name:'Create model'}).click();
+ await destination.waitFor({state:'hidden'});
+ const fresh=JSON.parse(await storage());
+ assert.notEqual(fresh.project.id,historical.project.id,'Same-title projects have independent identities');
+ assert.equal(fresh.project.models.length,1);assert.equal(fresh.project.models[0].name,'Fresh destination witness');
+ assert.equal(fresh.project.printer.curaNozzle,.4);
+ assert.deepEqual(fresh.project.hardwareProfiles,[]);
+ await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__sensoryStudio);
+ assert.equal(await page.evaluate(()=>window.__sensoryStudio.project.id),fresh.project.id);
  assert.deepEqual(errors,[]);
  await context.close();
  const touchContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});
  const touch=await touchContext.newPage();
- await touch.goto(url);await touch.waitForFunction(()=>window.__sensoryStudio);
+ await touch.goto(url,{waitUntil:'domcontentloaded'});await touch.waitForFunction(()=>window.__sensoryStudio);
  await touch.locator('#smsLibrary').tap();
  const builtIn=touch.locator('#smsBuiltInTemplates article').filter({has:touch.getByRole('heading',{name:'Cogs & Gears',exact:true})});
  const touchToggle=builtIn.locator('.sms-library-actions-toggle');
@@ -90,6 +205,14 @@ try{
  assert.equal(await touchToggle.getAttribute('aria-expanded'),'true');
  await builtIn.getByRole('button',{name:'New Cogs & Gears from template'}).tap();
  await touch.getByRole('dialog',{name:'Name new model'}).getByRole('button',{name:'Cancel'}).tap();
+ await revealLibraryActions(builtIn);
+ await builtIn.getByRole('button',{name:'New Cogs & Gears from template'}).tap();
+ const touchChooser=touch.getByRole('dialog',{name:'Name new model'});
+ await touchChooser.getByRole('textbox',{name:'Model name',exact:true}).fill('Touch destination witness');
+ await touchChooser.getByRole('button',{name:'Create model',exact:true}).tap();
+ await touch.waitForFunction(()=>window.__sensoryStudio.currentModel.name==='Touch destination witness');
  await touchContext.close();
  console.log('WT-023B2a Chromium: compact previews, hover persistence, keyboard disclosure, Escape, touch, linked source and unchanged storage passed.');
 }finally{await browser.close();}
+
+await import('./model-colour-browser.mjs');
