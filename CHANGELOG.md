@@ -62,6 +62,7 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 - Download a parts list alongside the prepared STL and 3MF from the Studio Print Centre.
 - Prepared jobs with a verified cable route include a wiring plan with the reported route lengths.
+- Crystal preparation fills inaccessible voids left by targeted light bores and checks the remaining passages against the final mesh.
 
 ## v0.16.0-dev.35.54 — Model colours and viewport Layers
 

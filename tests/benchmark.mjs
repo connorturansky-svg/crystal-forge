@@ -48,6 +48,12 @@ function measure(label,overrides={}){
   assert.equal(result.report.disconnected,1,'Manufacturing produced one connected body');
   assert.equal(result.report.internalCavities,0,'No sealed internal voids in benchmark case');
   if(cfg.baseVault)assert(result.report.vault.applied,'Requested vault must be cut');
+  if(label==='targeted-bores-with-sealed-pockets'){
+   assert(result.report.sealedCavitiesFilled>0,'The targeted-bore witness must exercise sealed cavity repair');
+   const inspection=result.report.lightPassageInspection;
+   assert(inspection.counts.blocked>0);
+   for(const id of result.report.targetedLightAcceptedIds)assert(inspection.rows.some(row=>row.id===id&&row.status==='clear'));
+  }
   const row={case:label,crystals:cfg.count,geometryMs:Math.round(generationMs),
    preparationMs:Math.round(preparationMs),rssDeltaMiB:Math.round((process.memoryUsage().rss-memoryBefore)/1048576),triangles:result.report.triangleCount,
    vaultColumns:result.report.vault?.supportCount||0};
@@ -66,6 +72,7 @@ if(extended){
  for(const count of [10,16,40,60])extendedResults.push(measure('crystal-count-'+count,{count,cutSockets:true}));
  // Opt-in extended production workloads: not substitutes for print tests.
  for(const [name,overrides] of [
+  ['targeted-bores-with-sealed-pockets',{count:10,cutSockets:true,targetedLightPaths:true,lightBoreDiameter:4}],
   ['targeted-optical-bores',{count:16,cutSockets:true,targetedLightPaths:true,lightBoreDiameter:4}],
   ['multiple-LED-sockets',{count:16,lightingMode:'multi',pixelCount:4,cutSockets:true,
    pixelProfileId:'gumdrop',mount:'None',wireChannels:false}],

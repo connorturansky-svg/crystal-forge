@@ -787,7 +787,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
   // enclosed voids. Open lumens connected to the pixel inlet are part of
   // the outward shell and are kept.
   let sealedCavitiesFilled=0;
-  if(s.hollowCrystals){
+  if(s.hollowCrystals||targetedLightCount>0){
    const shells=combined.decompose().map(hold);
    const positive=shells.filter(p=>p.volume()>.01);
    sealedCavitiesFilled=shells.filter(p=>p.volume()<-.01).length;
@@ -859,6 +859,15 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
    })),probe:(from,to)=>probeLightPassageSegment(wasm,combined,from,to)});
   lightPassageInspection.samplingMs=Math.round(performance.now()-auditStarted);
   lightPassageInspection.meshTriangles=combined.numTri();
+  const targetedLightSkipped=[...targetedPlan.skipped];
+  if(sealedCavitiesFilled&&targetedLightCount>0){
+   const clearIds=new Set(lightPassageInspection.rows.filter(row=>row.status==='clear').map(row=>row.id));
+   for(const id of acceptedTargetedLightIds)if(!clearIds.has(id)){
+    targetedLightSkipped.push({id,reason:'The final mesh did not retain a verified open path after sealed cavity cleanup.'});
+   }
+   acceptedTargetedLightIds=acceptedTargetedLightIds.filter(id=>clearIds.has(id));
+   targetedLightCount=acceptedTargetedLightIds.length;
+  }
   const resultMesh=combined.getMesh();
   const geom=fromResultMesh(resultMesh),indexed=compactMesh(resultMesh);
   const bounds=combined.boundingBox();
@@ -914,7 +923,7 @@ export function prepareFabrication({wasm,meshes,crystals,settings,onProgress=()=
   if(orientation.name!=='Base down (upright)')warnings.push('A different orientation may reduce unsupported area: '+orientation.name+'. Stability and support requirements still need slicer verification.');
   if(s.hollowCrystals&&!s.cutSockets&&!s.undersideAccess)warnings.push('Hollow chambers may be sealed. Enable socket openings or underside access for LED service and venting.');
   const report={ready:true,status:'Manifold mesh validated',printerFits,printerLimit:volumeLimit||null,roofReview,orientation,triangleCount:combined.numTri(),volumeMm3:volume,materialPLAgrams:volume/1000*1.24,initialVolume,disconnected,internalCavities,shellVolumes,
-    bounds:size,quality,lightPassageInspection,hollowed,hollowPorts,skippedHollowPorts,directLightPorts,skippedDirectLightPorts,lightPortDetails,targetedLightCount,targetedLightAcceptedIds:acceptedTargetedLightIds,targetedLightSkipped:targetedPlan.skipped,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
+    bounds:size,quality,lightPassageInspection,hollowed,hollowPorts,skippedHollowPorts,directLightPorts,skippedDirectLightPorts,lightPortDetails,targetedLightCount,targetedLightAcceptedIds:acceptedTargetedLightIds,targetedLightSkipped,baseFitsPixel,lightPathScreened,sealedCavitiesFilled,vault,ventCuts,socketCeilings,socketsCut,mountingHolesCut,edgeTabs:hardware.tabs.length,wireChannelsCut,wireLengthMm:hardware.wirePlan?.lengthMm||0,unroutedPixels:hardware.wirePlan?.unrouted||0,wireExitAdded:!!hardware.wirePlan?.exitAdded,
      wireOverLengthCount:hardware.wirePlan?.overLengthCount||0,
      plannedSockets:hardware.sockets,plannedMounts:[...hardware.mounts,...hardware.tabHoles],hardware,warnings,mesh:indexed};
   return {geometry:geom,report};

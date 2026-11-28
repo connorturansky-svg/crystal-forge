@@ -14,6 +14,8 @@ The owner merged #176 before this branch was reconciled. Base `890326f` includes
 | Migration | The versioned Crystal v3 fixture preserves the original bytes, backup, measured orientation and black, and round-trips the migrated Studio document. |
 | Performance | Run the extended benchmark with `CRYSTAL_FORGE_BENCH_EXTENDED=1`. The benchmark logs 10, 16, 40 and 60 crystals for solid and vaulted fixtures, targeted bores, multiple sockets/mounts, balloon hollowing and repeated preparation. RSS delta is a coarse process measurement; it is neither peak heap usage nor proof of leak absence. |
 
+The ten-Crystal targeted-bore fixture reproduced two sealed cavities. Preparation now fills inaccessible cavities before final-mesh inspection. The regression requires zero residual sealed cavities and reports only inspected clear targeted paths as accepted after cleanup.
+
 The [completion register](WT021_COMPLETION_REGISTER.md) records the broader per-tool evidence and remaining exceptions. DIM-01 still lacks the original owner project/export. FIT-03 and PAR-02 retain their unsupported or uncovered combinations. Real Cura installation and print checks remain in the [physical acceptance register](PHYSICAL_PRODUCTION_ACCEPTANCE.md).
 
 ## Structural audit (source tree and selected dependency review)
