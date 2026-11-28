@@ -65,6 +65,10 @@ In **Design**, open **Model appearance**. Choose a named swatch, use the system 
 
 Open **Layers** in the viewport to hide individual guides, or choose a preset such as **Clean model** or **Wire routing**. The choices are stored in this browser. Active editing feedback remains available. Use **Reset layers** to restore the defaults. Layers affect guides only. Real cuts and fused features remain part of the prepared solid. Crystal supplies tab outlines and cable length labels. The other builders expose their available fitting, route, mount and guide layers.
 
+## Production handover
+
+Prepare the current model in **Print Centre**, then choose **Download production ZIP**. The archive contains the prepared geometry, editable model, manifest and Cura settings, plus a parts list. Jobs with a verified cable route also include **wiring-plan.csv**. Check the manifest for the model and prepared revision before opening the files in Cura. Use the [physical acceptance register](PHYSICAL_PRODUCTION_ACCEPTANCE.md) when checking fit, installation and actual layer behaviour.
+
 ## Finding information
 
 Select **Info** in the toolbar, then choose Help guide, Features or What’s new. Press Escape to close and return to the toolbar. The `?` keyboard shortcut still opens the Help guide. Hover Notes and Detailed Explanations remain separate settings.

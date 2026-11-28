@@ -2,6 +2,20 @@
 
 Audited base: `6a81f9c55a1d8037080dacc5a66f5a69f828da3b`. Owner requested issue consolidation into implementation PRs, not closure based on cosmetic completion. Track remaining software acceptance from #79 and #10 here; actual physical printing, safety sign-off and owner settings remain external.
 
+## Phase E delivery evidence — 28 November 2026
+
+The owner merged #176 before this branch was reconciled. Base `890326f` includes the viewport appearance and inspection work. The software candidate is v0.16.0-dev.35.55.
+
+| Gate | Evidence |
+| --- | --- |
+| Prepared downloads and pack | `tests/phase-e-production-browser.mjs` queues each builder and uses the real Manifold worker. It decodes downloaded STL and 3MF bounds, compares both against the manifest, checks the packed mesh, editable revision, parts list and instructions, and checks cache reuse when revisiting the Print Centre. |
+| Wiring in the pack | The integrated routed and blocked browser witnesses check that the pack reflects prepared route metadata. The Manifold catalogue witnesses check that a prepared route produces the matching CSV rows. Only validated route data enters the pack. |
+| Job lifecycle | The focused browser test cancels a worker during startup, verifies disabled exports, then prepares and exports with a real replacement worker. The document boundary fixture continues to reject an obsolete completion and preserves unrelated jobs. |
+| Migration | The versioned Crystal v3 fixture preserves the original bytes, backup, measured orientation and black, and round-trips the migrated Studio document. |
+| Performance | Run the extended benchmark with `CRYSTAL_FORGE_BENCH_EXTENDED=1`. The benchmark logs 10, 16, 40 and 60 crystals for solid and vaulted fixtures, targeted bores, multiple sockets/mounts, balloon hollowing and repeated preparation. RSS delta is a coarse process measurement; it is neither peak heap usage nor proof of leak absence. |
+
+The [completion register](WT021_COMPLETION_REGISTER.md) records the broader per-tool evidence and remaining exceptions. DIM-01 still lacks the original owner project/export. FIT-03 and PAR-02 retain their unsupported or uncovered combinations. Real Cura installation and print checks remain in the [physical acceptance register](PHYSICAL_PRODUCTION_ACCEPTANCE.md).
+
 ## Structural audit (source tree and selected dependency review)
 72 root-level JS files, 11 source files under src/, 80 JS/MJS files under tests/. The principal integration hotspots are sensory-studio.js (~218 KB, workspace UI and transaction/renderer coordination), studio-v3.js (~116 KB, classic Crystal engine/editor), fabrication-v1.js (~72 KB), contextual-help-copy.js (~71 KB), hardware-editor.js (~66 KB) and studio-catalogue.js (~50 KB). Sizes are observations, not measures of quality or instructions to split files blindly.
 

@@ -27,7 +27,7 @@ function closure(entry){
  }
  return visited;
 }
-for(const entry of ['studio-documents.js','studio-organisation.js','studio-vault.js','studio-sync-plan.js','studio-model-worker.js','fabrication-worker.js','manufacturing-fingerprint.js','src/printing/production-pack.js']){
+for(const entry of ['studio-documents.js','studio-organisation.js','studio-vault.js','studio-sync-plan.js','studio-model-worker.js','fabrication-worker.js','manufacturing-fingerprint.js','src/printing/production-pack.js','src/printing/studio-production-reports.js']){
  const deps=closure(entry);
  const violations=[...deps].filter(p=>uiEntry.has(p)||p.startsWith('src/ui/'));
  assert.deepEqual(violations,[],entry+' must not depend on the editor or UI-only view state');

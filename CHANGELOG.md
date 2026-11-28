@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.55 — Studio production pack reports
+
+- Download a parts list alongside the prepared STL and 3MF from the Studio Print Centre.
+- Prepared jobs with a verified cable route include a wiring plan with the reported route lengths.
+
 ## v0.16.0-dev.35.54 — Model colours and viewport Layers
 
 - Set an exact HEX or RGB display colour or choose a swatch in Model appearance.

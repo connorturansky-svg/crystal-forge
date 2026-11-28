@@ -39,6 +39,7 @@ function measure(label,overrides={}){
  const cfg={...settings,...overrides},generationStart=performance.now();
  const {meshes,crystals}=assembly(cfg);
  const generationMs=performance.now()-generationStart;
+ const memoryBefore=process.memoryUsage().rss;
  const prepStart=performance.now();
  const result=prepareFabrication({wasm,meshes,crystals,settings:cfg});
  const preparationMs=performance.now()-prepStart;
@@ -48,7 +49,7 @@ function measure(label,overrides={}){
   assert.equal(result.report.internalCavities,0,'No sealed internal voids in benchmark case');
   if(cfg.baseVault)assert(result.report.vault.applied,'Requested vault must be cut');
   const row={case:label,crystals:cfg.count,geometryMs:Math.round(generationMs),
-   preparationMs:Math.round(preparationMs),triangles:result.report.triangleCount,
+   preparationMs:Math.round(preparationMs),rssDeltaMiB:Math.round((process.memoryUsage().rss-memoryBefore)/1048576),triangles:result.report.triangleCount,
    vaultColumns:result.report.vault?.supportCount||0};
   const budget=Number(process.env.CRYSTAL_FORGE_MAX_PREP_MS||0);
   if(budget>0)assert(preparationMs<=budget,label+' exceeded '+budget+'ms performance budget');
@@ -71,6 +72,11 @@ if(extended){
   ['multiple-mounts',{count:16,lightingMode:'multi',pixelCount:3,cutSockets:true,mount:'Magnet inserts'}],
   ['experimental-balloon-hollow',{count:10,hollowCrystals:true,cutSockets:true,baseVault:false}],
  ])extendedResults.push(measure(name,overrides));
+}
+if(extended){
+ for(const count of [10,16,40,60])extendedResults.push(measure('vault-count-'+count,{count,baseVault:true}));
+ const repeats=Array.from({length:3},()=>measure('repeat-solid-16',{count:16}));
+ assert(repeats.every(row=>row.triangles===repeats[0].triangles),'Repeated preparations preserve triangle count');
 }
 const normal=measure('cura-first-solid');
 const vaulted=measure('zero-infill-vault',{baseVault:true});

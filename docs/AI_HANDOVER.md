@@ -13,6 +13,10 @@ Audited main `890326f` includes the owner merge of #176 and release v0.16.0-dev.
 
 Fetch main and confirm ownership, mergeability and exact-head checks before each review. Allocate release metadata in merge order. Keep owner merge and physical sign-off separate. The planning/prompts branch is historical. Use the manual contributor handoff from #180.
 
+## #178 Phase E handover
+
+The reconciled [PR #178](https://github.com/connorturansky-svg/crystal-forge/pull/178) keeps the seven-builder assurance work on its existing branch. Candidate v0.16.0-dev.35.55 adds Studio production ZIP parts and verified route reports. The [evidence map](STRUCTURAL_PARITY_QA_20261125.md#phase-e-delivery-evidence--28-november-2026) records the real browser, Manifold, migration and benchmark checks and the outstanding exceptions. Review [exact-head CI](https://github.com/connorturansky-svg/crystal-forge/pull/178/checks) before owner merge. Physical acceptance remains with the owner.
+
 ## #176 release handover
 
 The existing colour dialog supports exact HEX and RGB, swatches, system picker, Apply/Cancel, history and saved revisions in all seven builders. Layers preserve workspace bytes and active editing feedback. Cable-length and tab outline guides are available in Crystal. Native guides follow each builder's existing renderer capabilities.

@@ -1029,7 +1029,14 @@ try{
   const routedJob=page.locator('#smsJobs article');
   await routedJob.getByText('Prepared',{exact:true}).waitFor({timeout:120000});
   const archive=zipEntries((await useDownload(routedJob.locator('[data-job-export]'))).bytes);
-  assert.equal(JSON.parse(archive.get('print-job-manifest.json')).routing.channels.length,3);
+  const preparedChannels=JSON.parse(archive.get('print-job-manifest.json')).routing.channels;
+  assert.equal(preparedChannels.length,3);
+  const wiringRows=archive.get('wiring-plan.csv').toString().trim().split(/\r?\n/);
+  assert.equal(wiringRows.length,preparedChannels.length+1);
+  for(const [index,channel] of preparedChannels.entries()){
+   assert.equal(wiringRows[index+1],'"'+channel.label+'","'+channel.lengthMm+'","'+channel.limitMm+'"');
+  }
+  assert.match(archive.get('parts-list.csv').toString(),/"Pixel socket features","2"/);
   await page.locator('#smsSaveState').filter({hasText:'Saved locally'}).waitFor();
   await page.reload();await page.waitForFunction(()=>window.__sensoryStudio);
   await page.locator('.sms-workspace-nav [data-workspace=wiring]').click();
@@ -1071,6 +1078,7 @@ try{
   assert([...openworkPack.keys()].some(name=>name.endsWith('.stl')));
   assert(zipEntries((await useDownload(routedJob.locator('[data-job-3mf]'))).bytes).has('3D/3dmodel.model'));
   assert.equal(JSON.parse(openworkPack.get('print-job-manifest.json')).routing?.channels?.length??0,0);
+  assert(!openworkPack.has('wiring-plan.csv'),'Blocked route must not be packed as verified wiring');
   await page.locator('.sms-workspace-nav [data-workspace=pixels]').click();
   for(let count=4;count>=1;count--){
    await palette.getByRole('button',{name:'P'+count,exact:true}).click();
