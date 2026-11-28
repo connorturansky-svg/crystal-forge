@@ -23,3 +23,7 @@ assert.match(parsePrecisionNumber('200',{key:'diameter',min:25,max:180}).error,/
 assert.match(parsePrecisionNumber('',{key:'diameter',min:25,max:180}).error,/Enter a number/);
 assert.match(parsePrecisionNumber('Infinity',{key:'diameter',min:25,max:180}).error,/finite/);
 console.log('Exact values: legacy and native decimal, bounds and integer validation passed.');
+
+await import('./model-colour.test.mjs');
+
+await import('./viewport-layers.test.mjs');

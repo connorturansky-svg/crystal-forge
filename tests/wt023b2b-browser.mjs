@@ -65,6 +65,14 @@ try{
   assert.equal(await download.failure(),null);
  };
  await downloadPrepared('stl');await downloadPrepared('3mf');
+ const preparedId=await preparedJob.getAttribute('data-print-job');
+ assert(preparedId);
+ // The worker completion enables downloads before the scheduled workspace save.
+ // Baseline the destination checks on this exact job after it is durable.
+ await page.waitForFunction(({key,id})=>{
+  const stored=JSON.parse(localStorage.getItem(key)||'null');
+  return stored?.project.printJobs.some(job=>job.id===id&&job.status==='prepared'&&job.preparedRevision===job.revision);
+ },{key:WORKSPACE_KEY,id:preparedId});
  await page.evaluate(()=>{const s=window.__sensoryStudio;window.__b2bModel=s.currentModel;window.__b2bJob=s.project.printJobs.at(-1);s.switchModel(s.currentModel.id);});
  const workspace=()=>page.evaluate(key=>JSON.parse(localStorage.getItem(key)),WORKSPACE_KEY);
  const originalSnapshots=structuredClone((await workspace()).savedProjects);

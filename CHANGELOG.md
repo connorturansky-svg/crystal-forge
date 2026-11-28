@@ -58,6 +58,11 @@ Only in the draft integration branch; **not a production release**. Owner approv
 
 **Codex rule:** after each independently tested *user-visible* milestone, update this draft section with concise impact and limitations in the same batched source/test commit. Synchronise in-app What's New/version data through UX-01. Never mislabel a draft-only change as shipped.
 
+## v0.16.0-dev.35.54 — Model colours and viewport Layers
+
+- Set an exact HEX or RGB display colour or choose a swatch in Model appearance.
+- Show or hide viewport guides independently with Layers, or use a preset while inspecting the model.
+
 ## v0.16.0-dev.35.53 — Compact Models drawer
 
 - Fit more open models into the viewport with five thumbnail sizes and compact model actions.

@@ -59,6 +59,12 @@ Set **Thumbnail size** from 1 (Extra compact) to 5 (Extra large). The setting is
 Use **New model** to pick a starting point, then review the suggested name. Previews load when their tiles come into view. If a preview fails, read the reason and use **Retry preview**.
 
 
+## Colours and viewport Layers
+
+In **Design**, open **Model appearance**. Choose a named swatch, use the system picker, or enter exact HEX or RGB values. Select **Apply colour** to commit the edit. **Cancel** discards the draft. Colours travel with the saved model. Secondary colour is available when the builder has an active second material.
+
+Open **Layers** in the viewport to hide individual guides, or choose a preset such as **Clean model** or **Wire routing**. The choices are stored in this browser. Active editing feedback remains available. Use **Reset layers** to restore the defaults. Layers affect guides only. Real cuts and fused features remain part of the prepared solid. Crystal supplies tab outlines and cable length labels. The other builders expose their available fitting, route, mount and guide layers.
+
 ## Finding information
 
 Select **Info** in the toolbar, then choose Help guide, Features or What’s new. Press Escape to close and return to the toolbar. The `?` keyboard shortcut still opens the Help guide. Hover Notes and Detailed Explanations remain separate settings.

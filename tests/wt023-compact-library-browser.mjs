@@ -214,3 +214,5 @@ try{
  await touchContext.close();
  console.log('WT-023B2a Chromium: compact previews, hover persistence, keyboard disclosure, Escape, touch, linked source and unchanged storage passed.');
 }finally{await browser.close();}
+
+await import('./model-colour-browser.mjs');

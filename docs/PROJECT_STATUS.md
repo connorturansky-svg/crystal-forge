@@ -2,7 +2,7 @@
 
 ## Active work — 27 November 2026
 
-Main `1d675f8` includes #175 Library destinations, #181 grip editing and #183 compact Models drawer, through v0.16.0-dev.35.53. [Current ownership and acceptance gates](AI_HANDOVER.md#current-coordination--27-november-2026) track #176–#179 and the documentation refresh in #182. The owner assigned #176 for continued implementation.
+Main `dc6d913` includes #175 Library destinations, #181 grip editing, #183 compact Models drawer and the #182 coordination refresh. [#176](https://github.com/connorturansky-svg/crystal-forge/pull/176) is the v0.16.0-dev.35.54 candidate. Its [release handover](AI_HANDOVER.md#176-release-handover) records verification and scope. Continue [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) on its existing branch after the owner merges #176. [Current coordination](AI_HANDOVER.md#current-coordination--27-november-2026) tracks the independent #177 and #179 lanes.
 
 ## Historical project status
 

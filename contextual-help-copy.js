@@ -208,7 +208,12 @@ export const nativeFamilyHelp = {
 };
 
 export const dynamicHelp = {
+ '[data-viewport-layers], [data-viewport-layer], [data-viewport-layer-preset]': ['Show or hide viewport guides.','Layer settings are saved in this browser. Active placement and editing feedback remains available, and hiding guides does not change your model, prepared solid or exports.'],
  '[data-drawer-zoom]': ['Changes thumbnail and card size without changing model data.','Choose a smaller size to fit more open models in the viewport, or a larger size to inspect the saved previews. The choice is remembered in this browser and does not change your model, camera zoom or print settings.'],
+ "[data-model-colour-channel]": ["Set an exact RGB channel.","Enter whole numbers from 0 to 255 for red, green and blue. Apply saves the combined colour."],
+ "[data-model-colour-picker]": ["Choose an exact display colour.","Use the system colour picker for visual selection; Apply commits the choice."],
+ "[data-model-colour-hex]": ["Enter six hexadecimal digits.","For example #000000 selects pure black. Invalid values are rejected; Cancel preserves the original colour."],
+ "#customModelColour, [data-model-colour-role]": ["Choose any exact model display colour.","Pick a named swatch, use the colour picker or enter six hexadecimal digits. Apply commits one model edit; Cancel changes nothing. The display colour is separate from LED glow and does not establish actual filament colour."],
  "[data-gear-top-field=\"x\"]": ["Move the grip left or right.","Keep the flared root on solid stock and clear of shaft openings."],
  "[data-gear-top-field=\"z\"]": ["Move the grip forward or backward.","Use an offset position for a crank spindle; check clearance from holes."],
  "[data-gear-top-field=\"width\"]": ["Set grip width.","Wider grips need more solid material around their base."],

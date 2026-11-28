@@ -139,10 +139,12 @@ export function previewRecipe(THREE, recipe, colours=[0x88bbff,0xffcf70]) {
   const k=Math.floor((link.path.length-1)/2),a=point(link.path[k]),b=point(link.path[k+1]);
   const d=b.clone().sub(a).normalize(),tip=a.clone().lerp(b,.63),back=tip.clone().addScaledVector(d,-2.5);
   const across=front?new THREE.Vector3(d.y,-d.x,0):new THREE.Vector3(-d.z,0,d.x);
-  points.push(tip,back.clone().addScaledVector(across,1.2),tip,back.clone().addScaledVector(across,-1.2));
+  const arrows=[tip,back.clone().addScaledVector(across,1.2),tip,back.clone().addScaledVector(across,-1.2)];
   const guide=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points),
    new THREE.LineBasicMaterial({color:link.reason?0xff3155:0x00d5c8,depthTest:false}));
-  guide.renderOrder=6;guide.visible=false;guide.userData.nativeRoute=true;guide.userData.previewOnly=true;group.add(guide);
+  guide.renderOrder=6;guide.visible=false;guide.userData.nativeRoute=true;guide.userData.routeWarning=!!link.reason;guide.userData.previewOnly=true;group.add(guide);
+  const direction=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(arrows),guide.material.clone());
+  direction.renderOrder=6;direction.visible=false;direction.userData.nativeRouteDirection=true;direction.userData.previewOnly=true;group.add(direction);
  }
  return group;
 }
