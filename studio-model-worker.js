@@ -35,6 +35,11 @@ self.onmessage=async({data})=>{
    const generator=studioGenerators.find(g=>g.typeId===ticket.model.generator.typeId);if(!generator)throw Error('Generator is unavailable.');
    const recipe=applyBuildModules(generator.recipe(ticket.model.parameters),ticket.model.build,generator.capabilities);
    prepared=prepareRecipe(THREE,wasm,recipe,{onProgress:progress});
+   const cuts=recipe.negative??[];
+   prepared.report.productionFeatures={
+    pixels:cuts.filter(part=>part.pixelHole).length,
+    mounts:cuts.filter(part=>part.mountHole||part.tabHole).length
+   };
   }
   self.postMessage({type:'complete',ticket,prepared});
  }catch(error){self.postMessage({type:'error',ticket,message:error.message});}

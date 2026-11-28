@@ -1,3 +1,4 @@
+import {studioProductionReports} from './src/printing/studio-production-reports.js';
 import {mountViewportLayers} from './src/ui/viewport-layer-control.mjs';
 import {LAYER_IDS,visibleForPicking} from './src/ui/viewport-layers.mjs';
 import {openModelColourControl} from './src/ui/model-colour-control.mjs';
@@ -3575,7 +3576,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
     return;
    }
    const entries=exported.stls.map(s=>[s.name,s.bytes]);entries.push([exported.filename,exported.threeMF],['editable-model.json',JSON.stringify(model,null,2)],['material-roles.json',JSON.stringify(exported.assignments,null,2)],['print-report.json',JSON.stringify(result.report,null,2)]);
-   entries.push(...lightPassageReportEntries(result.report.lightPassageInspection));
+   const reports=studioProductionReports(result.report,exported.stls);
+   entries.push(...reports.files,...lightPassageReportEntries(result.report.lightPassageInspection));
    const cura=printJobCura(settings),curaProfile=cura.profile?'included':'manual-review';
    if(cura.profile)entries.push(cura.profile);
    entries.push(cura.manual);
@@ -3590,6 +3592,8 @@ export function installSensoryStudio({THREE,scene,camera,orbit,renderer,bootstra
    const instructions=[
     'Model: '+model.name,'Revision: '+model.revision,'Job ID: '+job.id,
     'Prepared dimensions (X × Y × Z): '+manifest.dimensionsMm.map(n=>n.toFixed(2)).join(' × ')+' mm',
+    'See parts-list.csv for prepared parts and identified fittings.',
+    reports.wiringIncluded?'See wiring-plan.csv for prepared cable route lengths.':'This job has no verified cable route report.',
     'Printer: '+manifest.printer,'Nozzle: '+manifest.nozzleMm+' mm',
     'Material: '+manifest.material,'Quality: '+manifest.quality+' / 100','',
     exported.warnings.join('\n'),

@@ -1,3 +1,4 @@
+import {studioProductionReports} from '../src/printing/studio-production-reports.js';
 import './gear-top-manifold.test.mjs';
 import {makeRoutedSocketSpecimen} from '../studio-catalogue.js';
 import {PIXEL_PRESETS} from '../pixel-profiles.js';
@@ -354,6 +355,10 @@ for(const [recipe,family] of [[tileRoute,tileGenerator],[gearRoute,gearGenerator
   assert(Math.min(...ceilingVertices)<-30&&Math.max(...ceilingVertices)>30,'Channel ceiling reaches both external sides.');
   console.log('WT-012 routed export:',family.typeId,count);
   const output=exportMaterialBodies(routed,{name:family.typeId+'-routed'});
+  const handoff=studioProductionReports(routed.report,output.stls);
+  assert(handoff.wiringIncluded,family.typeId+' prepared route is available to the production pack');
+  assert.equal(handoff.files.find(([name])=>name==='wiring-plan.csv')[1].trim().split(/\r?\n/).length,
+   routed.report.nativeRouting.channels.length+1);
   assert.equal(output.stls.length,1);assert(output.threeMF.length>100);
  }
 }

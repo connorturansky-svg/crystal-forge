@@ -10,6 +10,7 @@ export function assessOpticalAccess(crystals,s,report=null){
  const planned=planCrystalLightPorts(crystals,s);
  const cutIds=new Set((report?.lightPortDetails||[]).map(p=>p.id));
  const targetedIds=new Set(report?.targetedLightAcceptedIds||[]);
+ const skippedTargeted=new Map((report?.targetedLightSkipped||[]).map(path=>[path.id,path.reason]));
  const results=crystals.filter(c=>!c.hidden).map(c=>{
   let nearest=null,distanceMm=Infinity;
   for(let i=0;i<sockets.length;i++){
@@ -21,7 +22,7 @@ export function assessOpticalAccess(crystals,s,report=null){
   const narrow=rootRadius<Math.max(1.25,Number(s.wallThickness||1.2)*2.2);
   let status='Unknown: no proven optical channel',reason='';
   if(!sockets.length){status='No LED socket';reason='Add an accepted physical LED socket.'}
-  else if(s.targetedLightPaths&&report?.targetedLightSkipped?.some(v=>v.id===c.id)){status='Conduit skipped';reason='Targeted planner rejected the geometry.'}
+  else if(s.targetedLightPaths&&skippedTargeted.has(c.id)){status='Conduit skipped';reason=skippedTargeted.get(c.id)||'Targeted planner rejected the geometry.'}
   else if(!hasOpenInterior){status='No modeled shared passage';reason='Solid roots can block light even if sparse infill is 0%.'}
   else if(narrow){status='Restricted root (review)';reason='Small root may not accommodate a safe light passage.'}
   else if(targetedIds.has(c.id)){status='Targeted conduit cut — inspect Cura';reason='A base-to-spine tube was subtracted for this crystal. Manifold geometry does not prove the route survives slicing or produces light.';}

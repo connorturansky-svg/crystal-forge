@@ -1,0 +1,19 @@
+{
+  "version": 3,
+  "settings": {
+    "title": "Phase E legacy Crystal",
+    "seed": 19,
+    "count": 1,
+    "width": 86,
+    "height": 105,
+    "baseType": "integrated",
+    "baseHeight": 18,
+    "colour": 0,
+    "pixelPlacement": "manual",
+    "manualPixelHoles": [{"id": "legacy-seat", "x": 0, "z": 0, "wireAngle": 180}]
+  },
+  "crystals": [
+    {"id": "legacy-spire", "x": 0, "y": 0, "z": 0, "r": 13, "h": 81, "shape": {"tipRound": 4}}
+  ],
+  "selectedId": "legacy-spire"
+}

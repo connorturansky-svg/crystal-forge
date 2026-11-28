@@ -1,8 +1,8 @@
 # Current work — Crystal Forge / Pixel Model Maker
 
-## Active work — 27 November 2026
+## Active work — 28 November 2026
 
-Main `dc6d913` includes #175 Library destinations, #181 grip editing, #183 compact Models drawer and the #182 coordination refresh. [#176](https://github.com/connorturansky-svg/crystal-forge/pull/176) is the v0.16.0-dev.35.54 candidate. Its [release handover](AI_HANDOVER.md#176-release-handover) records verification and scope. Continue [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) on its existing branch after the owner merges #176. [Current coordination](AI_HANDOVER.md#current-coordination--27-november-2026) tracks the independent #177 and #179 lanes.
+Main `890326f` includes merged #176 and release v0.16.0-dev.35.54. [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) owns WT-019 / Phase E software production assurance. The [structural audit](STRUCTURAL_PARITY_QA_20261125.md) and [completion register](WT021_COMPLETION_REGISTER.md) preserve the requirements and evidence. The owner retains the [physical fabrication gates](PHYSICAL_PRODUCTION_ACCEPTANCE.md). [Current coordination](AI_HANDOVER.md#current-coordination--28-november-2026) tracks the separate #177 and #179 lanes.
 
 ## Historical project status
 

@@ -1,17 +1,21 @@
 # AI handover — read immediately after AGENTS.md
 
-## Current coordination — 27 November 2026
+## Current coordination — 28 November 2026
 
-Audited main `dc6d913` includes the merged coordination refresh #182, [Library destinations #175](https://github.com/connorturansky-svg/crystal-forge/pull/175), [grip editing #181](https://github.com/connorturansky-svg/crystal-forge/pull/181) and [compact Models drawer #183](https://github.com/connorturansky-svg/crystal-forge/pull/183). The release baseline is v0.16.0-dev.35.53. Preserve the shared Info button and independent Help preferences.
+Audited main `890326f` includes the owner merge of #176 and release v0.16.0-dev.35.54, the #182 coordination refresh, #183 compact Models drawer, #175 Library destinations and #181 grip editing.
 
 | PR | Ownership and next acceptance |
 | --- | --- |
-| [#176](https://github.com/connorturansky-svg/crystal-forge/pull/176) | Model appearance and viewport Layers are implemented. Candidate v0.16.0-dev.35.54 requires exact-head CI after the #182 reconciliation and owner merge. See the [colour](MODEL_COLOUR_PICKER_CODEX.md) and [Layers](VIEWPORT_LAYERS_CODEX_PACKET.md) packets. Supersedes #167 and #171. |
+| [#176](https://github.com/connorturansky-svg/crystal-forge/pull/176) | Merged. The release handover below retains its implementation and verification evidence. |
 | [#177](https://github.com/connorturansky-svg/crystal-forge/pull/177) | Project resources and private backup. Reconcile merged #175 destination and workspace contracts before integration. |
-| [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) | WT-019 / Phase E software production assurance. Continue the existing branch after the owner merges #176. Preserve the separate physical acceptance register. |
-| [#179](https://github.com/connorturansky-svg/crystal-forge/pull/179) | Modular fabrication. Develop engine and export evidence independently and coordinate shared editor and release files with #176. |
+| [#178](https://github.com/connorturansky-svg/crystal-forge/pull/178) | Active WT-019 / Phase E software production assurance. Reconcile and extend the existing QA work. Physical fabrication acceptance stays with the owner. |
+| [#179](https://github.com/connorturansky-svg/crystal-forge/pull/179) | Modular fabrication. Develop engine and export evidence independently and coordinate shared editor and release files with active work. |
 
 Fetch main and confirm ownership, mergeability and exact-head checks before each review. Allocate release metadata in merge order. Keep owner merge and physical sign-off separate. The planning/prompts branch is historical. Use the manual contributor handoff from #180.
+
+## #178 Phase E handover
+
+The reconciled [PR #178](https://github.com/connorturansky-svg/crystal-forge/pull/178) keeps the seven-builder assurance work on its existing branch. Candidate v0.16.0-dev.35.55 adds Studio production ZIP parts and verified route reports. The [evidence map](STRUCTURAL_PARITY_QA_20261125.md#phase-e-delivery-evidence--28-november-2026) records the real browser, Manifold, migration and benchmark checks and the outstanding exceptions. Review [exact-head CI](https://github.com/connorturansky-svg/crystal-forge/pull/178/checks) before owner merge. Physical acceptance remains with the owner.
 
 ## #176 release handover
 

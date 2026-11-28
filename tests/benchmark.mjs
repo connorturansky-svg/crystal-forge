@@ -39,6 +39,7 @@ function measure(label,overrides={}){
  const cfg={...settings,...overrides},generationStart=performance.now();
  const {meshes,crystals}=assembly(cfg);
  const generationMs=performance.now()-generationStart;
+ const memoryBefore=process.memoryUsage().rss;
  const prepStart=performance.now();
  const result=prepareFabrication({wasm,meshes,crystals,settings:cfg});
  const preparationMs=performance.now()-prepStart;
@@ -47,9 +48,20 @@ function measure(label,overrides={}){
   assert.equal(result.report.disconnected,1,'Manufacturing produced one connected body');
   assert.equal(result.report.internalCavities,0,'No sealed internal voids in benchmark case');
   if(cfg.baseVault)assert(result.report.vault.applied,'Requested vault must be cut');
+  if(cfg.targetedLightPaths)assert(result.report.targetedLightCount>0,'Targeted benchmark must cut an accepted passage');
+  if(cfg.lightingMode==='multi')assert.equal(result.report.socketsCut,cfg.pixelCount);
+  if(cfg.mount==='Magnet inserts')assert.equal(result.report.mountingHolesCut,2);
+  if(cfg.hollowCrystals)assert(result.report.hollowed>0,'Balloon benchmark must prepare hollow geometry');
+  if(label==='targeted-bores-with-sealed-pockets'){
+   assert(result.report.sealedCavitiesFilled>0,'The targeted-bore witness must exercise sealed cavity repair');
+   const inspection=result.report.lightPassageInspection;
+   assert(inspection.counts.blocked>0);
+   for(const id of result.report.targetedLightAcceptedIds)assert(inspection.rows.some(row=>row.id===id&&row.status==='clear'));
+  }
   const row={case:label,crystals:cfg.count,geometryMs:Math.round(generationMs),
-   preparationMs:Math.round(preparationMs),triangles:result.report.triangleCount,
-   vaultColumns:result.report.vault?.supportCount||0};
+   preparationMs:Math.round(preparationMs),rssDeltaMiB:Math.round((process.memoryUsage().rss-memoryBefore)/1048576),triangles:result.report.triangleCount,
+   vaultColumns:result.report.vault?.supportCount||0,targetedPassages:result.report.targetedLightCount,
+   sockets:result.report.socketsCut,mounts:result.report.mountingHolesCut};
   const budget=Number(process.env.CRYSTAL_FORGE_MAX_PREP_MS||0);
   if(budget>0)assert(preparationMs<=budget,label+' exceeded '+budget+'ms performance budget');
   console.log(JSON.stringify(row));
@@ -62,15 +74,21 @@ function measure(label,overrides={}){
 const extended=process.env.CRYSTAL_FORGE_BENCH_EXTENDED==='1'||process.env.CRYSTAL_FORGE_BENCHMARK_EXTENDED==='1';
 const extendedResults=[];
 if(extended){
- for(const count of [10,16,40,60])extendedResults.push(measure('crystal-count-'+count,{count,cutSockets:true}));
- // Opt-in extended production workloads: not substitutes for print tests.
- for(const [name,overrides] of [
-  ['targeted-optical-bores',{count:16,cutSockets:true,targetedLightPaths:true,lightBoreDiameter:4}],
-  ['multiple-LED-sockets',{count:16,lightingMode:'multi',pixelCount:4,cutSockets:true,
-   pixelProfileId:'gumdrop',mount:'None',wireChannels:false}],
-  ['multiple-mounts',{count:16,lightingMode:'multi',pixelCount:3,cutSockets:true,mount:'Magnet inserts'}],
-  ['experimental-balloon-hollow',{count:10,hollowCrystals:true,cutSockets:true,baseVault:false}],
- ])extendedResults.push(measure(name,overrides));
+ const counts=[10,16,40,60];
+ for(const count of counts){
+  extendedResults.push(measure('solid-'+count,{count}));
+  extendedResults.push(measure('vault-'+count,{count,baseVault:true}));
+  extendedResults.push(measure('targeted-bores-'+count,{count,targetedLightPaths:true,lightBoreDiameter:2.5,lightReach:160}));
+  extendedResults.push(measure('multiple-sockets-'+count,{count,lightingMode:'multi',pixelCount:4,pixelProfileId:'gumdrop'}));
+  extendedResults.push(measure('multiple-mounts-'+count,{count,lightingMode:'multi',pixelCount:3,mount:'Magnet inserts',mountSpacing:72,baseWidth:20}));
+ }
+ extendedResults.push(measure('targeted-bores-with-sealed-pockets',{count:10,targetedLightPaths:true,lightBoreDiameter:4}));
+ // Larger balloon cases are intentionally opt-in. The hosted per-case
+ // guard applies to the representative 10-crystal workload.
+ const hollowCounts=process.env.CRYSTAL_FORGE_BENCH_LARGE_HOLLOW==='1'?counts:[10];
+ for(const count of hollowCounts)extendedResults.push(measure('experimental-balloon-hollow-'+count,{count,hollowCrystals:true}));
+ const repeats=Array.from({length:3},()=>measure('repeat-solid-16',{count:16}));
+ assert(repeats.every(row=>row.triangles===repeats[0].triangles),'Repeated preparations preserve triangle count');
 }
 const normal=measure('cura-first-solid');
 const vaulted=measure('zero-infill-vault',{baseVault:true});

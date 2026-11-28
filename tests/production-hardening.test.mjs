@@ -1,4 +1,8 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {BACKUP_KEY,LEGACY_KEYS,WORKSPACE_KEY,exportProject,importProject} from '../studio-documents.js';
+import {migrateLegacyStorage} from '../studio-migration.js';
+import {studioProductionReports} from '../src/printing/studio-production-reports.js';
 import {manufacturingFingerprint} from '../manufacturing-fingerprint.js';
 import {PROJECT_LIMIT,listSavedProjects,saveNamedProject} from '../project-library.js';
 import {mergeVault,validateVault,GitHubVault} from '../github-vault.js';
@@ -53,3 +57,23 @@ vault.connected=true;vault.reconciled=true;vault.auto=true;vault.token='private-
 vault.disconnect();
 assert.equal(vault.token,'');assert.equal(vault.auto,false,'Disconnect pauses auto-sync');
 console.log('PR11 production hardening: cache invalidation, data preservation and cloud-import rollback passed');
+
+const legacyFixture=readFileSync(new URL('./fixtures/phase-e-crystal-v3.json',import.meta.url),'utf8');
+const fixtureStore=memory({[LEGACY_KEYS[0]]:legacyFixture});
+const migrated=migrateLegacyStorage(fixtureStore);
+assert.equal(fixtureStore.getItem(LEGACY_KEYS[0]),legacyFixture);
+assert.equal(JSON.parse(fixtureStore.getItem(BACKUP_KEY)).originals[LEGACY_KEYS[0]],legacyFixture);
+assert.equal(migrated.project.models[0].parameters.colour,0);
+assert.equal(migrated.project.models[0].parameters.manualPixelHoles[0].wireAngle,180);
+assert.deepEqual(importProject(exportProject(migrated.project)),migrated.project);
+const persisted=fixtureStore.getItem(WORKSPACE_KEY);
+assert.deepEqual(migrateLegacyStorage(fixtureStore),migrated);
+assert.equal(fixtureStore.getItem(WORKSPACE_KEY),persisted);
+const part={name:'base-part.stl'};
+const reports=studioProductionReports({productionFeatures:{pixels:2,mounts:4},nativeRouting:{channels:[{label:'P1 → P2',lengthMm:48.4,limitMm:50}]}},[part]);
+assert.deepEqual(reports.files.map(([name])=>name),['parts-list.csv','wiring-plan.csv']);
+assert.match(reports.files[0][1],/"Pixel socket features","2"/);
+assert.match(reports.files[1][1],/"P1 → P2","48.4","50"/);
+assert.equal(studioProductionReports({hardware:{tabs:[],wirePlan:{ready:false}}},[part]).wiringIncluded,false);
+
+await import('./architecture-boundaries.test.mjs');
